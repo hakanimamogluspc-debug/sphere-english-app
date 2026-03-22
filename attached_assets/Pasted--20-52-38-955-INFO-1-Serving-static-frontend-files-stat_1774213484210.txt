@@ -1,0 +1,140 @@
+[20:52:38.955] INFO (1): Serving static frontend files
+    staticDir: "/app/public"
+[20:52:38.967] INFO (1): Server listening
+    port: 3000
+[20:53:21.276] INFO (1): request completed
+    req: {
+      "id": 1,
+      "method": "GET",
+      "url": "/health"
+    }
+    res: {
+      "statusCode": 200
+    }
+    responseTime: 10
+[20:53:22.202] INFO (1): request completed
+    req: {
+      "id": 2,
+      "method": "GET",
+      "url": "/favicon.ico"
+    }
+    res: {
+      "statusCode": 200
+    }
+    responseTime: 9
+
+> @workspace/db@0.0.0 push /app/lib/db
+> drizzle-kit push --config ./drizzle.config.ts --force
+
+Reading config file '/app/lib/db/drizzle.config.ts'
+Identifier '__dirname' has already been declared
+/app/lib/db:
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @workspace/db@0.0.0 push: `drizzle-kit push --config ./drizzle.config.ts --force`
+Exit status 1
+[20:56:16.683] INFO (39): Serving static frontend files
+    staticDir: "/app/public"
+[20:56:16.687] INFO (39): Server listening
+    port: 3000
+
+> @workspace/db@0.0.0 push /app/lib/db
+> drizzle-kit push --config ./drizzle.config.ts --force
+
+Reading config file '/app/lib/db/drizzle.config.ts'
+Using 'pg' driver for database querying
+[⣷] Pulling schema from database...
+[✓] Pulling schema from database...
+[✓] Changes applied
+[21:00:24.051] INFO (42): Serving static frontend files
+    staticDir: "/app/public"
+[21:00:24.057] INFO (42): Server listening
+    port: 3000
+
+> @workspace/db@0.0.0 push /app/lib/db
+> drizzle-kit push --config ./drizzle.config.ts --force
+
+Reading config file '/app/lib/db/drizzle.config.ts'
+Using 'pg' driver for database querying
+[⣷] Pulling schema from database...
+[⣯] Pulling schema from database...
+[⣟] Pulling schema from database...
+[⡿] Pulling schema from database...
+[⢿] Pulling schema from database...
+[⣻] Pulling schema from database...
+[⣽] Pulling schema from database...
+[⣷] Pulling schema from database...
+[✓] Pulling schema from database...
+[✓] Changes applied
+
+> @workspace/scripts@0.0.0 seed /app/scripts
+> tsx ./src/seed.ts
+
+
+node:internal/process/esm_loader:48
+      internalBinding('errors').triggerUncaughtException(
+                                ^
+Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'drizzle-orm' imported from /app/scripts/src/seed.ts
+Did you mean to import drizzle-orm@0.45.1_@types+pg@8.18.0_pg@8.20.0/node_modules/drizzle-orm/index.cjs?
+    at new NodeError (node:internal/errors:405:5)
+    at packageResolve (node:internal/modules/esm/resolve:780:9)
+    at moduleResolve (node:internal/modules/esm/resolve:829:20)
+    at defaultResolve (node:internal/modules/esm/resolve:1034:11)
+    at nextResolve (node:internal/modules/esm/hooks:832:28)
+    at resolveBase (file:///app/node_modules/.pnpm/tsx@4.21.0/node_modules/tsx/dist/esm/index.mjs?1774213413916:2:3744)
+    at resolveDirectory (file:///app/node_modules/.pnpm/tsx@4.21.0/node_modules/tsx/dist/esm/index.mjs?1774213413916:2:4243)
+    at resolveTsPaths (file:///app/node_modules/.pnpm/tsx@4.21.0/node_modules/tsx/dist/esm/index.mjs?1774213413916:2:4984)
+    at resolve (file:///app/node_modules/.pnpm/tsx@4.21.0/node_modules/tsx/dist/esm/index.mjs?1774213413916:2:5361)
+    at nextResolve (node:internal/modules/esm/hooks:832:28) {
+  code: 'ERR_MODULE_NOT_FOUND'
+}
+
+Node.js v20.6.1
+/app/scripts:
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @workspace/scripts@0.0.0 seed: `tsx ./src/seed.ts`
+Exit status 1
+[21:03:34.487] INFO (87): Serving static frontend files
+    staticDir: "/app/public"
+[21:03:34.496] INFO (87): Server listening
+    port: 3000
+
+> @workspace/db@0.0.0 push /app/lib/db
+> drizzle-kit push --config ./drizzle.config.ts --force
+
+Reading config file '/app/lib/db/drizzle.config.ts'
+Using 'pg' driver for database querying
+[⣷] Pulling schema from database...
+[⣯] Pulling schema from database...
+[⣟] Pulling schema from database...
+[⡿] Pulling schema from database...
+[✓] Pulling schema from database...
+[✓] Changes applied
+
+> @workspace/scripts@0.0.0 seed /app/scripts
+> tsx ./src/seed.ts
+
+
+node:internal/process/esm_loader:48
+      internalBinding('errors').triggerUncaughtException(
+                                ^
+Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'drizzle-orm' imported from /app/scripts/src/seed.ts
+Did you mean to import drizzle-orm@0.45.1_@types+pg@8.18.0_pg@8.20.0/node_modules/drizzle-orm/index.cjs?
+    at new NodeError (node:internal/errors:405:5)
+    at packageResolve (node:internal/modules/esm/resolve:780:9)
+    at moduleResolve (node:internal/modules/esm/resolve:829:20)
+    at defaultResolve (node:internal/modules/esm/resolve:1034:11)
+    at nextResolve (node:internal/modules/esm/hooks:832:28)
+    at resolveBase (file:///app/node_modules/.pnpm/tsx@4.21.0/node_modules/tsx/dist/esm/index.mjs?1774213450114:2:3744)
+    at resolveDirectory (file:///app/node_modules/.pnpm/tsx@4.21.0/node_modules/tsx/dist/esm/index.mjs?1774213450114:2:4243)
+    at resolveTsPaths (file:///app/node_modules/.pnpm/tsx@4.21.0/node_modules/tsx/dist/esm/index.mjs?1774213450114:2:4984)
+    at resolve (file:///app/node_modules/.pnpm/tsx@4.21.0/node_modules/tsx/dist/esm/index.mjs?1774213450114:2:5361)
+    at nextResolve (node:internal/modules/esm/hooks:832:28) {
+  code: 'ERR_MODULE_NOT_FOUND'
+}
+
+Node.js v20.6.1
+/app/scripts:
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @workspace/scripts@0.0.0 seed: `tsx ./src/seed.ts`
+Exit status 1
+[21:04:10.514] INFO (87): Serving static frontend files
+    staticDir: "/app/public"
+[21:04:10.517] INFO (87): Server listening
+    port: 3000
