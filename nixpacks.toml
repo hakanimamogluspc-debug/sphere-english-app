@@ -1,14 +1,19 @@
+providers = []
+
 [variables]
 NODE_ENV = "production"
 PORT = "8080"
 
 [phases.setup]
 nixPkgs = ["nodejs_20"]
+cmds = ["npm install -g pnpm@9"]
 
 [phases.install]
-cmds = ["npm install -g pnpm@9 --silent", "pnpm install --frozen-lockfile"]
+dependsOn = ["setup"]
+cmds = ["pnpm install --frozen-lockfile"]
 
 [phases.build]
+dependsOn = ["install"]
 cmds = ["pnpm --filter @workspace/api-server build"]
 
 [start]
