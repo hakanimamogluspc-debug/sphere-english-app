@@ -1,0 +1,78 @@
+/app/lib/db/src/index.ts:8
+  throw new Error(
+        ^
+
+
+Error: DATABASE_URL must be set. Did you forget to provision a database?
+    at <anonymous> (/app/lib/db/src/index.ts:8:9)
+    at ModuleJob.run (node:internal/modules/esm/module_job:217:25)
+    at async ModuleLoader.import (node:internal/modules/esm/loader:308:24)
+    at async loadESM (node:internal/process/esm_loader:42:7)
+    at async handleMainPromise (node:internal/modules/run_main:66:12)
+
+Node.js v20.6.1
+/app/lib/db/src/index.ts:8
+  throw new Error(
+        ^
+
+
+Error: DATABASE_URL must be set. Did you forget to provision a database?
+    at <anonymous> (/app/lib/db/src/index.ts:8:9)
+    at ModuleJob.run (node:internal/modules/esm/module_job:217:25)
+    at async ModuleLoader.import (node:internal/modules/esm/loader:308:24)
+    at async loadESM (node:internal/process/esm_loader:42:7)
+    at async handleMainPromise (node:internal/modules/run_main:66:12)
+
+Node.js v20.6.1
+/app/lib/db/src/index.ts:8
+  throw new Error(
+        ^
+
+
+Error: DATABASE_URL must be set. Did you forget to provision a database?
+    at <anonymous> (/app/lib/db/src/index.ts:8:9)
+    at ModuleJob.run (node:internal/modules/esm/module_job:217:25)
+    at async ModuleLoader.import (node:internal/modules/esm/loader:308:24)
+    at async loadESM (node:internal/process/esm_loader:42:7)
+    at async handleMainPromise (node:internal/modules/run_main:66:12)
+
+Node.js v20.6.1
+/app/lib/db/src/index.ts:8
+  throw new Error(
+        ^
+
+
+Error: DATABASE_URL must be set. Did you forget to provision a database?
+    at <anonymous> (/app/lib/db/src/index.ts:8:9)
+    at ModuleJob.run (node:internal/modules/esm/module_job:217:25)
+    at async ModuleLoader.import (node:internal/modules/esm/loader:308:24)
+    at async loadESM (node:internal/process/esm_loader:42:7)
+    at async handleMainPromise (node:internal/modules/run_main:66:12)
+
+Node.js v20.6.1
+/app/lib/db/src/index.ts:8
+  throw new Error(
+        ^
+
+
+Error: DATABASE_URL must be set. Did you forget to provision a database?
+    at <anonymous> (/app/lib/db/src/index.ts:8:9)
+    at ModuleJob.run (node:internal/modules/esm/module_job:217:25)
+    at async ModuleLoader.import (node:internal/modules/esm/loader:308:24)
+    at async loadESM (node:internal/process/esm_loader:42:7)
+    at async handleMainPromise (node:internal/modules/run_main:66:12)
+
+Node.js v20.6.1
+/app/lib/db/src/index.ts:8
+  throw new Error(
+        ^
+
+
+Error: DATABASE_URL must be set. Did you forget to provision a database?
+    at <anonymous> (/app/lib/db/src/index.ts:8:9)
+    at ModuleJob.run (node:internal/modules/esm/module_job:217:25)
+    at async ModuleLoader.import (node:internal/modules/esm/loader:308:24)
+    at async loadESM (node:internal/process/esm_loader:42:7)
+    at async handleMainPromise (node:internal/modules/run_main:66:12)
+
+Node.js v20.6.1
