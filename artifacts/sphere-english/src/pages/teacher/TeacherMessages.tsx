@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/core";
 import { Button } from "@/components/ui/core";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
+import { abbrevName } from "@/lib/utils";
 
 const API = "http://localhost:8080/api";
 
@@ -252,7 +253,7 @@ export default function TeacherMessages() {
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5">
-                      <p className="font-semibold text-sm truncate">{s.firstName} {s.lastName}</p>
+                      <p className="font-semibold text-sm truncate">{abbrevName(s.firstName, s.lastName)}</p>
                       {s.currentLevel && (
                         <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold shrink-0 ${LEVEL_COLORS[s.currentLevel] ?? "bg-gray-100 text-gray-600"}`}>
                           {s.currentLevel}
@@ -292,7 +293,7 @@ export default function TeacherMessages() {
                     {initials(selectedStudent.firstName, selectedStudent.lastName)}
                   </div>
                   <div>
-                    <p className="font-semibold">{selectedStudent.firstName} {selectedStudent.lastName}</p>
+                    <p className="font-semibold">{abbrevName(selectedStudent.firstName, selectedStudent.lastName)}</p>
                     <div className="flex items-center gap-2 mt-0.5">
                       {selectedStudent.currentLevel && (
                         <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${LEVEL_COLORS[selectedStudent.currentLevel] ?? ""}`}>
@@ -462,7 +463,7 @@ export default function TeacherMessages() {
                           </div>
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-1.5 flex-wrap">
-                              <span className="font-medium text-sm">{s.firstName} {s.lastName}</span>
+                              <span className="font-medium text-sm">{abbrevName(s.firstName, s.lastName)}</span>
                               {s.currentLevel && (
                                 <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${LEVEL_COLORS[s.currentLevel] ?? "bg-gray-100 text-gray-600"}`}>
                                   {s.currentLevel}
@@ -505,7 +506,7 @@ export default function TeacherMessages() {
                         const s = students.find(st => st.userId === id);
                         return s ? (
                           <span key={id} className="inline-flex items-center gap-1 bg-white border border-border rounded-full px-2 py-0.5 text-xs">
-                            {s.firstName} {s.lastName}
+                            {abbrevName(s.firstName, s.lastName)}
                             <button onClick={e => { e.stopPropagation(); toggleSelect(id); }} className="text-muted-foreground hover:text-red-500">
                               <X className="h-3 w-3" />
                             </button>

@@ -7,6 +7,7 @@ import { useForm, useFieldArray } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion } from "framer-motion";
+import { abbrevName } from "@/lib/utils";
 
 const questionSchema = z.object({
   type: z.enum(["multiple_choice", "true_false", "fill_blank"]),
@@ -291,7 +292,7 @@ export default function TeacherQuizzes() {
                 <div className="flex items-center gap-2">
                   {a.passed ? <CheckCircle2 className="h-4 w-4 text-green-500" /> : <XCircle className="h-4 w-4 text-red-400" />}
                   <div>
-                    <p className="text-sm font-medium">{a.firstName} {a.lastName}</p>
+                    <p className="text-sm font-medium">{abbrevName(a.firstName, a.lastName)}</p>
                     <p className="text-xs text-muted-foreground">{a.email}</p>
                   </div>
                 </div>

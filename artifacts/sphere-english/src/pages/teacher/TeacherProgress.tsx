@@ -4,6 +4,7 @@ import { Card, Badge } from "@/components/ui/core";
 import { LineChart, CheckCircle2, XCircle, Target, Flame, Star } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { motion } from "framer-motion";
+import { abbrevName } from "@/lib/utils";
 
 interface Attempt {
   id: number;
@@ -96,7 +97,7 @@ export default function TeacherProgress() {
                       {s.firstName[0]}{s.lastName[0]}
                     </div>
                     <div>
-                      <p className="font-semibold">{s.firstName} {s.lastName}</p>
+                      <p className="font-semibold">{abbrevName(s.firstName, s.lastName)}</p>
                       <p className="text-xs text-muted-foreground">{s.email}</p>
                     </div>
                   </div>

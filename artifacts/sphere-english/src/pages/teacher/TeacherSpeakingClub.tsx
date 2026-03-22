@@ -3,6 +3,7 @@ import { Card, Badge, Modal } from "@/components/ui/core";
 import { Mic, CalendarDays, Clock, Users, Link as LinkIcon, BookOpen, UserCheck } from "lucide-react";
 import { useState } from "react";
 import { motion } from "framer-motion";
+import { abbrevName } from "@/lib/utils";
 
 interface Participant {
   studentId: number;
@@ -199,7 +200,7 @@ export default function TeacherSpeakingClub() {
                       {p.firstName?.[0] || "?"}{p.lastName?.[0] || ""}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium">{p.firstName} {p.lastName}</p>
+                      <p className="text-sm font-medium">{abbrevName(p.firstName, p.lastName)}</p>
                       <p className="text-xs text-muted-foreground truncate">{p.email}</p>
                     </div>
                     <div className="flex items-center gap-1 text-xs text-green-600 shrink-0">

@@ -24,6 +24,15 @@ export function formatDateTime(dateString: string | null | undefined): string {
   }
 }
 
+/** Öğretmen görünümü için öğrenci adını kısaltır: "Hakan İnce" → "Hakan İ." */
+export function abbrevName(firstName?: string | null, lastName?: string | null): string {
+  const first = firstName?.trim() || "";
+  const last = lastName?.trim() || "";
+  if (!first && !last) return "?";
+  if (!last) return first;
+  return `${first} ${last[0].toUpperCase()}.`;
+}
+
 export function getLevelColor(level: string | null | undefined): string {
   switch (level) {
     case "A1": return "bg-slate-100 text-slate-700 border-slate-200";

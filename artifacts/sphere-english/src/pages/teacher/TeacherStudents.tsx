@@ -4,6 +4,7 @@ import { Card, Button, Input, Label, Badge, Modal } from "@/components/ui/core";
 import { useToast } from "@/hooks/use-toast";
 import { Users, UserPlus, UserMinus, Megaphone, Search, ChevronDown, ChevronRight, GraduationCap } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { abbrevName } from "@/lib/utils";
 
 interface Student { id: number; firstName: string; lastName: string; email: string; totalPoints: number; streak: number; }
 interface Group { id: number; name: string; description: string | null; memberCount: number; }
@@ -174,7 +175,7 @@ export default function TeacherStudents() {
                                 {s.firstName[0]}{s.lastName[0]}
                               </div>
                               <div>
-                                <p className="text-sm font-medium">{s.firstName} {s.lastName}</p>
+                                <p className="text-sm font-medium">{abbrevName(s.firstName, s.lastName)}</p>
                                 <p className="text-xs text-muted-foreground">{s.email}</p>
                               </div>
                             </div>
@@ -221,7 +222,7 @@ export default function TeacherStudents() {
               filteredAddStudents.map((s) => (
                 <div key={s.id} className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-secondary/40 transition-colors">
                   <div>
-                    <p className="text-sm font-medium">{s.firstName} {s.lastName}</p>
+                    <p className="text-sm font-medium">{abbrevName(s.firstName, s.lastName)}</p>
                     <p className="text-xs text-muted-foreground">{s.email}</p>
                   </div>
                   <Button
