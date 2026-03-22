@@ -18,13 +18,13 @@ export default function CourseList() {
     <div className="space-y-8">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold font-display text-foreground">Course Catalog</h1>
-          <p className="text-muted-foreground mt-1">Discover courses tailored to your level.</p>
+          <h1 className="text-3xl font-bold font-display text-foreground">Kurs Kataloğu</h1>
+          <p className="text-muted-foreground mt-1">Seviyenize uygun kursları keşfedin.</p>
         </div>
         <div className="w-full sm:w-72">
           <Input 
             icon={<Search size={18} />} 
-            placeholder="Search courses..." 
+            placeholder="Kurs ara..." 
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -56,14 +56,14 @@ export default function CourseList() {
                 <p className="text-muted-foreground text-sm line-clamp-2 mb-4 flex-1">{course.description}</p>
                 
                 <div className="flex items-center gap-4 text-sm text-muted-foreground mb-6">
-                  <div className="flex items-center gap-1"><BookOpen size={16}/> {course.totalLessons} Lessons</div>
-                  <div className="flex items-center gap-1"><Users size={16}/> {course.enrolledCount} Enrolled</div>
+                  <div className="flex items-center gap-1"><BookOpen size={16}/> {course.totalLessons} Ders</div>
+                  <div className="flex items-center gap-1"><Users size={16}/> {course.enrolledCount} Kayıtlı</div>
                 </div>
                 
                 <div className="flex items-center justify-between mt-auto pt-4 border-t border-border">
-                  <span className="font-semibold">{course.price ? `$${course.price}` : 'Free'}</span>
+                  <span className="font-semibold">{course.price ? `₺${course.price}` : 'Ücretsiz'}</span>
                   <Link href={`/courses/${course.id}`}>
-                    <Button variant="outline" size="sm">View Details</Button>
+                    <Button variant="outline" size="sm">Detayları Gör</Button>
                   </Link>
                 </div>
               </CardContent>
@@ -75,8 +75,8 @@ export default function CourseList() {
       {filteredCourses?.length === 0 && (
         <div className="text-center py-20 bg-card rounded-2xl border border-border">
           <BookOpen className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-          <h3 className="text-xl font-bold mb-2">No courses found</h3>
-          <p className="text-muted-foreground">Try adjusting your search terms.</p>
+          <h3 className="text-xl font-bold mb-2">Kurs bulunamadı</h3>
+          <p className="text-muted-foreground">Arama kriterlerinizi değiştirmeyi deneyin.</p>
         </div>
       )}
     </div>

@@ -12,12 +12,12 @@ import { useToast } from "@/hooks/use-toast";
 
 function formatDate(dateStr: string) {
   const d = new Date(dateStr);
-  return d.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
+  return d.toLocaleDateString("tr-TR", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
 }
 
 function formatTime(dateStr: string) {
   const d = new Date(dateStr);
-  return d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
+  return d.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" });
 }
 
 function ClassStatus({ startTime, duration }: { startTime: string; duration: number }) {
@@ -25,10 +25,15 @@ function ClassStatus({ startTime, duration }: { startTime: string; duration: num
   const start = new Date(startTime);
   const end = new Date(start.getTime() + duration * 60000);
 
-  if (now >= start && now <= end) return <Badge className="bg-green-100 text-green-800">Live Now</Badge>;
-  if (now < start) return <Badge className="bg-blue-100 text-blue-800">Upcoming</Badge>;
-  return <Badge className="bg-gray-100 text-gray-600">Ended</Badge>;
+  if (now >= start && now <= end) return <Badge className="bg-green-100 text-green-800">Canlı</Badge>;
+  if (now < start) return <Badge className="bg-blue-100 text-blue-800">Yaklaşan</Badge>;
+  return <Badge className="bg-gray-100 text-gray-600">Sona Erdi</Badge>;
 }
+
+const typeLabel: Record<string, string> = {
+  group: "Grup",
+  "one-on-one": "Birebir",
+};
 
 export default function LiveClasses() {
   const { user } = useAuth();
@@ -45,10 +50,10 @@ export default function LiveClasses() {
   const handleJoin = async (classId: number) => {
     try {
       await joinMutation.mutateAsync({ id: classId });
-      toast({ title: "Joined!", description: "You've successfully joined the class." });
+      toast({ title: "Katıldınız!", description: "Derse başarıyla katıldınız." });
       queryClient.invalidateQueries({ queryKey: ["/api/live-classes"] });
     } catch {
-      toast({ title: "Error", description: "Could not join the class.", variant: "destructive" });
+      toast({ title: "Hata", description: "Derse katılınamadı.", variant: "destructive" });
     }
   };
 
@@ -66,12 +71,12 @@ export default function LiveClasses() {
           isRecorded: false,
         }
       });
-      toast({ title: "Class Created!", description: "Your live class has been scheduled." });
+      toast({ title: "Ders Oluşturuldu!", description: "Canlı dersiniz planlandı." });
       queryClient.invalidateQueries({ queryKey: ["/api/live-classes"] });
       setShowCreate(false);
       reset();
     } catch {
-      toast({ title: "Error", description: "Could not create class.", variant: "destructive" });
+      toast({ title: "Hata", description: "Ders oluşturulamadı.", variant: "destructive" });
     }
   };
 
@@ -85,12 +90,12 @@ export default function LiveClasses() {
     <div className="space-y-8">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold font-display">Live Classes</h1>
-          <p className="text-muted-foreground mt-1">Join live sessions with your teachers.</p>
+          <h1 className="text-3xl font-bold font-display">Canlı Dersler</h1>
+          <p className="text-muted-foreground mt-1">Öğretmenlerinizle canlı oturumlara katılın.</p>
         </div>
         {canCreate && (
           <Button onClick={() => setShowCreate(true)} className="flex items-center gap-2">
-            <Plus size={18} /> Schedule Class
+            <Plus size={18} /> Ders Planla
           </Button>
         )}
       </div>
@@ -104,12 +109,12 @@ export default function LiveClasses() {
       ) : (
         <>
           <div>
-            <h2 className="text-xl font-bold mb-4 text-foreground">Upcoming Sessions</h2>
+            <h2 className="text-xl font-bold mb-4 text-foreground">Yaklaşan Oturumlar</h2>
             {upcoming.length === 0 ? (
               <Card>
                 <CardContent className="py-12 text-center text-muted-foreground">
                   <Video className="h-12 w-12 mx-auto mb-3 opacity-40" />
-                  <p>No upcoming classes scheduled.</p>
+                  <p>Planlanmış yaklaşan ders yok.</p>
                 </CardContent>
               </Card>
             ) : (
@@ -121,7 +126,7 @@ export default function LiveClasses() {
                         <div className="flex items-center gap-3 mb-2 flex-wrap">
                           <h3 className="text-lg font-bold">{cls.title}</h3>
                           <ClassStatus startTime={cls.startTime} duration={cls.duration} />
-                          <Badge variant="outline" className="capitalize">{cls.type}</Badge>
+                          <Badge variant="outline">{typeLabel[cls.type] || cls.type}</Badge>
                         </div>
                         <p className="text-muted-foreground text-sm mb-3">{cls.description}</p>
                         <div className="flex items-center gap-6 text-sm text-muted-foreground">
@@ -129,10 +134,10 @@ export default function LiveClasses() {
                             <Calendar size={15} /> {formatDate(cls.startTime)}
                           </span>
                           <span className="flex items-center gap-1.5">
-                            <Clock size={15} /> {formatTime(cls.startTime)} · {cls.duration} min
+                            <Clock size={15} /> {formatTime(cls.startTime)} · {cls.duration} dk
                           </span>
                           <span className="flex items-center gap-1.5">
-                            <Users size={15} /> Max {cls.maxStudents} students
+                            <Users size={15} /> Maks. {cls.maxStudents} öğrenci
                           </span>
                         </div>
                       </div>
@@ -144,13 +149,13 @@ export default function LiveClasses() {
                             onClick={() => handleJoin(cls.id)}
                             disabled={joinMutation.isPending}
                           >
-                            Join Class
+                            Derse Katıl
                           </Button>
                         )}
                         {cls.meetingLink && (
                           <a href={cls.meetingLink} target="_blank" rel="noreferrer">
                             <Button size="sm" className="flex items-center gap-2">
-                              <ExternalLink size={15} /> Open Meeting
+                              <ExternalLink size={15} /> Toplantıyı Aç
                             </Button>
                           </a>
                         )}
@@ -164,7 +169,7 @@ export default function LiveClasses() {
 
           {past.length > 0 && (
             <div>
-              <h2 className="text-xl font-bold mb-4 text-foreground">Past Sessions</h2>
+              <h2 className="text-xl font-bold mb-4 text-foreground">Geçmiş Oturumlar</h2>
               <div className="space-y-4">
                 {past.map(cls => (
                   <Card key={cls.id} className="opacity-70">
@@ -176,11 +181,11 @@ export default function LiveClasses() {
                         </div>
                         <div className="flex items-center gap-4 text-sm text-muted-foreground">
                           <span className="flex items-center gap-1.5"><Calendar size={14} /> {formatDate(cls.startTime)}</span>
-                          <span className="flex items-center gap-1.5"><Clock size={14} /> {cls.duration} min</span>
+                          <span className="flex items-center gap-1.5"><Clock size={14} /> {cls.duration} dk</span>
                         </div>
                       </div>
                       {cls.isRecorded && (
-                        <Button variant="outline" size="sm">Watch Recording</Button>
+                        <Button variant="outline" size="sm">Kaydı İzle</Button>
                       )}
                     </CardContent>
                   </Card>
@@ -194,40 +199,40 @@ export default function LiveClasses() {
       <Dialog open={showCreate} onOpenChange={setShowCreate}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>Schedule a Live Class</DialogTitle>
+            <DialogTitle>Canlı Ders Planla</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit(onCreateSubmit)} className="space-y-4 mt-2">
             <div>
-              <Label>Title</Label>
-              <Input {...register("title", { required: true })} placeholder="e.g. Grammar Workshop" className="mt-1" />
+              <Label>Başlık</Label>
+              <Input {...register("title", { required: true })} placeholder="örn. Gramer Atölyesi" className="mt-1" />
             </div>
             <div>
-              <Label>Description</Label>
-              <Input {...register("description")} placeholder="Brief description" className="mt-1" />
+              <Label>Açıklama</Label>
+              <Input {...register("description")} placeholder="Kısa açıklama" className="mt-1" />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label>Start Time</Label>
+                <Label>Başlangıç Saati</Label>
                 <Input type="datetime-local" {...register("startTime", { required: true })} className="mt-1" />
               </div>
               <div>
-                <Label>Duration (minutes)</Label>
+                <Label>Süre (dakika)</Label>
                 <Input type="number" {...register("duration", { required: true })} defaultValue={60} className="mt-1" />
               </div>
             </div>
             <div>
-              <Label>Meeting Link</Label>
+              <Label>Toplantı Bağlantısı</Label>
               <Input {...register("meetingLink")} placeholder="https://zoom.us/..." className="mt-1" />
             </div>
             <div>
-              <Label>Max Students</Label>
+              <Label>Maksimum Öğrenci</Label>
               <Input type="number" {...register("maxStudents")} defaultValue={20} className="mt-1" />
             </div>
             <div className="flex gap-3 pt-2">
               <Button type="submit" disabled={createMutation.isPending} className="flex-1">
-                {createMutation.isPending ? "Creating..." : "Schedule Class"}
+                {createMutation.isPending ? "Oluşturuluyor..." : "Ders Planla"}
               </Button>
-              <Button type="button" variant="outline" onClick={() => setShowCreate(false)}>Cancel</Button>
+              <Button type="button" variant="outline" onClick={() => setShowCreate(false)}>İptal</Button>
             </div>
           </form>
         </DialogContent>

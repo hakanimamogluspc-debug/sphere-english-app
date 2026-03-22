@@ -22,16 +22,16 @@ export default function CourseDetail() {
     queryClient.invalidateQueries({ queryKey: [`/api/courses/${courseId}`] });
   };
 
-  if (isLoading) return <div className="p-8 text-center animate-pulse">Loading course details...</div>;
-  if (!course) return <div className="p-8 text-center">Course not found</div>;
+  if (isLoading) return <div className="p-8 text-center animate-pulse">Kurs detayları yükleniyor...</div>;
+  if (!course) return <div className="p-8 text-center">Kurs bulunamadı</div>;
 
   return (
     <div className="max-w-5xl mx-auto space-y-8">
       <button onClick={() => setLocation('/courses')} className="flex items-center text-sm font-medium text-muted-foreground hover:text-foreground transition-colors mb-4">
-        <ArrowLeft size={16} className="mr-2" /> Back to Courses
+        <ArrowLeft size={16} className="mr-2" /> Kurslara Dön
       </button>
 
-      {/* Course Hero */}
+      {/* Kurs Başlık Alanı */}
       <div className="bg-card border border-border rounded-3xl overflow-hidden shadow-sm">
         <div className="h-64 md:h-80 w-full relative">
           <img 
@@ -40,30 +40,30 @@ export default function CourseDetail() {
             className="w-full h-full object-cover"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent flex flex-col justify-end p-8">
-            <Badge className={`w-fit mb-4 ${getLevelColor(course.level)} border-0`}>{course.level} Level</Badge>
+            <Badge className={`w-fit mb-4 ${getLevelColor(course.level)} border-0`}>{course.level} Seviyesi</Badge>
             <h1 className="text-3xl md:text-5xl font-bold font-display text-white mb-2">{course.title}</h1>
-            <p className="text-white/80 text-lg">Taught by {course.teacherName || "Sphere Instructor"}</p>
+            <p className="text-white/80 text-lg">Eğitmen: {course.teacherName || "Sphere Öğretmeni"}</p>
           </div>
         </div>
         <div className="p-8 flex flex-col md:flex-row gap-8 justify-between items-start md:items-center bg-card">
           <div className="max-w-3xl">
-            <h3 className="text-xl font-bold mb-2">About this course</h3>
+            <h3 className="text-xl font-bold mb-2">Bu kurs hakkında</h3>
             <p className="text-muted-foreground leading-relaxed">{course.description}</p>
           </div>
           <div className="shrink-0 flex flex-col items-center md:items-end gap-3 w-full md:w-auto">
             {course.isEnrolled ? (
               <div className="text-center md:text-right">
-                <div className="text-2xl font-bold text-accent mb-1">{course.completionPercentage || 0}% Complete</div>
+                <div className="text-2xl font-bold text-accent mb-1">%{course.completionPercentage || 0} Tamamlandı</div>
                 <div className="w-full md:w-48 bg-secondary rounded-full h-2 overflow-hidden mb-2">
                   <div className="bg-accent h-full rounded-full" style={{ width: `${course.completionPercentage || 0}%` }} />
                 </div>
-                <Button className="w-full" size="lg">Continue Learning</Button>
+                <Button className="w-full" size="lg">Öğrenmeye Devam Et</Button>
               </div>
             ) : (
               <div className="text-center md:text-right w-full">
-                <div className="text-2xl font-bold mb-3">{course.price ? `$${course.price}` : 'Free'}</div>
+                <div className="text-2xl font-bold mb-3">{course.price ? `₺${course.price}` : 'Ücretsiz'}</div>
                 <Button size="lg" className="w-full md:w-auto shadow-xl" onClick={handleEnroll} isLoading={enrollMutation.isPending}>
-                  Enroll Now
+                  Şimdi Kayıt Ol
                 </Button>
               </div>
             )}
@@ -71,9 +71,9 @@ export default function CourseDetail() {
         </div>
       </div>
 
-      {/* Course Curriculum */}
+      {/* Müfredat */}
       <div>
-        <h2 className="text-2xl font-bold font-display mb-6 flex items-center gap-2">Course Curriculum</h2>
+        <h2 className="text-2xl font-bold font-display mb-6">Kurs Müfredatı</h2>
         <div className="space-y-4">
           {course.modules?.map((module, mIndex) => (
             <Card key={module.id} className="overflow-hidden">
@@ -82,8 +82,8 @@ export default function CourseDetail() {
                 onClick={() => setOpenModule(openModule === module.id ? null : module.id)}
               >
                 <div>
-                  <h4 className="font-bold text-lg">Module {mIndex + 1}: {module.title}</h4>
-                  <p className="text-sm text-muted-foreground mt-1">{module.lessons.length} lessons</p>
+                  <h4 className="font-bold text-lg">Ünite {mIndex + 1}: {module.title}</h4>
+                  <p className="text-sm text-muted-foreground mt-1">{module.lessons.length} ders</p>
                 </div>
                 <div className={`transform transition-transform ${openModule === module.id ? 'rotate-180' : ''}`}>
                   ▼
@@ -101,8 +101,8 @@ export default function CourseDetail() {
                         <div>
                           <p className="font-medium text-foreground">{lIndex + 1}. {lesson.title}</p>
                           <p className="text-xs text-muted-foreground flex items-center gap-2 mt-0.5">
-                            <span className="capitalize">{lesson.type}</span>
-                            {lesson.duration && <span>• {lesson.duration} min</span>}
+                            <span className="capitalize">{lesson.type === 'video' ? 'Video' : lesson.type === 'document' ? 'Belge' : 'Metin'}</span>
+                            {lesson.duration && <span>• {lesson.duration} dk</span>}
                           </p>
                         </div>
                       </div>
@@ -111,7 +111,7 @@ export default function CourseDetail() {
                           lesson.isCompleted ? (
                             <CheckCircle className="text-green-500" size={24} />
                           ) : (
-                            <Button size="sm" variant="outline" className="opacity-0 group-hover:opacity-100 transition-opacity">Start</Button>
+                            <Button size="sm" variant="outline" className="opacity-0 group-hover:opacity-100 transition-opacity">Başla</Button>
                           )
                         ) : (
                           <Lock className="text-muted-foreground/50" size={20} />
@@ -125,7 +125,7 @@ export default function CourseDetail() {
           ))}
           {(!course.modules || course.modules.length === 0) && (
             <div className="text-center p-8 bg-card border border-border rounded-xl text-muted-foreground">
-              Curriculum is being prepared.
+              Müfredat hazırlanıyor.
             </div>
           )}
         </div>

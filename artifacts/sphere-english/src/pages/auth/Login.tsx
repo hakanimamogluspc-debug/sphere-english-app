@@ -9,8 +9,8 @@ import { Mail, Lock, AlertCircle } from "lucide-react";
 import { motion } from "framer-motion";
 
 const loginSchema = z.object({
-  email: z.string().email("Please enter a valid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
+  email: z.string().email("Geçerli bir e-posta adresi giriniz"),
+  password: z.string().min(6, "Şifre en az 6 karakter olmalıdır"),
 });
 
 type LoginForm = z.infer<typeof loginSchema>;
@@ -28,7 +28,7 @@ export default function Login() {
       setError(null);
       await login(data);
     } catch (err: any) {
-      setError(err.message || "Failed to login. Please check your credentials.");
+      setError(err.message || "Giriş yapılamadı. Lütfen bilgilerinizi kontrol edin.");
     }
   };
 
@@ -41,8 +41,8 @@ export default function Login() {
               <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center text-white font-bold font-display text-lg">S</div>
               <span className="text-xl font-bold font-display text-foreground">Sphere English</span>
             </Link>
-            <h2 className="text-3xl font-extrabold font-display text-foreground">Welcome back</h2>
-            <p className="mt-2 text-muted-foreground">Please enter your details to sign in.</p>
+            <h2 className="text-3xl font-extrabold font-display text-foreground">Tekrar hoş geldiniz</h2>
+            <p className="mt-2 text-muted-foreground">Giriş yapmak için bilgilerinizi girin.</p>
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -54,33 +54,33 @@ export default function Login() {
             )}
             
             <div>
-              <Label htmlFor="email">Email address</Label>
-              <Input id="email" type="email" icon={<Mail size={18} />} placeholder="name@example.com" error={errors.email?.message} {...register("email")} />
+              <Label htmlFor="email">E-posta adresi</Label>
+              <Input id="email" type="email" icon={<Mail size={18} />} placeholder="ad@ornek.com" error={errors.email?.message} {...register("email")} />
             </div>
 
             <div>
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">Şifre</Label>
               <Input id="password" type="password" icon={<Lock size={18} />} placeholder="••••••••" error={errors.password?.message} {...register("password")} />
             </div>
 
             <Button type="submit" className="w-full text-lg h-12" isLoading={isSubmitting}>
-              Sign in
+              Giriş Yap
             </Button>
           </form>
 
           <p className="mt-8 text-center text-sm text-muted-foreground">
-            Don't have an account?{" "}
-            <Link href="/register" className="font-semibold text-primary hover:text-accent transition-colors">Sign up for free</Link>
+            Hesabınız yok mu?{" "}
+            <Link href="/register" className="font-semibold text-primary hover:text-accent transition-colors">Ücretsiz kayıt olun</Link>
           </p>
         </motion.div>
       </div>
       
       <div className="hidden lg:block relative w-1/2 bg-primary">
-        <img src={`${import.meta.env.BASE_URL}images/auth-bg.png`} alt="Classroom" className="absolute inset-0 w-full h-full object-cover opacity-80" />
+        <img src={`${import.meta.env.BASE_URL}images/auth-bg.png`} alt="Sınıf" className="absolute inset-0 w-full h-full object-cover opacity-80" />
         <div className="absolute inset-0 bg-gradient-to-t from-primary via-primary/50 to-transparent"></div>
         <div className="absolute bottom-12 left-12 right-12 text-white">
-          <h3 className="text-3xl font-display font-bold mb-4">"The best investment you can make is in yourself."</h3>
-          <p className="text-lg text-white/80">Join thousands of students mastering English on Sphere.</p>
+          <h3 className="text-3xl font-display font-bold mb-4">"Yapabileceğiniz en iyi yatırım kendinize yaptığınızdır."</h3>
+          <p className="text-lg text-white/80">Sphere'de İngilizce öğrenen binlerce öğrenciye katılın.</p>
         </div>
       </div>
     </div>

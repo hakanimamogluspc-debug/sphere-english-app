@@ -12,8 +12,8 @@ function QuizList({ onSelect }: { onSelect: (id: number) => void }) {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-bold font-display">Quizzes & Exercises</h1>
-        <p className="text-muted-foreground mt-1">Test your knowledge and track your progress.</p>
+        <h1 className="text-3xl font-bold font-display">Sınavlar ve Alıştırmalar</h1>
+        <p className="text-muted-foreground mt-1">Bilginizi test edin ve ilerlemenizi takip edin.</p>
       </div>
 
       {isLoading ? (
@@ -24,8 +24,8 @@ function QuizList({ onSelect }: { onSelect: (id: number) => void }) {
         <Card>
           <CardContent className="py-16 text-center">
             <FileQuestion className="h-16 w-16 mx-auto text-muted-foreground/40 mb-4" />
-            <h3 className="text-xl font-bold mb-2">No quizzes yet</h3>
-            <p className="text-muted-foreground">Quizzes will appear here once your teacher adds them.</p>
+            <h3 className="text-xl font-bold mb-2">Henüz sınav yok</h3>
+            <p className="text-muted-foreground">Öğretmeniniz sınav eklediğinde burada görünecek.</p>
           </CardContent>
         </Card>
       ) : (
@@ -37,15 +37,15 @@ function QuizList({ onSelect }: { onSelect: (id: number) => void }) {
                   <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
                     <FileQuestion className="h-6 w-6 text-primary" />
                   </div>
-                  <Badge variant="outline">{quiz.courseId ? `Course ${quiz.courseId}` : 'General'}</Badge>
+                  <Badge variant="outline">{quiz.courseId ? `Kurs ${quiz.courseId}` : 'Genel'}</Badge>
                 </div>
                 <h3 className="text-lg font-bold mb-2 font-display">{quiz.title}</h3>
                 <div className="flex items-center gap-4 mt-auto pt-4 border-t border-border text-sm text-muted-foreground">
-                  <span className="flex items-center gap-1.5"><Clock size={14} /> {quiz.timeLimit} min</span>
-                  <span className="flex items-center gap-1.5"><Target size={14} /> {quiz.passingScore}% to pass</span>
+                  <span className="flex items-center gap-1.5"><Clock size={14} /> {quiz.timeLimit} dk</span>
+                  <span className="flex items-center gap-1.5"><Target size={14} /> %{quiz.passingScore} geçme</span>
                 </div>
                 <Button className="mt-4 w-full" size="sm">
-                  Start Quiz <ChevronRight size={16} className="ml-1" />
+                  Sınavı Başlat <ChevronRight size={16} className="ml-1" />
                 </Button>
               </CardContent>
             </Card>
@@ -95,7 +95,7 @@ function QuizTaker({ quizId, onBack }: { quizId: number; onBack: () => void }) {
       setSubmitted(true);
       queryClient.invalidateQueries({ queryKey: ["/api/quizzes"] });
     } catch {
-      toast({ title: "Error", description: "Could not submit quiz. Please try again.", variant: "destructive" });
+      toast({ title: "Hata", description: "Sınav gönderilemedi. Lütfen tekrar deneyin.", variant: "destructive" });
     }
   };
 
@@ -104,7 +104,7 @@ function QuizTaker({ quizId, onBack }: { quizId: number; onBack: () => void }) {
     return (
       <div className="max-w-2xl mx-auto space-y-8">
         <button onClick={onBack} className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
-          <ArrowLeft size={18} /> Back to Quizzes
+          <ArrowLeft size={18} /> Sınavlara Dön
         </button>
         <Card className={`border-2 ${passed ? 'border-green-500' : 'border-red-400'}`}>
           <CardContent className="p-8 text-center">
@@ -115,15 +115,15 @@ function QuizTaker({ quizId, onBack }: { quizId: number; onBack: () => void }) {
                 <Target className="h-12 w-12 text-red-500" />
               )}
             </div>
-            <h2 className="text-3xl font-bold font-display mb-2">{passed ? 'Congratulations!' : 'Keep Practicing!'}</h2>
-            <p className="text-muted-foreground mb-6">{passed ? 'You passed the quiz!' : `You need ${quiz.passingScore}% to pass.`}</p>
+            <h2 className="text-3xl font-bold font-display mb-2">{passed ? 'Tebrikler!' : 'Pratik Yapmaya Devam!'}</h2>
+            <p className="text-muted-foreground mb-6">{passed ? 'Sınavı geçtiniz!' : `Geçmek için %${quiz.passingScore} gerekiyor.`}</p>
             <div className="text-6xl font-bold font-display mb-2" style={{ color: passed ? '#16a34a' : '#dc2626' }}>
-              {result.percentage?.toFixed(0) || result.score}%
+              %{result.percentage?.toFixed(0) || result.score}
             </div>
-            <p className="text-muted-foreground text-sm mb-6">Score: {result.score} / {result.totalPoints} points</p>
+            <p className="text-muted-foreground text-sm mb-6">Puan: {result.score} / {result.totalPoints}</p>
             <div className="flex gap-4 justify-center">
-              <Button onClick={onBack} variant="outline">Back to Quizzes</Button>
-              {!passed && <Button onClick={() => { setSubmitted(false); setAnswers({}); setCurrentQ(0); }}>Try Again</Button>}
+              <Button onClick={onBack} variant="outline">Sınavlara Dön</Button>
+              {!passed && <Button onClick={() => { setSubmitted(false); setAnswers({}); setCurrentQ(0); }}>Tekrar Dene</Button>}
             </div>
           </CardContent>
         </Card>
@@ -135,10 +135,16 @@ function QuizTaker({ quizId, onBack }: { quizId: number; onBack: () => void }) {
   const progress = ((currentQ + 1) / questions.length) * 100;
   const answeredCount = Object.keys(answers).length;
 
+  const questionTypeLabel: Record<string, string> = {
+    multiple_choice: "Çoktan Seçmeli",
+    true_false: "Doğru/Yanlış",
+    fill_blank: "Boşluk Doldurma",
+  };
+
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <button onClick={onBack} className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
-        <ArrowLeft size={18} /> Back to Quizzes
+        <ArrowLeft size={18} /> Sınavlara Dön
       </button>
 
       <div>
@@ -152,7 +158,7 @@ function QuizTaker({ quizId, onBack }: { quizId: number; onBack: () => void }) {
       {q && (
         <Card>
           <CardContent className="p-8">
-            <Badge className="mb-4 capitalize">{q.type?.replace('_', ' ')}</Badge>
+            <Badge className="mb-4">{questionTypeLabel[q.type] || q.type}</Badge>
             <h3 className="text-xl font-bold mb-6">{q.question}</h3>
 
             {(q.type === 'multiple_choice' || q.type === 'true_false') && q.options && (
@@ -178,18 +184,18 @@ function QuizTaker({ quizId, onBack }: { quizId: number; onBack: () => void }) {
                 type="text"
                 value={answers[q.id] || ''}
                 onChange={e => handleAnswer(q.id, e.target.value)}
-                placeholder="Type your answer..."
+                placeholder="Cevabınızı yazın..."
                 className="w-full px-4 py-3 border-2 border-border rounded-xl focus:outline-none focus:border-primary text-base"
               />
             )}
 
             <div className="flex justify-between mt-8">
               <Button variant="outline" onClick={() => setCurrentQ(Math.max(0, currentQ - 1))} disabled={currentQ === 0}>
-                Previous
+                Önceki
               </Button>
               {currentQ < questions.length - 1 ? (
                 <Button onClick={() => setCurrentQ(currentQ + 1)} disabled={!answers[q.id]}>
-                  Next <ChevronRight size={16} className="ml-1" />
+                  Sonraki <ChevronRight size={16} className="ml-1" />
                 </Button>
               ) : (
                 <Button
@@ -197,7 +203,7 @@ function QuizTaker({ quizId, onBack }: { quizId: number; onBack: () => void }) {
                   disabled={submitMutation.isPending || answeredCount < questions.length}
                   className="bg-green-600 hover:bg-green-700"
                 >
-                  {submitMutation.isPending ? "Submitting..." : `Submit Quiz (${answeredCount}/${questions.length} answered)`}
+                  {submitMutation.isPending ? "Gönderiliyor..." : `Sınavı Tamamla (${answeredCount}/${questions.length} cevaplandı)`}
                 </Button>
               )}
             </div>

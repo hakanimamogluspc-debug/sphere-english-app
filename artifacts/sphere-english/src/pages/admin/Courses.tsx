@@ -4,99 +4,118 @@ import { BookOpen, Users, Search, ToggleLeft, ToggleRight, Trash2 } from "lucide
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { useQueryClient } from "@tanstack/react-query";
-import { useToast } from "@/hooks/use-toast";
 import { getLevelColor } from "@/lib/utils";
 
 export default function AdminCourses() {
+  const [search, setSearch] = useState("");
   const { data: courses, isLoading } = useGetCourses();
   const updateMutation = useUpdateCourse();
   const deleteMutation = useDeleteCourse();
-  const [search, setSearch] = useState("");
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   const filtered = courses?.filter(c =>
-    c.title.toLowerCase().includes(search.toLowerCase()) ||
-    c.level.toLowerCase().includes(search.toLowerCase())
+    c.title.toLowerCase().includes(search.toLowerCase())
   );
 
-  const toggleActive = async (id: number, current: boolean) => {
-    try {
-      await updateMutation.mutateAsync({ id, data: { isActive: !current } });
-      queryClient.invalidateQueries({ queryKey: ["/api/courses"] });
-      toast({ title: `Course ${!current ? "activated" : "deactivated"}` });
-    } catch {
-      toast({ title: "Error", variant: "destructive" });
-    }
+  const handleToggle = async (id: number, isActive: boolean) => {
+    await updateMutation.mutateAsync({ id, data: { isActive: !isActive } });
+    queryClient.invalidateQueries({ queryKey: ["/api/courses"] });
   };
 
-  const deleteCourse = async (id: number) => {
-    if (!confirm("Delete this course? This cannot be undone.")) return;
-    try {
+  const handleDelete = async (id: number) => {
+    if (confirm("Bu kursu silmek istediğinize emin misiniz?")) {
       await deleteMutation.mutateAsync({ id });
       queryClient.invalidateQueries({ queryKey: ["/api/courses"] });
-      toast({ title: "Course deleted." });
-    } catch {
-      toast({ title: "Error", variant: "destructive" });
     }
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold font-display">Course Management</h1>
-          <p className="text-muted-foreground mt-1">Manage all courses on the platform.</p>
+          <h1 className="text-3xl font-bold font-display text-foreground">Kurs Yönetimi</h1>
+          <p className="text-muted-foreground mt-1">Tüm platform kurslarını görüntüleyin ve yönetin.</p>
         </div>
-        <div className="w-full sm:w-72">
-          <Input icon={<Search size={16} />} placeholder="Search courses..." value={search} onChange={e => setSearch(e.target.value)} />
+        <div className="w-full sm:w-64">
+          <Input
+            placeholder="Kurs ara..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="h-10"
+          />
         </div>
       </div>
 
       <Card>
         <CardContent className="p-0">
-          {isLoading ? (
-            <div className="divide-y divide-border">
-              {[1,2,3,4].map(i => <div key={i} className="h-20 animate-pulse bg-secondary/30 m-4 rounded-xl" />)}
-            </div>
-          ) : (
-            <div className="divide-y divide-border">
-              {filtered?.map(course => (
-                <div key={course.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 hover:bg-secondary/20 transition-colors">
-                  <div className="flex items-start gap-4">
-                    <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                      <BookOpen className="h-6 w-6 text-primary" />
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2 mb-1 flex-wrap">
-                        <span className="font-semibold text-foreground">{course.title}</span>
-                        <Badge className={getLevelColor(course.level)}>{course.level}</Badge>
-                        <Badge className={course.isActive ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600"}>
-                          {course.isActive ? "Active" : "Inactive"}
-                        </Badge>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-secondary/50 text-muted-foreground">
+                <tr>
+                  <th className="px-6 py-4 font-semibold">Kurs</th>
+                  <th className="px-6 py-4 font-semibold">Seviye</th>
+                  <th className="px-6 py-4 font-semibold">Kayıtlı</th>
+                  <th className="px-6 py-4 font-semibold">Ücret</th>
+                  <th className="px-6 py-4 font-semibold">Durum</th>
+                  <th className="px-6 py-4 font-semibold text-right">İşlemler</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {isLoading ? (
+                  <tr><td colSpan={6} className="p-8 text-center text-muted-foreground animate-pulse">Kurslar yükleniyor...</td></tr>
+                ) : filtered?.map(course => (
+                  <tr key={course.id} className="hover:bg-secondary/20 transition-colors">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                          <BookOpen className="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                          <p className="font-semibold text-foreground">{course.title}</p>
+                          <p className="text-xs text-muted-foreground line-clamp-1">{course.description}</p>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        <span className="flex items-center gap-1"><Users size={13} /> {course.enrolledCount || 0} enrolled</span>
-                        <span className="flex items-center gap-1"><BookOpen size={13} /> {course.totalLessons || 0} lessons</span>
-                        <span>${course.price || 0}</span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <Badge className={getLevelColor(course.level)}>{course.level}</Badge>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-1 text-muted-foreground">
+                        <Users size={15} />
+                        <span>{course.enrolledCount || 0}</span>
                       </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <Button variant="ghost" size="sm" onClick={() => toggleActive(course.id, course.isActive)} title={course.isActive ? "Deactivate" : "Activate"}>
-                      {course.isActive ? <ToggleRight className="h-5 w-5 text-green-600" /> : <ToggleLeft className="h-5 w-5 text-muted-foreground" />}
-                    </Button>
-                    <Button variant="ghost" size="sm" onClick={() => deleteCourse(course.id)} className="text-destructive hover:text-destructive hover:bg-destructive/10">
-                      <Trash2 size={16} />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-              {filtered?.length === 0 && (
-                <div className="py-12 text-center text-muted-foreground">No courses found.</div>
-              )}
-            </div>
-          )}
+                    </td>
+                    <td className="px-6 py-4 font-medium">
+                      {course.price ? `₺${course.price}` : 'Ücretsiz'}
+                    </td>
+                    <td className="px-6 py-4">
+                      <Badge variant={course.isActive ? 'success' : 'secondary'}>
+                        {course.isActive ? 'Aktif' : 'Pasif'}
+                      </Badge>
+                    </td>
+                    <td className="px-6 py-4 text-right space-x-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleToggle(course.id, course.isActive)}
+                        title={course.isActive ? 'Pasife Al' : 'Aktifleştir'}
+                      >
+                        {course.isActive ? <ToggleRight className="text-green-500" size={20} /> : <ToggleLeft size={20} />}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-destructive hover:bg-destructive/10"
+                        onClick={() => handleDelete(course.id)}
+                      >
+                        <Trash2 size={16} />
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </CardContent>
       </Card>
     </div>

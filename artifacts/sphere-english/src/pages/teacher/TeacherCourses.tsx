@@ -4,14 +4,12 @@ import { Card, CardContent, CardHeader, CardTitle, Badge, Button } from "@/compo
 import { BookOpen, Plus, Users, Clock, ChevronRight, Video, FileText } from "lucide-react";
 import { Link } from "wouter";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useForm } from "react-hook-form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useForm } from "react-hook-form";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { getLevelColor } from "@/lib/utils";
-
-const LEVELS = ["A1", "A2", "B1", "B2", "C1", "C2"];
 
 export default function TeacherCourses() {
   const { data: courses, isLoading } = useGetMyCourses();
@@ -28,16 +26,17 @@ export default function TeacherCourses() {
           title: data.title,
           description: data.description,
           level: data.level,
-          price: parseFloat(data.price) || 0,
+          price: data.price ? parseFloat(data.price) : null,
+          imageUrl: data.imageUrl || null,
           isActive: true,
         }
       });
-      toast({ title: "Course Created!", description: "Your course is now live." });
+      toast({ title: "Kurs Oluşturuldu!", description: "Yeni kursunuz başarıyla eklendi." });
       queryClient.invalidateQueries({ queryKey: ["/api/courses/my-courses"] });
       setShowCreate(false);
       reset();
     } catch {
-      toast({ title: "Error", description: "Could not create course.", variant: "destructive" });
+      toast({ title: "Hata", description: "Kurs oluşturulamadı.", variant: "destructive" });
     }
   };
 
@@ -45,57 +44,62 @@ export default function TeacherCourses() {
     <div className="space-y-8">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold font-display">My Courses</h1>
-          <p className="text-muted-foreground mt-1">Manage your courses, modules, and lessons.</p>
+          <h1 className="text-3xl font-bold font-display">Kurslarımı Yönet</h1>
+          <p className="text-muted-foreground mt-1">Kurslarınızı oluşturun ve içeriklerinizi düzenleyin.</p>
         </div>
         <Button onClick={() => setShowCreate(true)} className="flex items-center gap-2">
-          <Plus size={18} /> Create Course
+          <Plus size={18} /> Kurs Oluştur
         </Button>
       </div>
 
       {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {[1, 2].map(i => <Card key={i} className="h-48 animate-pulse bg-secondary/50" />)}
+          {[1, 2, 3].map(i => <Card key={i} className="h-48 animate-pulse bg-secondary/50" />)}
         </div>
       ) : courses?.length === 0 ? (
         <Card>
           <CardContent className="py-20 text-center">
             <BookOpen className="h-16 w-16 mx-auto text-muted-foreground/30 mb-4" />
-            <h3 className="text-xl font-bold mb-2">No courses yet</h3>
-            <p className="text-muted-foreground mb-6">Create your first course to start teaching.</p>
-            <Button onClick={() => setShowCreate(true)}>Create Your First Course</Button>
+            <h3 className="text-xl font-bold mb-2">Henüz kursunuz yok</h3>
+            <p className="text-muted-foreground mb-6">İlk kursunuzu oluşturarak öğrencilerinize içerik sunmaya başlayın.</p>
+            <Button onClick={() => setShowCreate(true)} className="gap-2">
+              <Plus size={18} /> İlk Kursumu Oluştur
+            </Button>
           </CardContent>
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {courses?.map(course => (
-            <Card key={course.id} className="flex flex-col hover:-translate-y-1 transition-transform duration-300">
-              <div className="h-36 bg-gradient-to-br from-primary/10 to-accent/10 relative overflow-hidden rounded-t-xl">
-                {course.imageUrl && <img src={course.imageUrl} alt={course.title} className="w-full h-full object-cover" />}
-                <div className="absolute top-3 right-3">
+            <Card key={course.id} className="overflow-hidden flex flex-col hover:-translate-y-1 transition-transform duration-300">
+              <div className="h-40 relative bg-secondary">
+                <img
+                  src={course.imageUrl || `${import.meta.env.BASE_URL}images/course-placeholder.png`}
+                  alt={course.title}
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute top-3 left-3">
                   <Badge className={getLevelColor(course.level)}>{course.level}</Badge>
                 </div>
-                <div className="absolute bottom-3 left-3">
-                  <Badge className={course.isActive ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600"}>
-                    {course.isActive ? "Active" : "Draft"}
+                <div className="absolute top-3 right-3">
+                  <Badge variant={course.isActive ? 'success' : 'secondary'}>
+                    {course.isActive ? 'Yayında' : 'Taslak'}
                   </Badge>
                 </div>
               </div>
-              <CardContent className="p-6 flex flex-col flex-1">
-                <h3 className="text-lg font-bold font-display mb-2">{course.title}</h3>
+              <CardContent className="p-5 flex flex-col flex-1">
+                <h3 className="text-lg font-bold font-display mb-1 line-clamp-1">{course.title}</h3>
                 <p className="text-muted-foreground text-sm line-clamp-2 mb-4 flex-1">{course.description}</p>
-                <div className="flex items-center gap-6 text-sm text-muted-foreground mb-4">
-                  <span className="flex items-center gap-1.5"><Users size={14} /> {course.enrolledCount || 0} students</span>
-                  <span className="flex items-center gap-1.5"><BookOpen size={14} /> {course.totalLessons || 0} lessons</span>
-                  <span className="flex items-center gap-1.5">${course.price || 0}</span>
+                <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
+                  <span className="flex items-center gap-1.5"><Users size={14} /> {course.enrolledCount || 0} öğrenci</span>
+                  <span className="flex items-center gap-1.5"><BookOpen size={14} /> {course.totalLessons || 0} ders</span>
+                  <span className="font-semibold text-foreground">{course.price ? `₺${course.price}` : 'Ücretsiz'}</span>
                 </div>
-                <div className="flex gap-3 border-t border-border pt-4">
+                <div className="flex gap-2">
                   <Link href={`/courses/${course.id}`} className="flex-1">
-                    <Button variant="outline" size="sm" className="w-full">View Course</Button>
+                    <Button variant="outline" size="sm" className="w-full gap-1.5">
+                      Görüntüle <ChevronRight size={14} />
+                    </Button>
                   </Link>
-                  <Button size="sm" className="flex-1 flex items-center gap-1">
-                    Edit <ChevronRight size={14} />
-                  </Button>
                 </div>
               </CardContent>
             </Card>
@@ -106,39 +110,47 @@ export default function TeacherCourses() {
       <Dialog open={showCreate} onOpenChange={setShowCreate}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>Create a New Course</DialogTitle>
+            <DialogTitle>Yeni Kurs Oluştur</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 mt-2">
             <div>
-              <Label>Course Title</Label>
-              <Input {...register("title", { required: true })} placeholder="e.g. Business English for Professionals" className="mt-1" />
+              <Label>Kurs Başlığı</Label>
+              <Input {...register("title", { required: true })} placeholder="örn. İngilizce A1'den A2'ye" className="mt-1" />
             </div>
             <div>
-              <Label>Description</Label>
+              <Label>Açıklama</Label>
               <textarea
-                {...register("description")}
-                placeholder="What will students learn?"
-                rows={3}
-                className="mt-1 w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent resize-none"
+                {...register("description", { required: true })}
+                placeholder="Kurs hakkında kısa açıklama..."
+                className="mt-1 w-full px-4 py-3 border-2 border-border rounded-xl focus:outline-none focus:border-primary bg-background text-foreground resize-none h-24 text-sm"
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label>Level</Label>
-                <select {...register("level", { required: true })} className="mt-1 w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent bg-background">
-                  {LEVELS.map(l => <option key={l} value={l}>{l}</option>)}
+                <Label>Seviye</Label>
+                <select {...register("level", { required: true })} className="mt-1 flex h-12 w-full rounded-xl border-2 border-border bg-background px-4 py-2 text-sm">
+                  <option value="A1">A1 - Başlangıç</option>
+                  <option value="A2">A2 - Temel</option>
+                  <option value="B1">B1 - Orta Altı</option>
+                  <option value="B2">B2 - Orta</option>
+                  <option value="C1">C1 - İleri</option>
+                  <option value="C2">C2 - Ustalık</option>
                 </select>
               </div>
               <div>
-                <Label>Price (USD)</Label>
-                <Input type="number" step="0.01" {...register("price")} defaultValue={0} placeholder="0.00" className="mt-1" />
+                <Label>Ücret (₺)</Label>
+                <Input type="number" {...register("price")} placeholder="0 = Ücretsiz" className="mt-1" />
               </div>
+            </div>
+            <div>
+              <Label>Kapak Görseli URL (isteğe bağlı)</Label>
+              <Input {...register("imageUrl")} placeholder="https://..." className="mt-1" />
             </div>
             <div className="flex gap-3 pt-2">
               <Button type="submit" disabled={createMutation.isPending} className="flex-1">
-                {createMutation.isPending ? "Creating..." : "Create Course"}
+                {createMutation.isPending ? "Oluşturuluyor..." : "Kurs Oluştur"}
               </Button>
-              <Button type="button" variant="outline" onClick={() => setShowCreate(false)}>Cancel</Button>
+              <Button type="button" variant="outline" onClick={() => setShowCreate(false)}>İptal</Button>
             </div>
           </form>
         </DialogContent>

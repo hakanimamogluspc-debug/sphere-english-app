@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useGetUsers, useCreateUser, useDeleteUser, useUpdateUser } from "@workspace/api-client-react";
+import { useGetUsers, useCreateUser, useDeleteUser } from "@workspace/api-client-react";
 import { Card, CardContent, Button, Input, Badge, Modal, Label } from "@/components/ui/core";
 import { Search, Plus, Trash2, Edit } from "lucide-react";
 import { useForm } from "react-hook-form";
@@ -37,21 +37,27 @@ export default function AdminUsers() {
   };
 
   const handleDelete = async (id: number) => {
-    if(confirm("Are you sure you want to delete this user?")) {
+    if(confirm("Bu kullanıcıyı silmek istediğinize emin misiniz?")) {
       await deleteMutation.mutateAsync({ id });
       queryClient.invalidateQueries({ queryKey: ["/api/users"] });
     }
+  };
+
+  const roleLabel: Record<string, string> = {
+    admin: "Yönetici",
+    teacher: "Öğretmen",
+    student: "Öğrenci",
   };
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold font-display text-foreground">User Management</h1>
-          <p className="text-muted-foreground mt-1">Manage platform users, teachers, and admins.</p>
+          <h1 className="text-3xl font-bold font-display text-foreground">Kullanıcı Yönetimi</h1>
+          <p className="text-muted-foreground mt-1">Platform kullanıcılarını, öğretmenleri ve yöneticileri yönetin.</p>
         </div>
         <Button onClick={() => setIsCreateOpen(true)} className="gap-2">
-          <Plus size={18} /> Add User
+          <Plus size={18} /> Kullanıcı Ekle
         </Button>
       </div>
 
@@ -60,7 +66,7 @@ export default function AdminUsers() {
           <div className="p-4 border-b border-border">
             <Input 
               icon={<Search size={18} />} 
-              placeholder="Search by name or email..." 
+              placeholder="Ad veya e-posta ile ara..." 
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="max-w-md"
@@ -71,16 +77,16 @@ export default function AdminUsers() {
             <table className="w-full text-left text-sm">
               <thead className="bg-secondary/50 text-muted-foreground">
                 <tr>
-                  <th className="px-6 py-4 font-semibold">User</th>
-                  <th className="px-6 py-4 font-semibold">Role</th>
-                  <th className="px-6 py-4 font-semibold">Level / Points</th>
-                  <th className="px-6 py-4 font-semibold">Joined</th>
-                  <th className="px-6 py-4 font-semibold text-right">Actions</th>
+                  <th className="px-6 py-4 font-semibold">Kullanıcı</th>
+                  <th className="px-6 py-4 font-semibold">Rol</th>
+                  <th className="px-6 py-4 font-semibold">Seviye / Puan</th>
+                  <th className="px-6 py-4 font-semibold">Kayıt Tarihi</th>
+                  <th className="px-6 py-4 font-semibold text-right">İşlemler</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
                 {isLoading ? (
-                  <tr><td colSpan={5} className="p-8 text-center text-muted-foreground">Loading users...</td></tr>
+                  <tr><td colSpan={5} className="p-8 text-center text-muted-foreground">Kullanıcılar yükleniyor...</td></tr>
                 ) : usersData?.users?.map(user => (
                   <tr key={user.id} className="hover:bg-secondary/20 transition-colors">
                     <td className="px-6 py-4">
@@ -95,20 +101,20 @@ export default function AdminUsers() {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <Badge variant={user.role === 'admin' ? 'destructive' : user.role === 'teacher' ? 'success' : 'default'} className="capitalize">
-                        {user.role}
+                      <Badge variant={user.role === 'admin' ? 'destructive' : user.role === 'teacher' ? 'success' : 'default'}>
+                        {roleLabel[user.role] || user.role}
                       </Badge>
                     </td>
                     <td className="px-6 py-4">
                       {user.role === 'student' ? (
                         <div>
-                          <p className="font-medium">{user.currentLevel || 'N/A'}</p>
-                          <p className="text-xs text-muted-foreground">{user.totalPoints || 0} pts</p>
+                          <p className="font-medium">{user.currentLevel || 'Yok'}</p>
+                          <p className="text-xs text-muted-foreground">{user.totalPoints || 0} puan</p>
                         </div>
                       ) : '-'}
                     </td>
                     <td className="px-6 py-4 text-muted-foreground">
-                      {new Date(user.createdAt).toLocaleDateString()}
+                      {new Date(user.createdAt).toLocaleDateString('tr-TR')}
                     </td>
                     <td className="px-6 py-4 text-right space-x-2">
                       <Button variant="ghost" size="icon"><Edit size={16} /></Button>
@@ -124,35 +130,35 @@ export default function AdminUsers() {
         </CardContent>
       </Card>
 
-      <Modal isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} title="Create New User">
+      <Modal isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} title="Yeni Kullanıcı Oluştur">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label>First Name</Label>
+              <Label>Ad</Label>
               <Input {...register("firstName")} />
             </div>
             <div>
-              <Label>Last Name</Label>
+              <Label>Soyad</Label>
               <Input {...register("lastName")} />
             </div>
           </div>
           <div>
-            <Label>Email</Label>
+            <Label>E-posta</Label>
             <Input type="email" {...register("email")} />
           </div>
           <div>
-            <Label>Password</Label>
+            <Label>Şifre</Label>
             <Input type="password" {...register("password")} />
           </div>
           <div>
-            <Label>Role</Label>
+            <Label>Rol</Label>
             <select {...register("role")} className="flex h-12 w-full rounded-xl border-2 border-border bg-background px-4 py-2">
-              <option value="student">Student</option>
-              <option value="teacher">Teacher</option>
-              <option value="admin">Admin</option>
+              <option value="student">Öğrenci</option>
+              <option value="teacher">Öğretmen</option>
+              <option value="admin">Yönetici</option>
             </select>
           </div>
-          <Button type="submit" className="w-full mt-6" isLoading={createMutation.isPending}>Create User</Button>
+          <Button type="submit" className="w-full mt-6" isLoading={createMutation.isPending}>Kullanıcı Oluştur</Button>
         </form>
       </Modal>
     </div>

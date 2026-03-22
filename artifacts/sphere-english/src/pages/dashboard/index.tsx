@@ -12,13 +12,13 @@ function StudentDashboard() {
 
   return (
     <div className="space-y-8">
-      {/* Stats Row */}
+      {/* İstatistik Kartları */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card className="bg-gradient-to-br from-primary to-primary/80 text-white border-0">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-white/80 font-medium mb-1">Total Points</p>
+                <p className="text-white/80 font-medium mb-1">Toplam Puan</p>
                 <h3 className="text-4xl font-bold font-display">{stats?.totalPoints || 0}</h3>
               </div>
               <div className="h-12 w-12 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-md">
@@ -30,9 +30,9 @@ function StudentDashboard() {
         <Card>
           <CardContent className="p-6 flex items-center justify-between">
             <div>
-              <p className="text-muted-foreground font-medium mb-1">Current Streak</p>
+              <p className="text-muted-foreground font-medium mb-1">Günlük Seri</p>
               <h3 className="text-3xl font-bold font-display flex items-center gap-2">
-                {stats?.streak || 0} Days <Flame className="text-orange-500 h-6 w-6" />
+                {stats?.streak || 0} Gün <Flame className="text-orange-500 h-6 w-6" />
               </h3>
             </div>
           </CardContent>
@@ -40,7 +40,7 @@ function StudentDashboard() {
         <Card>
           <CardContent className="p-6 flex items-center justify-between">
             <div>
-              <p className="text-muted-foreground font-medium mb-1">Enrolled Courses</p>
+              <p className="text-muted-foreground font-medium mb-1">Kayıtlı Kurslar</p>
               <h3 className="text-3xl font-bold font-display">{stats?.enrolledCourses || 0}</h3>
             </div>
             <BookOpen className="h-8 w-8 text-primary/40" />
@@ -49,7 +49,7 @@ function StudentDashboard() {
         <Card>
           <CardContent className="p-6 flex items-center justify-between">
             <div>
-              <p className="text-muted-foreground font-medium mb-1">Upcoming Classes</p>
+              <p className="text-muted-foreground font-medium mb-1">Yaklaşan Dersler</p>
               <h3 className="text-3xl font-bold font-display">{stats?.upcomingClasses || 0}</h3>
             </div>
             <Video className="h-8 w-8 text-accent/40" />
@@ -59,10 +59,10 @@ function StudentDashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="col-span-2 space-y-8">
-          {/* Progress Chart */}
+          {/* Haftalık Aktivite Grafiği */}
           <Card>
             <CardHeader>
-              <CardTitle>Weekly Activity</CardTitle>
+              <CardTitle>Haftalık Aktivite</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="h-[300px] w-full mt-4">
@@ -75,7 +75,7 @@ function StudentDashboard() {
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
-                    <XAxis dataKey="date" axisLine={false} tickLine={false} tickFormatter={(val) => new Date(val).toLocaleDateString('en-US', {weekday: 'short'})} />
+                    <XAxis dataKey="date" axisLine={false} tickLine={false} tickFormatter={(val) => new Date(val).toLocaleDateString('tr-TR', {weekday: 'short'})} />
                     <YAxis axisLine={false} tickLine={false} />
                     <Tooltip 
                       contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
@@ -87,18 +87,18 @@ function StudentDashboard() {
             </CardContent>
           </Card>
 
-          {/* Enrolled Courses Progress */}
+          {/* Kayıtlı Kurslar İlerlemesi */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>My Courses</CardTitle>
-              <Link href="/courses" className="text-sm font-medium text-primary hover:underline">View all</Link>
+              <CardTitle>Kurslarım</CardTitle>
+              <Link href="/courses" className="text-sm font-medium text-primary hover:underline">Tümünü gör</Link>
             </CardHeader>
             <CardContent className="space-y-6">
               {progress?.courseProgress?.map(course => (
                 <div key={course.courseId}>
                   <div className="flex justify-between items-center mb-2">
                     <span className="font-semibold text-foreground">{course.courseTitle}</span>
-                    <span className="text-sm font-medium text-muted-foreground">{Math.round(course.percentage)}%</span>
+                    <span className="text-sm font-medium text-muted-foreground">%{Math.round(course.percentage)}</span>
                   </div>
                   <div className="w-full bg-secondary rounded-full h-3 overflow-hidden border border-border/50">
                     <div 
@@ -106,14 +106,14 @@ function StudentDashboard() {
                       style={{ width: `${course.percentage}%` }}
                     />
                   </div>
-                  <p className="text-xs text-muted-foreground mt-2">{course.completedLessons} / {course.totalLessons} lessons completed</p>
+                  <p className="text-xs text-muted-foreground mt-2">{course.completedLessons} / {course.totalLessons} ders tamamlandı</p>
                 </div>
               ))}
               {(!progress?.courseProgress || progress.courseProgress.length === 0) && (
                 <div className="text-center py-6">
-                  <p className="text-muted-foreground mb-4">You haven't enrolled in any courses yet.</p>
+                  <p className="text-muted-foreground mb-4">Henüz herhangi bir kursa kayıt olmadınız.</p>
                   <Link href="/courses">
-                    <Button>Explore Courses</Button>
+                    <Button>Kurslara Göz At</Button>
                   </Link>
                 </div>
               )}
@@ -122,27 +122,27 @@ function StudentDashboard() {
         </div>
 
         <div className="space-y-8">
-          {/* Level Badge */}
+          {/* Seviye Kartı */}
           <Card className="overflow-hidden">
             <div className="bg-primary p-6 text-center text-white">
               <div className="w-20 h-20 mx-auto bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center mb-4 border-4 border-white/30">
                 <span className="text-3xl font-bold font-display">{stats?.level || 'A1'}</span>
               </div>
-              <h3 className="text-xl font-bold">Current Level</h3>
+              <h3 className="text-xl font-bold">Mevcut Seviye</h3>
             </div>
             <CardContent className="p-0">
               <Link href="/courses">
                 <div className="p-4 flex items-center justify-center text-sm font-medium text-primary hover:bg-primary/5 transition-colors cursor-pointer">
-                  Take a level up test &rarr;
+                  Seviye atlama testini al &rarr;
                 </div>
               </Link>
             </CardContent>
           </Card>
 
-          {/* Recent Activity */}
+          {/* Son Aktiviteler */}
           <Card>
             <CardHeader>
-              <CardTitle>Recent Activity</CardTitle>
+              <CardTitle>Son Aktiviteler</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
@@ -157,8 +157,8 @@ function StudentDashboard() {
                     <div>
                       <p className="text-sm font-medium text-foreground">{activity.description}</p>
                       <div className="flex items-center gap-2 mt-1">
-                        <span className="text-xs text-muted-foreground">{new Date(activity.timestamp).toLocaleDateString()}</span>
-                        <span className="text-xs font-bold text-green-600">+{activity.pointsEarned} pts</span>
+                        <span className="text-xs text-muted-foreground">{new Date(activity.timestamp).toLocaleDateString('tr-TR')}</span>
+                        <span className="text-xs font-bold text-green-600">+{activity.pointsEarned} puan</span>
                       </div>
                     </div>
                   </div>
@@ -181,7 +181,7 @@ function TeacherDashboard() {
         <Card>
           <CardContent className="p-6 flex items-center justify-between">
             <div>
-              <p className="text-muted-foreground font-medium mb-1">Active Courses</p>
+              <p className="text-muted-foreground font-medium mb-1">Aktif Kurslar</p>
               <h3 className="text-3xl font-bold font-display">{stats?.taughtCourses || 0}</h3>
             </div>
             <BookOpen className="h-8 w-8 text-primary/40" />
@@ -190,7 +190,7 @@ function TeacherDashboard() {
         <Card>
           <CardContent className="p-6 flex items-center justify-between">
             <div>
-              <p className="text-muted-foreground font-medium mb-1">Total Students</p>
+              <p className="text-muted-foreground font-medium mb-1">Toplam Öğrenci</p>
               <h3 className="text-3xl font-bold font-display">{stats?.totalStudents || 0}</h3>
             </div>
             <Users className="h-8 w-8 text-accent/40" />
@@ -199,7 +199,7 @@ function TeacherDashboard() {
         <Card>
           <CardContent className="p-6 flex items-center justify-between">
             <div>
-              <p className="text-muted-foreground font-medium mb-1">Upcoming Classes</p>
+              <p className="text-muted-foreground font-medium mb-1">Yaklaşan Dersler</p>
               <h3 className="text-3xl font-bold font-display">{stats?.upcomingClasses || 0}</h3>
             </div>
             <Video className="h-8 w-8 text-orange-500/40" />
@@ -207,17 +207,16 @@ function TeacherDashboard() {
         </Card>
       </div>
       
-      {/* Additional teacher widgets can go here */}
       <Card>
         <CardHeader>
-          <CardTitle>Quick Actions</CardTitle>
+          <CardTitle>Hızlı İşlemler</CardTitle>
         </CardHeader>
         <CardContent className="flex gap-4">
-          <Link href="/teacher/courses/new">
-            <Button>Create Course</Button>
+          <Link href="/teacher/courses">
+            <Button>Kurs Oluştur</Button>
           </Link>
-          <Link href="/teacher/live-classes/new">
-            <Button variant="outline">Schedule Class</Button>
+          <Link href="/teacher/live-classes">
+            <Button variant="outline">Ders Planla</Button>
           </Link>
         </CardContent>
       </Card>
@@ -233,25 +232,25 @@ function AdminDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card>
           <CardContent className="p-6">
-            <p className="text-muted-foreground font-medium mb-1">Total Users</p>
+            <p className="text-muted-foreground font-medium mb-1">Toplam Kullanıcı</p>
             <h3 className="text-3xl font-bold font-display">{stats?.totalUsers || 0}</h3>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-6">
-            <p className="text-muted-foreground font-medium mb-1">Active Courses</p>
+            <p className="text-muted-foreground font-medium mb-1">Aktif Kurslar</p>
             <h3 className="text-3xl font-bold font-display">{stats?.activeCourses || 0}</h3>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-6">
-            <p className="text-muted-foreground font-medium mb-1">Total Enrollments</p>
+            <p className="text-muted-foreground font-medium mb-1">Toplam Kayıt</p>
             <h3 className="text-3xl font-bold font-display">{stats?.totalEnrollments || 0}</h3>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-6">
-            <p className="text-muted-foreground font-medium mb-1">Certificates Issued</p>
+            <p className="text-muted-foreground font-medium mb-1">Verilen Sertifikalar</p>
             <h3 className="text-3xl font-bold font-display">{stats?.certificatesIssued || 0}</h3>
           </CardContent>
         </Card>

@@ -15,30 +15,36 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
   const navigation = {
     student: [
-      { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-      { name: 'My Courses', href: '/courses', icon: BookOpen },
-      { name: 'Live Classes', href: '/live-classes', icon: Video },
-      { name: 'Exercises', href: '/quizzes', icon: FileQuestion },
-      { name: 'My Progress', href: '/progress', icon: LineChart },
-      { name: 'Certificates', href: '/certificates', icon: Award },
-      { name: 'Leaderboard', href: '/leaderboard', icon: Users },
-      { name: 'Messages', href: '/messages', icon: MessageSquare },
+      { name: 'Kontrol Paneli', href: '/dashboard', icon: LayoutDashboard },
+      { name: 'Kurslarım', href: '/courses', icon: BookOpen },
+      { name: 'Canlı Dersler', href: '/live-classes', icon: Video },
+      { name: 'Alıştırmalar', href: '/quizzes', icon: FileQuestion },
+      { name: 'İlerleme Durumum', href: '/progress', icon: LineChart },
+      { name: 'Sertifikalar', href: '/certificates', icon: Award },
+      { name: 'Sıralama', href: '/leaderboard', icon: Users },
+      { name: 'Mesajlar', href: '/messages', icon: MessageSquare },
     ],
     teacher: [
-      { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-      { name: 'Manage Courses', href: '/teacher/courses', icon: BookOpen },
-      { name: 'Live Sessions', href: '/teacher/live-classes', icon: Video },
-      { name: 'My Students', href: '/teacher/students', icon: Users },
-      { name: 'Quiz Builder', href: '/teacher/quizzes', icon: FileQuestion },
-      { name: 'Messages', href: '/messages', icon: MessageSquare },
+      { name: 'Kontrol Paneli', href: '/dashboard', icon: LayoutDashboard },
+      { name: 'Kurslarımı Yönet', href: '/teacher/courses', icon: BookOpen },
+      { name: 'Canlı Oturumlar', href: '/teacher/live-classes', icon: Video },
+      { name: 'Öğrencilerim', href: '/teacher/students', icon: Users },
+      { name: 'Sınav Oluşturucu', href: '/teacher/quizzes', icon: FileQuestion },
+      { name: 'Mesajlar', href: '/messages', icon: MessageSquare },
     ],
     admin: [
-      { name: 'Overview', href: '/dashboard', icon: LayoutDashboard },
-      { name: 'Users', href: '/admin/users', icon: Users },
-      { name: 'All Courses', href: '/admin/courses', icon: BookOpen },
-      { name: 'Announcements', href: '/admin/announcements', icon: Megaphone },
-      { name: 'System Reports', href: '/admin/reports', icon: LineChart },
+      { name: 'Genel Bakış', href: '/dashboard', icon: LayoutDashboard },
+      { name: 'Kullanıcılar', href: '/admin/users', icon: Users },
+      { name: 'Tüm Kurslar', href: '/admin/courses', icon: BookOpen },
+      { name: 'Duyurular', href: '/admin/announcements', icon: Megaphone },
+      { name: 'Sistem Raporları', href: '/admin/reports', icon: LineChart },
     ]
+  };
+
+  const roleLabel: Record<string, string> = {
+    admin: "Yönetici",
+    teacher: "Öğretmen",
+    student: "Öğrenci",
   };
 
   const currentNav = user ? navigation[user.role as keyof typeof navigation] || navigation.student : [];
@@ -81,9 +87,9 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             <Avatar name={`${user?.firstName} ${user?.lastName}`} src={user?.avatar} />
             <div className="ml-3">
               <p className="text-sm font-medium text-sidebar-foreground">{user?.firstName} {user?.lastName}</p>
-              <p className="text-xs font-medium text-sidebar-foreground/50 capitalize">{user?.role} {user?.currentLevel ? `• ${user.currentLevel}` : ''}</p>
+              <p className="text-xs font-medium text-sidebar-foreground/50 capitalize">{roleLabel[user?.role || ''] || user?.role} {user?.currentLevel ? `• ${user.currentLevel}` : ''}</p>
             </div>
-            <button onClick={logout} className="ml-auto p-2 rounded-lg text-sidebar-foreground/50 hover:text-white hover:bg-sidebar-accent transition-colors" title="Logout">
+            <button onClick={logout} className="ml-auto p-2 rounded-lg text-sidebar-foreground/50 hover:text-white hover:bg-sidebar-accent transition-colors" title="Çıkış Yap">
               <LogOut size={18} />
             </button>
           </div>
@@ -94,7 +100,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
-      {/* Mobile Sidebar */}
+      {/* Mobil Kenar Çubuğu */}
       <AnimatePresence>
         {isMobileOpen && (
           <>
@@ -106,12 +112,12 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         )}
       </AnimatePresence>
 
-      {/* Desktop Sidebar */}
+      {/* Masaüstü Kenar Çubuğu */}
       <div className="hidden lg:flex lg:w-72 lg:flex-col lg:fixed lg:inset-y-0 bg-sidebar shadow-xl">
         <SidebarContent />
       </div>
 
-      {/* Main Content */}
+      {/* Ana İçerik */}
       <div className="flex flex-1 flex-col lg:pl-72 w-full">
         <header className="sticky top-0 z-10 flex h-16 flex-shrink-0 items-center gap-x-4 border-b border-border/50 bg-background/80 backdrop-blur-md px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8">
           <button type="button" className="-m-2.5 p-2.5 text-foreground lg:hidden" onClick={() => setIsMobileOpen(true)}>
@@ -119,11 +125,11 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           </button>
           <div className="flex flex-1 gap-x-4 self-stretch lg:gap-x-6 items-center justify-between">
             <h1 className="text-xl font-bold font-display text-foreground hidden sm:block">
-              {currentNav.find(n => n.href === location || location.startsWith(n.href))?.name || 'Dashboard'}
+              {currentNav.find(n => n.href === location || location.startsWith(n.href))?.name || 'Kontrol Paneli'}
             </h1>
             <div className="flex items-center gap-x-4 lg:gap-x-6 ml-auto">
               <div className="flex items-center gap-2 bg-secondary/50 px-4 py-1.5 rounded-full border border-border">
-                <span className="text-sm font-semibold">🔥 {user?.streak || 0} Day Streak</span>
+                <span className="text-sm font-semibold">🔥 {user?.streak || 0} Günlük Seri</span>
               </div>
             </div>
           </div>

@@ -3,218 +3,182 @@ import { Card, CardContent, CardHeader, CardTitle, Badge } from "@/components/ui
 import { useAuth } from "@/hooks/use-auth";
 import { TrendingUp, BookOpen, CheckCircle, Star, Flame, Zap } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, Radar } from "recharts";
-import { getLevelColor } from "@/lib/utils";
-
-const LEVELS = ["A1", "A2", "B1", "B2", "C1", "C2"];
-const BADGES = [
-  { id: "first_lesson", name: "First Steps", icon: "🌱", description: "Complete your first lesson", earned: true },
-  { id: "streak_7", name: "Week Warrior", icon: "🔥", description: "7-day study streak", earned: false },
-  { id: "quiz_master", name: "Quiz Master", icon: "🧠", description: "Score 100% on a quiz", earned: false },
-  { id: "social", name: "Social Learner", icon: "💬", description: "Send 10 messages", earned: false },
-  { id: "course_complete", name: "Course Champion", icon: "🏆", description: "Complete a full course", earned: false },
-  { id: "fast_learner", name: "Fast Learner", icon: "⚡", description: "Complete 3 lessons in a day", earned: false },
-];
-
-const SKILL_DATA = [
-  { skill: "Reading", level: 70 },
-  { skill: "Writing", level: 55 },
-  { skill: "Listening", level: 80 },
-  { skill: "Speaking", level: 45 },
-  { skill: "Grammar", level: 65 },
-  { skill: "Vocabulary", level: 75 },
-];
+import { RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
 
 export default function ProgressPage() {
-  const { user } = useAuth();
   const { data: progress, isLoading } = useGetMyProgress();
-
-  const levelIndex = LEVELS.indexOf(user?.currentLevel || "A1");
-  const nextLevel = LEVELS[levelIndex + 1];
-  const pointsPerLevel = 500;
-  const levelProgress = ((user?.totalPoints || 0) % pointsPerLevel / pointsPerLevel) * 100;
+  const { user } = useAuth();
 
   if (isLoading) {
-    return (
-      <div className="space-y-6">
-        {[1, 2, 3].map(i => <Card key={i} className="h-32 animate-pulse bg-secondary/50" />)}
-      </div>
-    );
+    return <div className="text-center p-8 animate-pulse text-muted-foreground">İlerleme yükleniyor...</div>;
   }
+
+  const skillData = [
+    { subject: "Okuma", A: progress?.skillLevels?.reading || 0, fullMark: 100 },
+    { subject: "Yazma", A: progress?.skillLevels?.writing || 0, fullMark: 100 },
+    { subject: "Dinleme", A: progress?.skillLevels?.listening || 0, fullMark: 100 },
+    { subject: "Konuşma", A: progress?.skillLevels?.speaking || 0, fullMark: 100 },
+    { subject: "Gramer", A: progress?.skillLevels?.grammar || 0, fullMark: 100 },
+    { subject: "Kelime", A: progress?.skillLevels?.vocabulary || 0, fullMark: 100 },
+  ];
+
+  const badges = progress?.badges || [];
+  const levelXP = user?.totalPoints || 0;
+  const nextLevelXP = Math.ceil((levelXP + 1) / 500) * 500;
+  const xpPercent = Math.round((levelXP / nextLevelXP) * 100);
 
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-bold font-display">My Progress</h1>
-        <p className="text-muted-foreground mt-1">Track your English learning journey.</p>
+        <h1 className="text-3xl font-bold font-display">İlerleme Durumum</h1>
+        <p className="text-muted-foreground mt-1">Öğrenme yolculuğunuzu takip edin ve başarılarınızı görün.</p>
       </div>
 
-      {/* Stats Overview */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      {/* Üst İstatistikler */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="bg-gradient-to-br from-primary to-primary/80 text-white border-0">
-          <CardContent className="p-5">
-            <Star className="h-6 w-6 mb-2 text-yellow-300" />
-            <div className="text-3xl font-bold font-display">{user?.totalPoints || 0}</div>
-            <div className="text-white/70 text-sm">Total Points</div>
-          </CardContent>
-        </Card>
-        <Card className="bg-gradient-to-br from-orange-500 to-orange-600 text-white border-0">
-          <CardContent className="p-5">
-            <Flame className="h-6 w-6 mb-2" />
-            <div className="text-3xl font-bold font-display">{user?.streak || 0}</div>
-            <div className="text-white/70 text-sm">Day Streak</div>
+          <CardContent className="p-6">
+            <Star className="h-6 w-6 text-yellow-300 mb-2" />
+            <p className="text-white/70 text-sm font-medium">Toplam Puan</p>
+            <h3 className="text-3xl font-bold font-display">{user?.totalPoints || 0}</h3>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="p-5">
-            <BookOpen className="h-6 w-6 mb-2 text-primary" />
-            <div className="text-3xl font-bold font-display">{progress?.courseProgress?.length || 0}</div>
-            <div className="text-muted-foreground text-sm">Courses</div>
+          <CardContent className="p-6">
+            <Flame className="h-6 w-6 text-orange-500 mb-2" />
+            <p className="text-muted-foreground text-sm font-medium">Günlük Seri</p>
+            <h3 className="text-3xl font-bold font-display">{user?.streak || 0}</h3>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="p-5">
-            <CheckCircle className="h-6 w-6 mb-2 text-green-600" />
-            <div className="text-3xl font-bold font-display">
-              {progress?.courseProgress?.reduce((acc, c) => acc + (c.completedLessons || 0), 0) || 0}
-            </div>
-            <div className="text-muted-foreground text-sm">Lessons Done</div>
+          <CardContent className="p-6">
+            <CheckCircle className="h-6 w-6 text-green-500 mb-2" />
+            <p className="text-muted-foreground text-sm font-medium">Tamamlanan Dersler</p>
+            <h3 className="text-3xl font-bold font-display">{progress?.totalLessonsCompleted || 0}</h3>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6">
+            <BookOpen className="h-6 w-6 text-accent mb-2" />
+            <p className="text-muted-foreground text-sm font-medium">Sınav Ortalaması</p>
+            <h3 className="text-3xl font-bold font-display">%{progress?.quizStats?.averageScore?.toFixed(0) || 0}</h3>
           </CardContent>
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 space-y-8">
-          {/* Weekly Activity Chart */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5 text-accent" /> Weekly Activity
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {progress?.weeklyActivity && progress.weeklyActivity.length > 0 ? (
-                <div className="h-[250px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={progress.weeklyActivity}>
-                      <defs>
-                        <linearGradient id="prog" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="hsl(var(--accent))" stopOpacity={0.35} />
-                          <stop offset="95%" stopColor="hsl(var(--accent))" stopOpacity={0} />
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
-                      <XAxis dataKey="date" axisLine={false} tickLine={false} tickFormatter={v => new Date(v).toLocaleDateString("en-US", { weekday: "short" })} />
-                      <YAxis axisLine={false} tickLine={false} />
-                      <Tooltip contentStyle={{ borderRadius: "12px", border: "none", boxShadow: "0 10px 25px -5px rgba(0,0,0,0.15)" }} />
-                      <Area type="monotone" dataKey="pointsEarned" stroke="hsl(var(--accent))" strokeWidth={3} fill="url(#prog)" />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </div>
-              ) : (
-                <div className="h-[250px] flex items-center justify-center text-muted-foreground">
-                  <div className="text-center">
-                    <Zap className="h-8 w-8 mx-auto mb-2 opacity-40" />
-                    <p>Complete lessons to see your activity chart.</p>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+      {/* Seviye & XP Barı */}
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center text-white font-bold font-display text-lg">
+                {user?.currentLevel || 'A1'}
+              </div>
+              <div>
+                <p className="font-bold text-foreground">Mevcut Seviyeniz</p>
+                <p className="text-muted-foreground text-sm">Bir sonraki seviyeye {nextLevelXP - levelXP} puan kaldı</p>
+              </div>
+            </div>
+            <span className="font-bold text-primary text-lg">%{xpPercent}</span>
+          </div>
+          <Progress value={xpPercent} className="h-3" />
+          <div className="flex justify-between mt-2 text-xs text-muted-foreground">
+            <span>{levelXP} XP</span>
+            <span>{nextLevelXP} XP</span>
+          </div>
+        </CardContent>
+      </Card>
 
-          {/* Course Progress */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Course Progress</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {progress?.courseProgress?.map(course => (
-                <div key={course.courseId}>
-                  <div className="flex items-center justify-between mb-2">
-                    <div>
-                      <span className="font-semibold text-foreground">{course.courseTitle}</span>
-                      <span className="ml-2 text-xs text-muted-foreground">{course.completedLessons}/{course.totalLessons} lessons</span>
-                    </div>
-                    <span className="text-sm font-bold text-primary">{Math.round(course.percentage)}%</span>
-                  </div>
-                  <div className="h-3 bg-secondary rounded-full overflow-hidden border border-border/50">
-                    <div
-                      className="h-full bg-gradient-to-r from-primary to-accent rounded-full transition-all duration-1000"
-                      style={{ width: `${course.percentage}%` }}
-                    />
-                  </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Haftalık Aktivite */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Haftalık Aktivite</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[250px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={progress?.weeklyActivity || []}>
+                  <defs>
+                    <linearGradient id="colorActivity" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="hsl(var(--accent))" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="hsl(var(--accent))" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+                  <XAxis dataKey="date" tickFormatter={(v) => new Date(v).toLocaleDateString('tr-TR', {weekday: 'short'})} axisLine={false} tickLine={false} />
+                  <YAxis axisLine={false} tickLine={false} />
+                  <Tooltip contentStyle={{ borderRadius: '12px', border: 'none' }} />
+                  <Area type="monotone" dataKey="pointsEarned" stroke="hsl(var(--accent))" strokeWidth={2} fill="url(#colorActivity)" name="Puan" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Beceri Radarı */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Beceri Dağılımı</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[250px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <RadarChart data={skillData}>
+                  <PolarGrid stroke="hsl(var(--border))" />
+                  <PolarAngleAxis dataKey="subject" tick={{ fontSize: 12, fontWeight: 500 }} />
+                  <Radar name="Beceriler" dataKey="A" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.2} strokeWidth={2} />
+                </RadarChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Kurs İlerlemesi */}
+      {progress?.courseProgress && progress.courseProgress.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Kurs İlerlemesi</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {progress.courseProgress.map(course => (
+              <div key={course.courseId}>
+                <div className="flex justify-between items-center mb-2">
+                  <span className="font-semibold text-foreground">{course.courseTitle}</span>
+                  <span className="text-sm text-muted-foreground">%{Math.round(course.percentage)}</span>
+                </div>
+                <Progress value={course.percentage} className="h-2" />
+                <p className="text-xs text-muted-foreground mt-1">{course.completedLessons} / {course.totalLessons} ders tamamlandı</p>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Rozetler */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Kazanılan Rozetler</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {badges.length === 0 ? (
+            <div className="text-center py-8">
+              <Star className="h-12 w-12 mx-auto text-muted-foreground/30 mb-3" />
+              <p className="text-muted-foreground">Henüz rozet kazanılmadı. Öğrenmeye devam edin!</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+              {badges.map((badge: any, i: number) => (
+                <div key={i} className="flex flex-col items-center p-4 bg-secondary/50 rounded-2xl border border-border text-center hover:scale-105 transition-transform">
+                  <div className="text-4xl mb-2">{badge.icon || '🏅'}</div>
+                  <p className="text-xs font-semibold leading-tight">{badge.name}</p>
                 </div>
               ))}
-              {(!progress?.courseProgress || progress.courseProgress.length === 0) && (
-                <div className="text-center py-8 text-muted-foreground">
-                  <BookOpen className="h-8 w-8 mx-auto mb-2 opacity-40" />
-                  <p>Enroll in a course to track your progress.</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="space-y-8">
-          {/* Level Progress */}
-          <Card className="overflow-hidden">
-            <div className="bg-gradient-to-br from-primary to-primary/80 p-6 text-center text-white">
-              <div className="w-20 h-20 mx-auto bg-white/20 rounded-full flex items-center justify-center mb-3 border-4 border-white/30">
-                <span className="text-3xl font-bold font-display">{user?.currentLevel || "A1"}</span>
-              </div>
-              <h3 className="text-lg font-bold">Current Level</h3>
-              <p className="text-white/70 text-sm">{user?.totalPoints || 0} total points</p>
             </div>
-            {nextLevel && (
-              <CardContent className="p-5">
-                <div className="flex items-center justify-between text-sm mb-2">
-                  <span className="font-medium">{user?.currentLevel}</span>
-                  <span className="text-muted-foreground">→ {nextLevel}</span>
-                </div>
-                <Progress value={levelProgress} className="h-3" />
-                <p className="text-xs text-muted-foreground mt-2 text-center">
-                  {pointsPerLevel - ((user?.totalPoints || 0) % pointsPerLevel)} more points to {nextLevel}
-                </p>
-              </CardContent>
-            )}
-          </Card>
-
-          {/* Skill Radar */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Skills Breakdown</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[200px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <RadarChart data={SKILL_DATA}>
-                    <PolarGrid stroke="hsl(var(--border))" />
-                    <PolarAngleAxis dataKey="skill" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
-                    <Radar dataKey="level" stroke="hsl(var(--accent))" fill="hsl(var(--accent))" fillOpacity={0.2} strokeWidth={2} />
-                  </RadarChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Badges */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Achievements</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-3 gap-3">
-                {BADGES.map(badge => (
-                  <div key={badge.id} title={badge.description} className={`flex flex-col items-center gap-1 p-3 rounded-xl border transition-all ${badge.earned ? 'bg-yellow-50 border-yellow-200' : 'bg-secondary/50 border-border opacity-50 grayscale'}`}>
-                    <span className="text-2xl">{badge.icon}</span>
-                    <span className="text-xs font-medium text-center leading-tight">{badge.name}</span>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
