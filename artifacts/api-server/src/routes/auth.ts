@@ -1,7 +1,7 @@
 import { Router } from "express";
 import bcrypt from "bcryptjs";
 import { db, usersTable, companiesTable } from "@workspace/db";
-import { eq, sql } from "drizzle-orm";
+import { eq, and, count, sql } from "drizzle-orm";
 import { authMiddleware, generateToken, type AuthRequest } from "../middlewares/auth.js";
 
 const router = Router();
@@ -38,7 +38,7 @@ router.post("/auth/login", async (req, res) => {
 });
 
 router.post("/auth/register", async (req, res) => {
-  const { email, password, firstName, lastName, role, phone, companyName } = req.body;
+  const { email, password, firstName, lastName, role, phone, companyCode } = req.body;
   if (!email || !password || !firstName || !lastName) {
     res.status(400).json({ error: "Zorunlu alanlar eksik" });
     return;
@@ -46,8 +46,8 @@ router.post("/auth/register", async (req, res) => {
 
   const assignedRole = role === "corporate" ? "corporate" : "student";
 
-  if ((assignedRole === "student" || assignedRole === "corporate") && !companyName) {
-    res.status(400).json({ error: "Şirket adı zorunludur" });
+  if (!companyCode) {
+    res.status(400).json({ error: "Kurum kodu zorunludur" });
     return;
   }
 
@@ -57,32 +57,28 @@ router.post("/auth/register", async (req, res) => {
     return;
   }
 
-  let companyId: number | null = null;
-  let companyInfo = null;
+  const [company] = await db
+    .select()
+    .from(companiesTable)
+    .where(eq(companiesTable.code, companyCode.trim().toUpperCase()))
+    .limit(1);
 
-  if (companyName) {
-    const normalizedName = companyName.trim();
-    const [existingCompany] = await db
-      .select()
-      .from(companiesTable)
-      .where(sql`lower(${companiesTable.name}) = lower(${normalizedName})`)
-      .limit(1);
+  if (!company) {
+    res.status(400).json({ error: "Geçersiz kurum kodu. Lütfen kurumunuzdan aldığınız kodu giriniz." });
+    return;
+  }
 
-    if (existingCompany) {
-      companyId = existingCompany.id;
-      companyInfo = { id: existingCompany.id, name: existingCompany.name, code: existingCompany.code };
-    } else {
-      const [countResult] = await db.select({ count: sql<number>`count(*)` }).from(companiesTable);
-      const nextNum = (Number(countResult.count) + 1).toString().padStart(4, "0");
-      const code = `KUR-${nextNum}`;
+  if (assignedRole === "student" && company.registrationLimit > 0) {
+    const [{ registeredCount }] = await db
+      .select({ registeredCount: count() })
+      .from(usersTable)
+      .where(and(eq(usersTable.companyId, company.id), eq(usersTable.role, "student")));
 
-      const [newCompany] = await db
-        .insert(companiesTable)
-        .values({ name: normalizedName, code })
-        .returning();
-
-      companyId = newCompany.id;
-      companyInfo = { id: newCompany.id, name: newCompany.name, code: newCompany.code };
+    if (Number(registeredCount) >= company.registrationLimit) {
+      res.status(400).json({
+        error: `Bu kurum için kayıt limiti dolmuştur. (Limit: ${company.registrationLimit} öğrenci)`,
+      });
+      return;
     }
   }
 
@@ -94,11 +90,12 @@ router.post("/auth/register", async (req, res) => {
     lastName,
     role: assignedRole,
     phone: phone || null,
-    companyId,
+    companyId: company.id,
   }).returning();
 
   const token = generateToken(user.id, user.role);
   const { password: _, ...userWithoutPassword } = user;
+  const companyInfo = { id: company.id, name: company.name, code: company.code };
   res.status(201).json({ user: { ...userWithoutPassword, company: companyInfo }, token });
 });
 

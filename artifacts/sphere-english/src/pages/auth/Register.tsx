@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button, Input, Label, Card } from "@/components/ui/core";
-import { Mail, Lock, User, AlertCircle, Phone, Building2, GraduationCap, Briefcase } from "lucide-react";
+import { Mail, Lock, User, AlertCircle, Phone, Hash, GraduationCap, Briefcase } from "lucide-react";
 import { motion } from "framer-motion";
 
 const registerSchema = z.object({
@@ -14,7 +14,7 @@ const registerSchema = z.object({
   email: z.string().email("Geçerli bir e-posta adresi giriniz"),
   password: z.string().min(6, "Şifre en az 6 karakter olmalıdır"),
   phone: z.string().optional(),
-  companyName: z.string().min(2, "Şirket adı zorunludur"),
+  companyCode: z.string().min(3, "Kurum kodu zorunludur"),
   role: z.enum(["student", "corporate"]),
 });
 
@@ -24,7 +24,7 @@ export default function Register() {
   const { register: registerUser } = useAuth();
   const [error, setError] = useState<string | null>(null);
   const [selectedRole, setSelectedRole] = useState<"student" | "corporate">("student");
-  
+
   const { register, handleSubmit, setValue, formState: { errors, isSubmitting } } = useForm<RegisterForm>({
     resolver: zodResolver(registerSchema),
     defaultValues: { role: "student" }
@@ -43,10 +43,10 @@ export default function Register() {
     <div className="min-h-screen flex bg-background">
       <div className="hidden lg:block relative w-1/2 bg-primary">
         <img src={`${import.meta.env.BASE_URL}images/auth-bg.png`} alt="Sınıf" className="absolute inset-0 w-full h-full object-cover opacity-80" />
-        <div className="absolute inset-0 bg-gradient-to-t from-primary via-primary/50 to-transparent"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-primary via-primary/50 to-transparent" />
         <div className="absolute bottom-12 left-12 right-12 text-white">
           <h3 className="text-3xl font-display font-bold mb-4">Öğrenme yolculuğunuza bugün başlayın.</h3>
-          <p className="text-lg text-white/80">Hesap oluşturun ve kurslara anında erişim sağlayın.</p>
+          <p className="text-lg text-white/80">Kurumunuzdan aldığınız kod ile hemen kayıt olun.</p>
         </div>
       </div>
 
@@ -58,26 +58,26 @@ export default function Register() {
               <span className="text-xl font-bold font-display text-foreground">Sphere English</span>
             </Link>
             <h2 className="text-3xl font-extrabold font-display text-foreground">Hesap oluştur</h2>
-            <p className="mt-2 text-muted-foreground">Öğrenci veya kurum yetkilisi olarak kayıt olun.</p>
+            <p className="mt-2 text-muted-foreground">Kurumunuzdan aldığınız kod ile kayıt olun.</p>
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
             {error && (
               <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-xl flex items-start gap-3 text-destructive">
-                <AlertCircle className="h-5 w-5 shrink-0" />
+                <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
                 <p className="text-sm font-medium">{error}</p>
               </div>
             )}
 
-            <div className="flex gap-4 mb-6">
-              <Card 
+            <div className="flex gap-4">
+              <Card
                 className={`flex-1 p-4 cursor-pointer text-center border-2 transition-all ${selectedRole === 'student' ? 'border-primary bg-primary/5' : 'border-border'}`}
                 onClick={() => { setSelectedRole('student'); setValue('role', 'student'); }}
               >
                 <GraduationCap className="h-6 w-6 mx-auto mb-1 text-primary" />
                 <p className="font-bold text-foreground text-sm">Öğrenci</p>
               </Card>
-              <Card 
+              <Card
                 className={`flex-1 p-4 cursor-pointer text-center border-2 transition-all ${selectedRole === 'corporate' ? 'border-primary bg-primary/5' : 'border-border'}`}
                 onClick={() => { setSelectedRole('corporate'); setValue('role', 'corporate'); }}
               >
@@ -86,13 +86,6 @@ export default function Register() {
               </Card>
             </div>
 
-            {selectedRole === 'corporate' && (
-              <div className="p-3 bg-accent/10 border border-accent/20 rounded-xl text-sm text-accent-foreground">
-                <p className="font-medium text-primary">Kurum Yetkilisi Nedir?</p>
-                <p className="text-muted-foreground mt-1">Kurumunuzdaki öğrencilerin ilerlemelerini ve raporlarını takip edebilirsiniz.</p>
-              </div>
-            )}
-            
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="firstName">Ad</Label>
@@ -110,20 +103,25 @@ export default function Register() {
             </div>
 
             <div>
-              <Label htmlFor="companyName">
-                Şirket Adı <span className="text-destructive">*</span>
+              <Label htmlFor="companyCode">
+                Kurum Kodu <span className="text-destructive">*</span>
               </Label>
               <Input
-                id="companyName"
-                icon={<Building2 size={18} />}
-                placeholder="Örnek: ABC Şirketi"
-                error={errors.companyName?.message}
-                {...register("companyName")}
+                id="companyCode"
+                icon={<Hash size={18} />}
+                placeholder="KUR-0001"
+                error={errors.companyCode?.message}
+                {...register("companyCode")}
+                className="font-mono uppercase"
+                onChange={(e) => {
+                  e.target.value = e.target.value.toUpperCase();
+                  register("companyCode").onChange(e);
+                }}
               />
               <p className="text-xs text-muted-foreground mt-1">
                 {selectedRole === 'student'
-                  ? "Çalıştığınız veya bağlı olduğunuz şirketin adını giriniz."
-                  : "Yönetmek istediğiniz kurumun adını giriniz. Sistem otomatik kimlik oluşturur."}
+                  ? "Kurumunuzdan ya da yöneticinizden alınan KUR-XXXX formatındaki kodu giriniz."
+                  : "Yönetmek istediğiniz kuruma ait KUR-XXXX kodunu giriniz."}
               </p>
             </div>
 

@@ -13,12 +13,14 @@ import messagesRouter from "./messages";
 import leaderboardRouter from "./leaderboard";
 import dashboardRouter from "./dashboard";
 import corporateRouter from "./corporate";
+import adminCompaniesRouter from "./admin-companies";
 
 const router: IRouter = Router();
 
 router.use(healthRouter);
 router.use(authRouter);
 router.use(corporateRouter);
+router.use(adminCompaniesRouter);
 router.use(usersRouter);
 router.use(coursesRouter);
 router.use(modulesRouter);

@@ -34,6 +34,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     ],
     admin: [
       { name: 'Genel Bakış', href: '/dashboard', icon: LayoutDashboard },
+      { name: 'Kurumlar', href: '/admin/companies', icon: Building2 },
       { name: 'Kullanıcılar', href: '/admin/users', icon: Users },
       { name: 'Tüm Kurslar', href: '/admin/courses', icon: BookOpen },
       { name: 'Duyurular', href: '/admin/announcements', icon: Megaphone },

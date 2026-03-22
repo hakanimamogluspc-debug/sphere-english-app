@@ -24,6 +24,7 @@ import Certificates from "./pages/certificates/Certificates";
 import Messages from "./pages/messages/Messages";
 import Profile from "./pages/profile/Profile";
 import TeacherCourses from "./pages/teacher/TeacherCourses";
+import AdminCompanies from "./pages/admin/Companies";
 import CorporateDashboard from "./pages/corporate/CorporateDashboard";
 import CorporateStudents from "./pages/corporate/CorporateStudents";
 import CorporateReports from "./pages/corporate/CorporateReports";
@@ -101,6 +102,7 @@ function Router() {
       <Route path="/teacher/quizzes"><LayoutWrapper component={Quizzes} allowedRoles={['teacher', 'admin']} /></Route>
 
       {/* Admin Routes */}
+      <Route path="/admin/companies"><LayoutWrapper component={AdminCompanies} allowedRoles={['admin']} /></Route>
       <Route path="/admin/users"><LayoutWrapper component={AdminUsers} allowedRoles={['admin']} /></Route>
       <Route path="/admin/courses"><LayoutWrapper component={AdminCourses} allowedRoles={['admin']} /></Route>
       <Route path="/admin/announcements"><LayoutWrapper component={Announcements} allowedRoles={['admin']} /></Route>
