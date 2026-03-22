@@ -90,13 +90,19 @@ workspace/
 - `/dashboard` — Quick stats + "Create Course" / "Schedule Class" actions
 - `/teacher/courses` — Course management, create new courses
 - `/teacher/live-classes` — Live session scheduling with modal form
-- `/teacher/students` — Student user list
+- `/teacher/students` — **Own students only** (data isolation via group_members); group accordion, add/remove students, group-wide announcement broadcast
+- `/teacher/progress` — Student progress tracker: quiz attempts, average scores, streak/points per student
+- `/teacher/quizzes` — Quiz creator (multiple_choice/true_false/fill_blank), attempts viewer per quiz
+- `/teacher/speaking-club` — View assigned Speaking Club events + full participant list modal
+- `/messages` — Chat (send to any user); group announce via `/teacher/students`
 
 ### Admin Routes
 - `/dashboard` — System overview (total users, courses, enrollments, certificates)
 - `/admin/users` — User management table with role badges
 - `/admin/courses` — Course management with active/inactive toggle and delete
 - `/admin/announcements` — Post announcements with priority and audience targeting
+- `/admin/groups` — Group/class management: create, assign teacher, CRUD
+- `/admin/speaking-club` — Speaking Club event management: create, assign teacher, set capacity/level/link
 
 ## API Endpoints (40+)
 

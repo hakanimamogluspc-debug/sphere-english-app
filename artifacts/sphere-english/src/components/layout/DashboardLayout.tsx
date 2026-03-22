@@ -29,7 +29,9 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       { name: 'Kurslarımı Yönet', href: '/teacher/courses', icon: BookOpen },
       { name: 'Canlı Oturumlar', href: '/teacher/live-classes', icon: Video },
       { name: 'Öğrencilerim', href: '/teacher/students', icon: Users },
-      { name: 'Sınav Oluşturucu', href: '/teacher/quizzes', icon: FileQuestion },
+      { name: 'Öğrenci İlerlemesi', href: '/teacher/progress', icon: LineChart },
+      { name: 'Quiz Yönetimi', href: '/teacher/quizzes', icon: FileQuestion },
+      { name: 'Speaking Club', href: '/teacher/speaking-club', icon: Mic },
       { name: 'Mesajlar', href: '/messages', icon: MessageSquare },
     ],
     admin: [

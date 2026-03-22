@@ -1,4 +1,4 @@
-import { pgTable, serial, text, timestamp, integer } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, timestamp, integer, primaryKey } from "drizzle-orm/pg-core";
 import { usersTable } from "./users";
 
 export const speakingClubsTable = pgTable("speaking_clubs", {
@@ -16,4 +16,11 @@ export const speakingClubsTable = pgTable("speaking_clubs", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+export const speakingClubParticipantsTable = pgTable("speaking_club_participants", {
+  clubId: integer("club_id").notNull().references(() => speakingClubsTable.id, { onDelete: "cascade" }),
+  studentId: integer("student_id").notNull().references(() => usersTable.id, { onDelete: "cascade" }),
+  joinedAt: timestamp("joined_at").notNull().defaultNow(),
+}, (t) => [primaryKey({ columns: [t.clubId, t.studentId] })]);
+
 export type SpeakingClub = typeof speakingClubsTable.$inferSelect;
+export type SpeakingClubParticipant = typeof speakingClubParticipantsTable.$inferSelect;

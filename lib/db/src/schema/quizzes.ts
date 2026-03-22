@@ -9,6 +9,7 @@ export const quizzesTable = pgTable("quizzes", {
   title: text("title").notNull(),
   lessonId: integer("lesson_id").references(() => lessonsTable.id, { onDelete: "cascade" }),
   courseId: integer("course_id").references(() => coursesTable.id),
+  teacherId: integer("teacher_id").references(() => usersTable.id, { onDelete: "set null" }),
   timeLimit: integer("time_limit"),
   passingScore: integer("passing_score").notNull().default(70),
   createdAt: timestamp("created_at").notNull().defaultNow(),
