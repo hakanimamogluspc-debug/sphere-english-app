@@ -35,6 +35,9 @@ import AdminSpeakingClub from "./pages/admin/SpeakingClub";
 import CorporateDashboard from "./pages/corporate/CorporateDashboard";
 import CorporateStudents from "./pages/corporate/CorporateStudents";
 import CorporateReports from "./pages/corporate/CorporateReports";
+import StudentSpeakingClub from "./pages/student/StudentSpeakingClub";
+import StudentMaterials from "./pages/student/StudentMaterials";
+import Forum from "./pages/student/Forum";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -101,6 +104,9 @@ function Router() {
       <Route path="/quizzes"><LayoutWrapper component={Quizzes} /></Route>
       <Route path="/leaderboard"><LayoutWrapper component={Leaderboard} /></Route>
       <Route path="/certificates"><LayoutWrapper component={Certificates} /></Route>
+      <Route path="/student/speaking-club"><LayoutWrapper component={StudentSpeakingClub} allowedRoles={['student']} /></Route>
+      <Route path="/student/materials"><LayoutWrapper component={StudentMaterials} allowedRoles={['student']} /></Route>
+      <Route path="/forum"><LayoutWrapper component={Forum} /></Route>
 
       {/* Teacher Routes */}
       <Route path="/teacher/courses"><LayoutWrapper component={TeacherCourses} allowedRoles={['teacher', 'admin']} /></Route>

@@ -17,6 +17,8 @@ import adminCompaniesRouter from "./admin-companies";
 import adminGroupsRouter from "./admin-groups";
 import adminSpeakingClubsRouter from "./admin-speaking-clubs";
 import teacherRouter from "./teacher";
+import studentRouter from "./student";
+import forumRouter from "./forum";
 
 const router: IRouter = Router();
 
@@ -27,6 +29,8 @@ router.use(adminCompaniesRouter);
 router.use(adminGroupsRouter);
 router.use(adminSpeakingClubsRouter);
 router.use(teacherRouter);
+router.use(studentRouter);
+router.use(forumRouter);
 router.use(usersRouter);
 router.use(coursesRouter);
 router.use(modulesRouter);

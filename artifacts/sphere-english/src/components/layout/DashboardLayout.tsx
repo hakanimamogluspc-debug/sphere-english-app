@@ -4,7 +4,7 @@ import { Link, useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   BookOpen, LayoutDashboard, Video, FileQuestion, LineChart, 
-  Award, MessageSquare, Users, Megaphone, LogOut, Menu, Building2, BarChart3, GraduationCap, Mic
+  Award, MessageSquare, Users, Megaphone, LogOut, Menu, Building2, BarChart3, GraduationCap, Mic, MessageCircle, FolderOpen
 } from "lucide-react";
 import { Avatar } from "../ui/core";
 
@@ -17,8 +17,11 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     student: [
       { name: 'Kontrol Paneli', href: '/dashboard', icon: LayoutDashboard },
       { name: 'Kurslarım', href: '/courses', icon: BookOpen },
-      { name: 'Canlı Dersler', href: '/live-classes', icon: Video },
+      { name: 'Materyallerim', href: '/student/materials', icon: FolderOpen },
+      { name: 'Ders Takvimim', href: '/live-classes', icon: Video },
       { name: 'Alıştırmalar', href: '/quizzes', icon: FileQuestion },
+      { name: 'Speaking Club', href: '/student/speaking-club', icon: Mic },
+      { name: 'Forum', href: '/forum', icon: MessageCircle },
       { name: 'İlerleme Durumum', href: '/progress', icon: LineChart },
       { name: 'Sertifikalar', href: '/certificates', icon: Award },
       { name: 'Sıralama', href: '/leaderboard', icon: Users },

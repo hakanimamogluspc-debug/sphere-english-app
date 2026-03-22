@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useGetLiveClasses, useJoinLiveClass, useCreateLiveClass } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle, Badge, Button } from "@/components/ui/core";
 import { Video, Clock, Users, Calendar, ExternalLink, Plus } from "lucide-react";
@@ -9,6 +9,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+
+const API = "http://localhost:8080/api";
+
+function authHeaders() {
+  return { Authorization: `Bearer ${localStorage.getItem("sphere_token")}` };
+}
 
 function formatDate(dateStr: string) {
   const d = new Date(dateStr);
@@ -35,9 +41,27 @@ const typeLabel: Record<string, string> = {
   "one-on-one": "Birebir",
 };
 
+// Öğrenci için filtrelenmiş dersler
+function useStudentLiveClasses() {
+  const [data, setData] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  useEffect(() => {
+    fetch(`${API}/student/live-classes`, { headers: authHeaders() })
+      .then(r => r.json())
+      .then(d => setData(Array.isArray(d) ? d : []))
+      .catch(() => setData([]))
+      .finally(() => setIsLoading(false));
+  }, []);
+  return { data, isLoading };
+}
+
 export default function LiveClasses() {
   const { user } = useAuth();
-  const { data: classes, isLoading } = useGetLiveClasses();
+  const isStudent = user?.role === "student";
+  const { data: allClasses, isLoading: allLoading } = useGetLiveClasses();
+  const { data: studentClasses, isLoading: studentLoading } = useStudentLiveClasses();
+  const classes = isStudent ? studentClasses : allClasses;
+  const isLoading = isStudent ? studentLoading : allLoading;
   const joinMutation = useJoinLiveClass();
   const createMutation = useCreateLiveClass();
   const [showCreate, setShowCreate] = useState(false);
