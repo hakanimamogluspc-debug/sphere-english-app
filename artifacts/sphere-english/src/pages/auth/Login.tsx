@@ -37,9 +37,12 @@ export default function Login() {
       <div className="flex-1 flex flex-col justify-center px-4 sm:px-6 lg:flex-none lg:px-20 xl:px-24 w-full lg:w-1/2 relative z-10">
         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="mx-auto w-full max-w-md lg:w-96">
           <div className="mb-10">
-            <Link href="/" className="flex items-center gap-3 mb-8">
-              <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center text-white font-bold font-display text-lg">S</div>
-              <span className="text-xl font-bold font-display text-foreground">Sphere English</span>
+            <Link href="/" className="inline-flex mb-8">
+              <img
+                src={`${import.meta.env.BASE_URL}images/logo-full.png`}
+                alt="Sphere English"
+                className="h-14 w-auto object-contain"
+              />
             </Link>
             <h2 className="text-3xl font-extrabold font-display text-foreground">Tekrar hoş geldiniz</h2>
             <p className="mt-2 text-muted-foreground">Giriş yapmak için bilgilerinizi girin.</p>

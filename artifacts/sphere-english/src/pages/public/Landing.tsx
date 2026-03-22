@@ -9,12 +9,13 @@ export default function Landing() {
       {/* Navbar */}
       <nav className="fixed top-0 w-full z-50 glass border-b-0">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white font-bold font-display text-2xl shadow-lg">
-              S
-            </div>
-            <span className="text-2xl font-bold font-display text-foreground tracking-tight">Sphere English</span>
-          </div>
+          <Link href="/">
+            <img
+              src={`${import.meta.env.BASE_URL}images/logo-full.png`}
+              alt="Sphere English"
+              className="h-14 w-auto object-contain"
+            />
+          </Link>
           <div className="hidden md:flex gap-8 items-center font-medium text-foreground/80">
             <a href="#features" className="hover:text-accent transition-colors">Özellikler</a>
             <a href="#levels" className="hover:text-accent transition-colors">Seviyeler</a>

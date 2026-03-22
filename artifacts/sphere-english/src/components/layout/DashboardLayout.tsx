@@ -58,13 +58,12 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
   const SidebarContent = () => (
     <>
-      <div className="flex h-16 shrink-0 items-center px-6">
-        <div className="flex items-center gap-3">
-          <div className="h-8 w-8 rounded-lg bg-accent flex items-center justify-center text-white font-bold font-display text-xl shadow-lg shadow-accent/40">
-            S
-          </div>
-          <span className="text-xl font-bold font-display text-sidebar-foreground tracking-tight">Sphere English</span>
-        </div>
+      <div className="flex h-16 shrink-0 items-center px-5">
+        <img
+          src={`${import.meta.env.BASE_URL}images/logo-full.png`}
+          alt="Sphere English"
+          className="h-10 w-auto object-contain brightness-0 invert"
+        />
       </div>
 
       {user?.role === 'corporate' && (user as any).company && (
