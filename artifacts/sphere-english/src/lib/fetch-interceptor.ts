@@ -1,6 +1,3 @@
-// This intercepts all fetch calls globally to inject the auth token.
-// It ensures that generated Orval hooks automatically authenticate without modifying them.
-
 const originalFetch = window.fetch;
 
 window.fetch = async (...args) => {
@@ -10,9 +7,15 @@ window.fetch = async (...args) => {
   
   if (token) {
     config = config || {};
+
+    const existing =
+      config.headers instanceof Headers
+        ? Object.fromEntries((config.headers as Headers).entries())
+        : (config.headers as Record<string, string>) || {};
+
     config.headers = {
-      ...config.headers,
-      Authorization: `Bearer ${token}`
+      ...existing,
+      Authorization: `Bearer ${token}`,
     };
   }
   
