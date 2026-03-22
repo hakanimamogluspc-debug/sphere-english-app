@@ -80,13 +80,12 @@ router.post("/users", authMiddleware, requireRole("admin"), async (req: AuthRequ
 // Update user
 router.patch("/users/:id", authMiddleware, async (req: AuthRequest, res) => {
   const id = parseInt(req.params.id);
-  // Only admin can update others; regular users can only update themselves
   if (req.userRole !== "admin" && req.userId !== id) {
     res.status(403).json({ error: "Forbidden" });
     return;
   }
 
-  const { firstName, lastName, phone, avatar, currentLevel, role } = req.body;
+  const { firstName, lastName, phone, avatar, currentLevel, role, email } = req.body;
   const updates: any = { updatedAt: new Date() };
   if (firstName !== undefined) updates.firstName = firstName;
   if (lastName !== undefined) updates.lastName = lastName;
@@ -94,11 +93,29 @@ router.patch("/users/:id", authMiddleware, async (req: AuthRequest, res) => {
   if (avatar !== undefined) updates.avatar = avatar;
   if (currentLevel !== undefined) updates.currentLevel = currentLevel;
   if (role !== undefined && req.userRole === "admin") updates.role = role;
+  if (email !== undefined && req.userRole === "admin") updates.email = email.toLowerCase();
 
   const [updated] = await db.update(usersTable).set(updates).where(eq(usersTable.id, id)).returning();
   if (!updated) { res.status(404).json({ error: "User not found" }); return; }
   const { password: _, ...userWithoutPassword } = updated;
   res.json(userWithoutPassword);
+});
+
+// Change user password (admin only)
+router.post("/users/:id/change-password", authMiddleware, requireRole("admin"), async (req: AuthRequest, res) => {
+  const id = parseInt(req.params.id);
+  const { newPassword } = req.body;
+  if (!newPassword || newPassword.length < 6) {
+    res.status(400).json({ error: "Şifre en az 6 karakter olmalıdır" });
+    return;
+  }
+  const hashedPassword = await bcrypt.hash(newPassword, 10);
+  const [updated] = await db.update(usersTable)
+    .set({ password: hashedPassword, updatedAt: new Date() })
+    .where(eq(usersTable.id, id))
+    .returning({ id: usersTable.id });
+  if (!updated) { res.status(404).json({ error: "User not found" }); return; }
+  res.json({ success: true });
 });
 
 // Delete user (admin only)
