@@ -2,7 +2,7 @@ providers = []
 
 [variables]
 NODE_ENV = "production"
-PORT = "8080"
+PORT = "3000"
 
 [phases.setup]
 nixPkgs = ["nodejs_20"]

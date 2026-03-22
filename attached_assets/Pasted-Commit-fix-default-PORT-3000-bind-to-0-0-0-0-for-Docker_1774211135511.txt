@@ -1,0 +1,204 @@
+Commit: fix: default PORT=3000, bind to 0.0.0.0 for Docker 
+##########################################
+### Download Github Archive Started...
+### Sun, 22 Mar 2026 20:19:41 GMT
+##########################################
+
+
+╔══════════════════════════════ Nixpacks v1.41.0 ══════════════════════════════╗
+║ setup      │ pkgs: nodejs_20                                                 ║
+║            │ cmds: npm install -g pnpm@9                                     ║
+║──────────────────────────────────────────────────────────────────────────────║
+║ install    │ npm install -g pnpm@9 --prefix=/usr/local &&                    ║
+║            │ /usr/local/bin/pnpm install --no-frozen-lockfile                ║
+║──────────────────────────────────────────────────────────────────────────────║
+║ build      │ /usr/local/bin/pnpm --filter @workspace/sphere-english build && ║
+║            │ mkdir -p public && cp -r artifacts/sphere-english/dist/.        ║
+║            │ public/ && /usr/local/bin/pnpm --filter @workspace/api-server   ║
+║            │ build                                                           ║
+║──────────────────────────────────────────────────────────────────────────────║
+║ start      │ node --enable-source-maps artifacts/api-server/dist/index.mjs   ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+
+Saved output to:
+  /etc/easypanel/projects/sphere-english/sphere-english-app/code/
+#0 building with "default" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 1.00kB done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for ghcr.io/railwayapp/nixpacks:ubuntu-1745885067
+#2 DONE 0.7s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 114B done
+#3 DONE 0.0s
+
+#4 [ 1/11] FROM ghcr.io/railwayapp/nixpacks:ubuntu-1745885067@sha256:d45c89d80e13d7ad0fd555b5130f22a866d9dd10e861f589932303ef2314c7de
+#4 resolve ghcr.io/railwayapp/nixpacks:ubuntu-1745885067@sha256:d45c89d80e13d7ad0fd555b5130f22a866d9dd10e861f589932303ef2314c7de 0.0s done
+#4 DONE 0.0s
+
+#5 [internal] load build context
+#5 transferring context: 5.12MB 0.2s done
+#5 DONE 0.2s
+
+#6 [ 3/11] COPY .nixpacks/nixpkgs-5148520bfab61f99fd25fb9ff7bfbb50dad3c9db.nix .nixpacks/nixpkgs-5148520bfab61f99fd25fb9ff7bfbb50dad3c9db.nix
+#6 CACHED
+
+#7 [ 2/11] WORKDIR /app/
+#7 CACHED
+
+#8 [ 4/11] RUN nix-env -if .nixpacks/nixpkgs-5148520bfab61f99fd25fb9ff7bfbb50dad3c9db.nix && nix-collect-garbage -d
+#8 CACHED
+
+#9 [ 5/11] COPY . /app/.
+#9 DONE 0.2s
+
+#10 [ 6/11] RUN  npm install -g pnpm@9
+#10 1.494 
+#10 1.494 added 1 package in 1s
+#10 1.494 
+#10 1.494 1 package is looking for funding
+#10 1.494   run `npm fund` for details
+#10 1.497 npm notice 
+#10 1.497 npm notice New major version of npm available! 9.8.1 -> 11.12.0
+#10 1.497 npm notice Changelog: <https://github.com/npm/cli/releases/tag/v11.12.0>
+#10 1.497 npm notice Run `npm install -g npm@11.12.0` to update!
+#10 1.497 npm notice 
+#10 DONE 1.6s
+
+#11 [ 7/11] COPY . /app/.
+#11 DONE 0.2s
+
+#12 [ 8/11] RUN  npm install -g pnpm@9 --prefix=/usr/local && /usr/local/bin/pnpm install --no-frozen-lockfile
+#12 1.281 
+#12 1.281 added 1 package in 1s
+#12 1.281 
+#12 1.281 1 package is looking for funding
+#12 1.282   run `npm fund` for details
+#12 1.714 Scope: all 9 workspace projects
+#12 2.077 
+#12 2.077    ╭───────────────────────────────────────────────────────────────────╮
+#12 2.077    │                                                                   │
+#12 2.077    │                Update available! 9.15.9 → 10.32.1.                │
+#12 2.077    │   Changelog: https://github.com/pnpm/pnpm/releases/tag/v10.32.1   │
+#12 2.077    │                 Run "pnpm add -g pnpm" to update.                 │
+#12 2.077    │                                                                   │
+#12 2.077    ╰───────────────────────────────────────────────────────────────────╯
+#12 2.077 
+#12 2.153 Progress: resolved 1, reused 0, downloaded 0, added 0
+#12 2.206 artifacts/api-server                     |  WARN  deprecated @types/bcryptjs@3.0.0
+#12 3.154 Progress: resolved 57, reused 0, downloaded 56, added 0
+#12 4.156 Progress: resolved 61, reused 0, downloaded 60, added 0
+#12 5.158 Progress: resolved 79, reused 0, downloaded 78, added 0
+#12 6.161 Progress: resolved 185, reused 0, downloaded 169, added 0
+#12 7.162 Progress: resolved 226, reused 0, downloaded 210, added 0
+#12 8.163 Progress: resolved 315, reused 0, downloaded 300, added 0
+#12 9.164 Progress: resolved 513, reused 0, downloaded 390, added 0
+#12 10.16 Progress: resolved 620, reused 0, downloaded 505, added 0
+#12 11.16 Progress: resolved 679, reused 0, downloaded 565, added 0
+#12 11.33  WARN  9 deprecated subdependencies found: @esbuild-kit/core-utils@3.3.2, @esbuild-kit/esm-loader@2.6.5, are-we-there-yet@2.0.0, gauge@3.0.2, glob@7.2.3, inflight@1.0.6, npmlog@5.0.1, rimraf@3.0.2, tar@6.2.1
+#12 11.37 Packages: +565
+#12 11.37 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#12 12.16 Progress: resolved 679, reused 0, downloaded 565, added 312
+#12 12.83 Progress: resolved 679, reused 0, downloaded 565, added 565, done
+#12 13.13 .../bcrypt@6.0.0/node_modules/bcrypt install$ node-gyp-build
+#12 13.14 .../bcrypt@5.1.1/node_modules/bcrypt install$ node-pre-gyp install --fallback-to-build
+#12 13.14 .../esbuild@0.25.12/node_modules/esbuild postinstall$ node install.js
+#12 13.14 .../esbuild@0.18.20/node_modules/esbuild postinstall$ node install.js
+#12 13.14 .../esbuild@0.27.3/node_modules/esbuild postinstall$ node install.js
+#12 13.39 .../esbuild@0.25.12/node_modules/esbuild postinstall: Done
+#12 13.43 .../bcrypt@5.1.1/node_modules/bcrypt install: node-pre-gyp info it worked if it ends with ok
+#12 13.44 .../bcrypt@5.1.1/node_modules/bcrypt install: node-pre-gyp info using node-pre-gyp@1.0.11
+#12 13.45 .../esbuild@0.18.20/node_modules/esbuild postinstall: Done
+#12 13.45 .../bcrypt@5.1.1/node_modules/bcrypt install: node-pre-gyp info using node@20.6.1 | linux | x64
+#12 13.50 .../esbuild@0.27.3/node_modules/esbuild postinstall: Done
+#12 13.52 .../bcrypt@6.0.0/node_modules/bcrypt install: Done
+#12 13.58 .../bcrypt@5.1.1/node_modules/bcrypt install: node-pre-gyp info check checked for "/app/node_modules/.pnpm/bcrypt@5.1.1/node_modules/bcrypt/lib/binding/napi-v3/bcrypt_lib.node" (not found)
+#12 13.59 .../bcrypt@5.1.1/node_modules/bcrypt install: node-pre-gyp http GET https://github.com/kelektiv/node.bcrypt.js/releases/download/v5.1.1/bcrypt_lib-v5.1.1-napi-v3-linux-x64-glibc.tar.gz
+#12 13.68 .../bcrypt@5.1.1/node_modules/bcrypt install: node-pre-gyp info install unpacking napi-v3/bcrypt_lib.node
+#12 13.70 .../bcrypt@5.1.1/node_modules/bcrypt install: node-pre-gyp info extracted file count: 1 
+#12 13.70 .../bcrypt@5.1.1/node_modules/bcrypt install: [bcrypt] Success: "/app/node_modules/.pnpm/bcrypt@5.1.1/node_modules/bcrypt/lib/binding/napi-v3/bcrypt_lib.node" is installed via remote
+#12 13.70 .../bcrypt@5.1.1/node_modules/bcrypt install: node-pre-gyp info ok 
+#12 13.71 .../bcrypt@5.1.1/node_modules/bcrypt install: Done
+#12 15.61 . preinstall$ sh -c 'if [ "$NODE_ENV" = "production" ]; then exit 0; fi; rm -f package-lock.json yarn.lock; case "$npm_config_user_agent" in pnpm/*) ;; *) echo "Use pnpm instead" >&2; exit 1 ;; esac'
+#12 15.63 . preinstall: Done
+#12 15.73 
+#12 15.73 devDependencies:
+#12 15.73 + prettier 3.8.1
+#12 15.73 + typescript 5.9.3
+#12 15.73 
+#12 15.73  WARN  Issues with peer dependencies found
+#12 15.73 artifacts/api-server
+#12 15.73 └─┬ esbuild-plugin-pino 2.3.3
+#12 15.73   └── ✕ unmet peer esbuild@">=0.25.0 <=0.25.8": found 0.27.3
+#12 15.73 
+#12 15.75 Done in 14.4s using pnpm v9.15.9
+#12 DONE 16.0s
+
+#13 [ 9/11] COPY . /app/.
+#13 DONE 0.7s
+
+#14 [10/11] RUN  /usr/local/bin/pnpm --filter @workspace/sphere-english build && mkdir -p public && cp -r artifacts/sphere-english/dist/. public/ && /usr/local/bin/pnpm --filter @workspace/api-server build
+#14 0.588 
+#14 0.588 > @workspace/sphere-english@0.0.0 build /app/artifacts/sphere-english
+#14 0.588 > vite build --config vite.config.ts
+#14 0.588 
+#14 0.679 You are using Node.js 20.6.1. Vite requires Node.js version 20.19+ or 22.12+. Please upgrade your Node.js version.
+#14 1.019 vite v7.3.1 building client environment for production...
+#14 1.122 transforming...
+#14 2.011 src/components/ui/tooltip.tsx (2:0): Error when using sourcemap for reporting an error: Can't resolve original location of error.
+#14 2.488 src/components/ui/label.tsx (2:0): Error when using sourcemap for reporting an error: Can't resolve original location of error.
+#14 2.519 src/components/ui/progress.tsx (2:0): Error when using sourcemap for reporting an error: Can't resolve original location of error.
+#14 8.489 ✓ 3187 modules transformed.
+#14 9.514 rendering chunks...
+#14 9.553 computing gzip size...
+#14 9.623 dist/public/index.html                     0.73 kB │ gzip:   0.41 kB
+#14 9.623 dist/public/assets/index-DDiTQofs.css    133.35 kB │ gzip:  20.53 kB
+#14 9.623 dist/public/assets/index-B4wm7XFJ.js   1,252.64 kB │ gzip: 348.74 kB
+#14 9.623 
+#14 9.623 (!) Some chunks are larger than 500 kB after minification. Consider:
+#14 9.623 - Using dynamic import() to code-split the application
+#14 9.623 - Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+#14 9.623 - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+#14 9.623 ✓ built in 8.55s
+#14 10.16 
+#14 10.16 > @workspace/api-server@0.0.0 build /app/artifacts/api-server
+#14 10.16 > node ./build.mjs
+#14 10.16 
+#14 10.70 
+#14 10.70   dist/index.mjs                       2.4mb ⚠️
+#14 10.70   dist/pino-worker.mjs               153.4kb
+#14 10.70   dist/pino-file.mjs                 142.0kb
+#14 10.70   dist/pino-pretty.mjs               114.6kb
+#14 10.70   dist/thread-stream-worker.mjs        7.3kb
+#14 10.70   dist/index.mjs.map                   4.3mb
+#14 10.70   dist/pino-worker.mjs.map           256.9kb
+#14 10.70   dist/pino-file.mjs.map             229.0kb
+#14 10.70   dist/pino-pretty.mjs.map           203.9kb
+#14 10.70   dist/thread-stream-worker.mjs.map   12.0kb
+#14 10.70 
+#14 10.70 ⚡ Done in 478ms
+#14 DONE 10.7s
+
+#15 [11/11] COPY . /app
+#15 DONE 0.1s
+
+#16 exporting to image
+#16 exporting layers
+#16 exporting layers 32.0s done
+#16 exporting manifest sha256:9a5e6d9d089ad519b429b41fc03837bc5b931bc4f927f2c3f22bb00508a36dd3
+#16 exporting manifest sha256:9a5e6d9d089ad519b429b41fc03837bc5b931bc4f927f2c3f22bb00508a36dd3 0.0s done
+#16 exporting config sha256:97b97cb66aeb87ed917644f22c43718408651cb497fac3f59e30251c07b76cfc done
+#16 exporting attestation manifest sha256:78d63373a3a132668a2b9c982bc1a3e53af7af47619aa90f6dffc7cf184ca898 0.0s done
+#16 exporting manifest list sha256:a0372217ce43cd81cb7ca94ab8801b5ad9d24534541df29cb74e9cb4cad0fd20 done
+#16 naming to docker.io/easypanel/sphere-english/sphere-english-app:latest done
+#16 unpacking to docker.io/easypanel/sphere-english/sphere-english-app:latest
+#16 unpacking to docker.io/easypanel/sphere-english/sphere-english-app:latest 15.6s done
+#16 DONE 47.7s
+##########################################
+### Success
+### Sun, 22 Mar 2026 20:21:02 GMT
+##########################################
