@@ -3,6 +3,7 @@ import cors from "cors";
 import pinoHttp from "pino-http";
 import path from "path";
 import fs from "fs";
+import rateLimit from "express-rate-limit";
 import router from "./routes";
 import { logger } from "./lib/logger";
 
@@ -34,6 +35,41 @@ app.use(express.urlencoded({ extended: true }));
 app.get("/health", (_req, res) => {
   res.json({ status: "ok", time: new Date().toISOString() });
 });
+
+// ─── Rate Limiting ────────────────────────────────────────────────────────────
+
+// Giriş endpoint'i: 15 dakikada en fazla 10 deneme
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Çok fazla giriş denemesi. Lütfen 15 dakika sonra tekrar deneyin." },
+  skipSuccessfulRequests: true,
+});
+
+// Kayıt endpoint'i: 1 saatte en fazla 5 kayıt
+const registerLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Çok fazla kayıt denemesi. Lütfen 1 saat sonra tekrar deneyin." },
+});
+
+// Genel API: Dakikada en fazla 200 istek
+const apiLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 200,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "İstek limiti aşıldı. Lütfen bir dakika bekleyin." },
+  skip: (req) => req.path.startsWith("/uploads"),
+});
+
+app.use("/api/auth/login", loginLimiter);
+app.use("/api/auth/register", registerLimiter);
+app.use("/api", apiLimiter);
 
 // Serve uploaded materials files
 const uploadsDir = path.join(process.cwd(), "uploads");
