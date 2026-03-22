@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db, liveClassesTable, liveClassAttendanceTable, usersTable, coursesTable } from "@workspace/db";
-import { eq, and, gte, count } from "drizzle-orm";
+import { eq, and, gte, lte, count, desc, ilike, or } from "drizzle-orm";
 import { authMiddleware, requireRole, type AuthRequest } from "../middlewares/auth.js";
 import { createZoomMeeting, deleteZoomMeeting, zoomConfigured } from "../services/zoom.js";
 
@@ -66,10 +66,13 @@ router.get("/live-classes/:id", authMiddleware, async (req: AuthRequest, res) =>
 });
 
 router.post("/live-classes", authMiddleware, requireRole("admin", "teacher"), async (req: AuthRequest, res) => {
-  const { title, description, courseId, startTime, duration, meetingLink, maxStudents, type } = req.body;
+  const { title, description, courseId, startTime, duration, meetingLink, maxStudents, type, teacherId: bodyTeacherId } = req.body;
   if (!title || !startTime || !duration || !maxStudents) {
     res.status(400).json({ error: "Required fields missing" }); return;
   }
+
+  // Admin can specify a different teacher; teachers always create for themselves
+  const teacherId = (req.userRole === "admin" && bodyTeacherId) ? parseInt(bodyTeacherId) : req.userId!;
 
   let finalMeetingLink = meetingLink || "";
   let zoomMeetingId: string | null = null;
@@ -89,7 +92,7 @@ router.post("/live-classes", authMiddleware, requireRole("admin", "teacher"), as
   const [lc] = await db.insert(liveClassesTable).values({
     title,
     description: description || null,
-    teacherId: req.userId!,
+    teacherId,
     courseId: courseId || null,
     startTime: new Date(startTime),
     duration: parseInt(duration),
@@ -219,6 +222,74 @@ router.get("/live-classes/:id/attendance", authMiddleware, requireRole("admin", 
 
 router.get("/zoom/status", authMiddleware, (req, res) => {
   res.json({ configured: zoomConfigured() });
+});
+
+// ─── Admin: tüm oturumları listele (detaylı filtreleme) ───────────────────────
+router.get("/admin/live-classes", authMiddleware, requireRole("admin"), async (req: AuthRequest, res) => {
+  const { teacherId, type, dateFrom, dateTo, status, search } = req.query;
+  let conds: any[] = [];
+  if (teacherId && teacherId !== "all") conds.push(eq(liveClassesTable.teacherId, parseInt(teacherId as string)));
+  if (type && type !== "all") conds.push(eq(liveClassesTable.type, type as string));
+  if (dateFrom) conds.push(gte(liveClassesTable.startTime, new Date(dateFrom as string)));
+  if (dateTo) conds.push(lte(liveClassesTable.startTime, new Date(dateTo as string)));
+  if (status === "upcoming") conds.push(gte(liveClassesTable.startTime, new Date()));
+  if (status === "past") conds.push(lte(liveClassesTable.startTime, new Date()));
+
+  const where = conds.length > 0 ? and(...conds) : undefined;
+  const classes = await db.select().from(liveClassesTable).where(where).orderBy(desc(liveClassesTable.startTime));
+
+  const enriched = await Promise.all(classes.map(async (lc) => {
+    const [teacher] = await db.select({ firstName: usersTable.firstName, lastName: usersTable.lastName, email: usersTable.email })
+      .from(usersTable).where(eq(usersTable.id, lc.teacherId)).limit(1);
+    const [{ ec }] = await db.select({ ec: count() }).from(liveClassAttendanceTable)
+      .where(eq(liveClassAttendanceTable.liveClassId, lc.id));
+    let courseName = null;
+    if (lc.courseId) {
+      const [course] = await db.select({ title: coursesTable.title }).from(coursesTable).where(eq(coursesTable.id, lc.courseId)).limit(1);
+      courseName = course?.title || null;
+    }
+    return {
+      ...lc,
+      startTime: lc.startTime.toISOString(),
+      createdAt: lc.createdAt.toISOString(),
+      teacherName: teacher ? `${teacher.firstName} ${teacher.lastName}` : null,
+      teacherEmail: teacher?.email || null,
+      courseName,
+      enrolledCount: Number(ec),
+    };
+  }));
+
+  // Search filter after enrichment
+  const filtered = search
+    ? enriched.filter(lc =>
+        lc.title.toLowerCase().includes((search as string).toLowerCase()) ||
+        (lc.teacherName || "").toLowerCase().includes((search as string).toLowerCase())
+      )
+    : enriched;
+
+  res.json(filtered);
+});
+
+// ─── Admin: oturuma öğrenci ekle ─────────────────────────────────────────────
+router.post("/admin/live-classes/:id/students", authMiddleware, requireRole("admin"), async (req: AuthRequest, res) => {
+  const liveClassId = parseInt(req.params.id);
+  const { studentIds } = req.body;
+  if (!Array.isArray(studentIds) || studentIds.length === 0) {
+    res.status(400).json({ error: "studentIds gereklidir" }); return;
+  }
+  await db.insert(liveClassAttendanceTable)
+    .values(studentIds.map((sid: number) => ({ liveClassId, studentId: Number(sid), joinedAt: new Date() })))
+    .onConflictDoNothing();
+  res.json({ success: true, added: studentIds.length });
+});
+
+// ─── Admin: oturumdan öğrenci çıkar ──────────────────────────────────────────
+router.delete("/admin/live-classes/:id/students/:studentId", authMiddleware, requireRole("admin"), async (req: AuthRequest, res) => {
+  const liveClassId = parseInt(req.params.id);
+  const studentId = parseInt(req.params.studentId);
+  await db.delete(liveClassAttendanceTable)
+    .where(and(eq(liveClassAttendanceTable.liveClassId, liveClassId), eq(liveClassAttendanceTable.studentId, studentId)));
+  res.json({ success: true });
 });
 
 export default router;

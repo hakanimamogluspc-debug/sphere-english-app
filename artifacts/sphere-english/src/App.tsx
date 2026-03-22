@@ -32,6 +32,7 @@ import TeacherLiveClasses from "./pages/teacher/TeacherLiveClasses";
 import AdminCompanies from "./pages/admin/Companies";
 import AdminGroups from "./pages/admin/Groups";
 import AdminTeachers from "./pages/admin/Teachers";
+import AdminLiveClasses from "./pages/admin/AdminLiveClasses";
 import AdminSpeakingClub from "./pages/admin/SpeakingClub";
 import CorporateDashboard from "./pages/corporate/CorporateDashboard";
 import CorporateStudents from "./pages/corporate/CorporateStudents";
@@ -124,6 +125,7 @@ function Router() {
       <Route path="/admin/teachers"><LayoutWrapper component={AdminTeachers} allowedRoles={['admin']} /></Route>
       <Route path="/admin/groups"><LayoutWrapper component={AdminGroups} allowedRoles={['admin']} /></Route>
       <Route path="/admin/courses"><LayoutWrapper component={AdminCourses} allowedRoles={['admin']} /></Route>
+      <Route path="/admin/live-classes"><LayoutWrapper component={AdminLiveClasses} allowedRoles={['admin']} /></Route>
       <Route path="/admin/speaking-club"><LayoutWrapper component={AdminSpeakingClub} allowedRoles={['admin']} /></Route>
       <Route path="/admin/announcements"><LayoutWrapper component={Announcements} allowedRoles={['admin']} /></Route>
       <Route path="/admin/reports"><LayoutWrapper component={ProgressPage} allowedRoles={['admin']} /></Route>
