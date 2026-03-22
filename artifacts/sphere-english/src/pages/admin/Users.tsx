@@ -6,7 +6,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
-import { getApiUrl } from "@/lib/api-url";
+import { API } from "@/lib/api-url";
 
 const createSchema = z.object({
   firstName: z.string().min(2, "En az 2 karakter"),
@@ -103,7 +103,7 @@ export default function AdminUsers() {
     setIsEditLoading(true);
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`${getApiUrl()}/api/users/${editUser.id}`, {
+      const res = await fetch(`${API}/users/${editUser.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(data),
@@ -126,7 +126,7 @@ export default function AdminUsers() {
     setIsPasswordLoading(true);
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`${getApiUrl()}/api/users/${passwordUser.id}/change-password`, {
+      const res = await fetch(`${API}/users/${passwordUser.id}/change-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ newPassword: data.newPassword }),
