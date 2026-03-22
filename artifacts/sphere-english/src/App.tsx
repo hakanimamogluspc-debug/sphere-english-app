@@ -6,7 +6,6 @@ import NotFound from "@/pages/not-found";
 import { AuthProvider, useAuth } from "./hooks/use-auth";
 import "./lib/fetch-interceptor";
 
-import Landing from "./pages/public/Landing";
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
 import { DashboardLayout } from "./components/layout/DashboardLayout";
@@ -88,7 +87,7 @@ function Router() {
   return (
     <Switch>
       {/* Public */}
-      <Route path="/" component={Landing} />
+      <Route path="/"><Redirect to="/login" /></Route>
       <Route path="/login" component={Login} />
       <Route path="/register" component={Register} />
 
