@@ -30,6 +30,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     teacher: [
       { name: 'Kontrol Paneli', href: '/dashboard', icon: LayoutDashboard },
       { name: 'Kurslarımı Yönet', href: '/teacher/courses', icon: BookOpen },
+      { name: 'Materyaller', href: '/teacher/materials', icon: FolderOpen },
       { name: 'Canlı Oturumlar', href: '/teacher/live-classes', icon: Video },
       { name: 'Öğrencilerim', href: '/teacher/students', icon: Users },
       { name: 'Öğrenci İlerlemesi', href: '/teacher/progress', icon: LineChart },
@@ -44,6 +45,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       { name: 'Öğretmenler', href: '/admin/teachers', icon: GraduationCap },
       { name: 'Gruplar', href: '/admin/groups', icon: Users },
       { name: 'Tüm Kurslar', href: '/admin/courses', icon: BookOpen },
+      { name: 'Materyaller', href: '/admin/materials', icon: FolderOpen },
       { name: 'Canlı Dersler', href: '/admin/live-classes', icon: Video },
       { name: 'Speaking Club', href: '/admin/speaking-club', icon: Mic },
       { name: 'Duyurular', href: '/admin/announcements', icon: Megaphone },

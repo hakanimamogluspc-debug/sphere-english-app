@@ -8,3 +8,4 @@ export * from "./messages";
 export * from "./groups";
 export * from "./speaking-clubs";
 export * from "./forum";
+export * from "./materials";

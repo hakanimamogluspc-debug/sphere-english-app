@@ -1,270 +1,179 @@
-import { useState, useEffect } from "react";
-import { BookOpen, FileText, PlayCircle, ChevronDown, ChevronRight, GraduationCap, User, FolderOpen, Layers } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/core";
-import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/use-auth";
-
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Card, CardContent } from "@/components/ui/core";
+import { FolderOpen, FileText, File, ImageIcon, Download, ChevronRight, ArrowLeft } from "lucide-react";
+import { motion } from "framer-motion";
 import { API } from "@/lib/api-url";
 
-type Lesson = {
-  id: number;
-  title: string;
-  type: string;
-  duration: number | null;
-  content: string | null;
-  videoUrl: string | null;
-  isCompleted: boolean;
-  order: number;
-};
+// ─── Types ─────────────────────────────────────────────────────────────────────
+interface Folder { id: number; name: string; description: string | null; materialCount: number; isActive: boolean; }
+interface Material { id: number; title: string; fileName: string; fileUrl: string; fileType: string; fileSize: number | null; isActive: boolean; }
+interface FolderDetail extends Folder { materials: Material[]; }
 
-type Module = {
-  id: number;
-  title: string;
-  order: number;
-  lessons: Lesson[];
-};
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+function authHeaders() { return { Authorization: `Bearer ${localStorage.getItem("sphere_token")}` }; }
 
-type CourseData = {
-  courseId: number;
-  courseTitle: string;
-  level: string | null;
-  teacherName: string | null;
-  modules: Module[];
-};
-
-const LEVEL_COLORS: Record<string, string> = {
-  A1: "bg-emerald-100 text-emerald-700",
-  A2: "bg-green-100 text-green-700",
-  B1: "bg-blue-100 text-blue-700",
-  B2: "bg-indigo-100 text-indigo-700",
-  C1: "bg-purple-100 text-purple-700",
-  C2: "bg-rose-100 text-rose-700",
-};
-
-const TYPE_ICON: Record<string, JSX.Element> = {
-  video:    <PlayCircle className="h-4 w-4 text-blue-500" />,
-  document: <FileText className="h-4 w-4 text-amber-500" />,
-  text:     <FileText className="h-4 w-4 text-gray-500" />,
-};
-
-function authHeaders() {
-  return { Authorization: `Bearer ${localStorage.getItem("sphere_token")}` };
+async function apiFetch(url: string) {
+  const res = await fetch(url, { headers: authHeaders() });
+  if (!res.ok) throw new Error("Hata");
+  return res.json();
 }
 
+function fileIcon(type: string, size = "h-8 w-8") {
+  if (type === "pdf") return <FileText className={`${size} text-red-500`} />;
+  if (type === "pptx") return <File className={`${size} text-orange-500`} />;
+  if (type === "docx") return <FileText className={`${size} text-blue-500`} />;
+  if (["png", "jpeg", "jpg", "gif", "webp"].includes(type)) return <ImageIcon className={`${size} text-green-500`} />;
+  return <File className={`${size} text-muted-foreground`} />;
+}
+
+function fileSize(bytes: number | null) {
+  if (!bytes) return "";
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function fileTypeBg(type: string) {
+  if (type === "pdf") return "bg-red-50 border-red-100";
+  if (type === "pptx") return "bg-orange-50 border-orange-100";
+  if (type === "docx") return "bg-blue-50 border-blue-100";
+  if (["png", "jpeg", "jpg", "gif", "webp"].includes(type)) return "bg-green-50 border-green-100";
+  return "bg-muted/30 border-border";
+}
+
+// ─── Main ──────────────────────────────────────────────────────────────────────
 export default function StudentMaterials() {
-  const { toast } = useToast();
-  const [courses, setCourses] = useState<CourseData[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [openCourses, setOpenCourses] = useState<Set<number>>(new Set());
-  const [openModules, setOpenModules] = useState<Set<number>>(new Set());
-  const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
+  const [selectedFolder, setSelectedFolder] = useState<FolderDetail | null>(null);
 
-  useEffect(() => {
-    fetch(`${API}/student/materials`, { headers: authHeaders() })
-      .then(r => r.json())
-      .then(data => {
-        const arr = Array.isArray(data) ? data : [];
-        setCourses(arr);
-        // İlk kursu varsayılan açık
-        if (arr.length > 0) setOpenCourses(new Set([arr[0].courseId]));
-      })
-      .catch(() => toast({ title: "Hata", description: "Materyaller yüklenemedi", variant: "destructive" }))
-      .finally(() => setLoading(false));
-  }, []);
-
-  const toggleCourse = (id: number) => setOpenCourses(prev => {
-    const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n;
-  });
-  const toggleModule = (id: number) => setOpenModules(prev => {
-    const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n;
+  const { data: folders = [], isLoading } = useQuery<Folder[]>({
+    queryKey: ["/api/materials/folders"],
+    queryFn: () => apiFetch(`${API}/materials/folders`),
   });
 
-  const totalLessons = courses.reduce((sum, c) => sum + c.modules.reduce((s2, m) => s2 + m.lessons.length, 0), 0);
-  const completedLessons = courses.reduce((sum, c) => sum + c.modules.reduce((s2, m) => s2 + m.lessons.filter(l => l.isCompleted).length, 0), 0);
+  const { data: folderDetail } = useQuery<FolderDetail>({
+    queryKey: ["/api/materials/folders", selectedFolder?.id],
+    queryFn: () => apiFetch(`${API}/materials/folders/${selectedFolder!.id}`),
+    enabled: !!selectedFolder,
+  });
+
+  const currentDetail = folderDetail && folderDetail.id === selectedFolder?.id ? folderDetail : null;
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold font-display">Materyallerim</h1>
-        <p className="text-muted-foreground mt-1">Öğretmenlerinizin yüklediği ders içeriklerine erişin.</p>
+        <h1 className="text-2xl font-bold flex items-center gap-2 text-foreground">
+          <FolderOpen className="h-6 w-6 text-primary" />
+          {selectedFolder ? (
+            <span className="flex items-center gap-2">
+              <button onClick={() => setSelectedFolder(null)}
+                className="text-muted-foreground hover:text-foreground transition-colors">
+                Materyallerim
+              </button>
+              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              {selectedFolder.name}
+            </span>
+          ) : "Materyallerim"}
+        </h1>
+        <p className="text-muted-foreground text-sm mt-1">
+          {selectedFolder
+            ? "Dosyaları görüntüleyin ve indirin"
+            : "Öğretmenlerinizin paylaştığı ders materyallerine erişin"}
+        </p>
       </div>
 
-      {/* Özet */}
-      <div className="grid grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="p-5 flex items-center gap-3">
-            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-              <BookOpen className="h-5 w-5 text-primary" />
+      {/* Folder list */}
+      {!selectedFolder && (
+        <>
+          {isLoading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[1, 2, 3].map(i => <Card key={i} className="h-28 animate-pulse bg-secondary/50" />)}
             </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Kurs</p>
-              <p className="text-2xl font-bold">{courses.length}</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-5 flex items-center gap-3">
-            <div className="h-10 w-10 rounded-full bg-accent/10 flex items-center justify-center">
-              <Layers className="h-5 w-5 text-accent" />
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Toplam Ders</p>
-              <p className="text-2xl font-bold">{totalLessons}</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-5 flex items-center gap-3">
-            <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
-              <GraduationCap className="h-5 w-5 text-green-600" />
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Tamamlanan</p>
-              <p className="text-2xl font-bold text-green-600">{completedLessons}</p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {loading ? (
-        <div className="space-y-4">
-          {[1, 2].map(i => <Card key={i} className="h-24 animate-pulse bg-secondary/50" />)}
-        </div>
-      ) : courses.length === 0 ? (
-        <Card>
-          <CardContent className="py-16 text-center text-muted-foreground">
-            <BookOpen className="h-14 w-14 mx-auto mb-3 opacity-20" />
-            <p className="font-medium">Henüz kayıtlı olduğunuz bir kurs yok</p>
-            <p className="text-sm mt-1">Kurslara kayıt olduğunuzda materyaller burada görünecek.</p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Sol: ders ağacı */}
-          <div className="lg:col-span-1 space-y-3">
-            {courses.map(course => {
-              const isCourseOpen = openCourses.has(course.courseId);
-              const courseLessonCount = course.modules.reduce((s, m) => s + m.lessons.length, 0);
-              const courseCompletedCount = course.modules.reduce((s, m) => s + m.lessons.filter(l => l.isCompleted).length, 0);
-              const pct = courseLessonCount > 0 ? Math.round((courseCompletedCount / courseLessonCount) * 100) : 0;
-
-              return (
-                <Card key={course.courseId} className="overflow-hidden">
-                  {/* Kurs başlığı */}
-                  <button
-                    onClick={() => toggleCourse(course.courseId)}
-                    className="w-full p-4 flex items-start gap-3 hover:bg-secondary/30 transition-colors text-left"
-                  >
-                    <FolderOpen className="h-5 w-5 text-primary mt-0.5 shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="font-semibold text-sm">{course.courseTitle}</span>
-                        {course.level && (
-                          <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${LEVEL_COLORS[course.level] ?? ""}`}>
-                            {course.level}
-                          </span>
-                        )}
+          ) : folders.length === 0 ? (
+            <Card>
+              <CardContent className="py-16 text-center text-muted-foreground">
+                <FolderOpen className="h-14 w-14 mx-auto mb-3 opacity-20" />
+                <p className="font-medium">Henüz paylaşılan materyal yok</p>
+                <p className="text-sm mt-1">Öğretmenleriniz materyal paylaştığında burada görünecek.</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {folders.map(f => (
+                <motion.div key={f.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+                  <Card className="cursor-pointer hover:shadow-md transition-all border-2 border-transparent hover:border-primary/20"
+                    onClick={() => setSelectedFolder(f as any)}>
+                    <CardContent className="p-4 flex items-center gap-4">
+                      <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                        <FolderOpen className="h-6 w-6 text-primary" />
                       </div>
-                      {course.teacherName && (
-                        <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-                          <User className="h-3 w-3" /> {course.teacherName}
-                        </p>
-                      )}
-                      <div className="mt-1.5 flex items-center gap-2">
-                        <div className="flex-1 bg-secondary rounded-full h-1.5 overflow-hidden">
-                          <div className="bg-primary h-full rounded-full" style={{ width: `${pct}%` }} />
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-sm">{f.name}</p>
+                        {f.description && <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">{f.description}</p>}
+                        <p className="text-xs text-muted-foreground mt-1">{f.materialCount} dosya</p>
+                      </div>
+                      <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Folder detail */}
+      {selectedFolder && (
+        <>
+          <button onClick={() => setSelectedFolder(null)}
+            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
+            <ArrowLeft className="h-4 w-4" /> Tüm klasörler
+          </button>
+
+          {!currentDetail ? (
+            <div className="flex items-center justify-center py-12 text-muted-foreground gap-2">
+              <div className="animate-spin h-5 w-5 border-2 border-primary border-t-transparent rounded-full" /> Yükleniyor...
+            </div>
+          ) : currentDetail.materials.length === 0 ? (
+            <Card>
+              <CardContent className="py-12 text-center text-muted-foreground">
+                <File className="h-12 w-12 mx-auto mb-3 opacity-20" />
+                <p>Bu klasörde henüz materyal yok</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {currentDetail.materials.map(m => (
+                <motion.div key={m.id} initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }}>
+                  <a
+                    href={`${API.replace("/api", "")}${m.fileUrl}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block group">
+                    <Card className={`border-2 hover:shadow-md transition-all group-hover:border-primary/30 ${fileTypeBg(m.fileType)}`}>
+                      <CardContent className="p-5 flex flex-col items-center text-center gap-3">
+                        <div className="h-14 w-14 rounded-2xl bg-white shadow-sm flex items-center justify-center">
+                          {fileIcon(m.fileType, "h-7 w-7")}
                         </div>
-                        <span className="text-[10px] text-muted-foreground whitespace-nowrap">%{pct}</span>
-                      </div>
-                    </div>
-                    {isCourseOpen ? <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" /> : <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />}
-                  </button>
-
-                  {isCourseOpen && (
-                    <div className="border-t border-border/50">
-                      {course.modules.map(mod => {
-                        const isModOpen = openModules.has(mod.id);
-                        return (
-                          <div key={mod.id}>
-                            <button
-                              onClick={() => toggleModule(mod.id)}
-                              className="w-full px-4 py-2.5 flex items-center gap-2 hover:bg-secondary/30 transition-colors text-left bg-secondary/10"
-                            >
-                              {isModOpen ? <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" /> : <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />}
-                              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{mod.title}</span>
-                              <span className="ml-auto text-[10px] text-muted-foreground">{mod.lessons.length} ders</span>
-                            </button>
-                            {isModOpen && mod.lessons.map(lesson => (
-                              <button
-                                key={lesson.id}
-                                onClick={() => setSelectedLesson(lesson)}
-                                className={`w-full px-5 py-2.5 flex items-center gap-2.5 hover:bg-secondary/40 transition-colors text-left ${selectedLesson?.id === lesson.id ? "bg-primary/5 border-r-2 border-primary" : ""}`}
-                              >
-                                {TYPE_ICON[lesson.type] ?? <FileText className="h-4 w-4 text-gray-400" />}
-                                <span className="text-sm truncate flex-1">{lesson.title}</span>
-                                {lesson.isCompleted && <GraduationCap className="h-3.5 w-3.5 text-green-500 shrink-0" />}
-                              </button>
-                            ))}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </Card>
-              );
-            })}
-          </div>
-
-          {/* Sağ: ders içeriği */}
-          <div className="lg:col-span-2">
-            {!selectedLesson ? (
-              <Card className="h-full">
-                <CardContent className="flex items-center justify-center h-64 text-muted-foreground">
-                  <div className="text-center">
-                    <BookOpen className="h-14 w-14 mx-auto mb-3 opacity-20" />
-                    <p className="font-medium">Bir ders seçin</p>
-                    <p className="text-sm mt-1">Soldaki listeden görüntülemek istediğiniz dersi seçin.</p>
-                  </div>
-                </CardContent>
-              </Card>
-            ) : (
-              <Card>
-                <CardHeader className="border-b pb-4">
-                  <div className="flex items-start gap-3">
-                    <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                      {TYPE_ICON[selectedLesson.type] ?? <FileText className="h-5 w-5" />}
-                    </div>
-                    <div>
-                      <CardTitle className="text-lg">{selectedLesson.title}</CardTitle>
-                      <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                        <span className="capitalize">{selectedLesson.type === "video" ? "Video" : selectedLesson.type === "document" ? "Belge" : "Metin"}</span>
-                        {selectedLesson.duration && <span>· {selectedLesson.duration} dk</span>}
-                        {selectedLesson.isCompleted && <span className="text-green-600 font-semibold flex items-center gap-1"><GraduationCap className="h-3 w-3" /> Tamamlandı</span>}
-                      </div>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="p-6 space-y-4">
-                  {selectedLesson.videoUrl && (
-                    <div className="aspect-video bg-black rounded-xl overflow-hidden">
-                      <video src={selectedLesson.videoUrl} controls className="w-full h-full" />
-                    </div>
-                  )}
-                  {selectedLesson.content ? (
-                    <div className="prose prose-sm max-w-none text-foreground leading-relaxed whitespace-pre-wrap">
-                      {selectedLesson.content}
-                    </div>
-                  ) : (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <FileText className="h-10 w-10 mx-auto mb-2 opacity-20" />
-                      <p className="text-sm">Bu ders için içerik henüz eklenmemiş.</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-          </div>
-        </div>
+                        <div className="w-full">
+                          <p className="text-sm font-semibold line-clamp-2 leading-snug">{m.title}</p>
+                          <p className="text-xs text-muted-foreground mt-0.5 truncate">{m.fileName}</p>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <span className="uppercase font-medium">{m.fileType}</span>
+                          {m.fileSize && <span>· {fileSize(m.fileSize)}</span>}
+                        </div>
+                        <div className="flex items-center gap-1.5 text-xs text-primary font-medium group-hover:underline">
+                          <Download className="h-3.5 w-3.5" /> Görüntüle / İndir
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </a>
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </>
       )}
     </div>
   );

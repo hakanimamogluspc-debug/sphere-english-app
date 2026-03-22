@@ -19,6 +19,7 @@ import adminSpeakingClubsRouter from "./admin-speaking-clubs";
 import teacherRouter from "./teacher";
 import studentRouter from "./student";
 import forumRouter from "./forum";
+import materialsRouter from "./materials";
 
 const router: IRouter = Router();
 
@@ -42,5 +43,6 @@ router.use(certificatesRouter);
 router.use(messagesRouter);
 router.use(leaderboardRouter);
 router.use(dashboardRouter);
+router.use(materialsRouter);
 
 export default router;

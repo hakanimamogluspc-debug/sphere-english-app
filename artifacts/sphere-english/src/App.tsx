@@ -29,10 +29,12 @@ import TeacherQuizzes from "./pages/teacher/TeacherQuizzes";
 import TeacherSpeakingClub from "./pages/teacher/TeacherSpeakingClub";
 import TeacherMessages from "./pages/teacher/TeacherMessages";
 import TeacherLiveClasses from "./pages/teacher/TeacherLiveClasses";
+import TeacherMaterials from "./pages/teacher/TeacherMaterials";
 import AdminCompanies from "./pages/admin/Companies";
 import AdminGroups from "./pages/admin/Groups";
 import AdminTeachers from "./pages/admin/Teachers";
 import AdminLiveClasses from "./pages/admin/AdminLiveClasses";
+import AdminMaterials from "./pages/admin/AdminMaterials";
 import AdminSpeakingClub from "./pages/admin/SpeakingClub";
 import CorporateDashboard from "./pages/corporate/CorporateDashboard";
 import CorporateStudents from "./pages/corporate/CorporateStudents";
@@ -113,6 +115,7 @@ function Router() {
       {/* Teacher Routes */}
       <Route path="/teacher/courses"><LayoutWrapper component={TeacherCourses} allowedRoles={['teacher', 'admin']} /></Route>
       <Route path="/teacher/live-classes"><LayoutWrapper component={TeacherLiveClasses} allowedRoles={['teacher', 'admin']} /></Route>
+      <Route path="/teacher/materials"><LayoutWrapper component={TeacherMaterials} allowedRoles={['teacher', 'admin']} /></Route>
       <Route path="/teacher/students"><LayoutWrapper component={TeacherStudents} allowedRoles={['teacher', 'admin']} /></Route>
       <Route path="/teacher/progress"><LayoutWrapper component={TeacherProgress} allowedRoles={['teacher', 'admin']} /></Route>
       <Route path="/teacher/quizzes"><LayoutWrapper component={TeacherQuizzes} allowedRoles={['teacher', 'admin']} /></Route>
@@ -126,6 +129,7 @@ function Router() {
       <Route path="/admin/groups"><LayoutWrapper component={AdminGroups} allowedRoles={['admin']} /></Route>
       <Route path="/admin/courses"><LayoutWrapper component={AdminCourses} allowedRoles={['admin']} /></Route>
       <Route path="/admin/live-classes"><LayoutWrapper component={AdminLiveClasses} allowedRoles={['admin']} /></Route>
+      <Route path="/admin/materials"><LayoutWrapper component={AdminMaterials} allowedRoles={['admin']} /></Route>
       <Route path="/admin/speaking-club"><LayoutWrapper component={AdminSpeakingClub} allowedRoles={['admin']} /></Route>
       <Route path="/admin/announcements"><LayoutWrapper component={Announcements} allowedRoles={['admin']} /></Route>
       <Route path="/admin/reports"><LayoutWrapper component={ProgressPage} allowedRoles={['admin']} /></Route>
