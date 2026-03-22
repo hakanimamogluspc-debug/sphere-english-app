@@ -76,7 +76,21 @@ router.post("/auth/register", async (req, res) => {
 
     if (Number(registeredCount) >= company.registrationLimit) {
       res.status(400).json({
-        error: `Bu kurum için kayıt limiti dolmuştur. (Limit: ${company.registrationLimit} öğrenci)`,
+        error: `Bu kurum için öğrenci kayıt limiti dolmuştur. (Limit: ${company.registrationLimit} öğrenci)`,
+      });
+      return;
+    }
+  }
+
+  if (assignedRole === "corporate" && company.corporateLimit > 0) {
+    const [{ registeredCount }] = await db
+      .select({ registeredCount: count() })
+      .from(usersTable)
+      .where(and(eq(usersTable.companyId, company.id), eq(usersTable.role, "corporate")));
+
+    if (Number(registeredCount) >= company.corporateLimit) {
+      res.status(400).json({
+        error: `Bu kurum için yetkili kayıt limiti dolmuştur. (Limit: ${company.corporateLimit} yetkili)`,
       });
       return;
     }

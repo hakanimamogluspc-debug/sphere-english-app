@@ -31,7 +31,14 @@ router.get("/corporate/company", authMiddleware, requireRole("corporate"), async
     .from(usersTable)
     .where(and(eq(usersTable.companyId, companyId), eq(usersTable.role, "student")));
 
-  res.json({ ...company, studentCount: Number(studentCount) });
+  res.json({
+    id: company.id,
+    name: company.name,
+    code: company.code,
+    registrationLimit: company.registrationLimit,
+    corporateLimit: company.corporateLimit,
+    studentCount: Number(studentCount),
+  });
 });
 
 // GET /corporate/students — Şirkete ait öğrenciler

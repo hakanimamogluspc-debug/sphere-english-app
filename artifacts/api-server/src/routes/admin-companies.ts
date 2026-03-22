@@ -1,11 +1,11 @@
 import { Router } from "express";
 import { db, companiesTable, usersTable } from "@workspace/db";
-import { eq, and, count, sql, ilike } from "drizzle-orm";
+import { eq, and, count, sql } from "drizzle-orm";
 import { authMiddleware, requireRole, type AuthRequest } from "../middlewares/auth.js";
 
 const router = Router();
 
-// GET /admin/companies — Tüm kurumları listele
+// GET /admin/companies — Tüm kurumları listele (sadece admin)
 router.get("/admin/companies", authMiddleware, requireRole("admin"), async (_req: AuthRequest, res) => {
   const companies = await db.select().from(companiesTable).orderBy(companiesTable.createdAt);
 
@@ -26,6 +26,7 @@ router.get("/admin/companies", authMiddleware, requireRole("admin"), async (_req
         studentCount: Number(studentCount),
         corporateCount: Number(corporateCount),
         remaining: c.registrationLimit > 0 ? Math.max(0, c.registrationLimit - Number(studentCount)) : null,
+        corporateRemaining: c.corporateLimit > 0 ? Math.max(0, c.corporateLimit - Number(corporateCount)) : null,
       };
     })
   );
@@ -35,7 +36,17 @@ router.get("/admin/companies", authMiddleware, requireRole("admin"), async (_req
 
 // POST /admin/companies — Yeni kurum oluştur
 router.post("/admin/companies", authMiddleware, requireRole("admin"), async (_req: AuthRequest, res) => {
-  const { name, registrationLimit = 0 } = _req.body;
+  const {
+    name,
+    companyTitle,
+    address,
+    taxOffice,
+    taxNumber,
+    contactNumber,
+    registrationLimit = 0,
+    corporateLimit = 0,
+  } = _req.body;
+
   if (!name || name.trim() === "") {
     res.status(400).json({ error: "Kurum adı zorunludur" });
     return;
@@ -58,20 +69,45 @@ router.post("/admin/companies", authMiddleware, requireRole("admin"), async (_re
 
   const [company] = await db
     .insert(companiesTable)
-    .values({ name: name.trim(), code, registrationLimit: Number(registrationLimit) })
+    .values({
+      name: name.trim(),
+      code,
+      registrationLimit: Number(registrationLimit),
+      corporateLimit: Number(corporateLimit),
+      companyTitle: companyTitle?.trim() || null,
+      address: address?.trim() || null,
+      taxOffice: taxOffice?.trim() || null,
+      taxNumber: taxNumber?.trim() || null,
+      contactNumber: contactNumber?.trim() || null,
+    })
     .returning();
 
   res.status(201).json(company);
 });
 
-// PATCH /admin/companies/:id — Kurum güncelle (limit vb.)
+// PATCH /admin/companies/:id — Kurum güncelle
 router.patch("/admin/companies/:id", authMiddleware, requireRole("admin"), async (req: AuthRequest, res) => {
   const id = parseInt(req.params.id);
-  const { name, registrationLimit } = req.body;
+  const {
+    name,
+    companyTitle,
+    address,
+    taxOffice,
+    taxNumber,
+    contactNumber,
+    registrationLimit,
+    corporateLimit,
+  } = req.body;
 
   const updates: any = {};
   if (name !== undefined && name.trim() !== "") updates.name = name.trim();
   if (registrationLimit !== undefined) updates.registrationLimit = Number(registrationLimit);
+  if (corporateLimit !== undefined) updates.corporateLimit = Number(corporateLimit);
+  if (companyTitle !== undefined) updates.companyTitle = companyTitle?.trim() || null;
+  if (address !== undefined) updates.address = address?.trim() || null;
+  if (taxOffice !== undefined) updates.taxOffice = taxOffice?.trim() || null;
+  if (taxNumber !== undefined) updates.taxNumber = taxNumber?.trim() || null;
+  if (contactNumber !== undefined) updates.contactNumber = contactNumber?.trim() || null;
 
   if (Object.keys(updates).length === 0) {
     res.status(400).json({ error: "Güncellenecek alan yok" });
@@ -103,10 +139,17 @@ router.patch("/admin/companies/:id", authMiddleware, requireRole("admin"), async
     .from(usersTable)
     .where(and(eq(usersTable.companyId, id), eq(usersTable.role, "student")));
 
+  const [{ corporateCount }] = await db
+    .select({ corporateCount: count() })
+    .from(usersTable)
+    .where(and(eq(usersTable.companyId, id), eq(usersTable.role, "corporate")));
+
   res.json({
     ...updated,
     studentCount: Number(studentCount),
+    corporateCount: Number(corporateCount),
     remaining: updated.registrationLimit > 0 ? Math.max(0, updated.registrationLimit - Number(studentCount)) : null,
+    corporateRemaining: updated.corporateLimit > 0 ? Math.max(0, updated.corporateLimit - Number(corporateCount)) : null,
   });
 });
 

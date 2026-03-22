@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, Button, Input, Label, Modal } from "@/components/ui/core";
 import { useToast } from "@/hooks/use-toast";
-import { Building2, Plus, Edit2, Trash2, Users, Hash, Copy, Check, Shield } from "lucide-react";
+import { Building2, Plus, Edit2, Trash2, Users, Hash, Copy, Check, Shield, Phone, MapPin, Receipt, BadgeInfo } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -10,7 +10,13 @@ import { motion } from "framer-motion";
 
 const companySchema = z.object({
   name: z.string().min(2, "Kurum adı en az 2 karakter olmalıdır"),
+  companyTitle: z.string().optional(),
+  address: z.string().optional(),
+  taxOffice: z.string().optional(),
+  taxNumber: z.string().optional(),
+  contactNumber: z.string().optional(),
   registrationLimit: z.coerce.number().min(0, "0 veya daha büyük olmalıdır"),
+  corporateLimit: z.coerce.number().min(0, "0 veya daha büyük olmalıdır"),
 });
 type CompanyForm = z.infer<typeof companySchema>;
 
@@ -18,10 +24,17 @@ interface Company {
   id: number;
   name: string;
   code: string;
+  companyTitle?: string | null;
+  address?: string | null;
+  taxOffice?: string | null;
+  taxNumber?: string | null;
+  contactNumber?: string | null;
   registrationLimit: number;
+  corporateLimit: number;
   studentCount: number;
   corporateCount: number;
   remaining: number | null;
+  corporateRemaining: number | null;
   createdAt: string;
 }
 
@@ -32,6 +45,16 @@ async function apiFetch(url: string, options?: RequestInit) {
     throw new Error(err.error || "Bir hata oluştu");
   }
   return res.json();
+}
+
+function FormField({ label, id, error, children }: { label: string; id: string; error?: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <Label htmlFor={id}>{label}</Label>
+      {children}
+      {error && <p className="text-xs text-destructive mt-1">{error}</p>}
+    </div>
+  );
 }
 
 export default function AdminCompanies() {
@@ -88,7 +111,7 @@ export default function AdminCompanies() {
 
   const { register: regCreate, handleSubmit: handleCreate, reset: resetCreate, formState: { errors: errCreate } } = useForm<CompanyForm>({
     resolver: zodResolver(companySchema),
-    defaultValues: { registrationLimit: 0 },
+    defaultValues: { registrationLimit: 0, corporateLimit: 0 },
   });
 
   const { register: regEdit, handleSubmit: handleEdit, reset: resetEdit, formState: { errors: errEdit } } = useForm<CompanyForm>({
@@ -97,7 +120,16 @@ export default function AdminCompanies() {
 
   const openEdit = (company: Company) => {
     setEditingCompany(company);
-    resetEdit({ name: company.name, registrationLimit: company.registrationLimit });
+    resetEdit({
+      name: company.name,
+      companyTitle: company.companyTitle || "",
+      address: company.address || "",
+      taxOffice: company.taxOffice || "",
+      taxNumber: company.taxNumber || "",
+      contactNumber: company.contactNumber || "",
+      registrationLimit: company.registrationLimit,
+      corporateLimit: company.corporateLimit,
+    });
   };
 
   const handleDelete = (company: Company) => {
@@ -146,13 +178,16 @@ export default function AdminCompanies() {
             return (
               <motion.div key={company.id} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}>
                 <Card className={`p-5 border-2 ${isFull ? "border-red-200" : "border-border"}`}>
-                  <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-3">
                       <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
                         <Building2 className="h-5 w-5 text-primary" />
                       </div>
                       <div>
                         <h3 className="font-semibold text-foreground">{company.name}</h3>
+                        {company.companyTitle && (
+                          <p className="text-xs text-muted-foreground">{company.companyTitle}</p>
+                        )}
                         <div className="flex items-center gap-1.5 mt-0.5">
                           <Hash className="h-3.5 w-3.5 text-muted-foreground" />
                           <span className="text-sm font-mono font-semibold text-primary">{company.code}</span>
@@ -178,51 +213,99 @@ export default function AdminCompanies() {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-4 text-sm mb-4">
+                  {/* Hassas bilgiler — sadece admin görür */}
+                  <div className="mb-3 space-y-1">
+                    {company.contactNumber && (
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <Phone className="h-3.5 w-3.5 shrink-0" />
+                        <span>{company.contactNumber}</span>
+                      </div>
+                    )}
+                    {company.address && (
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <MapPin className="h-3.5 w-3.5 shrink-0" />
+                        <span className="line-clamp-1">{company.address}</span>
+                      </div>
+                    )}
+                    {(company.taxOffice || company.taxNumber) && (
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <Receipt className="h-3.5 w-3.5 shrink-0" />
+                        <span>
+                          {company.taxOffice && company.taxNumber
+                            ? `${company.taxOffice} — VKN: ${company.taxNumber}`
+                            : company.taxOffice || `VKN: ${company.taxNumber}`}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-4 text-sm mb-3">
                     <div className="flex items-center gap-1.5">
                       <Users className="h-4 w-4 text-muted-foreground" />
                       <span className="font-semibold">{company.studentCount}</span>
                       <span className="text-muted-foreground">öğrenci</span>
                     </div>
-                    {company.corporateCount > 0 && (
+                    <div className="flex items-center gap-1.5">
+                      <Shield className="h-4 w-4 text-muted-foreground" />
+                      <span className="font-semibold">{company.corporateCount}</span>
+                      <span className="text-muted-foreground">yetkili</span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    {/* Öğrenci limiti */}
+                    {company.registrationLimit > 0 ? (
+                      <div>
+                        <div className="flex justify-between text-xs mb-1">
+                          <span className="text-muted-foreground">Öğrenci kayıt kullanımı</span>
+                          <span className={`font-semibold ${isFull ? "text-red-600" : "text-foreground"}`}>
+                            {company.studentCount} / {company.registrationLimit}
+                            {isFull && " — Limit doldu!"}
+                          </span>
+                        </div>
+                        <div className="h-2 bg-secondary rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all duration-500 ${
+                              usagePercent >= 100 ? "bg-red-500" :
+                              usagePercent >= 80 ? "bg-orange-400" : "bg-green-500"
+                            }`}
+                            style={{ width: `${usagePercent}%` }}
+                          />
+                        </div>
+                      </div>
+                    ) : (
                       <div className="flex items-center gap-1.5">
-                        <Shield className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-semibold">{company.corporateCount}</span>
-                        <span className="text-muted-foreground">yetkili</span>
+                        <div className="h-2 w-2 rounded-full bg-green-400" />
+                        <span className="text-xs text-muted-foreground">Sınırsız öğrenci kaydı</span>
+                      </div>
+                    )}
+
+                    {/* Yetkili limiti */}
+                    {company.corporateLimit > 0 ? (
+                      <div>
+                        <div className="flex justify-between text-xs mb-1">
+                          <span className="text-muted-foreground">Yetkili kullanımı</span>
+                          <span className="font-semibold text-foreground">
+                            {company.corporateCount} / {company.corporateLimit}
+                          </span>
+                        </div>
+                        <div className="h-2 bg-secondary rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all duration-500 ${
+                              company.corporateCount >= company.corporateLimit ? "bg-red-500" :
+                              (company.corporateCount / company.corporateLimit) >= 0.8 ? "bg-orange-400" : "bg-blue-500"
+                            }`}
+                            style={{ width: `${Math.min(100, (company.corporateCount / company.corporateLimit) * 100)}%` }}
+                          />
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-1.5">
+                        <div className="h-2 w-2 rounded-full bg-blue-400" />
+                        <span className="text-xs text-muted-foreground">Sınırsız yetkili kaydı</span>
                       </div>
                     )}
                   </div>
-
-                  {company.registrationLimit > 0 ? (
-                    <div>
-                      <div className="flex justify-between text-xs mb-1.5">
-                        <span className="text-muted-foreground">Kayıt kullanımı</span>
-                        <span className={`font-semibold ${isFull ? "text-red-600" : "text-foreground"}`}>
-                          {company.studentCount} / {company.registrationLimit}
-                          {isFull && " — Limit doldu!"}
-                        </span>
-                      </div>
-                      <div className="h-2 bg-secondary rounded-full overflow-hidden">
-                        <div
-                          className={`h-full rounded-full transition-all duration-500 ${
-                            usagePercent >= 100 ? "bg-red-500" :
-                            usagePercent >= 80 ? "bg-orange-400" : "bg-green-500"
-                          }`}
-                          style={{ width: `${usagePercent}%` }}
-                        />
-                      </div>
-                      {company.remaining !== null && (
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {company.remaining > 0 ? `${company.remaining} kayıt hakkı kaldı` : "Tüm slotlar dolu"}
-                        </p>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-1.5">
-                      <div className="h-2 w-2 rounded-full bg-green-400" />
-                      <span className="text-xs text-muted-foreground">Sınırsız kayıt</span>
-                    </div>
-                  )}
 
                   <p className="text-xs text-muted-foreground mt-3">
                     Oluşturulma: {new Date(company.createdAt).toLocaleDateString("tr-TR")}
@@ -236,16 +319,45 @@ export default function AdminCompanies() {
 
       {/* Yeni Kurum Modal */}
       <Modal isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} title="Yeni Kurum Oluştur">
-        <form onSubmit={handleCreate((data) => createMutation.mutateAsync(data))} className="space-y-5">
-          <div>
-            <Label htmlFor="c-name">Kurum Adı <span className="text-destructive">*</span></Label>
-            <Input id="c-name" placeholder="Örnek: ABC Holding A.Ş." error={errCreate.name?.message} {...regCreate("name")} />
+        <form onSubmit={handleCreate((data) => createMutation.mutateAsync(data))} className="space-y-4 max-h-[70vh] overflow-y-auto pr-1">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="col-span-2">
+              <FormField label="Kurum Adı *" id="c-name" error={errCreate.name?.message}>
+                <Input id="c-name" placeholder="Örnek: ABC Holding" {...regCreate("name")} />
+              </FormField>
+            </div>
+            <div className="col-span-2">
+              <FormField label="Şirket Ünvanı" id="c-title" error={errCreate.companyTitle?.message}>
+                <Input id="c-title" placeholder="Örnek: ABC Holding A.Ş." {...regCreate("companyTitle")} />
+              </FormField>
+            </div>
+            <div className="col-span-2">
+              <FormField label="Adres" id="c-address" error={errCreate.address?.message}>
+                <Input id="c-address" placeholder="Tam adres" {...regCreate("address")} />
+              </FormField>
+            </div>
+            <FormField label="Vergi Dairesi" id="c-taxoffice" error={errCreate.taxOffice?.message}>
+              <Input id="c-taxoffice" placeholder="Vergi dairesi adı" {...regCreate("taxOffice")} />
+            </FormField>
+            <FormField label="Vergi Numarası" id="c-taxno" error={errCreate.taxNumber?.message}>
+              <Input id="c-taxno" placeholder="1234567890" {...regCreate("taxNumber")} />
+            </FormField>
+            <div className="col-span-2">
+              <FormField label="İletişim Numarası" id="c-phone" error={errCreate.contactNumber?.message}>
+                <Input id="c-phone" placeholder="+90 (5xx) xxx xx xx" {...regCreate("contactNumber")} />
+              </FormField>
+            </div>
+            <FormField label="Öğrenci Kayıt Limiti" id="c-limit" error={errCreate.registrationLimit?.message}>
+              <Input id="c-limit" type="number" min="0" placeholder="0 = Sınırsız" {...regCreate("registrationLimit")} />
+            </FormField>
+            <FormField label="Yetkili Kayıt Limiti" id="c-corp-limit" error={errCreate.corporateLimit?.message}>
+              <Input id="c-corp-limit" type="number" min="0" placeholder="0 = Sınırsız" {...regCreate("corporateLimit")} />
+            </FormField>
           </div>
-          <div>
-            <Label htmlFor="c-limit">Kayıt Limiti</Label>
-            <Input id="c-limit" type="number" min="0" placeholder="0 = Sınırsız" error={errCreate.registrationLimit?.message} {...regCreate("registrationLimit")} />
-            <p className="text-xs text-muted-foreground mt-1">0 girilirse sınırsız öğrenci kayıt olabilir.</p>
-          </div>
+          <p className="text-xs text-muted-foreground">
+            <BadgeInfo className="h-3.5 w-3.5 inline mr-1" />
+            Kurum ID'si otomatik oluşturulur (KUR-XXXX). Hassas bilgiler yalnızca admin tarafından görülebilir.
+          </p>
           <div className="flex gap-3 pt-2">
             <Button type="button" variant="outline" className="flex-1" onClick={() => setIsCreateOpen(false)}>İptal</Button>
             <Button type="submit" className="flex-1" isLoading={createMutation.isPending}>Oluştur</Button>
@@ -255,21 +367,46 @@ export default function AdminCompanies() {
 
       {/* Düzenleme Modal */}
       <Modal isOpen={!!editingCompany} onClose={() => setEditingCompany(null)} title={`Düzenle: ${editingCompany?.name}`}>
-        <form onSubmit={handleEdit((data) => updateMutation.mutateAsync({ id: editingCompany!.id, data }))} className="space-y-5">
-          <div>
-            <Label htmlFor="e-name">Kurum Adı</Label>
-            <Input id="e-name" error={errEdit.name?.message} {...regEdit("name")} />
+        <form onSubmit={handleEdit((data) => updateMutation.mutateAsync({ id: editingCompany!.id, data }))} className="space-y-4 max-h-[70vh] overflow-y-auto pr-1">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="col-span-2">
+              <FormField label="Kurum Adı" id="e-name" error={errEdit.name?.message}>
+                <Input id="e-name" {...regEdit("name")} />
+              </FormField>
+            </div>
+            <div className="col-span-2">
+              <FormField label="Şirket Ünvanı" id="e-title" error={errEdit.companyTitle?.message}>
+                <Input id="e-title" placeholder="Örnek: ABC Holding A.Ş." {...regEdit("companyTitle")} />
+              </FormField>
+            </div>
+            <div className="col-span-2">
+              <FormField label="Adres" id="e-address" error={errEdit.address?.message}>
+                <Input id="e-address" {...regEdit("address")} />
+              </FormField>
+            </div>
+            <FormField label="Vergi Dairesi" id="e-taxoffice" error={errEdit.taxOffice?.message}>
+              <Input id="e-taxoffice" {...regEdit("taxOffice")} />
+            </FormField>
+            <FormField label="Vergi Numarası" id="e-taxno" error={errEdit.taxNumber?.message}>
+              <Input id="e-taxno" {...regEdit("taxNumber")} />
+            </FormField>
+            <div className="col-span-2">
+              <FormField label="İletişim Numarası" id="e-phone" error={errEdit.contactNumber?.message}>
+                <Input id="e-phone" {...regEdit("contactNumber")} />
+              </FormField>
+            </div>
+            <FormField label="Öğrenci Kayıt Limiti" id="e-limit" error={errEdit.registrationLimit?.message}>
+              <Input id="e-limit" type="number" min="0" {...regEdit("registrationLimit")} />
+            </FormField>
+            <FormField label="Yetkili Kayıt Limiti" id="e-corp-limit" error={errEdit.corporateLimit?.message}>
+              <Input id="e-corp-limit" type="number" min="0" {...regEdit("corporateLimit")} />
+            </FormField>
           </div>
-          <div>
-            <Label htmlFor="e-limit">Kayıt Limiti</Label>
-            <Input id="e-limit" type="number" min="0" error={errEdit.registrationLimit?.message} {...regEdit("registrationLimit")} />
-            <p className="text-xs text-muted-foreground mt-1">0 girilirse sınırsız öğrenci kayıt olabilir.</p>
-            {editingCompany && editingCompany.studentCount > 0 && (
-              <p className="text-xs text-orange-600 mt-1">
-                ⚠ Şu an {editingCompany.studentCount} öğrenci kayıtlı. Limit bu sayının altına düşürülmesi yeni kayıtları engeller.
-              </p>
-            )}
-          </div>
+          {editingCompany && editingCompany.studentCount > 0 && (
+            <p className="text-xs text-orange-600">
+              ⚠ Şu an {editingCompany.studentCount} öğrenci kayıtlı. Limit bu sayının altına düşürülmesi yeni kayıtları engeller.
+            </p>
+          )}
           <div className="flex gap-3 pt-2">
             <Button type="button" variant="outline" className="flex-1" onClick={() => setEditingCompany(null)}>İptal</Button>
             <Button type="submit" className="flex-1" isLoading={updateMutation.isPending}>Güncelle</Button>
