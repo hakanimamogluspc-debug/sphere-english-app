@@ -1,8 +1,8 @@
-# Workspace
+# Sphere English LMS
 
 ## Overview
 
-pnpm workspace monorepo using TypeScript. Each package manages its own dependencies.
+Full-stack English Learning Management System (LMS) built as a pnpm monorepo. Features role-based dashboards for admin/teacher/student, course management with A1-C2 levels, live class scheduling, quizzes, progress tracking with gamification (points, streaks, badges), certificates with QR verification, messaging, and leaderboards.
 
 ## Stack
 
@@ -12,85 +12,149 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - **TypeScript version**: 5.9
 - **API framework**: Express 5
 - **Database**: PostgreSQL + Drizzle ORM
+- **Auth**: JWT (jsonwebtoken + bcryptjs)
 - **Validation**: Zod (`zod/v4`), `drizzle-zod`
 - **API codegen**: Orval (from OpenAPI spec)
+- **Frontend**: React + Vite + shadcn/ui + TailwindCSS
+- **State management**: TanStack React Query
+- **Routing**: wouter
+- **Charts**: Recharts
+- **Animations**: Framer Motion
 - **Build**: esbuild (CJS bundle)
 
 ## Structure
 
 ```text
-artifacts-monorepo/
-├── artifacts/              # Deployable applications
-│   └── api-server/         # Express API server
-├── lib/                    # Shared libraries
-│   ├── api-spec/           # OpenAPI spec + Orval codegen config
-│   ├── api-client-react/   # Generated React Query hooks
-│   ├── api-zod/            # Generated Zod schemas from OpenAPI
-│   └── db/                 # Drizzle ORM schema + DB connection
-├── scripts/                # Utility scripts (single workspace package)
-│   └── src/                # Individual .ts scripts, run via `pnpm --filter @workspace/scripts run <script>`
-├── pnpm-workspace.yaml     # pnpm workspace (artifacts/*, lib/*, lib/integrations/*, scripts)
-├── tsconfig.base.json      # Shared TS options (composite, bundler resolution, es2022)
-├── tsconfig.json           # Root TS project references
-└── package.json            # Root package with hoisted devDeps
+workspace/
+├── artifacts/
+│   ├── api-server/          # Express API server (port 8080, proxied at /api)
+│   ├── sphere-english/      # React + Vite frontend (previewPath: /)
+│   └── mockup-sandbox/      # Component preview server
+├── lib/
+│   ├── api-spec/            # OpenAPI spec + Orval codegen config
+│   ├── api-client-react/    # Generated React Query hooks from OpenAPI
+│   ├── api-zod/             # Generated Zod schemas from OpenAPI
+│   └── db/                  # Drizzle ORM schema + DB connection
+└── scripts/                 # Utility scripts
 ```
 
-## TypeScript & Composite Projects
+## Key Files
 
-Every package extends `tsconfig.base.json` which sets `composite: true`. The root `tsconfig.json` lists all packages as project references. This means:
+| File | Purpose |
+|------|---------|
+| `lib/api-spec/openapi.yaml` | Master OpenAPI spec (40+ endpoints) |
+| `lib/db/src/schema/index.ts` | Database schema (14 tables) |
+| `artifacts/api-server/src/routes/index.ts` | All Express route handlers |
+| `artifacts/api-server/src/middlewares/auth.ts` | JWT auth middleware |
+| `artifacts/sphere-english/src/App.tsx` | Frontend router with all routes |
+| `artifacts/sphere-english/src/hooks/use-auth.tsx` | Auth context hook |
+| `artifacts/sphere-english/src/components/layout/DashboardLayout.tsx` | Role-based sidebar |
 
-- **Always typecheck from the root** — run `pnpm run typecheck` (which runs `tsc --build --emitDeclarationOnly`). This builds the full dependency graph so that cross-package imports resolve correctly. Running `tsc` inside a single package will fail if its dependencies haven't been built yet.
-- **`emitDeclarationOnly`** — we only emit `.d.ts` files during typecheck; actual JS bundling is handled by esbuild/tsx/vite...etc, not `tsc`.
-- **Project references** — when package A depends on package B, A's `tsconfig.json` must list B in its `references` array. `tsc --build` uses this to determine build order and skip up-to-date packages.
+## Database Schema (14 tables)
 
-## Root Scripts
+- `users` — auth, roles (admin/teacher/student), points, streak, level
+- `courses` — A1-C2 English courses with pricing
+- `modules` — course sections
+- `lessons` — video/document/text lessons per module
+- `enrollments` — student-course relationships
+- `lesson_progress` — per-lesson completion tracking
+- `live_classes` — scheduled live sessions (group/one-on-one)
+- `live_class_attendance` — who attended which class
+- `quizzes` — assessments with questions (multiple choice, true/false, fill-in-blank)
+- `questions` — quiz questions with options and correct answers
+- `quiz_attempts` — student quiz submissions and scores
+- `certificates` — issued certificates with QR codes
+- `messages` — student-teacher direct messaging
+- `announcements` — platform-wide or role-targeted announcements
 
-- `pnpm run build` — runs `typecheck` first, then recursively runs `build` in all packages that define it
-- `pnpm run typecheck` — runs `tsc --build --emitDeclarationOnly` using project references
+## Frontend Pages
 
-## Packages
+### Public
+- `/` — Landing page with hero, features, pricing
+- `/login` — Login with JWT, stores token in localStorage
+- `/register` — Registration form
 
-### `artifacts/api-server` (`@workspace/api-server`)
+### Student Routes
+- `/dashboard` — Stats (points, streak, courses, classes), progress chart, recent activity, level display
+- `/courses` — Course catalog with search and level filters
+- `/courses/:id` — Course detail with curriculum accordion, enroll button
+- `/live-classes` — Upcoming & past sessions, join/open meeting buttons
+- `/quizzes` — Quiz list + interactive quiz taker with multiple question types
+- `/progress` — Progress charts, skill radar, achievement badges, level XP bar
+- `/leaderboard` — Top 3 podium + full rankings table with streaks
+- `/certificates` — Certificate display with QR verification and download
+- `/messages` — Real-time-style chat with conversation list + message view
+- `/profile` — Profile edit form + stats display + security section
 
-Express 5 API server. Routes live in `src/routes/` and use `@workspace/api-zod` for request and response validation and `@workspace/db` for persistence.
+### Teacher Routes
+- `/dashboard` — Quick stats + "Create Course" / "Schedule Class" actions
+- `/teacher/courses` — Course management, create new courses
+- `/teacher/live-classes` — Live session scheduling with modal form
+- `/teacher/students` — Student user list
 
-- Entry: `src/index.ts` — reads `PORT`, starts Express
-- App setup: `src/app.ts` — mounts CORS, JSON/urlencoded parsing, routes at `/api`
-- Routes: `src/routes/index.ts` mounts sub-routers; `src/routes/health.ts` exposes `GET /health` (full path: `/api/health`)
-- Depends on: `@workspace/db`, `@workspace/api-zod`
-- `pnpm --filter @workspace/api-server run dev` — run the dev server
-- `pnpm --filter @workspace/api-server run build` — production esbuild bundle (`dist/index.cjs`)
-- Build bundles an allowlist of deps (express, cors, pg, drizzle-orm, zod, etc.) and externalizes the rest
+### Admin Routes
+- `/dashboard` — System overview (total users, courses, enrollments, certificates)
+- `/admin/users` — User management table with role badges
+- `/admin/courses` — Course management with active/inactive toggle and delete
+- `/admin/announcements` — Post announcements with priority and audience targeting
 
-### `lib/db` (`@workspace/db`)
+## API Endpoints (40+)
 
-Database layer using Drizzle ORM with PostgreSQL. Exports a Drizzle client instance and schema models.
+- `POST /api/auth/register` — Register new user
+- `POST /api/auth/login` — Login, returns JWT token
+- `GET /api/auth/me` — Get current user profile
+- `GET/POST /api/users` — List/create users (admin)
+- `PATCH/DELETE /api/users/:id` — Update/delete user
+- `GET/POST /api/courses` — List/create courses
+- `GET /api/courses/my-courses` — Current user's courses
+- `GET /api/courses/:id` — Course with modules and lessons
+- `POST /api/courses/:id/enroll` — Enroll in course
+- `POST /api/modules` — Create module
+- `POST /api/lessons` — Create lesson
+- `POST /api/lessons/:id/complete` — Mark lesson complete
+- `GET /api/live-classes` — List live classes
+- `POST /api/live-classes` — Create live class
+- `POST /api/live-classes/:id/join` — Join live class
+- `GET/POST /api/quizzes` — List/create quizzes
+- `GET /api/quizzes/:id` — Get quiz with questions
+- `POST /api/quizzes/:id/submit` — Submit quiz answers
+- `GET /api/progress/me` — Get my learning progress
+- `GET /api/leaderboard` — Get leaderboard rankings
+- `GET /api/certificates` — Get my certificates
+- `GET /api/certificates/verify/:qrCode` — Verify certificate
+- `GET/POST /api/messages` — Get/send messages
+- `GET /api/messages/conversation/:userId` — Get conversation
+- `GET/POST /api/announcements` — List/create announcements
+- `GET /api/dashboard/stats` — Student/teacher dashboard stats
+- `GET /api/admin/dashboard` — Admin overview stats
 
-- `src/index.ts` — creates a `Pool` + Drizzle instance, exports schema
-- `src/schema/index.ts` — barrel re-export of all models
-- `src/schema/<modelname>.ts` — table definitions with `drizzle-zod` insert schemas (no models definitions exist right now)
-- `drizzle.config.ts` — Drizzle Kit config (requires `DATABASE_URL`, automatically provided by Replit)
-- Exports: `.` (pool, db, schema), `./schema` (schema only)
+## Auth Flow
 
-Production migrations are handled by Replit when publishing. In development, we just use `pnpm --filter @workspace/db run push`, and we fallback to `pnpm --filter @workspace/db run push-force`.
+1. Login → server returns `{ token, user }`
+2. Token stored in `localStorage` as `sphere_token`
+3. Token injected into all API requests via `lib/fetch-interceptor.ts`
+4. JWT middleware extracts `userId` and `userRole` on protected routes
+5. `AuthProvider` in React keeps user state synchronized via `/api/auth/me`
 
-### `lib/api-spec` (`@workspace/api-spec`)
+## Demo Accounts
 
-Owns the OpenAPI 3.1 spec (`openapi.yaml`) and the Orval config (`orval.config.ts`). Running codegen produces output into two sibling packages:
+| Role    | Email                           | Password    |
+|---------|--------------------------------|-------------|
+| Admin   | admin@sphereenglish.com        | admin123    |
+| Teacher | sarah.johnson@sphereenglish.com | teacher123  |
+| Teacher | michael.brown@sphereenglish.com | teacher123  |
+| Student | alice@example.com              | student123  |
+| Student | bob@example.com                | student123  |
+| Student | ceren@example.com              | student123  |
 
-1. `lib/api-client-react/src/generated/` — React Query hooks + fetch client
-2. `lib/api-zod/src/generated/` — Zod schemas
+## Brand Colors
 
-Run codegen: `pnpm --filter @workspace/api-spec run codegen`
+- Primary (navy): HSL `220 74% 24%` (#102b6a)
+- Accent (turquoise): HSL `201 83% 49%` (#0f9ee0)
+- Sidebar background uses CSS variable `--sidebar`
 
-### `lib/api-zod` (`@workspace/api-zod`)
+## Environment Variables
 
-Generated Zod schemas from the OpenAPI spec (e.g. `HealthCheckResponse`). Used by `api-server` for response validation.
-
-### `lib/api-client-react` (`@workspace/api-client-react`)
-
-Generated React Query hooks and fetch client from the OpenAPI spec (e.g. `useHealthCheck`, `healthCheck`).
-
-### `scripts` (`@workspace/scripts`)
-
-Utility scripts package. Each script is a `.ts` file in `src/` with a corresponding npm script in `package.json`. Run scripts via `pnpm --filter @workspace/scripts run <script>`. Scripts can import any workspace package (e.g., `@workspace/db`) by adding it as a dependency in `scripts/package.json`.
+- `DATABASE_URL` — PostgreSQL connection string (set by Replit)
+- `JWT_SECRET` — JWT signing secret (fallback: `sphere-english-secret-key-2024`)
+- `PORT` — Server port (default 8080 for API)

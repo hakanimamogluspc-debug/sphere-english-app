@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Sphere English LMS"
+version = "1.0.0"
+id = "artifacts/sphere-english"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 25833
+
+[services.development]
+run = "pnpm --filter @workspace/sphere-english run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/sphere-english", "run", "build" ]
+publicDir = "artifacts/sphere-english/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "25833"
+BASE_PATH = "/"

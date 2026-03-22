@@ -1,0 +1,111 @@
+import { Router } from "express";
+import bcrypt from "bcryptjs";
+import { db, usersTable } from "@workspace/db";
+import { eq, ilike, and, or, count, sql } from "drizzle-orm";
+import { authMiddleware, requireRole, type AuthRequest } from "../middlewares/auth.js";
+
+const router = Router();
+
+// List users (admin only)
+router.get("/users", authMiddleware, requireRole("admin"), async (req: AuthRequest, res) => {
+  const { role, search, page = 1, limit = 20 } = req.query;
+  const offset = (Number(page) - 1) * Number(limit);
+
+  let conditions: any[] = [];
+  if (role && role !== "null") conditions.push(eq(usersTable.role, role as string));
+  if (search) {
+    const s = `%${search}%`;
+    conditions.push(or(ilike(usersTable.firstName, s), ilike(usersTable.lastName, s), ilike(usersTable.email, s)));
+  }
+
+  const query = conditions.length > 0 ? and(...conditions) : undefined;
+  const users = await db.select({
+    id: usersTable.id,
+    email: usersTable.email,
+    role: usersTable.role,
+    firstName: usersTable.firstName,
+    lastName: usersTable.lastName,
+    avatar: usersTable.avatar,
+    phone: usersTable.phone,
+    currentLevel: usersTable.currentLevel,
+    totalPoints: usersTable.totalPoints,
+    streak: usersTable.streak,
+    badges: usersTable.badges,
+    createdAt: usersTable.createdAt,
+  }).from(usersTable).where(query).limit(Number(limit)).offset(offset);
+
+  const [{ total }] = await db.select({ total: count() }).from(usersTable).where(query);
+
+  res.json({ users, total: Number(total), page: Number(page), limit: Number(limit) });
+});
+
+// Get user by ID
+router.get("/users/:id", authMiddleware, async (req: AuthRequest, res) => {
+  const id = parseInt(req.params.id);
+  const [user] = await db.select({
+    id: usersTable.id,
+    email: usersTable.email,
+    role: usersTable.role,
+    firstName: usersTable.firstName,
+    lastName: usersTable.lastName,
+    avatar: usersTable.avatar,
+    phone: usersTable.phone,
+    currentLevel: usersTable.currentLevel,
+    totalPoints: usersTable.totalPoints,
+    streak: usersTable.streak,
+    badges: usersTable.badges,
+    createdAt: usersTable.createdAt,
+  }).from(usersTable).where(eq(usersTable.id, id)).limit(1);
+
+  if (!user) { res.status(404).json({ error: "User not found" }); return; }
+  res.json(user);
+});
+
+// Create user (admin only)
+router.post("/users", authMiddleware, requireRole("admin"), async (req: AuthRequest, res) => {
+  const { email, password, firstName, lastName, role, phone, currentLevel } = req.body;
+  if (!email || !password || !firstName || !lastName) {
+    res.status(400).json({ error: "Required fields missing" });
+    return;
+  }
+  const hashedPassword = await bcrypt.hash(password, 10);
+  const [user] = await db.insert(usersTable).values({
+    email: email.toLowerCase(), password: hashedPassword, firstName, lastName,
+    role: role || "student", phone: phone || null, currentLevel: currentLevel || null,
+  }).returning();
+  const { password: _, ...userWithoutPassword } = user;
+  res.status(201).json(userWithoutPassword);
+});
+
+// Update user
+router.patch("/users/:id", authMiddleware, async (req: AuthRequest, res) => {
+  const id = parseInt(req.params.id);
+  // Only admin can update others; regular users can only update themselves
+  if (req.userRole !== "admin" && req.userId !== id) {
+    res.status(403).json({ error: "Forbidden" });
+    return;
+  }
+
+  const { firstName, lastName, phone, avatar, currentLevel, role } = req.body;
+  const updates: any = { updatedAt: new Date() };
+  if (firstName !== undefined) updates.firstName = firstName;
+  if (lastName !== undefined) updates.lastName = lastName;
+  if (phone !== undefined) updates.phone = phone;
+  if (avatar !== undefined) updates.avatar = avatar;
+  if (currentLevel !== undefined) updates.currentLevel = currentLevel;
+  if (role !== undefined && req.userRole === "admin") updates.role = role;
+
+  const [updated] = await db.update(usersTable).set(updates).where(eq(usersTable.id, id)).returning();
+  if (!updated) { res.status(404).json({ error: "User not found" }); return; }
+  const { password: _, ...userWithoutPassword } = updated;
+  res.json(userWithoutPassword);
+});
+
+// Delete user (admin only)
+router.delete("/users/:id", authMiddleware, requireRole("admin"), async (req: AuthRequest, res) => {
+  const id = parseInt(req.params.id);
+  await db.delete(usersTable).where(eq(usersTable.id, id));
+  res.json({ success: true, message: "User deleted" });
+});
+
+export default router;

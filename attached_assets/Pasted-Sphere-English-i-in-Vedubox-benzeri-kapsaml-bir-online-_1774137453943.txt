@@ -1,0 +1,400 @@
+Sphere English için Vedubox benzeri kapsamlı bir online İngilizce eğitim platformu oluştur.
+
+### Platform Amacı
+İngilizce öğrenen öğrenciler ile İngilizce eğitmenlerini buluşturan, canlı dersler, kayıtlı içerikler, interaktif alıştırmalar ve ilerleme takibi sunan all-in-one bir LMS platformu.
+
+---
+
+## 🎨 SPHERE ENGLISH RENK PALETİ (sphereenglish.com)
+
+### Ana Renkler (Primary Colors)
+- **Sphere Lacivert** (Logo, Başlıklar): `#102b6a`
+  - RGB: 16, 43, 106
+  - Koyu, profesyonel, kurumsal
+  - Logo, ana başlıklar, önemli metinler
+
+- **Sphere Lacivert (Alternatif)**: `#1b365d`
+  - RGB: 27, 54, 93
+  - Body metinleri, ikincil başlıklar
+
+### Vurgu Renkleri (Accent Colors)
+- **Sphere Turkuaz** (CTA Butonlar, Vurgular): `#0f9ee0`
+  - RGB: 15, 158, 224
+  - Canlı, enerjik, dikkat çekici
+  - TEKLİF AL butonu, linkler, aktif durumlar
+
+- **Sphere Turkuaz (Açık)**: `#17a6e7`
+  - RGB: 23, 166, 231
+  - Hover durumları, ikincil vurgular
+
+### Nötr Renkler (Neutral Colors)
+- **Beyaz**: `#ffffff`
+  - Ana arka plan
+
+- **Açık Mavi-Gri**: `#f9fbfc`
+  - RGB: 249, 251, 252
+  - Alternatif arka plan, section backgrounds
+
+- **Açık Mavi**: `#edf6fb`
+  - RGB: 237, 246, 251
+  - Kart arka planları, hover alanları
+
+- **Orta Mavi-Gri**: `#4d6281`
+  - RGB: 77, 98, 129
+  - İkincil metinler, açıklamalar
+
+- **Soluk Mavi-Gri**: `#8c9aae`
+  - RGB: 140, 154, 174
+  - Placeholder'lar, disabled durumlar
+
+### Durum Renkleri (State Colors)
+- **Başarı Yeşili**: `#10b981` (tamamlanan içerikler, başarı)
+- **Uyarı Turuncusu**: `#f59e0b` (hatırlatıcılar, yaklaşan dersler)
+- **Hata Kırmızısı**: `#ef4444` (hata mesajları)
+
+### Gradient Kullanımı
+- **Hero Gradient**: `linear-gradient(135deg, #102b6a 0%, #1b365d 100%)`
+- **CTA Gradient**: `linear-gradient(135deg, #0f9ee0 0%, #17a6e7 100%)`
+- **Kart Hover**: `linear-gradient(180deg, #ffffff 0%, #edf6fb 100%)`
+
+---
+
+## 1. KULLANICI ROLLERİ VE YETKİLERİ
+
+### Admin (Sistem Yöneticisi)
+- Tüm kullanıcıları yönetme (ekleme, düzenleme, silme)
+- Kurs ve seviye oluşturma (A1, A2, B1, B2, C1, C2)
+- Eğitmen atamaları
+- Sistem ayarları ve yapılandırma
+- Finansal raporları görüntüleme
+- Tüm raporlara erişim
+
+### Eğitmen (Teacher)
+- Kendi derslerini oluşturma ve yönetme
+- Canlı ders planlama (Zoom/Meet entegrasyonu)
+- Ödev ve quiz oluşturma
+- Öğrenci ilerlemesini takip etme
+- Öğrencilere geri bildirim verme
+- Sınıf içi mesajlaşma
+- Not verme ve değerlendirme
+
+### Öğrenci (Student)
+- Profil oluşturma ve seviye testi
+- Kayıtlı kurslara erişim
+- Canlı derslere katılım
+- Video içerikleri izleme
+- Quiz ve alıştırmaları çözme
+- İlerleme takibi
+- Sertifika alma
+- Eğitmenle mesajlaşma
+
+---
+
+## 2. TEMEL MODÜLLER
+
+### A. KURS YÖNETİMİ (Course Management)
+
+**Seviye Sistemi:**
+- A1 (Beginner), A2 (Elementary), B1 (Intermediate), B2 (Upper-Intermediate), C1 (Advanced), C2 (Proficiency)
+- Her seviye için modüller ve üniteler
+
+**İçerik Tipleri:**
+- 🎥 Video dersler (YouTube/Vimeo embed veya doğrudan yükleme)
+- 📄 PDF dokümanlar (grammar notes, vocabulary lists)
+- 🎧 Ses dosyaları (dinleme alıştırmaları)
+- 📝 Metin içerikler (reading passages)
+- 🖼️ Görsel materyaller (flashcards, infographics)
+- 🔗 Harici linkler
+
+**İçerik Sıralama:**
+- Sıralı ilerleme (bir içeriği tamamlamadan sonrakine geçilemez)
+- Serbest ilerleme seçeneği
+- Ön koşul sistemi
+
+### B. CANLI DERS MODÜLÜ (Live Classes)
+
+**Özellikler:**
+- Canlı ders takvimi (aylık/haftalık görünüm)
+- Zoom / Google Meet entegrasyonu (otomatik link oluşturma)
+- Ders kaydı ve tekrar izleme
+- Sınıf kapasitesi yönetimi (1-1, grup dersleri)
+- Otomatik e-posta/SMS hatırlatıcıları
+- Yoklama alma (attendance)
+
+**Sanal Sınıf Özellikleri:**
+- Ekran paylaşımı
+- Beyaz tahta (whiteboard)
+- El kaldırma özelliği
+- Sohbet/chat
+- Breakout odaları (grup çalışmaları için)
+
+### C. SINAV ve DEĞERLENDİRME (Assessment)
+
+**Soru Tipleri:**
+- Çoktan seçmeli (multiple choice)
+- Doğru/Yanlış (true/false)
+- Boşluk doldurma (fill in the blanks)
+- Eşleştirme (matching)
+- Sıralama (ordering)
+- Açık uçlu yazılı (essay/writing)
+- Sesli yanıt (speaking - ses kaydı)
+
+**Sınav Modları:**
+- Quiz (hızlı değerlendirme)
+- Test (birim sonu değerlendirmesi)
+- Final sınavı (seviye tamamlama)
+- Seviye belirleme sınavı (placement test)
+- Zamanlı sınavlar
+
+**Özellikler:**
+- Soru bankası (rastgele soru seçimi)
+- Otomatik değerlendirme (objektif sorular için)
+- Anlık sonuç görüntüleme
+- Detaylı raporlama (hangi konularda zayıf)
+
+### D. GAMIFICATION (Oyunlaştırma)
+
+**Puan Sistemi:**
+- İçerik tamamlama: 10 puan
+- Quiz başarısı: 20-50 puan (başarı oranına göre)
+- Canlı derse katılım: 15 puan
+- Ödev teslimi: 25 puan
+- Streak (ardışık gün): bonus puan
+
+**Rozetler ve Kupalar:**
+- 🏆 "İlk Ders" rozeti
+- 🔥 "7 Gün Streak" rozeti  
+- ⭐ "Mükemmel Quiz" rozeti (100% başarı)
+- 🎯 "Seviye Atlama" kupası
+- 🎓 "Kurs Tamamlama" kupası
+
+**Liderlik Tablosu:**
+- Haftalık/aylık/genel sıralama
+- Seviyeye göre liderlik tabloları
+- Arkadaşlar arası karşılaştırma
+
+### E. İLERLEME TAKİBİ (Progress Tracking)
+
+**Öğrenci Dashboard:**
+- Tamamlanan içerik yüzdesi
+- Seviye ilerleme çubuğu
+- Haftalık hedefler
+- Yaklaşan dersler
+- Son aktiviteler
+
+**Raporlar:**
+- Ders katılım raporu
+- Quiz başarı grafiği
+- Zaman içinde ilerleme
+- Güçlü/zayıf konular analizi
+
+### F. SERTİFİKA SİSTEMİ
+
+- Otomatik sertifika oluşturma
+- Özelleştirilebilir sertifika şablonları
+- Sertifika doğrulama (QR kod ile)
+- PDF olarak indirme
+- LinkedIn entegrasyonu
+
+### G. İLETİŞİM MODÜLÜ
+
+**Özellikler:**
+- Eğitmen-öğrenci mesajlaşması
+- Sınıf duyuruları
+- Forum/discussion board
+- Bildirim sistemi (email ve in-app)
+- Ödev geri bildirimleri
+
+---
+
+## 3. SAYFA YAPISI
+
+### Landing Page (Ana Sayfa)
+- Hero section (Sphere Lacivert gradient arka plan)
+- Seviye testi CTA (Sphere Turkuaz buton)
+- Kurs paketleri/pricing
+- Eğitmenlerimiz
+- Başarı hikayeleri
+- SSS
+- Footer (Sphere Lacivert)
+
+### Öğrenci Paneli
+- Dashboard (özet görünüm)
+- Kurslarım
+- Canlı Dersler (takvim)
+- Alıştırmalar/Quizler
+- İlerlemem
+- Sertifikalarım
+- Mesajlarım
+- Profil Ayarları
+
+### Eğitmen Paneli
+- Dashboard
+- Derslerim
+- Canlı Ders Planla
+- Öğrencilerim
+- Ödev/Quiz Oluştur
+- Raporlar
+- Mesajlar
+
+### Admin Paneli
+- Kullanıcı Yönetimi
+- Kurs Yönetimi
+- İçerik Yönetimi
+- Finansal Raporlar
+- Sistem Ayarları
+- Genel Raporlar
+
+---
+
+## 4. TEKNİK GEREKSİNİMLER
+
+**Frontend:**
+- React + TypeScript + Vite
+- Tailwind CSS
+- shadcn/ui komponentleri
+- React Router
+- Zustand (state management)
+
+**Backend (Replit uyumlu):**
+- Node.js + Express
+- SQLite veya PostgreSQL
+- JWT authentication
+- Multer (dosya yükleme)
+- Socket.io (real-time chat)
+
+**Entegrasyonlar:**
+- Zoom API (canlı dersler)
+- Google Calendar API
+- SendGrid/EmailJS (email)
+- Stripe/PayPal (ödeme)
+
+**Özellikler:**
+- Responsive tasarım (mobil uyumlu)
+- Çoklu dil desteği (TR/EN)
+- Dark/Light mode (varsayılan: light)
+- Offline erişim (PWA)
+
+---
+
+## 5. VERİ MODELLERİ
+
+```typescript
+// User
+interface User {
+  id: string;
+  email: string;
+  password: string;
+  role: 'admin' | 'teacher' | 'student';
+  firstName: string;
+  lastName: string;
+  avatar?: string;
+  phone?: string;
+  createdAt: Date;
+}
+
+// Student Profile
+interface StudentProfile {
+  userId: string;
+  currentLevel: 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2';
+  totalPoints: number;
+  streak: number;
+  enrolledCourses: string[];
+}
+
+// Course
+interface Course {
+  id: string;
+  title: string;
+  description: string;
+  level: string;
+  teacherId: string;
+  modules: Module[];
+  price?: number;
+  isActive: boolean;
+}
+
+// Module
+interface Module {
+  id: string;
+  courseId: string;
+  title: string;
+  order: number;
+  lessons: Lesson[];
+}
+
+// Lesson
+interface Lesson {
+  id: string;
+  moduleId: string;
+  title: string;
+  type: 'video' | 'document' | 'quiz' | 'live';
+  content: string;
+  duration: number;
+  order: number;
+}
+
+// Live Class
+interface LiveClass {
+  id: string;
+  title: string;
+  description: string;
+  teacherId: string;
+  courseId: string;
+  startTime: Date;
+  duration: number;
+  meetingLink: string;
+  maxStudents: number;
+  enrolledStudents: string[];
+  isRecorded: boolean;
+  recordingUrl?: string;
+}
+
+// Quiz
+interface Quiz {
+  id: string;
+  title: string;
+  lessonId: string;
+  questions: Question[];
+  timeLimit?: number;
+  passingScore: number;
+}
+
+// Question
+interface Question {
+  id: string;
+  type: 'multiple_choice' | 'true_false' | 'fill_blank' | 'matching';
+  question: string;
+  options?: string[];
+  correctAnswer: string | string[];
+  points: number;
+}
+
+// Progress
+interface Progress {
+  userId: string;
+  lessonId: string;
+  completed: boolean;
+  completedAt?: Date;
+  score?: number;
+}
+
+// Certificate
+interface Certificate {
+  id: string;
+  userId: string;
+  courseId: string;
+  issuedAt: Date;
+  template: string;
+  verificationCode: string;
+}
+
+// Message
+interface Message {
+  id: string;
+  senderId: string;
+  receiverId: string;
+  content: string;
+  sentAt: Date;
+  isRead: boolean;
+}

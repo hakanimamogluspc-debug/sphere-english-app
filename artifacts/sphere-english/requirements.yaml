@@ -1,0 +1,23 @@
+packages:
+  "framer-motion": "For fluid page transitions, beautiful micro-interactions, and modal animations"
+  "recharts": "For student progress charts and admin analytics visualization"
+  "date-fns": "For elegant date and time formatting on live classes and announcements"
+  "react-hook-form": "For robust and performant form state management"
+  "@hookform/resolvers": "For integrating Zod validation with react-hook-form"
+  "clsx": "For conditional tailwind class merging"
+  "tailwind-merge": "For conflict-free tailwind utility application"
+
+images:
+  - path: "artifacts/sphere-english/public/images/hero-bg.png"
+    description: "Elegant deep navy blue abstract background with subtle glowing turquoise geometric light leaks, representing modern digital education, 8k resolution, clean minimal tech aesthetic"
+    aspect_ratio: "16:9"
+  - path: "artifacts/sphere-english/public/images/auth-bg.png"
+    description: "Beautiful bright modern classroom environment with depth of field, warm natural lighting, subtle floating abstract 3D UI elements representing learning"
+    aspect_ratio: "9:16"
+  - path: "artifacts/sphere-english/public/images/course-placeholder.png"
+    description: "Abstract 3D composition with colorful fluid shapes, books, and language learning symbols against a clean light background"
+    aspect_ratio: "16:9"
+
+notes:
+  - JWT auth token is stored in localStorage as 'sphere_token' and injected via a global window.fetch interceptor to work seamlessly with Orval generated hooks.
+  - UI components are consolidated to reduce import complexity while maintaining a premium aesthetic.
