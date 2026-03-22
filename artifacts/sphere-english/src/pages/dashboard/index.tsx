@@ -6,13 +6,14 @@ import { Trophy, Flame, BookOpen, Video, Users, CheckCircle, TrendingUp, DollarS
 import { Link } from "wouter";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useEffect, useState } from "react";
+import { API } from "@/lib/api-url";
 
 function useAnnouncements() {
   const [announcements, setAnnouncements] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
     const token = localStorage.getItem("sphere_token");
-    fetch("http://localhost:8080/api/announcements", {
+    fetch(`${API}/announcements`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then(r => r.json())

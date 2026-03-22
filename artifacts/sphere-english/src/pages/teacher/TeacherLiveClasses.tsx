@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { abbrevName } from "@/lib/utils";
 
-const API = "http://localhost:8080/api";
+import { API } from "@/lib/api-url";
 function authHeaders() {
   return { Authorization: `Bearer ${localStorage.getItem("sphere_token")}`, "Content-Type": "application/json" };
 }

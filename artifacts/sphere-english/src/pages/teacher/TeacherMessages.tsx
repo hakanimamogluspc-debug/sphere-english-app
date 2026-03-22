@@ -6,7 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { abbrevName } from "@/lib/utils";
 
-const API = "http://localhost:8080/api";
+import { API } from "@/lib/api-url";
 
 type Student = {
   userId: number;

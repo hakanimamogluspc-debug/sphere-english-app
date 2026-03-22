@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 
-const API = "http://localhost:8080/api";
+import { API } from "@/lib/api-url";
 
 function authHeaders() {
   return { Authorization: `Bearer ${localStorage.getItem("sphere_token")}`, "Content-Type": "application/json" };

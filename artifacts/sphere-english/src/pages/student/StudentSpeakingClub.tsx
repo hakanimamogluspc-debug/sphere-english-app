@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/core";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 
-const API = "http://localhost:8080/api";
+import { API } from "@/lib/api-url";
 
 type Club = {
   id: number;
