@@ -40,8 +40,12 @@ const STATUS_COLORS: Record<string, string> = {
   cancelled: "bg-red-100 text-red-600",
 };
 
+function authHeaders() {
+  return { Authorization: `Bearer ${localStorage.getItem("sphere_token")}` };
+}
+
 async function apiFetch(url: string) {
-  const res = await fetch(url);
+  const res = await fetch(url, { headers: authHeaders() });
   if (!res.ok) throw new Error("Hata");
   return res.json();
 }

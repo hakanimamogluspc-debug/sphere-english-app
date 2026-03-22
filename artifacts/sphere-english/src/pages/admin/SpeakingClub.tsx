@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, Button, Input, Label, Modal, Badge } from "@/components/ui/core";
 import { useToast } from "@/hooks/use-toast";
-import { Mic, Plus, Edit2, Trash2, CalendarDays, Clock, Users, Link as LinkIcon, BookOpen } from "lucide-react";
+import { Mic, Plus, Edit2, Trash2, CalendarDays, Clock, Users, Link as LinkIcon, BookOpen, UserCheck, List } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -23,6 +23,14 @@ type ClubForm = z.infer<typeof clubSchema>;
 
 interface Teacher { id: number; firstName: string; lastName: string; }
 
+interface Participant {
+  studentId: number;
+  firstName: string | null;
+  lastName: string | null;
+  email: string | null;
+  joinedAt: string;
+}
+
 interface SpeakingClub {
   id: number;
   title: string;
@@ -33,6 +41,7 @@ interface SpeakingClub {
   scheduledAt: string;
   durationMinutes: number;
   maxParticipants: number;
+  participantCount: number;
   level: string;
   status: string;
   meetingLink: string | null;
@@ -63,8 +72,15 @@ const STATUS_COLORS: Record<string, string> = {
   cancelled: "destructive",
 };
 
+function authHeaders(): Record<string, string> {
+  return { Authorization: `Bearer ${localStorage.getItem("sphere_token")}` };
+}
+
 async function apiFetch(url: string, options?: RequestInit) {
-  const res = await fetch(url, options);
+  const res = await fetch(url, {
+    ...options,
+    headers: { ...authHeaders(), ...(options?.headers as Record<string, string> || {}) },
+  });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: "Bir hata oluştu" }));
     throw new Error(err.error || "Bir hata oluştu");
@@ -83,6 +99,13 @@ export default function AdminSpeakingClub() {
   const { toast } = useToast();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingClub, setEditingClub] = useState<SpeakingClub | null>(null);
+  const [participantClub, setParticipantClub] = useState<SpeakingClub | null>(null);
+
+  const { data: participants = [], isLoading: participantsLoading } = useQuery<Participant[]>({
+    queryKey: ["/api/admin/speaking-clubs", participantClub?.id, "participants"],
+    queryFn: () => apiFetch(`/api/admin/speaking-clubs/${participantClub!.id}/participants`),
+    enabled: !!participantClub,
+  });
 
   const { data: clubs = [], isLoading } = useQuery<SpeakingClub[]>({
     queryKey: ["/api/admin/speaking-clubs"],
@@ -251,9 +274,11 @@ export default function AdminSpeakingClub() {
               <h3 className="text-lg font-semibold mb-3">Yaklaşan Etkinlikler</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                 {upcoming.map((club, i) => (
-                  <ClubCard key={club.id} club={club} i={i} onEdit={openEdit} onDelete={(id) => {
-                    if (confirm("Bu etkinliği silmek istediğinize emin misiniz?")) deleteMutation.mutate(id);
-                  }} onStatusChange={(id, status) => updateMutation.mutate({ id, data: { status } as any })} />
+                  <ClubCard key={club.id} club={club} i={i} onEdit={openEdit}
+                    onDelete={(id) => { if (confirm("Bu etkinliği silmek istediğinize emin misiniz?")) deleteMutation.mutate(id); }}
+                    onStatusChange={(id, status) => updateMutation.mutate({ id, data: { status } as any })}
+                    onViewParticipants={setParticipantClub}
+                  />
                 ))}
               </div>
             </div>
@@ -263,9 +288,11 @@ export default function AdminSpeakingClub() {
               <h3 className="text-lg font-semibold mb-3 text-muted-foreground">Geçmiş Etkinlikler</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                 {past.map((club, i) => (
-                  <ClubCard key={club.id} club={club} i={i} onEdit={openEdit} onDelete={(id) => {
-                    if (confirm("Bu etkinliği silmek istediğinize emin misiniz?")) deleteMutation.mutate(id);
-                  }} onStatusChange={(id, status) => updateMutation.mutate({ id, data: { status } as any })} />
+                  <ClubCard key={club.id} club={club} i={i} onEdit={openEdit}
+                    onDelete={(id) => { if (confirm("Bu etkinliği silmek istediğinize emin misiniz?")) deleteMutation.mutate(id); }}
+                    onStatusChange={(id, status) => updateMutation.mutate({ id, data: { status } as any })}
+                    onViewParticipants={setParticipantClub}
+                  />
                 ))}
               </div>
             </div>
@@ -294,18 +321,97 @@ export default function AdminSpeakingClub() {
           </div>
         </form>
       </Modal>
+
+      {/* Katılımcı Listesi Modal */}
+      <Modal
+        isOpen={!!participantClub}
+        onClose={() => setParticipantClub(null)}
+        title={`Katılımcılar: ${participantClub?.title}`}
+      >
+        {participantClub && (
+          <div className="space-y-4">
+            {/* Özet */}
+            <div className="flex items-center gap-4 py-3 px-4 bg-secondary/40 rounded-xl">
+              <div className="flex items-center gap-2 text-sm">
+                <Users className="h-4 w-4 text-primary" />
+                <span className="font-semibold text-foreground">
+                  {participantClub.participantCount} / {participantClub.maxParticipants}
+                </span>
+                <span className="text-muted-foreground">kişi</span>
+              </div>
+              <div className="flex-1 bg-border rounded-full h-2 overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all ${
+                    (participantClub.participantCount / participantClub.maxParticipants) >= 0.8 ? "bg-red-400" :
+                    (participantClub.participantCount / participantClub.maxParticipants) >= 0.5 ? "bg-yellow-400" : "bg-green-500"
+                  }`}
+                  style={{ width: `${Math.min(100, (participantClub.participantCount / participantClub.maxParticipants) * 100)}%` }}
+                />
+              </div>
+              <span className="text-xs text-muted-foreground">
+                {Math.round((participantClub.participantCount / participantClub.maxParticipants) * 100)}% dolu
+              </span>
+            </div>
+
+            {participantsLoading ? (
+              <div className="flex items-center justify-center py-10">
+                <div className="animate-spin h-7 w-7 border-4 border-primary border-t-transparent rounded-full" />
+              </div>
+            ) : participants.length === 0 ? (
+              <div className="text-center py-10 text-muted-foreground">
+                <Users className="h-10 w-10 mx-auto mb-2 opacity-20" />
+                <p className="text-sm font-medium">Henüz kayıtlı katılımcı yok</p>
+                <p className="text-xs mt-1">Öğrenciler kaydoldukça burada görünecek.</p>
+              </div>
+            ) : (
+              <div className="space-y-2 max-h-80 overflow-y-auto">
+                {participants.map((p, i) => (
+                  <motion.div
+                    key={p.studentId}
+                    initial={{ opacity: 0, x: -8 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.04 }}
+                    className="flex items-center gap-3 py-2.5 px-3 rounded-xl bg-secondary/40"
+                  >
+                    <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary shrink-0">
+                      {p.firstName?.[0] || "?"}{p.lastName?.[0] || ""}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium">{p.firstName} {p.lastName}</p>
+                      <p className="text-xs text-muted-foreground truncate">{p.email}</p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <div className="flex items-center gap-1 text-xs text-green-600">
+                        <UserCheck className="h-3.5 w-3.5" />
+                        <span>Kayıtlı</span>
+                      </div>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">
+                        {new Date(p.joinedAt).toLocaleDateString("tr-TR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                      </p>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }
 
-function ClubCard({ club, i, onEdit, onDelete, onStatusChange }: {
+function ClubCard({ club, i, onEdit, onDelete, onStatusChange, onViewParticipants }: {
   club: SpeakingClub;
   i: number;
   onEdit: (c: SpeakingClub) => void;
   onDelete: (id: number) => void;
   onStatusChange: (id: number, status: string) => void;
+  onViewParticipants: (c: SpeakingClub) => void;
 }) {
   const date = new Date(club.scheduledAt);
+  const fillPct = club.maxParticipants > 0 ? Math.round((club.participantCount / club.maxParticipants) * 100) : 0;
+  const isFull = club.participantCount >= club.maxParticipants;
+
   return (
     <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
       <Card className="p-5 border-2 border-border hover:border-primary/30 transition-colors">
@@ -340,10 +446,6 @@ function ClubCard({ club, i, onEdit, onDelete, onStatusChange }: {
             <Clock className="h-3.5 w-3.5 shrink-0" />
             <span>{date.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })} — {club.durationMinutes} dk</span>
           </div>
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Users className="h-3.5 w-3.5 shrink-0" />
-            <span>Maks. {club.maxParticipants} kişi</span>
-          </div>
           {club.teacher && (
             <div className="flex items-center gap-2 text-muted-foreground">
               <BookOpen className="h-3.5 w-3.5 shrink-0" />
@@ -360,19 +462,50 @@ function ClubCard({ club, i, onEdit, onDelete, onStatusChange }: {
           )}
         </div>
 
+        {/* Kontenjan doluluk çubuğu */}
+        <div className="mt-3 space-y-1">
+          <div className="flex items-center justify-between">
+            <button
+              onClick={() => onViewParticipants(club)}
+              className="flex items-center gap-1.5 text-xs hover:text-primary transition-colors"
+            >
+              <Users className="h-3.5 w-3.5" />
+              <span className={isFull ? "text-red-500 font-semibold" : "text-muted-foreground"}>
+                {club.participantCount} / {club.maxParticipants} kişi
+              </span>
+              {isFull && <span className="text-red-500 font-semibold">— Kontenjan Doldu</span>}
+            </button>
+            <span className="text-xs text-muted-foreground">{fillPct}%</span>
+          </div>
+          <div className="h-1.5 rounded-full bg-secondary overflow-hidden">
+            <div
+              className={`h-full rounded-full transition-all ${fillPct >= 80 ? "bg-red-400" : fillPct >= 50 ? "bg-yellow-400" : "bg-green-500"}`}
+              style={{ width: `${Math.min(fillPct, 100)}%` }}
+            />
+          </div>
+        </div>
+
         <div className="flex items-center justify-between mt-3 pt-3 border-t border-border">
           <div className="flex gap-2">
             <Badge variant="outline" className="text-xs">{club.level === "all" ? "Tüm Seviyeler" : club.level}</Badge>
             <Badge variant={STATUS_COLORS[club.status] as any} className="text-xs">{STATUS_LABELS[club.status] || club.status}</Badge>
           </div>
-          {club.status === "upcoming" && (
+          <div className="flex items-center gap-3">
             <button
-              onClick={() => onStatusChange(club.id, "completed")}
-              className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+              onClick={() => onViewParticipants(club)}
+              className="flex items-center gap-1 text-xs text-primary hover:underline transition-colors"
             >
-              Tamamlandı işaretle
+              <List className="h-3.5 w-3.5" /> Katılımcılar
             </button>
-          )}
+            {club.status === "upcoming" && (
+              <button
+                onClick={() => onStatusChange(club.id, "completed")}
+                className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Tamamlandı
+              </button>
+            )}
+          </div>
         </div>
       </Card>
     </motion.div>

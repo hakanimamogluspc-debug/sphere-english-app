@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { db, speakingClubsTable, usersTable } from "@workspace/db";
-import { eq, desc } from "drizzle-orm";
+import { db, speakingClubsTable, speakingClubParticipantsTable, usersTable } from "@workspace/db";
+import { eq, desc, count } from "drizzle-orm";
 import { authMiddleware, requireRole, type AuthRequest } from "../middlewares/auth.js";
 
 const router = Router();
@@ -23,11 +23,33 @@ router.get("/admin/speaking-clubs", authMiddleware, requireRole("admin"), async 
           .limit(1);
         teacher = t || null;
       }
-      return { ...c, teacher };
+      const [{ pc }] = await db
+        .select({ pc: count() })
+        .from(speakingClubParticipantsTable)
+        .where(eq(speakingClubParticipantsTable.clubId, c.id));
+      return { ...c, teacher, participantCount: Number(pc) };
     })
   );
 
   res.json(result);
+});
+
+// GET /admin/speaking-clubs/:id/participants
+router.get("/admin/speaking-clubs/:id/participants", authMiddleware, requireRole("admin"), async (req, res) => {
+  const id = parseInt(req.params.id);
+  const participants = await db
+    .select({
+      studentId: speakingClubParticipantsTable.studentId,
+      joinedAt: speakingClubParticipantsTable.joinedAt,
+      firstName: usersTable.firstName,
+      lastName: usersTable.lastName,
+      email: usersTable.email,
+    })
+    .from(speakingClubParticipantsTable)
+    .leftJoin(usersTable, eq(speakingClubParticipantsTable.studentId, usersTable.id))
+    .where(eq(speakingClubParticipantsTable.clubId, id))
+    .orderBy(speakingClubParticipantsTable.joinedAt);
+  res.json(participants);
 });
 
 // POST /admin/speaking-clubs
