@@ -3,9 +3,9 @@ import {
   db, usersTable, groupsTable, groupMembersTable,
   quizzesTable, questionsTable, quizAttemptsTable,
   speakingClubsTable, speakingClubParticipantsTable,
-  messagesTable,
+  messagesTable, companiesTable,
 } from "@workspace/db";
-import { eq, and, inArray, count, desc, sql } from "drizzle-orm";
+import { eq, and, inArray, count, desc, sql, or } from "drizzle-orm";
 import { authMiddleware, requireRole, type AuthRequest } from "../middlewares/auth.js";
 
 const router = Router();
@@ -31,7 +31,7 @@ router.get("/teacher/groups", authMiddleware, requireRole("teacher", "admin"), a
   res.json(result);
 });
 
-// GET /teacher/students — kendi gruplarındaki öğrenciler
+// GET /teacher/students — kendi gruplarındaki öğrenciler (level + company dahil)
 router.get("/teacher/students", authMiddleware, requireRole("teacher", "admin"), async (req: AuthRequest, res) => {
   const teacherId = req.userId!;
   const groupIds = await teacherGroupIds(teacherId);
@@ -53,12 +53,26 @@ router.get("/teacher/students", authMiddleware, requireRole("teacher", "admin"),
     email: usersTable.email,
     totalPoints: usersTable.totalPoints,
     streak: usersTable.streak,
-    avatarUrl: usersTable.avatarUrl,
+    currentLevel: usersTable.currentLevel,
+    companyId: usersTable.companyId,
+    avatar: usersTable.avatar,
   }).from(usersTable).where(inArray(usersTable.id, studentIds));
+
+  // Kurumları toplu çek
+  const companyIds = [...new Set(students.map(s => s.companyId).filter(Boolean))] as number[];
+  const companies = companyIds.length > 0
+    ? await db.select({ id: companiesTable.id, name: companiesTable.name })
+        .from(companiesTable).where(inArray(companiesTable.id, companyIds))
+    : [];
 
   const result = students.map((s) => {
     const mem = members.filter((m) => m.studentId === s.id);
-    return { ...s, groups: mem.map((m) => ({ groupId: m.groupId, joinedAt: m.joinedAt })) };
+    const company = companies.find(c => c.id === s.companyId);
+    return {
+      ...s,
+      companyName: company?.name ?? null,
+      groups: mem.map((m) => ({ groupId: m.groupId, joinedAt: m.joinedAt })),
+    };
   });
   res.json(result);
 });
@@ -377,6 +391,127 @@ router.post("/teacher/groups/:groupId/announce", authMiddleware, requireRole("te
     db.insert(messagesTable).values({ senderId: teacherId, receiverId: m.studentId, content })
   ));
   res.json({ sent: members.length });
+});
+
+// ─── Öğretmen Mesajlaşma (Sadece kendi öğrencileri) ─────────────────────────
+
+// GET /teacher/messages — öğretmenin kendi öğrencileriyle konuşmaları
+router.get("/teacher/messages", authMiddleware, requireRole("teacher", "admin"), async (req: AuthRequest, res) => {
+  const teacherId = req.userId!;
+  const groupIds = await teacherGroupIds(teacherId);
+  if (groupIds.length === 0) { res.json({ conversations: [] }); return; }
+
+  const members = await db.select({ studentId: groupMembersTable.studentId })
+    .from(groupMembersTable).where(inArray(groupMembersTable.groupId, groupIds));
+  const studentIds = [...new Set(members.map(m => m.studentId))];
+  if (studentIds.length === 0) { res.json({ conversations: [] }); return; }
+
+  const conversations = await Promise.all(studentIds.map(async (studentId) => {
+    const [student] = await db.select({
+      id: usersTable.id, firstName: usersTable.firstName, lastName: usersTable.lastName,
+      email: usersTable.email, currentLevel: usersTable.currentLevel,
+      companyId: usersTable.companyId, avatar: usersTable.avatar,
+    }).from(usersTable).where(eq(usersTable.id, studentId)).limit(1);
+    if (!student) return null;
+
+    const msgs = await db.select().from(messagesTable).where(
+      or(
+        and(eq(messagesTable.senderId, teacherId), eq(messagesTable.receiverId, studentId)),
+        and(eq(messagesTable.senderId, studentId), eq(messagesTable.receiverId, teacherId))
+      )
+    ).orderBy(desc(messagesTable.sentAt)).limit(1);
+
+    const lastMsg = msgs[0];
+    const unreadCount = await db.select({ c: count() }).from(messagesTable).where(
+      and(eq(messagesTable.senderId, studentId), eq(messagesTable.receiverId, teacherId), eq(messagesTable.isRead, false))
+    );
+
+    return {
+      userId: studentId,
+      firstName: student.firstName,
+      lastName: student.lastName,
+      email: student.email,
+      currentLevel: student.currentLevel,
+      companyId: student.companyId,
+      avatar: student.avatar,
+      lastMessage: lastMsg?.content ?? null,
+      lastMessageAt: lastMsg?.sentAt?.toISOString() ?? null,
+      unreadCount: Number(unreadCount[0]?.c ?? 0),
+    };
+  }));
+
+  res.json({ conversations: conversations.filter(Boolean) });
+});
+
+// GET /teacher/messages/:studentId — belirli bir öğrenciyle mesaj geçmişi
+router.get("/teacher/messages/:studentId", authMiddleware, requireRole("teacher", "admin"), async (req: AuthRequest, res) => {
+  const teacherId = req.userId!;
+  const studentId = parseInt(req.params.studentId);
+
+  const groupIds = await teacherGroupIds(teacherId);
+  if (groupIds.length === 0) { res.status(403).json({ error: "Bu öğrenciye mesaj gönderme yetkiniz yok" }); return; }
+
+  const [membership] = await db.select().from(groupMembersTable).where(
+    and(inArray(groupMembersTable.groupId, groupIds), eq(groupMembersTable.studentId, studentId))
+  ).limit(1);
+  if (!membership) { res.status(403).json({ error: "Bu öğrenci sizin gruplarınızda değil" }); return; }
+
+  const messages = await db.select().from(messagesTable).where(
+    or(
+      and(eq(messagesTable.senderId, teacherId), eq(messagesTable.receiverId, studentId)),
+      and(eq(messagesTable.senderId, studentId), eq(messagesTable.receiverId, teacherId))
+    )
+  ).orderBy(messagesTable.sentAt);
+
+  await db.update(messagesTable)
+    .set({ isRead: true })
+    .where(and(eq(messagesTable.senderId, studentId), eq(messagesTable.receiverId, teacherId)));
+
+  res.json({ messages: messages.map(m => ({ ...m, sentAt: m.sentAt.toISOString() })) });
+});
+
+// POST /teacher/messages/bulk — seçili öğrencilere toplu mesaj
+router.post("/teacher/messages/bulk", authMiddleware, requireRole("teacher", "admin"), async (req: AuthRequest, res) => {
+  const teacherId = req.userId!;
+  const { studentIds, content } = req.body as { studentIds: number[]; content: string };
+
+  if (!content?.trim()) { res.status(400).json({ error: "Mesaj içeriği boş olamaz" }); return; }
+  if (!Array.isArray(studentIds) || studentIds.length === 0) { res.status(400).json({ error: "En az bir öğrenci seçmelisiniz" }); return; }
+
+  const groupIds = await teacherGroupIds(teacherId);
+  if (groupIds.length === 0) { res.status(403).json({ error: "Atanmış grubunuz yok" }); return; }
+
+  const memberships = await db.select({ studentId: groupMembersTable.studentId })
+    .from(groupMembersTable).where(
+      and(inArray(groupMembersTable.groupId, groupIds), inArray(groupMembersTable.studentId, studentIds))
+    );
+  const validIds = memberships.map(m => m.studentId);
+  const invalid = studentIds.filter(id => !validIds.includes(id));
+  if (invalid.length > 0) { res.status(403).json({ error: "Bazı öğrenciler sizin gruplarınızda değil" }); return; }
+
+  await Promise.all(validIds.map(receiverId =>
+    db.insert(messagesTable).values({ senderId: teacherId, receiverId, content: content.trim() })
+  ));
+
+  res.json({ sent: validIds.length });
+});
+
+// POST /teacher/messages/:studentId — tek öğrenciye mesaj gönder
+router.post("/teacher/messages/:studentId", authMiddleware, requireRole("teacher", "admin"), async (req: AuthRequest, res) => {
+  const teacherId = req.userId!;
+  const studentId = parseInt(req.params.studentId);
+  const { content } = req.body;
+
+  if (!content?.trim()) { res.status(400).json({ error: "Mesaj içeriği boş olamaz" }); return; }
+
+  const groupIds = await teacherGroupIds(teacherId);
+  const [membership] = await db.select().from(groupMembersTable).where(
+    and(inArray(groupMembersTable.groupId, groupIds), eq(groupMembersTable.studentId, studentId))
+  ).limit(1);
+  if (!membership) { res.status(403).json({ error: "Bu öğrenci sizin gruplarınızda değil" }); return; }
+
+  const [msg] = await db.insert(messagesTable).values({ senderId: teacherId, receiverId: studentId, content: content.trim() }).returning();
+  res.status(201).json({ ...msg, sentAt: msg.sentAt.toISOString() });
 });
 
 export default router;

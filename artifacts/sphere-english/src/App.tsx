@@ -28,6 +28,7 @@ import TeacherStudents from "./pages/teacher/TeacherStudents";
 import TeacherProgress from "./pages/teacher/TeacherProgress";
 import TeacherQuizzes from "./pages/teacher/TeacherQuizzes";
 import TeacherSpeakingClub from "./pages/teacher/TeacherSpeakingClub";
+import TeacherMessages from "./pages/teacher/TeacherMessages";
 import AdminCompanies from "./pages/admin/Companies";
 import AdminGroups from "./pages/admin/Groups";
 import AdminSpeakingClub from "./pages/admin/SpeakingClub";
@@ -108,6 +109,7 @@ function Router() {
       <Route path="/teacher/progress"><LayoutWrapper component={TeacherProgress} allowedRoles={['teacher', 'admin']} /></Route>
       <Route path="/teacher/quizzes"><LayoutWrapper component={TeacherQuizzes} allowedRoles={['teacher', 'admin']} /></Route>
       <Route path="/teacher/speaking-club"><LayoutWrapper component={TeacherSpeakingClub} allowedRoles={['teacher', 'admin']} /></Route>
+      <Route path="/teacher/messages"><LayoutWrapper component={TeacherMessages} allowedRoles={['teacher', 'admin']} /></Route>
 
       {/* Admin Routes */}
       <Route path="/admin/companies"><LayoutWrapper component={AdminCompanies} allowedRoles={['admin']} /></Route>

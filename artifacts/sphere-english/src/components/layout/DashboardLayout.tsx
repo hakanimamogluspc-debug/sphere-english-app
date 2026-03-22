@@ -32,7 +32,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       { name: 'Öğrenci İlerlemesi', href: '/teacher/progress', icon: LineChart },
       { name: 'Quiz Yönetimi', href: '/teacher/quizzes', icon: FileQuestion },
       { name: 'Speaking Club', href: '/teacher/speaking-club', icon: Mic },
-      { name: 'Mesajlar', href: '/messages', icon: MessageSquare },
+      { name: 'Mesajlar', href: '/teacher/messages', icon: MessageSquare },
     ],
     admin: [
       { name: 'Genel Bakış', href: '/dashboard', icon: LayoutDashboard },
