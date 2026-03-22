@@ -5,3 +5,5 @@ export * from "./live-classes";
 export * from "./quizzes";
 export * from "./certificates";
 export * from "./messages";
+export * from "./groups";
+export * from "./speaking-clubs";

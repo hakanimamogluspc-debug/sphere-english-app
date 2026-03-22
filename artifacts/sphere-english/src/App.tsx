@@ -25,6 +25,8 @@ import Messages from "./pages/messages/Messages";
 import Profile from "./pages/profile/Profile";
 import TeacherCourses from "./pages/teacher/TeacherCourses";
 import AdminCompanies from "./pages/admin/Companies";
+import AdminGroups from "./pages/admin/Groups";
+import AdminSpeakingClub from "./pages/admin/SpeakingClub";
 import CorporateDashboard from "./pages/corporate/CorporateDashboard";
 import CorporateStudents from "./pages/corporate/CorporateStudents";
 import CorporateReports from "./pages/corporate/CorporateReports";
@@ -104,7 +106,9 @@ function Router() {
       {/* Admin Routes */}
       <Route path="/admin/companies"><LayoutWrapper component={AdminCompanies} allowedRoles={['admin']} /></Route>
       <Route path="/admin/users"><LayoutWrapper component={AdminUsers} allowedRoles={['admin']} /></Route>
+      <Route path="/admin/groups"><LayoutWrapper component={AdminGroups} allowedRoles={['admin']} /></Route>
       <Route path="/admin/courses"><LayoutWrapper component={AdminCourses} allowedRoles={['admin']} /></Route>
+      <Route path="/admin/speaking-club"><LayoutWrapper component={AdminSpeakingClub} allowedRoles={['admin']} /></Route>
       <Route path="/admin/announcements"><LayoutWrapper component={Announcements} allowedRoles={['admin']} /></Route>
       <Route path="/admin/reports"><LayoutWrapper component={ProgressPage} allowedRoles={['admin']} /></Route>
 
