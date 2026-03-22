@@ -2,6 +2,7 @@ import { Router } from "express";
 import { db, liveClassesTable, liveClassAttendanceTable, usersTable, coursesTable } from "@workspace/db";
 import { eq, and, gte, count } from "drizzle-orm";
 import { authMiddleware, requireRole, type AuthRequest } from "../middlewares/auth.js";
+import { createZoomMeeting, deleteZoomMeeting, zoomConfigured } from "../services/zoom.js";
 
 const router = Router();
 
@@ -19,10 +20,12 @@ async function enrichLiveClass(lc: any, userId?: number) {
   }
 
   let isEnrolled = false;
+  let attendanceRecord: any = null;
   if (userId) {
     const [att] = await db.select().from(liveClassAttendanceTable)
       .where(and(eq(liveClassAttendanceTable.liveClassId, lc.id), eq(liveClassAttendanceTable.studentId, userId))).limit(1);
     isEnrolled = !!att;
+    attendanceRecord = att || null;
   }
 
   return {
@@ -33,6 +36,12 @@ async function enrichLiveClass(lc: any, userId?: number) {
     courseName,
     enrolledCount: Number(ec),
     isEnrolled,
+    attendanceRecord: attendanceRecord ? {
+      joinedAt: attendanceRecord.joinedAt?.toISOString() || null,
+      leftAt: attendanceRecord.leftAt?.toISOString() || null,
+      durationMinutes: attendanceRecord.durationMinutes || null,
+    } : null,
+    zoomEnabled: zoomConfigured(),
   };
 }
 
@@ -57,14 +66,37 @@ router.get("/live-classes/:id", authMiddleware, async (req: AuthRequest, res) =>
 });
 
 router.post("/live-classes", authMiddleware, requireRole("admin", "teacher"), async (req: AuthRequest, res) => {
-  const { title, description, courseId, startTime, duration, meetingLink, maxStudents, isRecorded, type } = req.body;
-  if (!title || !startTime || !duration || !meetingLink || !maxStudents) {
+  const { title, description, courseId, startTime, duration, meetingLink, maxStudents, type } = req.body;
+  if (!title || !startTime || !duration || !maxStudents) {
     res.status(400).json({ error: "Required fields missing" }); return;
   }
+
+  let finalMeetingLink = meetingLink || "";
+  let zoomMeetingId: string | null = null;
+
+  if (zoomConfigured()) {
+    try {
+      const meeting = await createZoomMeeting(title, new Date(startTime), parseInt(duration));
+      finalMeetingLink = meeting.joinUrl;
+      zoomMeetingId = meeting.id;
+    } catch (err: any) {
+      res.status(502).json({ error: `Zoom toplantısı oluşturulamadı: ${err.message}` }); return;
+    }
+  } else if (!meetingLink) {
+    res.status(400).json({ error: "Zoom entegrasyonu aktif değil. Toplantı linki giriniz." }); return;
+  }
+
   const [lc] = await db.insert(liveClassesTable).values({
-    title, description: description || null, teacherId: req.userId!,
-    courseId: courseId || null, startTime: new Date(startTime),
-    duration, meetingLink, maxStudents, isRecorded: isRecorded || false,
+    title,
+    description: description || null,
+    teacherId: req.userId!,
+    courseId: courseId || null,
+    startTime: new Date(startTime),
+    duration: parseInt(duration),
+    meetingLink: finalMeetingLink,
+    zoomMeetingId,
+    maxStudents: parseInt(maxStudents),
+    isRecorded: false,
     type: type || "group",
   }).returning();
   res.status(201).json(await enrichLiveClass(lc, req.userId));
@@ -72,16 +104,14 @@ router.post("/live-classes", authMiddleware, requireRole("admin", "teacher"), as
 
 router.patch("/live-classes/:id", authMiddleware, requireRole("admin", "teacher"), async (req: AuthRequest, res) => {
   const id = parseInt(req.params.id);
-  const { title, description, startTime, duration, meetingLink, maxStudents, isRecorded, recordingUrl } = req.body;
+  const { title, description, startTime, duration, meetingLink, maxStudents } = req.body;
   const updates: any = {};
   if (title !== undefined) updates.title = title;
   if (description !== undefined) updates.description = description;
   if (startTime !== undefined) updates.startTime = new Date(startTime);
-  if (duration !== undefined) updates.duration = duration;
+  if (duration !== undefined) updates.duration = parseInt(duration);
   if (meetingLink !== undefined) updates.meetingLink = meetingLink;
-  if (maxStudents !== undefined) updates.maxStudents = maxStudents;
-  if (isRecorded !== undefined) updates.isRecorded = isRecorded;
-  if (recordingUrl !== undefined) updates.recordingUrl = recordingUrl;
+  if (maxStudents !== undefined) updates.maxStudents = parseInt(maxStudents);
 
   const [updated] = await db.update(liveClassesTable).set(updates).where(eq(liveClassesTable.id, id)).returning();
   if (!updated) { res.status(404).json({ error: "Live class not found" }); return; }
@@ -90,24 +120,105 @@ router.patch("/live-classes/:id", authMiddleware, requireRole("admin", "teacher"
 
 router.delete("/live-classes/:id", authMiddleware, requireRole("admin", "teacher"), async (req: AuthRequest, res) => {
   const id = parseInt(req.params.id);
+  const [lc] = await db.select().from(liveClassesTable).where(eq(liveClassesTable.id, id)).limit(1);
+  if (lc?.zoomMeetingId && zoomConfigured()) {
+    try { await deleteZoomMeeting(lc.zoomMeetingId); } catch {}
+  }
   await db.delete(liveClassesTable).where(eq(liveClassesTable.id, id));
-  res.json({ success: true, message: "Live class deleted" });
+  res.json({ success: true });
 });
 
 router.post("/live-classes/:id/join", authMiddleware, async (req: AuthRequest, res) => {
   const liveClassId = parseInt(req.params.id);
   const studentId = req.userId!;
+
+  const [lc] = await db.select().from(liveClassesTable).where(eq(liveClassesTable.id, liveClassId)).limit(1);
+  if (!lc) { res.status(404).json({ error: "Live class not found" }); return; }
+
+  const now = new Date();
+  const classStart = new Date(lc.startTime);
+  const classEnd = new Date(classStart.getTime() + lc.duration * 60000);
+  const windowStart = new Date(classStart.getTime() - 15 * 60000);
+
+  if (now < windowStart) {
+    res.status(400).json({ error: "Ders henüz başlamadı. 15 dakika öncesinden katılabilirsiniz." }); return;
+  }
+  if (now > classEnd) {
+    res.status(400).json({ error: "Bu dersin süresi doldu." }); return;
+  }
+
   const [existing] = await db.select().from(liveClassAttendanceTable)
     .where(and(eq(liveClassAttendanceTable.liveClassId, liveClassId), eq(liveClassAttendanceTable.studentId, studentId))).limit(1);
+
   if (!existing) {
-    await db.insert(liveClassAttendanceTable).values({ liveClassId, studentId });
-    // Add 15 points for joining
+    await db.insert(liveClassAttendanceTable).values({ liveClassId, studentId, joinedAt: now });
     const [user] = await db.select().from(usersTable).where(eq(usersTable.id, studentId)).limit(1);
     if (user) {
       await db.update(usersTable).set({ totalPoints: user.totalPoints + 15, updatedAt: new Date() }).where(eq(usersTable.id, studentId));
     }
   }
-  res.json({ success: true, message: "Joined live class" });
+
+  res.json({ success: true, meetingLink: lc.meetingLink });
+});
+
+router.post("/live-classes/:id/leave", authMiddleware, async (req: AuthRequest, res) => {
+  const liveClassId = parseInt(req.params.id);
+  const studentId = req.userId!;
+
+  const [att] = await db.select().from(liveClassAttendanceTable)
+    .where(and(eq(liveClassAttendanceTable.liveClassId, liveClassId), eq(liveClassAttendanceTable.studentId, studentId))).limit(1);
+
+  if (!att) { res.json({ success: true }); return; }
+  if (att.leftAt) { res.json({ success: true, alreadyLeft: true }); return; }
+
+  const now = new Date();
+  const durationMinutes = Math.round((now.getTime() - att.joinedAt.getTime()) / 60000);
+
+  await db.update(liveClassAttendanceTable)
+    .set({ leftAt: now, durationMinutes })
+    .where(eq(liveClassAttendanceTable.id, att.id));
+
+  res.json({ success: true, durationMinutes });
+});
+
+router.get("/live-classes/:id/attendance", authMiddleware, requireRole("admin", "teacher"), async (req: AuthRequest, res) => {
+  const liveClassId = parseInt(req.params.id);
+
+  const [lc] = await db.select().from(liveClassesTable).where(eq(liveClassesTable.id, liveClassId)).limit(1);
+  if (!lc) { res.status(404).json({ error: "Live class not found" }); return; }
+
+  const records = await db.select({
+    id: liveClassAttendanceTable.id,
+    studentId: liveClassAttendanceTable.studentId,
+    joinedAt: liveClassAttendanceTable.joinedAt,
+    leftAt: liveClassAttendanceTable.leftAt,
+    durationMinutes: liveClassAttendanceTable.durationMinutes,
+    firstName: usersTable.firstName,
+    lastName: usersTable.lastName,
+    email: usersTable.email,
+  })
+    .from(liveClassAttendanceTable)
+    .leftJoin(usersTable, eq(liveClassAttendanceTable.studentId, usersTable.id))
+    .where(eq(liveClassAttendanceTable.liveClassId, liveClassId));
+
+  res.json({
+    liveClass: {
+      id: lc.id,
+      title: lc.title,
+      startTime: lc.startTime.toISOString(),
+      duration: lc.duration,
+      maxStudents: lc.maxStudents,
+    },
+    attendance: records.map(r => ({
+      ...r,
+      joinedAt: r.joinedAt?.toISOString() || null,
+      leftAt: r.leftAt?.toISOString() || null,
+    })),
+  });
+});
+
+router.get("/zoom/status", authMiddleware, (req, res) => {
+  res.json({ configured: zoomConfigured() });
 });
 
 export default router;

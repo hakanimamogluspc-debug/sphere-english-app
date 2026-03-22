@@ -13,6 +13,7 @@ export const liveClassesTable = pgTable("live_classes", {
   startTime: timestamp("start_time").notNull(),
   duration: integer("duration").notNull(),
   meetingLink: text("meeting_link").notNull(),
+  zoomMeetingId: text("zoom_meeting_id"),
   maxStudents: integer("max_students").notNull().default(30),
   isRecorded: boolean("is_recorded").notNull().default(false),
   recordingUrl: text("recording_url"),
@@ -25,6 +26,8 @@ export const liveClassAttendanceTable = pgTable("live_class_attendance", {
   liveClassId: integer("live_class_id").notNull().references(() => liveClassesTable.id, { onDelete: "cascade" }),
   studentId: integer("student_id").notNull().references(() => usersTable.id, { onDelete: "cascade" }),
   joinedAt: timestamp("joined_at").notNull().defaultNow(),
+  leftAt: timestamp("left_at"),
+  durationMinutes: integer("duration_minutes"),
 });
 
 export const insertLiveClassSchema = createInsertSchema(liveClassesTable).omit({ id: true, createdAt: true });
