@@ -42,7 +42,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem("sphere_token", response.token);
     setToken(response.token);
     queryClient.setQueryData(["/api/auth/me"], response.user);
-    setLocation("/dashboard");
+    const dest = response.user?.role === "corporate" ? "/corporate/dashboard" : "/dashboard";
+    setLocation(dest);
   };
 
   const handleRegister = async (data: RegisterRequest) => {
@@ -50,7 +51,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem("sphere_token", response.token);
     setToken(response.token);
     queryClient.setQueryData(["/api/auth/me"], response.user);
-    setLocation("/dashboard");
+    const dest = response.user?.role === "corporate" ? "/corporate/dashboard" : "/dashboard";
+    setLocation(dest);
   };
 
   const handleLogout = () => {

@@ -24,6 +24,9 @@ import Certificates from "./pages/certificates/Certificates";
 import Messages from "./pages/messages/Messages";
 import Profile from "./pages/profile/Profile";
 import TeacherCourses from "./pages/teacher/TeacherCourses";
+import CorporateDashboard from "./pages/corporate/CorporateDashboard";
+import CorporateStudents from "./pages/corporate/CorporateStudents";
+import CorporateReports from "./pages/corporate/CorporateReports";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -62,10 +65,11 @@ function LayoutWrapper({ component: Component, allowedRoles }: { component: any,
 }
 
 function Router() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const [location] = useLocation();
 
   if (isAuthenticated && location === "/") {
+    if (user?.role === "corporate") return <Redirect to="/corporate/dashboard" />;
     return <Redirect to="/dashboard" />;
   }
 
@@ -101,6 +105,11 @@ function Router() {
       <Route path="/admin/courses"><LayoutWrapper component={AdminCourses} allowedRoles={['admin']} /></Route>
       <Route path="/admin/announcements"><LayoutWrapper component={Announcements} allowedRoles={['admin']} /></Route>
       <Route path="/admin/reports"><LayoutWrapper component={ProgressPage} allowedRoles={['admin']} /></Route>
+
+      {/* Corporate Routes */}
+      <Route path="/corporate/dashboard"><LayoutWrapper component={CorporateDashboard} allowedRoles={['corporate', 'admin']} /></Route>
+      <Route path="/corporate/students"><LayoutWrapper component={CorporateStudents} allowedRoles={['corporate', 'admin']} /></Route>
+      <Route path="/corporate/reports"><LayoutWrapper component={CorporateReports} allowedRoles={['corporate', 'admin']} /></Route>
 
       <Route component={NotFound} />
     </Switch>

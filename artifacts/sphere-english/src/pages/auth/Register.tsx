@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button, Input, Label, Card } from "@/components/ui/core";
-import { Mail, Lock, User, AlertCircle, Phone } from "lucide-react";
+import { Mail, Lock, User, AlertCircle, Phone, Building2, GraduationCap, Briefcase } from "lucide-react";
 import { motion } from "framer-motion";
 
 const registerSchema = z.object({
@@ -14,7 +14,8 @@ const registerSchema = z.object({
   email: z.string().email("Geçerli bir e-posta adresi giriniz"),
   password: z.string().min(6, "Şifre en az 6 karakter olmalıdır"),
   phone: z.string().optional(),
-  role: z.enum(["student", "teacher"]),
+  companyName: z.string().min(2, "Şirket adı zorunludur"),
+  role: z.enum(["student", "corporate"]),
 });
 
 type RegisterForm = z.infer<typeof registerSchema>;
@@ -22,7 +23,7 @@ type RegisterForm = z.infer<typeof registerSchema>;
 export default function Register() {
   const { register: registerUser } = useAuth();
   const [error, setError] = useState<string | null>(null);
-  const [selectedRole, setSelectedRole] = useState<"student" | "teacher">("student");
+  const [selectedRole, setSelectedRole] = useState<"student" | "corporate">("student");
   
   const { register, handleSubmit, setValue, formState: { errors, isSubmitting } } = useForm<RegisterForm>({
     resolver: zodResolver(registerSchema),
@@ -32,7 +33,7 @@ export default function Register() {
   const onSubmit = async (data: RegisterForm) => {
     try {
       setError(null);
-      await registerUser({ ...data, role: selectedRole as "admin" | "teacher" | "student" });
+      await registerUser({ ...data, role: selectedRole as any });
     } catch (err: any) {
       setError(err.message || "Kayıt olunamadı. Lütfen tekrar deneyin.");
     }
@@ -57,7 +58,7 @@ export default function Register() {
               <span className="text-xl font-bold font-display text-foreground">Sphere English</span>
             </Link>
             <h2 className="text-3xl font-extrabold font-display text-foreground">Hesap oluştur</h2>
-            <p className="mt-2 text-muted-foreground">Öğrenci olarak katılın veya öğretmen olarak başvurun.</p>
+            <p className="mt-2 text-muted-foreground">Öğrenci veya kurum yetkilisi olarak kayıt olun.</p>
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
@@ -73,15 +74,24 @@ export default function Register() {
                 className={`flex-1 p-4 cursor-pointer text-center border-2 transition-all ${selectedRole === 'student' ? 'border-primary bg-primary/5' : 'border-border'}`}
                 onClick={() => { setSelectedRole('student'); setValue('role', 'student'); }}
               >
-                <p className="font-bold text-foreground">Öğrenci</p>
+                <GraduationCap className="h-6 w-6 mx-auto mb-1 text-primary" />
+                <p className="font-bold text-foreground text-sm">Öğrenci</p>
               </Card>
               <Card 
-                className={`flex-1 p-4 cursor-pointer text-center border-2 transition-all ${selectedRole === 'teacher' ? 'border-primary bg-primary/5' : 'border-border'}`}
-                onClick={() => { setSelectedRole('teacher'); setValue('role', 'teacher'); }}
+                className={`flex-1 p-4 cursor-pointer text-center border-2 transition-all ${selectedRole === 'corporate' ? 'border-primary bg-primary/5' : 'border-border'}`}
+                onClick={() => { setSelectedRole('corporate'); setValue('role', 'corporate'); }}
               >
-                <p className="font-bold text-foreground">Öğretmen</p>
+                <Briefcase className="h-6 w-6 mx-auto mb-1 text-primary" />
+                <p className="font-bold text-foreground text-sm">Kurum Yetkilisi</p>
               </Card>
             </div>
+
+            {selectedRole === 'corporate' && (
+              <div className="p-3 bg-accent/10 border border-accent/20 rounded-xl text-sm text-accent-foreground">
+                <p className="font-medium text-primary">Kurum Yetkilisi Nedir?</p>
+                <p className="text-muted-foreground mt-1">Kurumunuzdaki öğrencilerin ilerlemelerini ve raporlarını takip edebilirsiniz.</p>
+              </div>
+            )}
             
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -97,6 +107,24 @@ export default function Register() {
             <div>
               <Label htmlFor="email">E-posta adresi</Label>
               <Input id="email" type="email" icon={<Mail size={18} />} placeholder="ad@ornek.com" error={errors.email?.message} {...register("email")} />
+            </div>
+
+            <div>
+              <Label htmlFor="companyName">
+                Şirket Adı <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="companyName"
+                icon={<Building2 size={18} />}
+                placeholder="Örnek: ABC Şirketi"
+                error={errors.companyName?.message}
+                {...register("companyName")}
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                {selectedRole === 'student'
+                  ? "Çalıştığınız veya bağlı olduğunuz şirketin adını giriniz."
+                  : "Yönetmek istediğiniz kurumun adını giriniz. Sistem otomatik kimlik oluşturur."}
+              </p>
             </div>
 
             <div>

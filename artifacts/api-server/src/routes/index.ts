@@ -12,11 +12,13 @@ import certificatesRouter from "./certificates";
 import messagesRouter from "./messages";
 import leaderboardRouter from "./leaderboard";
 import dashboardRouter from "./dashboard";
+import corporateRouter from "./corporate";
 
 const router: IRouter = Router();
 
 router.use(healthRouter);
 router.use(authRouter);
+router.use(corporateRouter);
 router.use(usersRouter);
 router.use(coursesRouter);
 router.use(modulesRouter);

@@ -4,7 +4,7 @@ import { Link, useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   BookOpen, LayoutDashboard, Video, FileQuestion, LineChart, 
-  Award, MessageSquare, Users, Megaphone, LogOut, Menu, X 
+  Award, MessageSquare, Users, Megaphone, LogOut, Menu, Building2, BarChart3
 } from "lucide-react";
 import { Avatar } from "../ui/core";
 
@@ -38,13 +38,19 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       { name: 'Tüm Kurslar', href: '/admin/courses', icon: BookOpen },
       { name: 'Duyurular', href: '/admin/announcements', icon: Megaphone },
       { name: 'Sistem Raporları', href: '/admin/reports', icon: LineChart },
-    ]
+    ],
+    corporate: [
+      { name: 'Genel Bakış', href: '/corporate/dashboard', icon: LayoutDashboard },
+      { name: 'Öğrencilerim', href: '/corporate/students', icon: Users },
+      { name: 'Raporlar', href: '/corporate/reports', icon: BarChart3 },
+    ],
   };
 
   const roleLabel: Record<string, string> = {
     admin: "Yönetici",
     teacher: "Öğretmen",
     student: "Öğrenci",
+    corporate: "Kurum Yetkilisi",
   };
 
   const currentNav = user ? navigation[user.role as keyof typeof navigation] || navigation.student : [];
@@ -59,10 +65,23 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           <span className="text-xl font-bold font-display text-sidebar-foreground tracking-tight">Sphere English</span>
         </div>
       </div>
+
+      {user?.role === 'corporate' && (user as any).company && (
+        <div className="mx-4 mb-2 px-3 py-2 rounded-xl bg-sidebar-accent/30 border border-sidebar-border">
+          <div className="flex items-center gap-2">
+            <Building2 className="h-4 w-4 text-accent shrink-0" />
+            <div className="min-w-0">
+              <p className="text-xs font-semibold text-sidebar-foreground truncate">{(user as any).company.name}</p>
+              <p className="text-xs text-sidebar-foreground/50">{(user as any).company.code}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-1 flex-col overflow-y-auto px-4 py-4">
         <nav className="flex-1 space-y-1.5">
           {currentNav.map((item) => {
-            const isActive = location === item.href || (location.startsWith(item.href) && item.href !== '/dashboard');
+            const isActive = location === item.href || (location.startsWith(item.href) && item.href !== '/dashboard' && item.href !== '/corporate/dashboard');
             return (
               <Link 
                 key={item.name} 
@@ -100,7 +119,6 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
-      {/* Mobil Kenar Çubuğu */}
       <AnimatePresence>
         {isMobileOpen && (
           <>
@@ -112,12 +130,10 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         )}
       </AnimatePresence>
 
-      {/* Masaüstü Kenar Çubuğu */}
       <div className="hidden lg:flex lg:w-72 lg:flex-col lg:fixed lg:inset-y-0 bg-sidebar shadow-xl">
         <SidebarContent />
       </div>
 
-      {/* Ana İçerik */}
       <div className="flex flex-1 flex-col lg:pl-72 w-full">
         <header className="sticky top-0 z-10 flex h-16 flex-shrink-0 items-center gap-x-4 border-b border-border/50 bg-background/80 backdrop-blur-md px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8">
           <button type="button" className="-m-2.5 p-2.5 text-foreground lg:hidden" onClick={() => setIsMobileOpen(true)}>
@@ -128,9 +144,11 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               {currentNav.find(n => n.href === location || location.startsWith(n.href))?.name || 'Kontrol Paneli'}
             </h1>
             <div className="flex items-center gap-x-4 lg:gap-x-6 ml-auto">
-              <div className="flex items-center gap-2 bg-secondary/50 px-4 py-1.5 rounded-full border border-border">
-                <span className="text-sm font-semibold">🔥 {user?.streak || 0} Günlük Seri</span>
-              </div>
+              {user?.role !== 'corporate' && (
+                <div className="flex items-center gap-2 bg-secondary/50 px-4 py-1.5 rounded-full border border-border">
+                  <span className="text-sm font-semibold">🔥 {user?.streak || 0} Günlük Seri</span>
+                </div>
+              )}
             </div>
           </div>
         </header>
