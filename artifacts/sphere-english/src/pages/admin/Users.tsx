@@ -13,7 +13,7 @@ const createSchema = z.object({
   lastName: z.string().min(2, "En az 2 karakter"),
   email: z.string().email("Geçerli e-posta giriniz"),
   password: z.string().min(6, "En az 6 karakter"),
-  role: z.enum(["admin", "teacher", "student"]),
+  role: z.enum(["admin", "teacher", "student", "corporate"]),
   phone: z.string().optional(),
   currentLevel: z.string().optional(),
 });
@@ -22,7 +22,7 @@ const editSchema = z.object({
   firstName: z.string().min(2, "En az 2 karakter"),
   lastName: z.string().min(2, "En az 2 karakter"),
   email: z.string().email("Geçerli e-posta giriniz"),
-  role: z.enum(["admin", "teacher", "student"]),
+  role: z.enum(["admin", "teacher", "student", "corporate"]),
   phone: z.string().optional(),
   currentLevel: z.string().optional(),
 });
@@ -152,6 +152,7 @@ export default function AdminUsers() {
     admin: "Yönetici",
     teacher: "Öğretmen",
     student: "Öğrenci",
+    corporate: "Kurum Yetkilisi",
   };
 
   return (
@@ -207,7 +208,7 @@ export default function AdminUsers() {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <Badge variant={user.role === 'admin' ? 'destructive' : user.role === 'teacher' ? 'success' : 'default'}>
+                      <Badge variant={user.role === 'admin' ? 'destructive' : user.role === 'teacher' ? 'success' : user.role === 'corporate' ? 'warning' : 'default'}>
                         {roleLabel[user.role] || user.role}
                       </Badge>
                     </td>
@@ -282,6 +283,7 @@ export default function AdminUsers() {
                 <option value="student">Öğrenci</option>
                 <option value="teacher">Öğretmen</option>
                 <option value="admin">Yönetici</option>
+                <option value="corporate">Kurum Yetkilisi</option>
               </select>
             </div>
             <div>
@@ -327,6 +329,7 @@ export default function AdminUsers() {
                 <option value="student">Öğrenci</option>
                 <option value="teacher">Öğretmen</option>
                 <option value="admin">Yönetici</option>
+                <option value="corporate">Kurum Yetkilisi</option>
               </select>
             </div>
             <div>
