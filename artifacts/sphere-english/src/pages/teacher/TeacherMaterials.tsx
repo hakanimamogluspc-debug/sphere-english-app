@@ -221,7 +221,7 @@ export default function TeacherMaterials() {
       )}
 
       {/* Create Folder Modal */}
-      <Modal open={isCreateFolderOpen} onClose={() => setIsCreateFolderOpen(false)} title="Yeni Klasör">
+      <Modal isOpen={isCreateFolderOpen} onClose={() => setIsCreateFolderOpen(false)} title="Yeni Klasör">
         <form onSubmit={e => { e.preventDefault(); createFolderMut.mutate(folderForm); }} className="space-y-4">
           <div>
             <Label>Klasör Adı *</Label>
@@ -242,7 +242,7 @@ export default function TeacherMaterials() {
       </Modal>
 
       {/* Upload Modal */}
-      <Modal open={isUploadOpen} onClose={() => { setIsUploadOpen(false); setSelectedFile(null); setUploadTitle(""); }}
+      <Modal isOpen={isUploadOpen} onClose={() => { setIsUploadOpen(false); setSelectedFile(null); setUploadTitle(""); }}
         title={`Dosya Yükle — ${selectedFolder?.name}`}>
         <form onSubmit={handleUpload} className="space-y-4">
           <div>

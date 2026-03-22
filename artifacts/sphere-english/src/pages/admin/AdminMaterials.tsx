@@ -297,7 +297,7 @@ export default function AdminMaterials() {
       )}
 
       {/* ─── Create Folder Modal ─────────────────────────────────────────────── */}
-      <Modal open={isCreateFolderOpen} onClose={() => setIsCreateFolderOpen(false)} title="Yeni Klasör Oluştur">
+      <Modal isOpen={isCreateFolderOpen} onClose={() => setIsCreateFolderOpen(false)} title="Yeni Klasör Oluştur">
         <form onSubmit={e => { e.preventDefault(); createFolderMut.mutate(folderForm); }} className="space-y-4">
           <div>
             <Label>Klasör Adı *</Label>
@@ -320,7 +320,7 @@ export default function AdminMaterials() {
       </Modal>
 
       {/* ─── Upload Modal ────────────────────────────────────────────────────── */}
-      <Modal open={isUploadOpen} onClose={() => { setIsUploadOpen(false); setSelectedFile(null); setUploadTitle(""); }}
+      <Modal isOpen={isUploadOpen} onClose={() => { setIsUploadOpen(false); setSelectedFile(null); setUploadTitle(""); }}
         title={`Dosya Yükle — ${selectedFolder?.name}`}>
         <form onSubmit={handleUpload} className="space-y-4">
           <div>
@@ -368,7 +368,7 @@ export default function AdminMaterials() {
       </Modal>
 
       {/* ─── Student Access Modal ────────────────────────────────────────────── */}
-      <Modal open={isAccessOpen} onClose={() => { setIsAccessOpen(false); setStudentSearch(""); }}
+      <Modal isOpen={isAccessOpen} onClose={() => { setIsAccessOpen(false); setStudentSearch(""); }}
         title={`Öğrenci Erişimi — ${selectedFolder?.name}`}>
         <div className="space-y-4">
           <p className="text-sm text-muted-foreground">Hangi öğrencilerin bu klasörü görebileceğini kontrol edin. Yeşil = Erişim var, Kırmızı = Erişim yok.</p>

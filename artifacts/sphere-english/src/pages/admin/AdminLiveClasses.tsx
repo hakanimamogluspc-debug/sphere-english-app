@@ -371,7 +371,7 @@ export default function AdminLiveClasses() {
       )}
 
       {/* ─── Create Modal ─────────────────────────────────────────────────────── */}
-      <Modal open={isCreateOpen} onClose={() => setIsCreateOpen(false)} title="Yeni Canlı Ders Oturumu">
+      <Modal isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} title="Yeni Canlı Ders Oturumu">
         <form onSubmit={handleCreate} className="space-y-4">
           <div>
             <Label>Başlık *</Label>
@@ -444,7 +444,7 @@ export default function AdminLiveClasses() {
 
       {/* ─── View Attendance Modal ───────────────────────────────────────────────── */}
       {viewSession && (
-        <Modal open={!!viewSession} onClose={() => setViewSession(null)}
+        <Modal isOpen={!!viewSession} onClose={() => setViewSession(null)}
           title={`Katılımcılar — ${viewSession.title}`}>
           <div className="space-y-4">
             <div className="bg-muted/30 rounded-lg p-3 text-sm space-y-1">
@@ -497,7 +497,7 @@ export default function AdminLiveClasses() {
 
       {/* ─── Add Students Modal ─────────────────────────────────────────────────── */}
       {addStudentSession && (
-        <Modal open={!!addStudentSession} onClose={() => { setAddStudentSession(null); setSelectedStudentIds([]); setStudentSearch(""); }}
+        <Modal isOpen={!!addStudentSession} onClose={() => { setAddStudentSession(null); setSelectedStudentIds([]); setStudentSearch(""); }}
           title={`Öğrenci Ekle — ${addStudentSession.title}`}>
           <div className="space-y-4">
             <div className="relative">
