@@ -2,9 +2,26 @@ import { useAuth } from "@/hooks/use-auth";
 import { useGetDashboardStats, useGetMyProgress, useGetAdminDashboard } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle, Badge, Button } from "@/components/ui/core";
 import { formatDateTime, getLevelColor } from "@/lib/utils";
-import { Trophy, Flame, BookOpen, Video, Users, CheckCircle, TrendingUp, DollarSign } from "lucide-react";
+import { Trophy, Flame, BookOpen, Video, Users, CheckCircle, TrendingUp, DollarSign, Megaphone, AlertCircle, Info, ChevronRight } from "lucide-react";
 import { Link } from "wouter";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { useEffect, useState } from "react";
+
+function useAnnouncements() {
+  const [announcements, setAnnouncements] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    const token = localStorage.getItem("sphere_token");
+    fetch("http://localhost:8080/api/announcements", {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(r => r.json())
+      .then(data => setAnnouncements(Array.isArray(data) ? data : []))
+      .catch(() => setAnnouncements([]))
+      .finally(() => setLoading(false));
+  }, []);
+  return { announcements, loading };
+}
 
 function StudentDashboard() {
   const { data: stats } = useGetDashboardStats();
@@ -172,11 +189,91 @@ function StudentDashboard() {
   );
 }
 
+const PRIORITY_CONFIG: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
+  high:   { label: 'Yüksek',  color: 'border-l-red-500 bg-red-50',    icon: <AlertCircle className="h-4 w-4 text-red-500 shrink-0" /> },
+  medium: { label: 'Orta',    color: 'border-l-amber-500 bg-amber-50', icon: <Info className="h-4 w-4 text-amber-500 shrink-0" /> },
+  low:    { label: 'Düşük',   color: 'border-l-blue-500 bg-blue-50',   icon: <Info className="h-4 w-4 text-blue-500 shrink-0" /> },
+};
+
+function AnnouncementsCard() {
+  const { announcements, loading } = useAnnouncements();
+  const [expanded, setExpanded] = useState<number | null>(null);
+  const sorted = [...announcements].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between pb-3">
+        <div className="flex items-center gap-2">
+          <Megaphone className="h-5 w-5 text-primary" />
+          <CardTitle>Duyurular</CardTitle>
+          {announcements.length > 0 && (
+            <span className="h-5 px-1.5 rounded-full bg-primary text-white text-xs font-bold flex items-center justify-center">
+              {announcements.length}
+            </span>
+          )}
+        </div>
+        <Link href="/admin/announcements" className="text-xs text-primary hover:underline font-medium flex items-center gap-1">
+          Yönet <ChevronRight className="h-3 w-3" />
+        </Link>
+      </CardHeader>
+      <CardContent className="space-y-2.5">
+        {loading ? (
+          <div className="space-y-2.5">
+            {[1, 2].map(i => (
+              <div key={i} className="h-16 bg-secondary/50 rounded-xl animate-pulse" />
+            ))}
+          </div>
+        ) : sorted.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            <Megaphone className="h-10 w-10 mx-auto mb-2 opacity-20" />
+            <p className="text-sm">Henüz duyuru yok</p>
+          </div>
+        ) : sorted.map(ann => {
+          const cfg = PRIORITY_CONFIG[ann.priority] ?? PRIORITY_CONFIG.low;
+          const isOpen = expanded === ann.id;
+          return (
+            <button
+              key={ann.id}
+              onClick={() => setExpanded(isOpen ? null : ann.id)}
+              className={`w-full text-left border-l-4 rounded-xl p-4 transition-all hover:shadow-sm ${cfg.color}`}
+            >
+              <div className="flex items-start gap-3">
+                {cfg.icon}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="font-semibold text-sm text-foreground truncate">{ann.title}</p>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+                        {new Date(ann.createdAt).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' })}
+                      </span>
+                      <ChevronRight className={`h-4 w-4 text-muted-foreground transition-transform ${isOpen ? 'rotate-90' : ''}`} />
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {ann.authorName}
+                    {ann.courseTitle ? ` · ${ann.courseTitle}` : ''}
+                  </p>
+                  {isOpen && (
+                    <p className="text-sm text-foreground mt-2 leading-relaxed border-t border-black/5 pt-2">
+                      {ann.content}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </button>
+          );
+        })}
+      </CardContent>
+    </Card>
+  );
+}
+
 function TeacherDashboard() {
   const { data: stats } = useGetDashboardStats();
   
   return (
     <div className="space-y-8">
+      {/* İstatistik kartları */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card>
           <CardContent className="p-6 flex items-center justify-between">
@@ -206,20 +303,44 @@ function TeacherDashboard() {
           </CardContent>
         </Card>
       </div>
-      
-      <Card>
-        <CardHeader>
-          <CardTitle>Hızlı İşlemler</CardTitle>
-        </CardHeader>
-        <CardContent className="flex gap-4">
-          <Link href="/teacher/courses">
-            <Button>Kurs Oluştur</Button>
-          </Link>
-          <Link href="/teacher/live-classes">
-            <Button variant="outline">Ders Planla</Button>
-          </Link>
-        </CardContent>
-      </Card>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Sol: Duyurular */}
+        <div className="lg:col-span-2">
+          <AnnouncementsCard />
+        </div>
+
+        {/* Sağ: Hızlı İşlemler */}
+        <div className="space-y-4">
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle>Hızlı İşlemler</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <Link href="/teacher/courses">
+                <Button className="w-full justify-start gap-2">
+                  <BookOpen className="h-4 w-4" /> Kurs Oluştur
+                </Button>
+              </Link>
+              <Link href="/teacher/live-classes">
+                <Button variant="outline" className="w-full justify-start gap-2">
+                  <Video className="h-4 w-4" /> Ders Planla
+                </Button>
+              </Link>
+              <Link href="/teacher/students">
+                <Button variant="outline" className="w-full justify-start gap-2">
+                  <Users className="h-4 w-4" /> Öğrencilerim
+                </Button>
+              </Link>
+              <Link href="/teacher/messages">
+                <Button variant="outline" className="w-full justify-start gap-2">
+                  <Megaphone className="h-4 w-4" /> Mesaj Gönder
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 }
