@@ -1,0 +1,86 @@
+{
+  "services": [
+    {
+      "type": "app",
+      "data": {
+        "projectName": "sphere-english",
+        "serviceName": "sphere-api",
+        "deploy": {
+          "replicas": 1,
+          "command": null,
+          "zeroDowntime": true
+        },
+        "domains": [
+          {
+            "host": "sphere-english-sphere-api.svc7un.easypanel.host",
+            "https": true,
+            "port": 80,
+            "path": "/",
+            "middlewares": [],
+            "certificateResolver": "",
+            "wildcard": false,
+            "internalProtocol": "http"
+          }
+        ]
+      }
+    },
+    {
+      "type": "postgres",
+      "data": {
+        "projectName": "sphere-english",
+        "serviceName": "sphere-db",
+        "image": "postgres:17",
+        "password": "Hk163178.,!1"
+      }
+    },
+    {
+      "type": "app",
+      "data": {
+        "projectName": "sphere-english",
+        "serviceName": "sphere-english-app",
+        "source": {
+          "type": "github",
+          "owner": "hakanimamogluspc-debug",
+          "repo": "sphere-english-app",
+          "ref": "main",
+          "path": "/",
+          "autoDeploy": false
+        },
+        "build": {
+          "type": "nixpacks",
+          "nixpacksVersion": "1.41.0",
+          "installCommand": "npm install -g pnpm@9 --prefix=/usr/local && /usr/local/bin/pnpm install --no-frozen-lockfile",
+          "buildCommand": "/usr/local/bin/pnpm --filter @workspace/sphere-english build && mkdir -p public && cp -r artifacts/sphere-english/dist/. public/ && /usr/local/bin/pnpm --filter @workspace/api-server build",
+          "startCommand": "node --enable-source-maps artifacts/api-server/dist/index.mjs"
+        },
+        "deploy": {
+          "replicas": 1,
+          "command": null,
+          "zeroDowntime": true
+        },
+        "domains": [
+          {
+            "host": "sphere-english-sphere-english-app.svc7un.easypanel.host",
+            "https": true,
+            "port": 80,
+            "path": "/",
+            "middlewares": [],
+            "certificateResolver": "",
+            "wildcard": false,
+            "internalProtocol": "http"
+          },
+          {
+            "host": "app.sphereenglish.com",
+            "https": true,
+            "port": 3000,
+            "path": "/",
+            "middlewares": [],
+            "certificateResolver": "",
+            "wildcard": false,
+            "internalProtocol": "http"
+          }
+        ]
+      }
+    }
+  ]
+}
