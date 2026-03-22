@@ -13,7 +13,7 @@ export default function Landing() {
             <img
               src={`${import.meta.env.BASE_URL}images/logo-full.png`}
               alt="Sphere English"
-              className="h-14 w-auto object-contain"
+              className="h-[90px] w-auto object-contain"
             />
           </Link>
           <div className="hidden md:flex gap-8 items-center font-medium text-foreground/80">

@@ -62,7 +62,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         <img
           src={`${import.meta.env.BASE_URL}images/logo-full.png`}
           alt="Sphere English"
-          className="h-10 w-auto object-contain brightness-0 invert"
+          className="h-16 w-auto object-contain brightness-0 invert"
         />
       </div>
 

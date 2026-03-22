@@ -41,7 +41,7 @@ export default function Login() {
               <img
                 src={`${import.meta.env.BASE_URL}images/logo-full.png`}
                 alt="Sphere English"
-                className="h-14 w-auto object-contain"
+                className="h-[90px] w-auto object-contain"
               />
             </Link>
             <h2 className="text-3xl font-extrabold font-display text-foreground">Tekrar hoş geldiniz</h2>
