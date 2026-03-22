@@ -17,4 +17,4 @@ dependsOn = ["install"]
 cmds = ["pnpm install --frozen-lockfile", "pnpm --filter @workspace/api-server build"]
 
 [start]
-cmd = "node --enable-source-maps artifacts/api-server/dist/index.mjs"
+cmd = "/usr/local/bin/pnpm --filter @workspace/db push --force 2>/dev/null; node --enable-source-maps artifacts/api-server/dist/index.mjs"
