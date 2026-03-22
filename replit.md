@@ -38,6 +38,33 @@ workspace/
 └── scripts/                 # Utility scripts
 ```
 
+## Production Deployment (Easypanel)
+
+- **Platform**: Easypanel (Nixpacks build)
+- **URL**: `https://sphere-english-sphere-english-app.svc7un.easypanel.host`
+- **Target domain**: `app.sphereenglish.com` (DNS A record → `46.224.223.19`)
+- **GitHub repo**: `github.com/hakanimamogluspc-debug/sphere-english-app` (branch: main)
+- **Easypanel project**: `sphere-english` / service: `sphere-english-app`
+- **Port**: 3000 (Traefik domain target must be set to 3000)
+- **Database**: `postgres://postgres:***@sphere-english_sphere-db:5432/sphere-english?sslmode=disable`
+
+### Easypanel Start Command (in Komut field):
+```
+/usr/local/bin/pnpm --filter @workspace/db push --force; node --enable-source-maps artifacts/api-server/dist/index.mjs
+```
+The server automatically seeds the database (admin/teacher/student accounts + courses) on first startup.
+
+### Known Fixes Applied:
+- Express 5 wildcard route: `"*"` → `"/{*splat}"` 
+- DATABASE_URL is optional at startup (server doesn't crash without it)
+- `drizzle.config.ts` uses relative schema path (no `__dirname`)
+- Seed logic embedded in `artifacts/api-server/src/seed.ts`, called from `index.ts`
+
+### Test Credentials:
+- Admin: `admin@sphereenglish.com` / `admin123`
+- Teacher: `sarah.johnson@sphereenglish.com` / `teacher123`
+- Student: `alice@example.com` / `student123`
+
 ## Key Files
 
 | File | Purpose |
