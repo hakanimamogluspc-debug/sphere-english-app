@@ -10,11 +10,11 @@ cmds = ["npm install -g pnpm@9"]
 
 [phases.install]
 dependsOn = ["setup"]
-cmds = ["pnpm install --frozen-lockfile"]
+cmds = ["npm install --ignore-scripts"]
 
 [phases.build]
 dependsOn = ["install"]
-cmds = ["pnpm --filter @workspace/api-server build"]
+cmds = ["pnpm install --frozen-lockfile", "pnpm --filter @workspace/api-server build"]
 
 [start]
 cmd = "node --enable-source-maps artifacts/api-server/dist/index.mjs"
