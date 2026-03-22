@@ -4,6 +4,7 @@ import {
   quizzesTable, questionsTable, quizAttemptsTable,
   speakingClubsTable, speakingClubParticipantsTable,
   messagesTable, companiesTable,
+  liveClassesTable, liveClassAttendanceTable,
 } from "@workspace/db";
 import { eq, and, inArray, count, desc, sql, or } from "drizzle-orm";
 import { authMiddleware, requireRole, type AuthRequest } from "../middlewares/auth.js";
@@ -494,6 +495,92 @@ router.post("/teacher/messages/bulk", authMiddleware, requireRole("teacher", "ad
   ));
 
   res.json({ sent: validIds.length });
+});
+
+// ─── Öğretmen Canlı Ders Öğrenci Yönetimi ────────────────────────────────────
+
+// GET /teacher/live-classes/:id/my-students — bu derse eklenebilecek öğretmenin öğrencileri
+router.get("/teacher/live-classes/:id/my-students", authMiddleware, requireRole("teacher", "admin"), async (req: AuthRequest, res) => {
+  const teacherId = req.userId!;
+  const liveClassId = parseInt(req.params.id);
+
+  // Verify class belongs to teacher
+  const [lc] = await db.select().from(liveClassesTable)
+    .where(and(eq(liveClassesTable.id, liveClassId), eq(liveClassesTable.teacherId, teacherId))).limit(1);
+  if (!lc) { res.status(403).json({ error: "Bu derse erişim yetkiniz yok" }); return; }
+
+  // Get teacher's students
+  const groupIds = await teacherGroupIds(teacherId);
+  if (groupIds.length === 0) { res.json({ students: [], enrolled: [] }); return; }
+
+  const members = await db.select({ studentId: groupMembersTable.studentId })
+    .from(groupMembersTable).where(inArray(groupMembersTable.groupId, groupIds));
+  const studentIds = [...new Set(members.map(m => m.studentId))];
+
+  const students = studentIds.length > 0
+    ? await db.select({
+        id: usersTable.id, firstName: usersTable.firstName, lastName: usersTable.lastName,
+        email: usersTable.email, currentLevel: usersTable.currentLevel,
+      }).from(usersTable).where(inArray(usersTable.id, studentIds))
+    : [];
+
+  // Get currently enrolled students
+  const enrolled = await db.select({ studentId: liveClassAttendanceTable.studentId })
+    .from(liveClassAttendanceTable).where(eq(liveClassAttendanceTable.liveClassId, liveClassId));
+  const enrolledIds = enrolled.map(e => e.studentId);
+
+  res.json({ students, enrolledIds });
+});
+
+// POST /teacher/live-classes/:id/students — oturuma kendi öğrencilerini ekle
+router.post("/teacher/live-classes/:id/students", authMiddleware, requireRole("teacher", "admin"), async (req: AuthRequest, res) => {
+  const teacherId = req.userId!;
+  const liveClassId = parseInt(req.params.id);
+  const { studentIds } = req.body;
+
+  if (!Array.isArray(studentIds) || studentIds.length === 0) {
+    res.status(400).json({ error: "studentIds gereklidir" }); return;
+  }
+
+  // Verify class belongs to teacher
+  const [lc] = await db.select().from(liveClassesTable)
+    .where(and(eq(liveClassesTable.id, liveClassId), eq(liveClassesTable.teacherId, teacherId))).limit(1);
+  if (!lc) { res.status(403).json({ error: "Bu derse erişim yetkiniz yok" }); return; }
+
+  // Verify students belong to teacher's groups
+  const groupIds = await teacherGroupIds(teacherId);
+  if (groupIds.length > 0) {
+    const memberships = await db.select({ studentId: groupMembersTable.studentId })
+      .from(groupMembersTable).where(
+        and(inArray(groupMembersTable.groupId, groupIds), inArray(groupMembersTable.studentId, studentIds.map(Number)))
+      );
+    const validIds = memberships.map(m => m.studentId);
+
+    if (validIds.length > 0) {
+      await db.insert(liveClassAttendanceTable)
+        .values(validIds.map(sid => ({ liveClassId, studentId: sid, joinedAt: new Date() })))
+        .onConflictDoNothing();
+    }
+    res.json({ success: true, added: validIds.length });
+  } else {
+    res.json({ success: true, added: 0 });
+  }
+});
+
+// DELETE /teacher/live-classes/:id/students/:studentId — dersten öğrenci çıkar
+router.delete("/teacher/live-classes/:id/students/:studentId", authMiddleware, requireRole("teacher", "admin"), async (req: AuthRequest, res) => {
+  const teacherId = req.userId!;
+  const liveClassId = parseInt(req.params.id);
+  const studentId = parseInt(req.params.studentId);
+
+  const [lc] = await db.select().from(liveClassesTable)
+    .where(and(eq(liveClassesTable.id, liveClassId), eq(liveClassesTable.teacherId, teacherId))).limit(1);
+  if (!lc) { res.status(403).json({ error: "Bu derse erişim yetkiniz yok" }); return; }
+
+  await db.delete(liveClassAttendanceTable).where(
+    and(eq(liveClassAttendanceTable.liveClassId, liveClassId), eq(liveClassAttendanceTable.studentId, studentId))
+  );
+  res.json({ success: true });
 });
 
 // POST /teacher/messages/:studentId — tek öğrenciye mesaj gönder
