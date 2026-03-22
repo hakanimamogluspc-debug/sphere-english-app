@@ -20,10 +20,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
 
-  const { data: user, isLoading: isUserLoading } = useGetCurrentUser({
+  const { data: user, isLoading: isUserLoading, isError: isAuthError } = useGetCurrentUser({
     query: {
       enabled: !!token,
       retry: false,
+      refetchOnWindowFocus: false,
+      staleTime: 5 * 60 * 1000,
     }
   });
 
@@ -31,11 +33,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const registerMutation = useRegister();
 
   useEffect(() => {
-    if (user === null && token) {
-      // Token is invalid/expired
+    if (isAuthError && token) {
+      // Token is invalid/expired — only logout on explicit API error
       handleLogout();
     }
-  }, [user, token]);
+  }, [isAuthError, token]);
 
   const handleLogin = async (data: LoginRequest) => {
     const response = await loginMutation.mutateAsync({ data });

@@ -102,7 +102,7 @@ export default function AdminUsers() {
     if (!editUser) return;
     setIsEditLoading(true);
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("sphere_token");
       const res = await fetch(`${API}/users/${editUser.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
@@ -125,7 +125,7 @@ export default function AdminUsers() {
     if (!passwordUser) return;
     setIsPasswordLoading(true);
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("sphere_token");
       const res = await fetch(`${API}/users/${passwordUser.id}/change-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
