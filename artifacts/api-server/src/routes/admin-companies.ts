@@ -38,6 +38,7 @@ router.get("/admin/companies", authMiddleware, requireRole("admin"), async (_req
 router.post("/admin/companies", authMiddleware, requireRole("admin"), async (_req: AuthRequest, res) => {
   const {
     name,
+    code: rawCode,
     companyTitle,
     address,
     taxOffice,
@@ -52,6 +53,13 @@ router.post("/admin/companies", authMiddleware, requireRole("admin"), async (_re
     return;
   }
 
+  if (!rawCode || rawCode.trim() === "") {
+    res.status(400).json({ error: "Kurum ID'si zorunludur" });
+    return;
+  }
+
+  const code = rawCode.trim().toUpperCase();
+
   const existing = await db
     .select()
     .from(companiesTable)
@@ -63,9 +71,16 @@ router.post("/admin/companies", authMiddleware, requireRole("admin"), async (_re
     return;
   }
 
-  const [countResult] = await db.select({ count: sql<number>`count(*)` }).from(companiesTable);
-  const nextNum = (Number(countResult.count) + 1).toString().padStart(4, "0");
-  const code = `KUR-${nextNum}`;
+  const existingCode = await db
+    .select()
+    .from(companiesTable)
+    .where(sql`upper(${companiesTable.code}) = ${code}`)
+    .limit(1);
+
+  if (existingCode.length > 0) {
+    res.status(400).json({ error: "Bu kurum ID'si zaten kullanımda" });
+    return;
+  }
 
   const [company] = await db
     .insert(companiesTable)
@@ -90,6 +105,7 @@ router.patch("/admin/companies/:id", authMiddleware, requireRole("admin"), async
   const id = parseInt(req.params.id);
   const {
     name,
+    code: rawCode,
     companyTitle,
     address,
     taxOffice,
@@ -101,6 +117,7 @@ router.patch("/admin/companies/:id", authMiddleware, requireRole("admin"), async
 
   const updates: any = {};
   if (name !== undefined && name.trim() !== "") updates.name = name.trim();
+  if (rawCode !== undefined && rawCode.trim() !== "") updates.code = rawCode.trim().toUpperCase();
   if (registrationLimit !== undefined) updates.registrationLimit = Number(registrationLimit);
   if (corporateLimit !== undefined) updates.corporateLimit = Number(corporateLimit);
   if (companyTitle !== undefined) updates.companyTitle = companyTitle?.trim() || null;
@@ -122,6 +139,18 @@ router.patch("/admin/companies/:id", authMiddleware, requireRole("admin"), async
       .limit(1);
     if (existing.length > 0) {
       res.status(400).json({ error: "Bu isimde başka bir kurum zaten mevcut" });
+      return;
+    }
+  }
+
+  if (updates.code) {
+    const existingCode = await db
+      .select()
+      .from(companiesTable)
+      .where(and(sql`upper(${companiesTable.code}) = ${updates.code}`, sql`${companiesTable.id} != ${id}`))
+      .limit(1);
+    if (existingCode.length > 0) {
+      res.status(400).json({ error: "Bu kurum ID'si başka bir kurumda kullanımda" });
       return;
     }
   }

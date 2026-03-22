@@ -10,6 +10,7 @@ import { motion } from "framer-motion";
 
 const companySchema = z.object({
   name: z.string().min(2, "Kurum adı en az 2 karakter olmalıdır"),
+  code: z.string().min(1, "Kurum ID'si zorunludur"),
   companyTitle: z.string().optional(),
   address: z.string().optional(),
   taxOffice: z.string().optional(),
@@ -18,6 +19,7 @@ const companySchema = z.object({
   registrationLimit: z.coerce.number().min(0, "0 veya daha büyük olmalıdır"),
   corporateLimit: z.coerce.number().min(0, "0 veya daha büyük olmalıdır"),
 });
+
 type CompanyForm = z.infer<typeof companySchema>;
 
 interface Company {
@@ -122,6 +124,7 @@ export default function AdminCompanies() {
     setEditingCompany(company);
     resetEdit({
       name: company.name,
+      code: company.code,
       companyTitle: company.companyTitle || "",
       address: company.address || "",
       taxOffice: company.taxOffice || "",
@@ -327,6 +330,11 @@ export default function AdminCompanies() {
               </FormField>
             </div>
             <div className="col-span-2">
+              <FormField label="Kurum ID'si *" id="c-code" error={errCreate.code?.message}>
+                <Input id="c-code" placeholder="Örnek: KUR-0001" className="font-mono" {...regCreate("code")} />
+              </FormField>
+            </div>
+            <div className="col-span-2">
               <FormField label="Şirket Ünvanı" id="c-title" error={errCreate.companyTitle?.message}>
                 <Input id="c-title" placeholder="Örnek: ABC Holding A.Ş." {...regCreate("companyTitle")} />
               </FormField>
@@ -372,6 +380,11 @@ export default function AdminCompanies() {
             <div className="col-span-2">
               <FormField label="Kurum Adı" id="e-name" error={errEdit.name?.message}>
                 <Input id="e-name" {...regEdit("name")} />
+              </FormField>
+            </div>
+            <div className="col-span-2">
+              <FormField label="Kurum ID'si" id="e-code" error={errEdit.code?.message}>
+                <Input id="e-code" className="font-mono" {...regEdit("code")} />
               </FormField>
             </div>
             <div className="col-span-2">
