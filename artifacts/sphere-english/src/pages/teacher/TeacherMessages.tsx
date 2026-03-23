@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { MessageSquare, Send, Users, Search, Filter, CheckSquare, Square, Building2, GraduationCap, ChevronDown, X, ArrowLeft } from "lucide-react";
+import { MessageSquare, Send, Users, Search, Filter, CheckSquare, Square, Building2, GraduationCap, ChevronDown, X, ArrowLeft, Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/core";
 import { Button } from "@/components/ui/core";
 import { useToast } from "@/hooks/use-toast";
@@ -148,6 +148,19 @@ export default function TeacherMessages() {
       toast({ title: "Hata", description: e.message, variant: "destructive" });
     } finally {
       setSending(false);
+    }
+  };
+
+  // Mesaj sil
+  const deleteMessage = async (msgId: number) => {
+    try {
+      const r = await fetch(`${API}/messages/${msgId}`, { method: "DELETE", headers: authHeaders() });
+      if (!r.ok) throw new Error();
+      setMessages(prev => prev.filter(m => m.id !== msgId));
+      // Öğrenci listesini de yenile (son mesaj değişmiş olabilir)
+      loadStudents(true);
+    } catch {
+      toast({ title: "Hata", description: "Mesaj silinemedi", variant: "destructive" });
     }
   };
 
@@ -333,7 +346,16 @@ export default function TeacherMessages() {
                   ) : messages.map(msg => {
                     const isMe = msg.senderId === user?.id;
                     return (
-                      <div key={msg.id} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
+                      <div key={msg.id} className={`group flex items-end gap-1.5 ${isMe ? "justify-end" : "justify-start"}`}>
+                        {isMe && (
+                          <button
+                            onClick={() => deleteMessage(msg.id)}
+                            className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive shrink-0 mb-1"
+                            title="Sil"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        )}
                         <div className={`max-w-[70%] px-4 py-3 rounded-2xl text-sm ${isMe ? "bg-primary text-white rounded-br-sm" : "bg-secondary text-foreground rounded-bl-sm"}`}>
                           <p>{msg.content}</p>
                           <p className={`text-xs mt-1 ${isMe ? "text-white/60" : "text-muted-foreground"}`}>

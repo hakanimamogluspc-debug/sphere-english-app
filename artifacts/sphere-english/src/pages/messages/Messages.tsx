@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardHeader, Button } from "@/components/ui/core";
-import { MessageSquare, Send, Search } from "lucide-react";
+import { MessageSquare, Send, Search, Trash2 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { API } from "@/lib/api-url";
 
@@ -72,6 +72,15 @@ export default function Messages() {
       }),
     onSuccess: () => {
       setMessageText("");
+      qc.invalidateQueries({ queryKey: ["/api/messages", selectedUserId] });
+      qc.invalidateQueries({ queryKey: ["/api/messages"] });
+    },
+  });
+
+  const deleteMut = useMutation({
+    mutationFn: (msgId: number) =>
+      apiFetch(`${API}/messages/${msgId}`, { method: "DELETE" }),
+    onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["/api/messages", selectedUserId] });
       qc.invalidateQueries({ queryKey: ["/api/messages"] });
     },
@@ -225,8 +234,18 @@ export default function Messages() {
                     return (
                       <div
                         key={msg.id}
-                        className={`flex ${isMe ? "justify-end" : "justify-start"}`}
+                        className={`group flex items-end gap-1.5 ${isMe ? "justify-end" : "justify-start"}`}
                       >
+                        {isMe && (
+                          <button
+                            onClick={() => deleteMut.mutate(msg.id)}
+                            disabled={deleteMut.isPending}
+                            className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive shrink-0 mb-1"
+                            title="Sil"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        )}
                         <div
                           className={`max-w-[70%] px-4 py-2.5 rounded-2xl text-sm ${
                             isMe
@@ -235,11 +254,7 @@ export default function Messages() {
                           }`}
                         >
                           <p>{msg.content}</p>
-                          <p
-                            className={`text-xs mt-1 ${
-                              isMe ? "text-white/60" : "text-muted-foreground"
-                            }`}
-                          >
+                          <p className={`text-xs mt-1 ${isMe ? "text-white/60" : "text-muted-foreground"}`}>
                             {new Date(msg.sentAt).toLocaleTimeString("tr-TR", {
                               hour: "2-digit",
                               minute: "2-digit",

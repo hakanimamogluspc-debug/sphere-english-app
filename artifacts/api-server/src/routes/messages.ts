@@ -79,6 +79,15 @@ router.patch("/messages/:id/read", authMiddleware, async (req: AuthRequest, res)
   res.json({ success: true, message: "Marked as read" });
 });
 
+router.delete("/messages/:id", authMiddleware, async (req: AuthRequest, res) => {
+  const id = parseInt(req.params.id);
+  const [msg] = await db.select().from(messagesTable).where(eq(messagesTable.id, id)).limit(1);
+  if (!msg) { res.status(404).json({ error: "Mesaj bulunamadı" }); return; }
+  if (msg.senderId !== req.userId) { res.status(403).json({ error: "Sadece kendi mesajınızı silebilirsiniz" }); return; }
+  await db.delete(messagesTable).where(eq(messagesTable.id, id));
+  res.json({ success: true });
+});
+
 // Announcements
 router.get("/announcements", authMiddleware, async (req: AuthRequest, res) => {
   const { courseId } = req.query;
