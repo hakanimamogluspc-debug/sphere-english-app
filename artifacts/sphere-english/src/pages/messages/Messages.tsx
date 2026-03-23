@@ -49,14 +49,18 @@ export default function Messages() {
   const { data: conversations = [], isLoading } = useQuery<Conversation[]>({
     queryKey: ["/api/messages"],
     queryFn: () => apiFetch(`${API}/messages`),
-    refetchInterval: 10000,
+    refetchInterval: 5000,
+    refetchIntervalInBackground: true,
+    staleTime: 0,
   });
 
   const { data: thread = [] } = useQuery<Message[]>({
     queryKey: ["/api/messages", selectedUserId],
     queryFn: () => apiFetch(`${API}/messages/${selectedUserId}`),
     enabled: !!selectedUserId,
-    refetchInterval: 5000,
+    refetchInterval: 3000,
+    refetchIntervalInBackground: true,
+    staleTime: 0,
   });
 
   const sendMut = useMutation({

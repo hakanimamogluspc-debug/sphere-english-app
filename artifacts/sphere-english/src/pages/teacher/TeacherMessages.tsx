@@ -82,33 +82,46 @@ export default function TeacherMessages() {
   const [bulkText, setBulkText] = useState("");
   const [sendingBulk, setSendingBulk] = useState(false);
 
-  // Öğrencileri yükle
-  useEffect(() => {
-    setLoadingStudents(true);
-    fetch(`${API}/teacher/messages`, { headers: authHeaders() })
-      .then(r => r.json())
-      .then(d => setStudents(d.conversations ?? []))
-      .catch(() => toast({ title: "Hata", description: "Öğrenciler yüklenemedi", variant: "destructive" }))
-      .finally(() => setLoadingStudents(false));
+  // Öğrencileri yükle + her 5 sn'de güncelle
+  const loadStudents = useCallback(async (silent = false) => {
+    if (!silent) setLoadingStudents(true);
+    try {
+      const r = await fetch(`${API}/teacher/messages`, { headers: authHeaders() });
+      const d = await r.json();
+      setStudents(d.conversations ?? []);
+    } catch {
+      if (!silent) toast({ title: "Hata", description: "Öğrenciler yüklenemedi", variant: "destructive" });
+    } finally {
+      if (!silent) setLoadingStudents(false);
+    }
   }, []);
 
+  useEffect(() => {
+    loadStudents();
+    const interval = setInterval(() => loadStudents(true), 5000);
+    return () => clearInterval(interval);
+  }, [loadStudents]);
+
   // Mesaj geçmişini yükle
-  const loadMessages = useCallback(async (studentId: number) => {
-    setLoadingMsgs(true);
+  const loadMessages = useCallback(async (studentId: number, silent = false) => {
+    if (!silent) setLoadingMsgs(true);
     try {
       const r = await fetch(`${API}/teacher/messages/${studentId}`, { headers: authHeaders() });
       const d = await r.json();
       setMessages(d.messages ?? []);
     } catch {
-      toast({ title: "Hata", description: "Mesajlar yüklenemedi", variant: "destructive" });
+      if (!silent) toast({ title: "Hata", description: "Mesajlar yüklenemedi", variant: "destructive" });
     } finally {
-      setLoadingMsgs(false);
+      if (!silent) setLoadingMsgs(false);
     }
   }, []);
 
   useEffect(() => {
-    if (selectedStudent) loadMessages(selectedStudent.userId);
-  }, [selectedStudent]);
+    if (!selectedStudent) return;
+    loadMessages(selectedStudent.userId);
+    const interval = setInterval(() => loadMessages(selectedStudent.userId, true), 3000);
+    return () => clearInterval(interval);
+  }, [selectedStudent, loadMessages]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
