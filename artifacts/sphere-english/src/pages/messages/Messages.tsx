@@ -73,6 +73,21 @@ export default function Messages() {
     },
   });
 
+  // Konuşma açıldığında okunmamış mesajları okundu olarak işaretle
+  useEffect(() => {
+    if (!thread.length || !user?.id) return;
+    const unread = thread.filter((m) => m.receiverId === user.id && !m.isRead);
+    if (unread.length === 0) return;
+    Promise.all(
+      unread.map((m) =>
+        apiFetch(`${API}/messages/${m.id}/read`, { method: "PATCH" })
+      )
+    ).then(() => {
+      qc.invalidateQueries({ queryKey: ["/api/messages"] });
+      qc.invalidateQueries({ queryKey: ["/api/messages", selectedUserId] });
+    });
+  }, [thread, user?.id]);
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [thread]);
