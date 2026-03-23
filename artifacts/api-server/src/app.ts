@@ -29,7 +29,31 @@ app.use(
   }),
 );
 app.set("trust proxy", 1);
-app.use(cors());
+
+// ─── HTTPS Yönlendirme + HSTS (Production) ────────────────────────────────────
+if (process.env.NODE_ENV === "production") {
+  app.use((req, res, next) => {
+    const proto = req.headers["x-forwarded-proto"];
+    if (proto && proto !== "https") {
+      return res.redirect(301, `https://${req.headers.host}${req.url}`);
+    }
+    // HSTS: tarayıcıya 1 yıl boyunca yalnızca HTTPS kullanmasını söyle
+    res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+    next();
+  });
+}
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow same-origin requests and configured domains
+    if (!origin || origin.includes("sphereenglish.com") || origin.includes("localhost")) {
+      callback(null, true);
+    } else {
+      callback(null, false);
+    }
+  },
+  credentials: true,
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
