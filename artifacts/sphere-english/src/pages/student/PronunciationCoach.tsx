@@ -188,17 +188,15 @@ type Phase = "select" | "idle" | "listening" | "processing" | "done";
 export default function PronunciationCoach() {
   const [phase, setPhase] = useState<Phase>("select");
   const [selectedTeacher, setSelectedTeacher] = useState<Teacher>(TEACHERS[0]);
-  const [transcript, setTranscript] = useState("");
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [error, setError] = useState("");
 
-  const recognitionRef = useRef<any>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const activeRef = useRef(false);
   const lastAudioBase64Ref = useRef<string>("");
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
+  const streamRef = useRef<MediaStream | null>(null);
 
   const getApiBase = () => {
     const base = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -234,69 +232,61 @@ export default function PronunciationCoach() {
     }
   };
 
-  const analyzeText = async (text: string, audioBlob?: Blob) => {
-    if (!text.trim()) return;
+  const analyzeAudio = async (audioBlob: Blob) => {
     setPhase("processing");
     setError("");
     try {
       const token = localStorage.getItem(TOKEN_KEY);
       const formData = new FormData();
-      formData.append("text", text.trim());
       formData.append("voice", selectedTeacher.voice);
-      if (audioBlob && audioBlob.size > 1000) {
-        formData.append("audio", audioBlob, "audio.webm");
-      }
+      formData.append("audio", audioBlob, "audio.webm");
       const res = await fetch(`${getApiBase()}/api/pronunciation/analyze`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
         body: formData,
       });
-      if (!res.ok) throw new Error("Analysis failed");
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error((err as any).error || "Analiz başarısız");
+      }
       const data: AnalysisResult = await res.json();
       setResult(data);
       setPhase("done");
       if (data.audioBase64) playAudio(data.audioBase64);
-    } catch {
-      setError("Analiz yapılamadı. Lütfen tekrar deneyin.");
+    } catch (e: any) {
+      setError(e?.message || "Analiz yapılamadı. Lütfen tekrar deneyin.");
       setPhase("idle");
     }
   };
 
-  const stopRecognition = () => {
-    activeRef.current = false;
-    if (recognitionRef.current) {
-      try { recognitionRef.current.stop(); } catch {}
-      recognitionRef.current = null;
-    }
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
-      try { mediaRecorderRef.current.stop(); } catch {}
-    }
+  const stopStream = () => {
+    streamRef.current?.getTracks().forEach((t) => t.stop());
+    streamRef.current = null;
   };
 
   const handleStop = () => {
-    stopRecognition();
-    setPhase("idle");
+    const mr = mediaRecorderRef.current;
+    if (mr && mr.state === "recording") {
+      mr.onstop = () => {
+        const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+        stopStream();
+        analyzeAudio(blob);
+      };
+      mr.stop();
+    } else {
+      stopStream();
+      setPhase("idle");
+    }
+    mediaRecorderRef.current = null;
   };
 
   const handleStart = async () => {
-    const SpeechRecognition =
-      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-
-    if (!SpeechRecognition) {
-      setError("Tarayıcınız ses tanımayı desteklemiyor. Chrome veya Edge kullanın.");
-      return;
-    }
-
     setResult(null);
-    setTranscript("");
     setError("");
-    setPhase("listening");
-    activeRef.current = true;
     audioChunksRef.current = [];
-
-    // Start MediaRecorder for audio capture (for Whisper)
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
       const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
         ? "audio/webm;codecs=opus"
         : "audio/webm";
@@ -306,81 +296,30 @@ export default function PronunciationCoach() {
       };
       recorder.start(200);
       mediaRecorderRef.current = recorder;
+      setPhase("listening");
     } catch {
-      // MediaRecorder failed — continue without audio (grammar-only mode)
-      mediaRecorderRef.current = null;
+      setError("Mikrofon erişimi reddedildi. Tarayıcı ayarlarından mikrofona izin verin.");
     }
-
-    const recognition = new SpeechRecognition();
-    recognition.lang = "en-US";
-    recognition.continuous = false;
-    recognition.interimResults = true;
-    recognition.maxAlternatives = 1;
-    recognitionRef.current = recognition;
-
-    recognition.onresult = (event: any) => {
-      if (!activeRef.current) return;
-      const last = event.results.length - 1;
-      const text = event.results[last][0].transcript;
-      setTranscript(text);
-      if (event.results[last].isFinal) {
-        activeRef.current = false;
-        recognitionRef.current = null;
-        // Stop recorder and get audio blob
-        const mr = mediaRecorderRef.current;
-        if (mr && mr.state === "recording") {
-          mr.onstop = () => {
-            const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
-            // Stop all tracks
-            (mr as any).stream?.getTracks?.()?.forEach((t: MediaStreamTrack) => t.stop());
-            analyzeText(text, blob);
-          };
-          mr.stop();
-        } else {
-          analyzeText(text);
-        }
-      }
-    };
-
-    recognition.onerror = (event: any) => {
-      if (!activeRef.current) return;
-      if (event.error === "no-speech") return;
-      if (event.error === "not-allowed") {
-        setError("Mikrofon erişimi reddedildi. Tarayıcı ayarlarından mikrofona izin verin.");
-      } else {
-        setError("Ses algılanamadı. Tekrar deneyin.");
-      }
-      activeRef.current = false;
-      recognitionRef.current = null;
-      setPhase("idle");
-    };
-
-    recognition.onend = () => {
-      if (activeRef.current) {
-        // ended unexpectedly while still listening → go back to idle
-        activeRef.current = false;
-        setPhase("idle");
-      }
-    };
-
-    recognition.start();
   };
 
   const reset = () => {
-    stopRecognition();
+    stopStream();
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
+      try { mediaRecorderRef.current.stop(); } catch {}
+      mediaRecorderRef.current = null;
+    }
     if (audioRef.current) {
       audioRef.current.pause();
       setIsSpeaking(false);
     }
     setResult(null);
-    setTranscript("");
     setError("");
     setPhase("idle");
   };
 
   useEffect(() => {
     return () => {
-      stopRecognition();
+      stopStream();
       if (audioRef.current) audioRef.current.pause();
     };
   }, []);
@@ -483,33 +422,6 @@ export default function PronunciationCoach() {
           >
             {isSpeaking ? "Geri bildirim veriliyor..." : stateLabel[phase]}
           </motion.p>
-        </div>
-
-        {/* Transcript */}
-        <div className="px-6 py-4 min-h-[72px] flex items-center justify-center bg-gray-50 border-y border-gray-100">
-          <AnimatePresence mode="wait">
-            {transcript ? (
-              <motion.div
-                key="transcript"
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                className="text-center"
-              >
-                <p className="text-xs text-gray-400 mb-1">Söyledikleriniz</p>
-                <p className="text-gray-700 font-medium text-base italic">"{transcript}"</p>
-              </motion.div>
-            ) : (
-              <motion.p
-                key="placeholder"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="text-gray-300 text-sm"
-              >
-                Altyazı burada görünecek...
-              </motion.p>
-            )}
-          </AnimatePresence>
         </div>
 
         {/* Result */}
