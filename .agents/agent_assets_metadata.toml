@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "FsU4PAkDB_a1cFXTkO03x"
+uri = "file://artifacts/sphere-english/public/www-sitemap.xml"
+type = "unspecified"
+title = "www.sphereenglish.com Sitemap"
