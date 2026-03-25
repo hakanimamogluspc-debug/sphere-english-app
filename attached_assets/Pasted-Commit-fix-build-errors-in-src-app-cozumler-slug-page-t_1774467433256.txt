@@ -1,0 +1,104 @@
+Commit: fix: build errors in src/app/cozumler/[slug]/page.tsx 
+##########################################
+### Download Github Archive Started...
+### Wed, 25 Mar 2026 19:36:32 GMT
+##########################################
+
+#0 building with "default" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 800B done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/node:20-alpine
+#2 DONE 0.4s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 2B done
+#3 DONE 0.0s
+
+#4 [deps 1/4] FROM docker.io/library/node:20-alpine@sha256:b88333c42c23fbd91596ebd7fd10de239cedab9617de04142dde7315e3bc0afa
+#4 resolve docker.io/library/node:20-alpine@sha256:b88333c42c23fbd91596ebd7fd10de239cedab9617de04142dde7315e3bc0afa 0.0s done
+#4 DONE 0.0s
+
+#5 [internal] load build context
+#5 transferring context: 21.20MB 0.2s done
+#5 DONE 0.2s
+
+#6 [deps 2/4] WORKDIR /app
+#6 CACHED
+
+#7 [deps 3/4] COPY package.json ./
+#7 CACHED
+
+#8 [deps 4/4] RUN npm install
+#8 CACHED
+
+#9 [builder 3/5] COPY --from=deps /app/node_modules ./node_modules
+#9 CACHED
+
+#10 [builder 4/5] COPY . .
+#10 DONE 0.1s
+
+#11 [builder 5/5] RUN npm run build
+#11 0.661 
+#11 0.661 > salesplaybook@0.1.0 build
+#11 0.661 > next build
+#11 0.661 
+#11 1.620 Attention: Next.js now collects completely anonymous telemetry regarding usage.
+#11 1.621 This information is used to shape Next.js' roadmap and prioritize features.
+#11 1.621 You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+#11 1.621 https://nextjs.org/telemetry
+#11 1.621 
+#11 1.625 (node:17) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///app/image-hosts.config.js is not specified and it doesn't parse as CommonJS.
+#11 1.625 Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+#11 1.625 To eliminate this warning, add "type": "module" to /app/package.json.
+#11 1.625 (Use `node --trace-warnings ...` to show where the warning was created)
+#11 1.785    ▲ Next.js 15.1.11
+#11 1.785 
+#11 1.878    Creating an optimized production build ...
+#11 20.16  ✓ Compiled successfully
+#11 20.20    Skipping validation of types
+#11 20.20    Skipping linting
+#11 20.60    Collecting page data ...
+#11 21.38 ReferenceError: solutions is not defined
+#11 21.38     at Object.d [as generateStaticParams] (.next/server/app/cozumler/[slug]/page.js:1:2374)
+#11 21.38 
+#11 21.38 > Build error occurred
+#11 21.39 [Error: Failed to collect page data for /cozumler/[slug]] {
+#11 21.39   type: 'Error'
+#11 21.39 }
+#11 21.50 npm notice
+#11 21.50 npm notice New major version of npm available! 10.8.2 -> 11.12.0
+#11 21.50 npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.12.0
+#11 21.50 npm notice To update run: npm install -g npm@11.12.0
+#11 21.50 npm notice
+#11 ERROR: process "/bin/sh -c npm run build" did not complete successfully: exit code: 1
+------
+ > [builder 5/5] RUN npm run build:
+21.38 
+21.38 > Build error occurred
+21.39 [Error: Failed to collect page data for /cozumler/[slug]] {
+21.39   type: 'Error'
+21.39 }
+21.50 npm notice
+21.50 npm notice New major version of npm available! 10.8.2 -> 11.12.0
+21.50 npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.12.0
+21.50 npm notice To update run: npm install -g npm@11.12.0
+21.50 npm notice
+------
+Dockerfile:10
+--------------------
+   8 |       COPY --from=deps /app/node_modules ./node_modules
+   9 |       COPY . .
+  10 | >>>   RUN npm run build
+  11 |     
+  12 |       FROM node:20-alpine AS runner
+--------------------
+ERROR: failed to build: failed to solve: process "/bin/sh -c npm run build" did not complete successfully: exit code: 1
+##########################################
+### Error
+### Wed, 25 Mar 2026 19:36:57 GMT
+##########################################
+
+Command failed with exit code 1: docker buildx build --network host -f /etc/easypanel/projects/sphere-english/sphere-www/code/Dockerfile -t easypanel/sphere-english/sphere-www --label 'keep=true' --build-arg 'BREVO_API_KEY=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' --build-arg 'NOTION_API_KEY=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' --build-arg 'NOTION_DATABASE_ID=1efaf60b706a4083bc4d483f4b1cbe9f' --build-arg 'NEXT_PUBLIC_GA_MEASUREMENT_ID=G-ELDF1FF5S1' --build-arg 'GIT_SHA=de275ca8216c80c4bc42140a09607227936ec43b' /etc/easypanel/projects/sphere-english/sphere-www/code/
