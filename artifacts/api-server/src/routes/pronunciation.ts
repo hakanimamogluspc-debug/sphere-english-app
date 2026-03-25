@@ -2,7 +2,6 @@ import { Router, Request, Response } from "express";
 import OpenAI from "openai";
 import multer from "multer";
 import { authMiddleware } from "../middlewares/auth.js";
-import { Readable } from "stream";
 
 const router = Router();
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -11,22 +10,95 @@ const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 
 const ALLOWED_VOICES = ["nova", "onyx", "shimmer", "echo", "alloy", "fable"] as const;
 type Voice = typeof ALLOWED_VOICES[number];
 
-function normalizeWord(w: string) {
-  return w.toLowerCase().replace(/[^a-z']/g, "");
+// ─── Azure Pronunciation Assessment ─────────────────────────────────────────
+
+interface AzureWordResult {
+  Word: string;
+  PronunciationAssessment: {
+    AccuracyScore: number;
+    ErrorType: string; // "None" | "Omission" | "Insertion" | "Mispronunciation"
+  };
+  Phonemes?: { Phoneme: string; PronunciationAssessment: { AccuracyScore: number } }[];
 }
 
-function comparePronunciation(webSpeech: string, whisper: string): string[] {
-  const ws = webSpeech.trim().split(/\s+/).map(normalizeWord).filter(Boolean);
-  const wh = whisper.trim().split(/\s+/).map(normalizeWord).filter(Boolean);
-  const mispronounced: string[] = [];
-  const minLen = Math.min(ws.length, wh.length);
-  for (let i = 0; i < minLen; i++) {
-    if (ws[i] !== wh[i] && ws[i].length > 0 && wh[i].length > 0) {
-      mispronounced.push(ws[i]);
-    }
-  }
-  return mispronounced;
+interface AzurePronunciationResult {
+  accuracyScore: number;
+  fluencyScore: number;
+  completenessScore: number;
+  prosodyScore: number;
+  words: { word: string; accuracyScore: number; errorType: string }[];
+  mispronounced: string[];
 }
+
+async function assessPronunciation(
+  audioBuffer: Buffer,
+  referenceText: string,
+  mimeType: string
+): Promise<AzurePronunciationResult | null> {
+  const azureKey = process.env.AZURE_SPEECH_KEY;
+  const azureRegion = process.env.AZURE_SPEECH_REGION || "westeurope";
+
+  if (!azureKey) return null;
+
+  const assessmentConfig = Buffer.from(
+    JSON.stringify({
+      ReferenceText: referenceText,
+      GradingSystem: "HundredMark",
+      Granularity: "Word",
+      EnableMiscue: true,
+    })
+  ).toString("base64");
+
+  try {
+    const url = `https://${azureRegion}.stt.speech.microsoft.com/speech/recognition/conversation/cognitiveservices/v1?language=en-US&format=detailed`;
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Ocp-Apim-Subscription-Key": azureKey,
+        "Content-Type": mimeType.includes("webm") ? "audio/webm;codecs=opus" : "audio/wav;codecs=audio/pcm;samplerate=16000",
+        "Pronunciation-Assessment": assessmentConfig,
+      },
+      body: audioBuffer,
+    });
+
+    if (!res.ok) {
+      const errText = await res.text();
+      console.warn("Azure Speech API error:", res.status, errText);
+      return null;
+    }
+
+    const data = await res.json() as any;
+    const nbest = data?.NBest?.[0];
+    if (!nbest) return null;
+
+    const pa = nbest.PronunciationAssessment;
+    const words: AzureWordResult[] = nbest.Words || [];
+
+    const wordResults = words.map((w) => ({
+      word: w.Word,
+      accuracyScore: w.PronunciationAssessment?.AccuracyScore ?? 100,
+      errorType: w.PronunciationAssessment?.ErrorType ?? "None",
+    }));
+
+    const mispronounced = wordResults
+      .filter((w) => w.errorType !== "None" || w.accuracyScore < 70)
+      .map((w) => w.word);
+
+    return {
+      accuracyScore: pa?.AccuracyScore ?? 0,
+      fluencyScore: pa?.FluencyScore ?? 0,
+      completenessScore: pa?.CompletenessScore ?? 0,
+      prosodyScore: pa?.ProsodyScore ?? 0,
+      words: wordResults,
+      mispronounced,
+    };
+  } catch (e: any) {
+    console.warn("Azure Pronunciation Assessment failed:", e?.message);
+    return null;
+  }
+}
+
+// ─── Route ───────────────────────────────────────────────────────────────────
 
 router.post(
   "/pronunciation/analyze",
@@ -42,14 +114,14 @@ router.post(
         return res.status(400).json({ error: "Text is empty" });
       }
 
-      // --- Whisper transcription (if audio provided) ---
-      let whisperText = webSpeechText;
-      let mispronounced: string[] = [];
+      const hasAudio = req.file && req.file.buffer.length > 1000;
 
-      if (req.file && req.file.buffer.length > 1000) {
+      // ── Whisper transcription (raw audio → reference text) ──
+      let whisperText = webSpeechText;
+      if (hasAudio) {
         try {
-          const audioFile = new File([req.file.buffer], "audio.webm", {
-            type: req.file.mimetype || "audio/webm",
+          const audioFile = new File([req.file!.buffer], "audio.webm", {
+            type: req.file!.mimetype || "audio/webm",
           });
           const whisperRes = await openai.audio.transcriptions.create({
             model: "whisper-1",
@@ -58,44 +130,54 @@ router.post(
             temperature: 0,
           });
           whisperText = whisperRes.text.trim();
-          mispronounced = comparePronunciation(webSpeechText, whisperText);
         } catch (e: any) {
-          console.warn("Whisper error (ignoring):", e?.message);
+          console.warn("Whisper error:", e?.message);
         }
       }
 
-      // --- GPT grammar + pronunciation analysis ---
-      const pronunciationNote =
-        mispronounced.length > 0
-          ? `Whisper (ham ses analizi) şu kelimeleri farklı duydu: ${mispronounced.join(", ")}. Bu kelimeler telaffuz sorunu yaşanmış olabilir.`
-          : "";
+      // ── Azure Pronunciation Assessment ──
+      let azureResult: AzurePronunciationResult | null = null;
+      if (hasAudio) {
+        azureResult = await assessPronunciation(
+          req.file!.buffer,
+          whisperText || webSpeechText,
+          req.file!.mimetype || "audio/webm"
+        );
+      }
 
+      // ── Build pronunciation context for GPT ──
+      const azureContext = azureResult
+        ? `Azure Telaffuz Değerlendirmesi:
+- Doğruluk (Accuracy): ${azureResult.accuracyScore}/100
+- Akıcılık (Fluency): ${azureResult.fluencyScore}/100
+- Eksiksizlik (Completeness): ${azureResult.completenessScore}/100
+${azureResult.mispronounced.length > 0 ? `- Sorunlu kelimeler: ${azureResult.mispronounced.join(", ")}` : "- Telaffuz sorunsuz"}`
+        : "Azure telaffuz analizi yok (sadece gramer analizi)";
+
+      // ── GPT grammar + feedback ──
       const completion = await openai.chat.completions.create({
         model: "gpt-4o-mini",
         messages: [
           {
             role: "system",
-            content: `Sen İngilizce konuşma koçusun. Öğrenci bir şey söyledi; sistem bu konuşmayı yazıya çevirdi.
+            content: `Sen İngilizce konuşma koçusun.
 
-ÖNEMLİ KISITLAMALAR:
-- Bu bir KONUŞMA analizidir. Büyük/küçük harf, noktalama işareti, yazım kuralları hakkında ASLA yorum yapma.
-- Sadece KONUŞMADA duyulabilecek hatalar önemlidir: yanlış kelime seçimi, eksik/fazla kelime, yanlış çekim, yanlış zaman kipi.
-- İsimler her zaman küçük harfle gelebilir — bu bir hata DEĞİLDİR.
+ÖNEMLİ: Bu bir KONUŞMA analizidir.
+- Büyük/küçük harf, noktalama ASLA hata değildir.
+- Sadece konuşmada duyulabilecek hatalar önemli: yanlış kelime, eksik/fazla kelime, yanlış zaman kipi.
 
-Web Speech duyduğu: "{{webSpeech}}"
-Whisper (ham ses) duyduğu: "{{whisper}}"
-${pronunciationNote}
+${azureContext}
 
-Aşağıdaki JSON'u döndür:
-- hasErrors: boolean (yalnızca gerçek gramer veya telaffuz hatası varsa true)
-- corrected: string (konuşma hatası varsa düzeltilmiş hali, yoksa orijinalin kendisi)
-- feedback: string (1-2 cümle Türkçe. Sadece gramer/telaffuz hataları hakkında konuş. Büyük/küçük harf, noktalama YOK.)
-- score: number (0-100. Telaffuz hatası -10, gramer hatası -15. Her şey doğruysa 100.)
-- pronunciationIssues: string[] (Whisper ile fark olan kelimeler, yoksa boş dizi)`,
+JSON döndür:
+- hasErrors: boolean (gramer VEYA telaffuz hatası varsa true)
+- corrected: string (düzeltilmiş hali, yoksa orijinal)
+- feedback: string (1-2 cümle Türkçe. Azure verileri varsa telaffuz puanlarını ve sorunlu kelimeleri belirt.)
+- score: number (Azure varsa accuracy score'u kullan. Yoksa gramer hatasına göre 70-100 arası ver.)
+- pronunciationIssues: string[] (Azure'dan gelen sorunlu kelimeler)`,
           },
           {
             role: "user",
-            content: `Web Speech: "${webSpeechText}"\nWhisper: "${whisperText}"`,
+            content: `Söylenen: "${webSpeechText}"`,
           },
         ],
         response_format: { type: "json_object" },
@@ -103,10 +185,10 @@ Aşağıdaki JSON'u döndür:
         max_tokens: 300,
       });
 
-      const result = JSON.parse(completion.choices[0].message.content || "{}");
+      const gptResult = JSON.parse(completion.choices[0].message.content || "{}");
 
-      // TTS
-      const ttsText = result.corrected || webSpeechText;
+      // ── TTS ──
+      const ttsText = gptResult.corrected || webSpeechText;
       const ttsResponse = await openai.audio.speech.create({
         model: "tts-1",
         voice: safeVoice,
@@ -114,17 +196,24 @@ Aşağıdaki JSON'u döndür:
         speed: 0.85,
       });
 
-      const audioBuffer = Buffer.from(await ttsResponse.arrayBuffer());
-      const audioBase64 = audioBuffer.toString("base64");
+      const audioBase64 = Buffer.from(await ttsResponse.arrayBuffer()).toString("base64");
 
       return res.json({
-        hasErrors: result.hasErrors ?? false,
-        corrected: result.corrected || webSpeechText,
+        hasErrors: gptResult.hasErrors ?? false,
+        corrected: gptResult.corrected || webSpeechText,
         original: webSpeechText,
         whisperText,
-        feedback: result.feedback || "",
-        score: result.score ?? 100,
-        pronunciationIssues: result.pronunciationIssues ?? [],
+        feedback: gptResult.feedback || "",
+        score: gptResult.score ?? azureResult?.accuracyScore ?? 100,
+        pronunciationIssues: gptResult.pronunciationIssues ?? azureResult?.mispronounced ?? [],
+        azureScores: azureResult
+          ? {
+              accuracy: azureResult.accuracyScore,
+              fluency: azureResult.fluencyScore,
+              completeness: azureResult.completenessScore,
+              prosody: azureResult.prosodyScore,
+            }
+          : null,
         audioBase64,
       });
     } catch (err: any) {

@@ -68,6 +68,13 @@ const TEACHERS: Teacher[] = [
   },
 ];
 
+interface AzureScores {
+  accuracy: number;
+  fluency: number;
+  completeness: number;
+  prosody: number;
+}
+
 interface AnalysisResult {
   hasErrors: boolean;
   corrected: string;
@@ -76,6 +83,7 @@ interface AnalysisResult {
   feedback: string;
   score: number;
   pronunciationIssues: string[];
+  azureScores: AzureScores | null;
   audioBase64: string;
 }
 
@@ -555,6 +563,36 @@ export default function PronunciationCoach() {
                 </div>
                 <p className="text-blue-900 font-semibold text-lg">"{result.corrected}"</p>
               </div>
+
+              {/* Azure detailed scores */}
+              {result.azureScores && (
+                <div className="mb-4 p-4 rounded-xl bg-slate-50 border border-slate-100">
+                  <p className="text-xs font-medium text-slate-400 mb-3">📊 Detaylı Telaffuz Analizi</p>
+                  <div className="grid grid-cols-4 gap-2">
+                    {[
+                      { label: "Doğruluk", value: result.azureScores.accuracy, color: "blue" },
+                      { label: "Akıcılık", value: result.azureScores.fluency, color: "violet" },
+                      { label: "Eksiksizlik", value: result.azureScores.completeness, color: "green" },
+                      { label: "Prozodi", value: result.azureScores.prosody, color: "orange" },
+                    ].map(({ label, value, color }) => (
+                      <div key={label} className="flex flex-col items-center">
+                        <div className={`text-xl font-bold ${
+                          value >= 80 ? "text-green-600" : value >= 60 ? "text-amber-500" : "text-red-500"
+                        }`}>{Math.round(value)}</div>
+                        <div className="w-full bg-gray-200 rounded-full h-1.5 my-1">
+                          <div
+                            className={`h-1.5 rounded-full ${
+                              value >= 80 ? "bg-green-500" : value >= 60 ? "bg-amber-400" : "bg-red-400"
+                            }`}
+                            style={{ width: `${value}%` }}
+                          />
+                        </div>
+                        <p className="text-xs text-gray-400 text-center">{label}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {result.pronunciationIssues && result.pronunciationIssues.length > 0 && (
                 <div className="mb-4 p-4 rounded-xl bg-orange-50 border border-orange-100">
