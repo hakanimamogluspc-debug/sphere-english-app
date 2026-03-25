@@ -1,0 +1,27 @@
+User-agent: *
+
+# Giriş ve kayıt sayfaları indexlenebilir
+Allow: /$
+Allow: /login
+Allow: /register
+
+# Uygulama içi sayfalar (giriş gerektirir) indexlenmesin
+Disallow: /dashboard
+Disallow: /admin
+Disallow: /teacher
+Disallow: /student
+Disallow: /corporate
+Disallow: /courses
+Disallow: /forum
+Disallow: /messages
+Disallow: /live-classes
+Disallow: /quiz
+Disallow: /leaderboard
+Disallow: /certificates
+Disallow: /profile
+Disallow: /speaking-club
+Disallow: /materials
+Disallow: /announcements
+Disallow: /api/
+
+Sitemap: https://app.sphereenglish.com/sitemap.xml
