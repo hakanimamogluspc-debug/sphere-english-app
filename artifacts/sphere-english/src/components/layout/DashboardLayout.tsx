@@ -21,6 +21,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       { name: 'Ders Takvimim', href: '/live-classes', icon: Video },
       { name: 'Alıştırmalar', href: '/quizzes', icon: FileQuestion },
       { name: 'Speaking Club', href: '/student/speaking-club', icon: Mic },
+      { name: 'Telaffuz Koçu 🤖', href: '/student/pronunciation-coach', icon: Mic },
       { name: 'Forum', href: '/forum', icon: MessageCircle },
       { name: 'İlerleme Durumum', href: '/progress', icon: LineChart },
       { name: 'Sertifikalar', href: '/certificates', icon: Award },

@@ -42,6 +42,7 @@ import CorporateReports from "./pages/corporate/CorporateReports";
 import StudentSpeakingClub from "./pages/student/StudentSpeakingClub";
 import StudentMaterials from "./pages/student/StudentMaterials";
 import Forum from "./pages/student/Forum";
+import PronunciationCoach from "./pages/student/PronunciationCoach";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -110,6 +111,7 @@ function Router() {
       <Route path="/certificates"><LayoutWrapper component={Certificates} /></Route>
       <Route path="/student/speaking-club"><LayoutWrapper component={StudentSpeakingClub} allowedRoles={['student']} /></Route>
       <Route path="/student/materials"><LayoutWrapper component={StudentMaterials} allowedRoles={['student']} /></Route>
+      <Route path="/student/pronunciation-coach"><LayoutWrapper component={PronunciationCoach} allowedRoles={['student']} /></Route>
       <Route path="/forum"><LayoutWrapper component={Forum} /></Route>
 
       {/* Teacher Routes */}
