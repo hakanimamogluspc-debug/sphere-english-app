@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Mic, MicOff, Volume2, CheckCircle, AlertCircle, RefreshCw } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -12,7 +12,6 @@ interface AnalysisResult {
   errorType: string;
   score: number;
   audioBase64: string;
-  speakText: string;
 }
 
 function TeacherAvatar({ isSpeaking, isListening }: { isSpeaking: boolean; isListening: boolean }) {
@@ -23,7 +22,6 @@ function TeacherAvatar({ isSpeaking, isListening }: { isSpeaking: boolean; isLis
         transition={{ repeat: isSpeaking ? Infinity : 0, duration: 0.6 }}
         className="relative"
       >
-        {/* Glow ring when speaking */}
         {isSpeaking && (
           <motion.div
             className="absolute inset-0 rounded-full bg-blue-400 blur-xl opacity-30"
@@ -39,83 +37,48 @@ function TeacherAvatar({ isSpeaking, isListening }: { isSpeaking: boolean; isLis
           />
         )}
 
-        {/* Avatar SVG */}
         <svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
-          {/* Background circle */}
           <circle cx="100" cy="100" r="98" fill="url(#bgGrad)" stroke="#e2e8f0" strokeWidth="2" />
-
-          {/* Body / Shirt */}
           <ellipse cx="100" cy="170" rx="55" ry="35" fill="#1e3a5f" />
           <rect x="68" y="148" width="64" height="32" rx="8" fill="#1e3a5f" />
-
-          {/* Collar */}
           <path d="M85 148 L100 162 L115 148" fill="white" stroke="#e2e8f0" strokeWidth="1" />
-
-          {/* Neck */}
           <rect x="88" y="130" width="24" height="22" rx="5" fill="#FDBCB4" />
-
-          {/* Head */}
           <ellipse cx="100" cy="98" rx="42" ry="45" fill="#FDBCB4" />
-
-          {/* Hair */}
           <path d="M58 90 Q60 55 100 52 Q140 55 142 90 Q138 60 100 58 Q62 60 58 90Z" fill="#4a2c0a" />
           <path d="M60 88 Q55 110 58 130 Q60 118 62 108Z" fill="#4a2c0a" />
           <path d="M140 88 Q145 110 142 130 Q140 118 138 108Z" fill="#4a2c0a" />
-
-          {/* Ears */}
           <ellipse cx="58" cy="100" rx="8" ry="10" fill="#FDBCB4" />
           <ellipse cx="142" cy="100" rx="8" ry="10" fill="#FDBCB4" />
           <ellipse cx="58" cy="100" rx="5" ry="7" fill="#f4a896" />
           <ellipse cx="142" cy="100" rx="5" ry="7" fill="#f4a896" />
-
-          {/* Eyes */}
           <ellipse cx="82" cy="95" rx="9" ry="10" fill="white" />
           <ellipse cx="118" cy="95" rx="9" ry="10" fill="white" />
           <circle cx="84" cy="95" r="6" fill="#3d2b1f" />
           <circle cx="120" cy="95" r="6" fill="#3d2b1f" />
           <circle cx="85" cy="93" r="2" fill="white" />
           <circle cx="121" cy="93" r="2" fill="white" />
-
-          {/* Eyebrows */}
           <path d="M73 83 Q82 79 91 82" stroke="#4a2c0a" strokeWidth="2.5" strokeLinecap="round" />
           <path d="M109 82 Q118 79 127 83" stroke="#4a2c0a" strokeWidth="2.5" strokeLinecap="round" />
-
-          {/* Nose */}
           <path d="M97 105 Q100 112 103 105" stroke="#d4958a" strokeWidth="1.5" strokeLinecap="round" fill="none" />
-
-          {/* Mouth - animated */}
           {isSpeaking ? (
             <motion.ellipse
-              cx="100"
-              cy="122"
-              rx="12"
-              ry="6"
-              fill="#c0392b"
+              cx="100" cy="122" rx="12" ry="6" fill="#c0392b"
               animate={{ ry: [6, 10, 4, 8, 5, 6] }}
               transition={{ repeat: Infinity, duration: 0.4, ease: "easeInOut" }}
             />
           ) : (
             <path d="M88 120 Q100 128 112 120" stroke="#c0392b" strokeWidth="2" strokeLinecap="round" fill="none" />
           )}
-
-          {/* Teeth when speaking */}
           {isSpeaking && (
-            <motion.rect
-              x="91" y="122" width="18" height="5" rx="2" fill="white"
+            <motion.rect x="91" y="122" width="18" height="5" rx="2" fill="white"
               animate={{ opacity: [1, 0.8, 1] }}
               transition={{ repeat: Infinity, duration: 0.4 }}
             />
           )}
-
-          {/* Cheek blush */}
           <ellipse cx="72" cy="108" rx="8" ry="5" fill="#ffb3a0" opacity="0.4" />
           <ellipse cx="128" cy="108" rx="8" ry="5" fill="#ffb3a0" opacity="0.4" />
-
-          {/* Earrings */}
           <circle cx="58" cy="112" r="3" fill="#f59e0b" />
           <circle cx="142" cy="112" r="3" fill="#f59e0b" />
-
-          {/* Gradient def */}
           <defs>
             <radialGradient id="bgGrad" cx="50%" cy="40%" r="60%">
               <stop offset="0%" stopColor="#dbeafe" />
@@ -124,7 +87,6 @@ function TeacherAvatar({ isSpeaking, isListening }: { isSpeaking: boolean; isLis
           </defs>
         </svg>
 
-        {/* Speaking indicator */}
         {isSpeaking && (
           <motion.div
             className="absolute bottom-2 right-2 bg-blue-500 rounded-full p-1.5 shadow-lg"
@@ -139,36 +101,50 @@ function TeacherAvatar({ isSpeaking, isListening }: { isSpeaking: boolean; isLis
   );
 }
 
-type RecognitionState = "idle" | "listening" | "processing" | "done";
+type Phase = "idle" | "listening" | "processing" | "done";
 
 export default function PronunciationCoach() {
-  const [state, setState] = useState<RecognitionState>("idle");
+  const [phase, setPhase] = useState<Phase>("idle");
   const [transcript, setTranscript] = useState("");
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [error, setError] = useState("");
+
   const recognitionRef = useRef<any>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const activeRef = useRef(false); // tracks if we're still in listening mode
 
   const getApiBase = () => {
     const base = import.meta.env.BASE_URL.replace(/\/$/, "");
     return base.replace("/sphere-english", "/api-server");
   };
 
-  const stopListening = useCallback(() => {
-    if (recognitionRef.current) {
-      recognitionRef.current.stop();
-    }
-  }, []);
+  const playAudio = (audioBase64: string) => {
+    const blob = new Blob(
+      [Uint8Array.from(atob(audioBase64), (c) => c.charCodeAt(0))],
+      { type: "audio/mpeg" }
+    );
+    const url = URL.createObjectURL(blob);
+    const audio = new Audio(url);
+    audioRef.current = audio;
+    setIsSpeaking(true);
+    audio.play();
+    audio.onended = () => {
+      setIsSpeaking(false);
+      URL.revokeObjectURL(url);
+    };
+    audio.onerror = () => {
+      setIsSpeaking(false);
+    };
+  };
 
-  const analyzeText = useCallback(async (text: string) => {
+  const analyzeText = async (text: string) => {
     if (!text.trim()) return;
-    setState("processing");
+    setPhase("processing");
     setError("");
     try {
       const token = localStorage.getItem(TOKEN_KEY);
-      const apiBase = getApiBase();
-      const res = await fetch(`${apiBase}/api/pronunciation/analyze`, {
+      const res = await fetch(`${getApiBase()}/api/pronunciation/analyze`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -179,31 +155,28 @@ export default function PronunciationCoach() {
       if (!res.ok) throw new Error("Analysis failed");
       const data: AnalysisResult = await res.json();
       setResult(data);
-      setState("done");
-
-      // Play audio
-      if (data.audioBase64) {
-        const blob = new Blob(
-          [Uint8Array.from(atob(data.audioBase64), (c) => c.charCodeAt(0))],
-          { type: "audio/mpeg" }
-        );
-        const url = URL.createObjectURL(blob);
-        const audio = new Audio(url);
-        audioRef.current = audio;
-        setIsSpeaking(true);
-        audio.play();
-        audio.onended = () => {
-          setIsSpeaking(false);
-          URL.revokeObjectURL(url);
-        };
-      }
+      setPhase("done");
+      if (data.audioBase64) playAudio(data.audioBase64);
     } catch {
       setError("Analiz yapılamadı. Lütfen tekrar deneyin.");
-      setState("idle");
+      setPhase("idle");
     }
-  }, []);
+  };
 
-  const startListening = useCallback(() => {
+  const stopRecognition = () => {
+    activeRef.current = false;
+    if (recognitionRef.current) {
+      try { recognitionRef.current.stop(); } catch {}
+      recognitionRef.current = null;
+    }
+  };
+
+  const handleStop = () => {
+    stopRecognition();
+    setPhase("idle");
+  };
+
+  const handleStart = () => {
     const SpeechRecognition =
       (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
@@ -215,40 +188,54 @@ export default function PronunciationCoach() {
     setResult(null);
     setTranscript("");
     setError("");
-    setState("listening");
+    setPhase("listening");
+    activeRef.current = true;
 
     const recognition = new SpeechRecognition();
     recognition.lang = "en-US";
     recognition.continuous = false;
     recognition.interimResults = true;
     recognition.maxAlternatives = 1;
+    recognitionRef.current = recognition;
 
     recognition.onresult = (event: any) => {
+      if (!activeRef.current) return;
       const last = event.results.length - 1;
       const text = event.results[last][0].transcript;
       setTranscript(text);
       if (event.results[last].isFinal) {
-        recognition.stop();
+        activeRef.current = false;
+        recognitionRef.current = null;
         analyzeText(text);
       }
     };
 
     recognition.onerror = (event: any) => {
-      if (event.error !== "no-speech") {
-        setError("Ses algılanamadı. Mikrofon izni verdiğinizden emin olun.");
+      if (!activeRef.current) return;
+      if (event.error === "no-speech") return;
+      if (event.error === "not-allowed") {
+        setError("Mikrofon erişimi reddedildi. Tarayıcı ayarlarından mikrofona izin verin.");
+      } else {
+        setError("Ses algılanamadı. Tekrar deneyin.");
       }
-      setState("idle");
+      activeRef.current = false;
+      recognitionRef.current = null;
+      setPhase("idle");
     };
 
     recognition.onend = () => {
-      if (state === "listening") setState("idle");
+      if (activeRef.current) {
+        // ended unexpectedly while still listening → go back to idle
+        activeRef.current = false;
+        setPhase("idle");
+      }
     };
 
-    recognitionRef.current = recognition;
     recognition.start();
-  }, [analyzeText, state]);
+  };
 
   const reset = () => {
+    stopRecognition();
     if (audioRef.current) {
       audioRef.current.pause();
       setIsSpeaking(false);
@@ -256,17 +243,17 @@ export default function PronunciationCoach() {
     setResult(null);
     setTranscript("");
     setError("");
-    setState("idle");
+    setPhase("idle");
   };
 
   useEffect(() => {
     return () => {
-      if (recognitionRef.current) recognitionRef.current.stop();
+      stopRecognition();
       if (audioRef.current) audioRef.current.pause();
     };
   }, []);
 
-  const stateLabels = {
+  const stateLabel: Record<Phase, string> = {
     idle: "Konuşmak için butona basın",
     listening: "Dinliyorum... İngilizce konuşun",
     processing: "Analiz ediliyor...",
@@ -275,7 +262,6 @@ export default function PronunciationCoach() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6">
-      {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">AI Telaffuz Koçu</h1>
         <p className="text-gray-500 text-sm mt-1">
@@ -283,31 +269,27 @@ export default function PronunciationCoach() {
         </p>
       </div>
 
-      {/* Main card */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        {/* Avatar section */}
         <div className="bg-gradient-to-b from-blue-50 to-white px-6 pt-8 pb-4 flex flex-col items-center">
-          <TeacherAvatar isSpeaking={isSpeaking} isListening={state === "listening"} />
-
-          {/* State label */}
+          <TeacherAvatar isSpeaking={isSpeaking} isListening={phase === "listening"} />
           <motion.p
-            key={state}
+            key={isSpeaking ? "speaking" : phase}
             initial={{ opacity: 0, y: 4 }}
             animate={{ opacity: 1, y: 0 }}
             className={`mt-3 text-sm font-medium ${
-              state === "listening" ? "text-red-500" :
-              state === "processing" ? "text-blue-500" :
-              state === "done" ? "text-green-600" : "text-gray-400"
+              phase === "listening" ? "text-red-500" :
+              phase === "processing" ? "text-blue-500" :
+              phase === "done" ? "text-green-600" : "text-gray-400"
             }`}
           >
-            {isSpeaking ? "Geri bildirim veriliyor..." : stateLabels[state]}
+            {isSpeaking ? "Geri bildirim veriliyor..." : stateLabel[phase]}
           </motion.p>
         </div>
 
-        {/* Subtitle / transcript area */}
+        {/* Transcript */}
         <div className="px-6 py-4 min-h-[72px] flex items-center justify-center bg-gray-50 border-y border-gray-100">
           <AnimatePresence mode="wait">
-            {transcript && state !== "idle" && (
+            {transcript ? (
               <motion.div
                 key="transcript"
                 initial={{ opacity: 0, y: 6 }}
@@ -318,8 +300,7 @@ export default function PronunciationCoach() {
                 <p className="text-xs text-gray-400 mb-1">Söyledikleriniz</p>
                 <p className="text-gray-700 font-medium text-base italic">"{transcript}"</p>
               </motion.div>
-            )}
-            {!transcript && state === "idle" && !result && (
+            ) : (
               <motion.p
                 key="placeholder"
                 initial={{ opacity: 0 }}
@@ -332,7 +313,7 @@ export default function PronunciationCoach() {
           </AnimatePresence>
         </div>
 
-        {/* Feedback / Result section */}
+        {/* Result */}
         <AnimatePresence>
           {result && (
             <motion.div
@@ -341,7 +322,6 @@ export default function PronunciationCoach() {
               exit={{ opacity: 0, height: 0 }}
               className="px-6 py-5"
             >
-              {/* Score */}
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   {result.hasErrors ? (
@@ -361,7 +341,6 @@ export default function PronunciationCoach() {
                 </div>
               </div>
 
-              {/* Corrected text */}
               {result.hasErrors && (
                 <div className="mb-4 p-4 rounded-xl bg-blue-50 border border-blue-100">
                   <p className="text-xs font-medium text-blue-400 mb-1">Doğru İfade</p>
@@ -369,7 +348,6 @@ export default function PronunciationCoach() {
                 </div>
               )}
 
-              {/* Feedback */}
               <div className={`p-4 rounded-xl ${
                 result.hasErrors ? "bg-amber-50 border border-amber-100" : "bg-green-50 border border-green-100"
               }`}>
@@ -382,7 +360,6 @@ export default function PronunciationCoach() {
           )}
         </AnimatePresence>
 
-        {/* Error */}
         {error && (
           <div className="mx-6 mb-4 p-3 bg-red-50 border border-red-100 rounded-xl text-sm text-red-600">
             {error}
@@ -391,7 +368,7 @@ export default function PronunciationCoach() {
 
         {/* Controls */}
         <div className="px-6 pb-6 pt-2 flex items-center justify-center gap-4">
-          {state === "done" ? (
+          {phase === "done" ? (
             <button
               onClick={reset}
               className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium transition-colors"
@@ -399,51 +376,47 @@ export default function PronunciationCoach() {
               <RefreshCw className="w-4 h-4" />
               Tekrar Dene
             </button>
+          ) : phase === "listening" ? (
+            <motion.button
+              onClick={handleStop}
+              whileTap={{ scale: 0.95 }}
+              className="flex items-center gap-3 px-8 py-4 rounded-2xl font-semibold text-white shadow-md bg-red-500 hover:bg-red-600 shadow-red-200 transition-all"
+            >
+              <motion.div
+                animate={{ scale: [1, 1.3, 1] }}
+                transition={{ repeat: Infinity, duration: 0.6 }}
+              >
+                <MicOff className="w-5 h-5" />
+              </motion.div>
+              Durdurun
+            </motion.button>
+          ) : phase === "processing" ? (
+            <button
+              disabled
+              className="flex items-center gap-3 px-8 py-4 rounded-2xl font-semibold text-white bg-blue-400 opacity-80 cursor-not-allowed"
+            >
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+              >
+                <RefreshCw className="w-5 h-5" />
+              </motion.div>
+              Analiz ediliyor...
+            </button>
           ) : (
             <motion.button
-              onClick={state === "listening" ? stopListening : startListening}
-              disabled={state === "processing" || isSpeaking}
+              onClick={handleStart}
+              disabled={isSpeaking}
               whileTap={{ scale: 0.95 }}
-              className={`flex items-center gap-3 px-8 py-4 rounded-2xl font-semibold text-white shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
-                state === "listening"
-                  ? "bg-red-500 hover:bg-red-600 shadow-red-200"
-                  : state === "processing"
-                  ? "bg-blue-400"
-                  : "bg-blue-600 hover:bg-blue-700 shadow-blue-200"
-              }`}
+              className="flex items-center gap-3 px-8 py-4 rounded-2xl font-semibold text-white shadow-md bg-blue-600 hover:bg-blue-700 shadow-blue-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {state === "listening" ? (
-                <>
-                  <motion.div
-                    animate={{ scale: [1, 1.3, 1] }}
-                    transition={{ repeat: Infinity, duration: 0.6 }}
-                  >
-                    <MicOff className="w-5 h-5" />
-                  </motion.div>
-                  Durdurun
-                </>
-              ) : state === "processing" ? (
-                <>
-                  <motion.div
-                    animate={{ rotate: 360 }}
-                    transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
-                  >
-                    <RefreshCw className="w-5 h-5" />
-                  </motion.div>
-                  Analiz ediliyor...
-                </>
-              ) : (
-                <>
-                  <Mic className="w-5 h-5" />
-                  Konuşmaya Başla
-                </>
-              )}
+              <Mic className="w-5 h-5" />
+              Konuşmaya Başla
             </motion.button>
           )}
         </div>
       </div>
 
-      {/* Tips */}
       <div className="mt-6 grid grid-cols-3 gap-3">
         {[
           { emoji: "🎯", title: "Cümle Kurun", desc: "Tek kelime değil, tam cümle konuşun" },
