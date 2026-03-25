@@ -72,9 +72,10 @@ interface AnalysisResult {
   hasErrors: boolean;
   corrected: string;
   original: string;
+  whisperText: string;
   feedback: string;
-  errorType: string;
   score: number;
+  pronunciationIssues: string[];
   audioBase64: string;
 }
 
@@ -188,6 +189,8 @@ export default function PronunciationCoach() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const activeRef = useRef(false);
   const lastAudioBase64Ref = useRef<string>("");
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
 
   const getApiBase = () => {
     const base = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -223,19 +226,22 @@ export default function PronunciationCoach() {
     }
   };
 
-  const analyzeText = async (text: string) => {
+  const analyzeText = async (text: string, audioBlob?: Blob) => {
     if (!text.trim()) return;
     setPhase("processing");
     setError("");
     try {
       const token = localStorage.getItem(TOKEN_KEY);
+      const formData = new FormData();
+      formData.append("text", text.trim());
+      formData.append("voice", selectedTeacher.voice);
+      if (audioBlob && audioBlob.size > 1000) {
+        formData.append("audio", audioBlob, "audio.webm");
+      }
       const res = await fetch(`${getApiBase()}/api/pronunciation/analyze`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ text, voice: selectedTeacher.voice }),
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
       });
       if (!res.ok) throw new Error("Analysis failed");
       const data: AnalysisResult = await res.json();
@@ -254,6 +260,9 @@ export default function PronunciationCoach() {
       try { recognitionRef.current.stop(); } catch {}
       recognitionRef.current = null;
     }
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
+      try { mediaRecorderRef.current.stop(); } catch {}
+    }
   };
 
   const handleStop = () => {
@@ -261,7 +270,7 @@ export default function PronunciationCoach() {
     setPhase("idle");
   };
 
-  const handleStart = () => {
+  const handleStart = async () => {
     const SpeechRecognition =
       (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
@@ -275,6 +284,24 @@ export default function PronunciationCoach() {
     setError("");
     setPhase("listening");
     activeRef.current = true;
+    audioChunksRef.current = [];
+
+    // Start MediaRecorder for audio capture (for Whisper)
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
+        ? "audio/webm;codecs=opus"
+        : "audio/webm";
+      const recorder = new MediaRecorder(stream, { mimeType });
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) audioChunksRef.current.push(e.data);
+      };
+      recorder.start(200);
+      mediaRecorderRef.current = recorder;
+    } catch {
+      // MediaRecorder failed — continue without audio (grammar-only mode)
+      mediaRecorderRef.current = null;
+    }
 
     const recognition = new SpeechRecognition();
     recognition.lang = "en-US";
@@ -291,7 +318,19 @@ export default function PronunciationCoach() {
       if (event.results[last].isFinal) {
         activeRef.current = false;
         recognitionRef.current = null;
-        analyzeText(text);
+        // Stop recorder and get audio blob
+        const mr = mediaRecorderRef.current;
+        if (mr && mr.state === "recording") {
+          mr.onstop = () => {
+            const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+            // Stop all tracks
+            (mr as any).stream?.getTracks?.()?.forEach((t: MediaStreamTrack) => t.stop());
+            analyzeText(text, blob);
+          };
+          mr.stop();
+        } else {
+          analyzeText(text);
+        }
       }
     };
 
@@ -516,6 +555,19 @@ export default function PronunciationCoach() {
                 </div>
                 <p className="text-blue-900 font-semibold text-lg">"{result.corrected}"</p>
               </div>
+
+              {result.pronunciationIssues && result.pronunciationIssues.length > 0 && (
+                <div className="mb-4 p-4 rounded-xl bg-orange-50 border border-orange-100">
+                  <p className="text-xs font-medium text-orange-400 mb-2">⚠️ Telaffuz Sorunu Tespit Edildi</p>
+                  <div className="flex flex-wrap gap-2">
+                    {result.pronunciationIssues.map((word) => (
+                      <span key={word} className="bg-orange-100 text-orange-700 text-sm font-semibold px-2.5 py-1 rounded-lg">
+                        {word}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div className={`p-4 rounded-xl ${
                 result.hasErrors ? "bg-amber-50 border border-amber-100" : "bg-green-50 border border-green-100"
