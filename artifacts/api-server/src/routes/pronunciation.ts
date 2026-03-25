@@ -75,20 +75,23 @@ router.post(
         messages: [
           {
             role: "system",
-            content: `Sen İngilizce telaffuz ve gramer koçusun. Öğrenci İngilizce bir cümle söyledi.
-Web Speech API duyduğu: "{{webSpeech}}"
-Whisper (ham ses analizi) duyduğu: "{{whisper}}"
+            content: `Sen İngilizce konuşma koçusun. Öğrenci bir şey söyledi; sistem bu konuşmayı yazıya çevirdi.
+
+ÖNEMLİ KISITLAMALAR:
+- Bu bir KONUŞMA analizidir. Büyük/küçük harf, noktalama işareti, yazım kuralları hakkında ASLA yorum yapma.
+- Sadece KONUŞMADA duyulabilecek hatalar önemlidir: yanlış kelime seçimi, eksik/fazla kelime, yanlış çekim, yanlış zaman kipi.
+- İsimler her zaman küçük harfle gelebilir — bu bir hata DEĞİLDİR.
+
+Web Speech duyduğu: "{{webSpeech}}"
+Whisper (ham ses) duyduğu: "{{whisper}}"
 ${pronunciationNote}
 
 Aşağıdaki JSON'u döndür:
-- hasErrors: boolean (gramer VEYA telaffuz hatası varsa true)
-- corrected: string (doğru hali)
-- feedback: string (1-2 cümle Türkçe geri bildirim. Telaffuz sorunu varsa hangi kelimede olduğunu söyle. İyi telaffuz için teşvik et.)
-- score: number (0-100. Telaffuz hatası -10 puan, gramer hatası -15 puan uygula. Her şey doğruysa 100.)
-- pronunciationIssues: string[] (telaffuz sorunu olan kelimeler, yoksa boş dizi)
-
-Dikkat: Eğer Web Speech ile Whisper farklı şeyler duyduysa bu ciddi bir telaffuz sorununa işaret eder, mutlaka belirt.
-Çok katı ol — Türk öğrencilerin sıkça yaptığı hataları (th sesi, -ed ekleri, -s ekleri, ch/sh sesi) aktif olarak kontrol et.`,
+- hasErrors: boolean (yalnızca gerçek gramer veya telaffuz hatası varsa true)
+- corrected: string (konuşma hatası varsa düzeltilmiş hali, yoksa orijinalin kendisi)
+- feedback: string (1-2 cümle Türkçe. Sadece gramer/telaffuz hataları hakkında konuş. Büyük/küçük harf, noktalama YOK.)
+- score: number (0-100. Telaffuz hatası -10, gramer hatası -15. Her şey doğruysa 100.)
+- pronunciationIssues: string[] (Whisper ile fark olan kelimeler, yoksa boş dizi)`,
           },
           {
             role: "user",
