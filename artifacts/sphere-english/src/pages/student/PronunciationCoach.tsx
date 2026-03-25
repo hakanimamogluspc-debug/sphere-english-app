@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Mic, MicOff, Volume2, CheckCircle, AlertCircle, RefreshCw } from "lucide-react";
+import { Mic, MicOff, Volume2, CheckCircle, AlertCircle, RefreshCw, Play } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const TOKEN_KEY = "sphere_token";
@@ -112,7 +112,8 @@ export default function PronunciationCoach() {
 
   const recognitionRef = useRef<any>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const activeRef = useRef(false); // tracks if we're still in listening mode
+  const activeRef = useRef(false);
+  const lastAudioBase64Ref = useRef<string>("");
 
   const getApiBase = () => {
     const base = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -120,6 +121,10 @@ export default function PronunciationCoach() {
   };
 
   const playAudio = (audioBase64: string) => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+    }
+    lastAudioBase64Ref.current = audioBase64;
     const blob = new Blob(
       [Uint8Array.from(atob(audioBase64), (c) => c.charCodeAt(0))],
       { type: "audio/mpeg" }
@@ -136,6 +141,12 @@ export default function PronunciationCoach() {
     audio.onerror = () => {
       setIsSpeaking(false);
     };
+  };
+
+  const replayAudio = () => {
+    if (lastAudioBase64Ref.current) {
+      playAudio(lastAudioBase64Ref.current);
+    }
   };
 
   const analyzeText = async (text: string) => {
@@ -341,12 +352,29 @@ export default function PronunciationCoach() {
                 </div>
               </div>
 
-              {result.hasErrors && (
-                <div className="mb-4 p-4 rounded-xl bg-blue-50 border border-blue-100">
-                  <p className="text-xs font-medium text-blue-400 mb-1">Doğru İfade</p>
-                  <p className="text-blue-900 font-semibold text-base">"{result.corrected}"</p>
+              {/* Correct sentence — always shown, with replay button */}
+              <div className="mb-4 p-4 rounded-xl bg-blue-50 border border-blue-100">
+                <div className="flex items-center justify-between mb-1">
+                  <p className="text-xs font-medium text-blue-400">
+                    {result.hasErrors ? "Doğru İfade" : "Söylediğiniz (Doğru!)"}
+                  </p>
+                  <button
+                    onClick={replayAudio}
+                    disabled={isSpeaking}
+                    className="flex items-center gap-1 text-xs text-blue-500 hover:text-blue-700 disabled:opacity-40 font-medium transition-colors"
+                  >
+                    {isSpeaking ? (
+                      <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 0.5 }}>
+                        <Volume2 className="w-3.5 h-3.5" />
+                      </motion.div>
+                    ) : (
+                      <Play className="w-3.5 h-3.5" />
+                    )}
+                    {isSpeaking ? "Oynatılıyor..." : "Tekrar Dinle"}
+                  </button>
                 </div>
-              )}
+                <p className="text-blue-900 font-semibold text-lg">"{result.corrected}"</p>
+              </div>
 
               <div className={`p-4 rounded-xl ${
                 result.hasErrors ? "bg-amber-50 border border-amber-100" : "bg-green-50 border border-green-100"
