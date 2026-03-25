@@ -14,89 +14,98 @@ interface AnalysisResult {
   audioBase64: string;
 }
 
+function SoundWave({ active }: { active: boolean }) {
+  const bars = [0.4, 0.7, 1, 0.8, 0.5, 0.9, 0.6, 1, 0.7, 0.4];
+  return (
+    <div className="flex items-center justify-center gap-0.5 h-8">
+      {bars.map((h, i) => (
+        <motion.div
+          key={i}
+          className="w-1 rounded-full bg-blue-400"
+          animate={active ? { scaleY: [h, h * 0.3, h * 1.2, h * 0.5, h] } : { scaleY: 0.15 }}
+          transition={active ? {
+            repeat: Infinity,
+            duration: 0.6,
+            delay: i * 0.06,
+            ease: "easeInOut",
+          } : { duration: 0.3 }}
+          style={{ height: 28, originY: "bottom" }}
+        />
+      ))}
+    </div>
+  );
+}
+
 function TeacherAvatar({ isSpeaking, isListening }: { isSpeaking: boolean; isListening: boolean }) {
+  const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
   return (
     <div className="relative flex items-center justify-center">
-      <motion.div
-        animate={isSpeaking ? { scale: [1, 1.02, 1] } : { scale: 1 }}
-        transition={{ repeat: isSpeaking ? Infinity : 0, duration: 0.6 }}
-        className="relative"
-      >
-        {isSpeaking && (
+      {/* Outer pulse rings */}
+      {(isSpeaking || isListening) && (
+        <>
           <motion.div
-            className="absolute inset-0 rounded-full bg-blue-400 blur-xl opacity-30"
-            animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
-            transition={{ repeat: Infinity, duration: 1.2 }}
+            className={`absolute rounded-full ${isSpeaking ? "bg-blue-400" : "bg-red-400"}`}
+            style={{ width: 220, height: 220 }}
+            animate={{ scale: [1, 1.15, 1], opacity: [0.15, 0.3, 0.15] }}
+            transition={{ repeat: Infinity, duration: isSpeaking ? 1.2 : 0.8 }}
           />
-        )}
+          <motion.div
+            className={`absolute rounded-full ${isSpeaking ? "bg-blue-300" : "bg-red-300"}`}
+            style={{ width: 200, height: 200 }}
+            animate={{ scale: [1, 1.08, 1], opacity: [0.2, 0.4, 0.2] }}
+            transition={{ repeat: Infinity, duration: isSpeaking ? 1.2 : 0.8, delay: 0.15 }}
+          />
+        </>
+      )}
+
+      {/* Photo in circle */}
+      <motion.div
+        className="relative rounded-full overflow-hidden shadow-xl border-4 border-white"
+        style={{ width: 180, height: 180 }}
+        animate={isSpeaking ? { scale: [1, 1.015, 1] } : { scale: 1 }}
+        transition={{ repeat: isSpeaking ? Infinity : 0, duration: 0.7 }}
+      >
+        <img
+          src={`${BASE}/images/teacher-avatar.png`}
+          alt="Teacher"
+          className="w-full h-full object-cover object-top"
+        />
+        {/* Subtle overlay when listening */}
         {isListening && (
           <motion.div
-            className="absolute inset-0 rounded-full bg-red-400 blur-xl opacity-20"
-            animate={{ scale: [1, 1.15, 1], opacity: [0.2, 0.4, 0.2] }}
+            className="absolute inset-0 bg-red-500 opacity-10"
+            animate={{ opacity: [0.05, 0.15, 0.05] }}
             transition={{ repeat: Infinity, duration: 0.8 }}
           />
         )}
+      </motion.div>
 
-        <svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="100" cy="100" r="98" fill="url(#bgGrad)" stroke="#e2e8f0" strokeWidth="2" />
-          <ellipse cx="100" cy="170" rx="55" ry="35" fill="#1e3a5f" />
-          <rect x="68" y="148" width="64" height="32" rx="8" fill="#1e3a5f" />
-          <path d="M85 148 L100 162 L115 148" fill="white" stroke="#e2e8f0" strokeWidth="1" />
-          <rect x="88" y="130" width="24" height="22" rx="5" fill="#FDBCB4" />
-          <ellipse cx="100" cy="98" rx="42" ry="45" fill="#FDBCB4" />
-          <path d="M58 90 Q60 55 100 52 Q140 55 142 90 Q138 60 100 58 Q62 60 58 90Z" fill="#4a2c0a" />
-          <path d="M60 88 Q55 110 58 130 Q60 118 62 108Z" fill="#4a2c0a" />
-          <path d="M140 88 Q145 110 142 130 Q140 118 138 108Z" fill="#4a2c0a" />
-          <ellipse cx="58" cy="100" rx="8" ry="10" fill="#FDBCB4" />
-          <ellipse cx="142" cy="100" rx="8" ry="10" fill="#FDBCB4" />
-          <ellipse cx="58" cy="100" rx="5" ry="7" fill="#f4a896" />
-          <ellipse cx="142" cy="100" rx="5" ry="7" fill="#f4a896" />
-          <ellipse cx="82" cy="95" rx="9" ry="10" fill="white" />
-          <ellipse cx="118" cy="95" rx="9" ry="10" fill="white" />
-          <circle cx="84" cy="95" r="6" fill="#3d2b1f" />
-          <circle cx="120" cy="95" r="6" fill="#3d2b1f" />
-          <circle cx="85" cy="93" r="2" fill="white" />
-          <circle cx="121" cy="93" r="2" fill="white" />
-          <path d="M73 83 Q82 79 91 82" stroke="#4a2c0a" strokeWidth="2.5" strokeLinecap="round" />
-          <path d="M109 82 Q118 79 127 83" stroke="#4a2c0a" strokeWidth="2.5" strokeLinecap="round" />
-          <path d="M97 105 Q100 112 103 105" stroke="#d4958a" strokeWidth="1.5" strokeLinecap="round" fill="none" />
-          {isSpeaking ? (
-            <motion.ellipse
-              cx="100" cy="122" rx="12" ry="6" fill="#c0392b"
-              animate={{ ry: [6, 10, 4, 8, 5, 6] }}
-              transition={{ repeat: Infinity, duration: 0.4, ease: "easeInOut" }}
-            />
-          ) : (
-            <path d="M88 120 Q100 128 112 120" stroke="#c0392b" strokeWidth="2" strokeLinecap="round" fill="none" />
-          )}
-          {isSpeaking && (
-            <motion.rect x="91" y="122" width="18" height="5" rx="2" fill="white"
-              animate={{ opacity: [1, 0.8, 1] }}
-              transition={{ repeat: Infinity, duration: 0.4 }}
-            />
-          )}
-          <ellipse cx="72" cy="108" rx="8" ry="5" fill="#ffb3a0" opacity="0.4" />
-          <ellipse cx="128" cy="108" rx="8" ry="5" fill="#ffb3a0" opacity="0.4" />
-          <circle cx="58" cy="112" r="3" fill="#f59e0b" />
-          <circle cx="142" cy="112" r="3" fill="#f59e0b" />
-          <defs>
-            <radialGradient id="bgGrad" cx="50%" cy="40%" r="60%">
-              <stop offset="0%" stopColor="#dbeafe" />
-              <stop offset="100%" stopColor="#eff6ff" />
-            </radialGradient>
-          </defs>
-        </svg>
+      {/* Speaking badge */}
+      {isSpeaking && (
+        <motion.div
+          className="absolute -bottom-1 left-1/2 -translate-x-1/2 bg-white rounded-full px-3 py-1 shadow-lg border border-blue-100 flex items-center gap-1.5"
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <SoundWave active={isSpeaking} />
+        </motion.div>
+      )}
 
-        {isSpeaking && (
+      {/* Mic active badge */}
+      {isListening && (
+        <motion.div
+          className="absolute -bottom-1 left-1/2 -translate-x-1/2 bg-red-500 rounded-full px-3 py-1.5 shadow-lg"
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
           <motion.div
-            className="absolute bottom-2 right-2 bg-blue-500 rounded-full p-1.5 shadow-lg"
             animate={{ scale: [1, 1.2, 1] }}
             transition={{ repeat: Infinity, duration: 0.5 }}
           >
-            <Volume2 className="w-3.5 h-3.5 text-white" />
+            <Mic className="w-4 h-4 text-white" />
           </motion.div>
-        )}
-      </motion.div>
+        </motion.div>
+      )}
     </div>
   );
 }
