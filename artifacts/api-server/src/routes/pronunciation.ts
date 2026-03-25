@@ -5,11 +5,11 @@ import { authMiddleware } from "../middlewares/auth.js";
 const router = Router();
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-router.post("/api/pronunciation/analyze", authMiddleware, async (req, res) => {
+router.post("/pronunciation/analyze", authMiddleware, async (req, res) => {
   try {
     const { text } = req.body as { text: string };
-    if (!text || text.trim().length < 2) {
-      return res.status(400).json({ error: "Text too short" });
+    if (!text || !text.trim()) {
+      return res.status(400).json({ error: "Text is empty" });
     }
 
     const completion = await openai.chat.completions.create({
