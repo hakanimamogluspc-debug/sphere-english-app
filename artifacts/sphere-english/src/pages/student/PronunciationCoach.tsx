@@ -4,6 +4,70 @@ import { motion, AnimatePresence } from "framer-motion";
 
 const TOKEN_KEY = "sphere_token";
 
+interface Teacher {
+  id: string;
+  name: string;
+  accent: string;
+  accentLabel: string;
+  gender: string;
+  voice: string;
+  image: string;
+  flag: string;
+  description: string;
+  color: string;
+}
+
+const TEACHERS: Teacher[] = [
+  {
+    id: "sarah",
+    name: "Sarah",
+    accent: "american",
+    accentLabel: "Amerikan",
+    gender: "Kadın",
+    voice: "nova",
+    image: "teacher-avatar.png",
+    flag: "🇺🇸",
+    description: "Sıcak ve teşvik edici",
+    color: "blue",
+  },
+  {
+    id: "james",
+    name: "James",
+    accent: "american",
+    accentLabel: "Amerikan",
+    gender: "Erkek",
+    voice: "onyx",
+    image: "teacher-james.png",
+    flag: "🇺🇸",
+    description: "Güçlü ve özgüvenli",
+    color: "indigo",
+  },
+  {
+    id: "emma",
+    name: "Emma",
+    accent: "british",
+    accentLabel: "İngiliz",
+    gender: "Kadın",
+    voice: "shimmer",
+    image: "teacher-emma.png",
+    flag: "🇬🇧",
+    description: "Zarif ve profesyonel",
+    color: "violet",
+  },
+  {
+    id: "oliver",
+    name: "Oliver",
+    accent: "british",
+    accentLabel: "İngiliz",
+    gender: "Erkek",
+    voice: "echo",
+    image: "teacher-oliver.png",
+    flag: "🇬🇧",
+    description: "Deneyimli ve sakin",
+    color: "slate",
+  },
+];
+
 interface AnalysisResult {
   hasErrors: boolean;
   corrected: string;
@@ -36,7 +100,7 @@ function SoundWave({ active }: { active: boolean }) {
   );
 }
 
-function TeacherAvatar({ isSpeaking, isListening }: { isSpeaking: boolean; isListening: boolean }) {
+function TeacherAvatar({ isSpeaking, isListening, image }: { isSpeaking: boolean; isListening: boolean; image: string }) {
   const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
   return (
     <div className="relative flex items-center justify-center">
@@ -66,7 +130,7 @@ function TeacherAvatar({ isSpeaking, isListening }: { isSpeaking: boolean; isLis
         transition={{ repeat: isSpeaking ? Infinity : 0, duration: 0.7 }}
       >
         <img
-          src={`${BASE}/images/teacher-avatar.png`}
+          src={`${BASE}/images/${image}`}
           alt="Teacher"
           className="w-full h-full object-cover object-top"
         />
@@ -110,10 +174,11 @@ function TeacherAvatar({ isSpeaking, isListening }: { isSpeaking: boolean; isLis
   );
 }
 
-type Phase = "idle" | "listening" | "processing" | "done";
+type Phase = "select" | "idle" | "listening" | "processing" | "done";
 
 export default function PronunciationCoach() {
-  const [phase, setPhase] = useState<Phase>("idle");
+  const [phase, setPhase] = useState<Phase>("select");
+  const [selectedTeacher, setSelectedTeacher] = useState<Teacher>(TEACHERS[0]);
   const [transcript, setTranscript] = useState("");
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -170,7 +235,7 @@ export default function PronunciationCoach() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ text }),
+        body: JSON.stringify({ text, voice: selectedTeacher.voice }),
       });
       if (!res.ok) throw new Error("Analysis failed");
       const data: AnalysisResult = await res.json();
@@ -274,29 +339,97 @@ export default function PronunciationCoach() {
   }, []);
 
   const stateLabel: Record<Phase, string> = {
+    select: "Öğretmen seçin",
     idle: "Konuşmak için butona basın",
     listening: "Dinliyorum... İngilizce konuşun",
     processing: "Analiz ediliyor...",
     done: "Analiz tamamlandı",
   };
 
+  if (phase === "select") {
+    return (
+      <div className="max-w-2xl mx-auto px-4 py-6">
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-gray-900">AI Telaffuz Koçu</h1>
+          <p className="text-gray-500 text-sm mt-1">
+            Sizi koçluk yapacak öğretmeni seçin. Her öğretmenin farklı aksanı ve sesi var.
+          </p>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          {TEACHERS.map((teacher) => (
+            <motion.button
+              key={teacher.id}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => {
+                setSelectedTeacher(teacher);
+                setPhase("idle");
+              }}
+              className="bg-white border-2 border-gray-100 hover:border-blue-300 rounded-2xl p-5 flex flex-col items-center gap-3 shadow-sm hover:shadow-md transition-all text-left group"
+            >
+              <div className="relative">
+                <img
+                  src={`/images/${teacher.image}`}
+                  alt={teacher.name}
+                  className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-md group-hover:shadow-blue-100 transition-shadow"
+                />
+                <span className="absolute -bottom-1 -right-1 text-xl">{teacher.flag}</span>
+              </div>
+              <div className="text-center">
+                <p className="text-lg font-bold text-gray-900">{teacher.name}</p>
+                <p className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full inline-block mt-1">
+                  {teacher.flag} {teacher.accentLabel} Aksanı
+                </p>
+                <p className="text-xs text-gray-400 mt-1">{teacher.gender} · {teacher.description}</p>
+              </div>
+            </motion.button>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-2xl mx-auto px-4 py-6">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">AI Telaffuz Koçu</h1>
-        <p className="text-gray-500 text-sm mt-1">
-          İngilizce konuşun — yapay zeka gramer ve telaffuzunuzu analiz edip sesli geri bildirim verecek.
-        </p>
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">AI Telaffuz Koçu</h1>
+            <p className="text-gray-500 text-sm mt-1">
+              İngilizce konuşun — yapay zeka gramer ve telaffuzunuzu analiz edip sesli geri bildirim verecek.
+            </p>
+          </div>
+          <button
+            onClick={() => {
+              reset();
+              setPhase("select");
+            }}
+            className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-blue-600 bg-gray-50 hover:bg-blue-50 border border-gray-200 hover:border-blue-200 px-3 py-1.5 rounded-xl transition-all mt-1 shrink-0"
+          >
+            <img
+              src={`/images/${selectedTeacher.image}`}
+              alt={selectedTeacher.name}
+              className="w-5 h-5 rounded-full object-cover"
+            />
+            {selectedTeacher.name} {selectedTeacher.flag}
+            <span className="text-gray-300">|</span>
+            <span>Değiştir</span>
+          </button>
+        </div>
       </div>
 
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="bg-gradient-to-b from-blue-50 to-white px-6 pt-8 pb-4 flex flex-col items-center">
-          <TeacherAvatar isSpeaking={isSpeaking} isListening={phase === "listening"} />
+          <TeacherAvatar isSpeaking={isSpeaking} isListening={phase === "listening"} image={selectedTeacher.image} />
+          <p className="mt-3 text-sm font-semibold text-gray-700">
+            {selectedTeacher.name} {selectedTeacher.flag}
+            <span className="ml-1.5 text-xs font-normal text-gray-400">{selectedTeacher.accentLabel} Aksanı</span>
+          </p>
           <motion.p
             key={isSpeaking ? "speaking" : phase}
             initial={{ opacity: 0, y: 4 }}
             animate={{ opacity: 1, y: 0 }}
-            className={`mt-3 text-sm font-medium ${
+            className={`mt-1 text-sm font-medium ${
               phase === "listening" ? "text-red-500" :
               phase === "processing" ? "text-blue-500" :
               phase === "done" ? "text-green-600" : "text-gray-400"

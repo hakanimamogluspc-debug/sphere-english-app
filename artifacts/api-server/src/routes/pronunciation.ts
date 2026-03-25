@@ -5,9 +5,13 @@ import { authMiddleware } from "../middlewares/auth.js";
 const router = Router();
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
+const ALLOWED_VOICES = ["nova", "onyx", "shimmer", "echo", "alloy", "fable"] as const;
+type Voice = typeof ALLOWED_VOICES[number];
+
 router.post("/pronunciation/analyze", authMiddleware, async (req, res) => {
   try {
-    const { text } = req.body as { text: string };
+    const { text, voice = "nova" } = req.body as { text: string; voice?: Voice };
+    const safeVoice: Voice = ALLOWED_VOICES.includes(voice as Voice) ? (voice as Voice) : "nova";
     if (!text || !text.trim()) {
       return res.status(400).json({ error: "Text is empty" });
     }
@@ -43,7 +47,7 @@ Be concise. For single words, check spelling/pronunciation context.`,
 
     const ttsResponse = await openai.audio.speech.create({
       model: "tts-1",
-      voice: "nova",
+      voice: safeVoice,
       input: ttsText,
       speed: 0.85,
     });
