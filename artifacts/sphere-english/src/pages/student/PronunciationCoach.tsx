@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect } from "react";
-import { Mic, MicOff, Volume2, CheckCircle, AlertCircle, RefreshCw, Play } from "lucide-react";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { Mic, MicOff, Volume2, ChevronLeft } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const TOKEN_KEY = "sphere_token";
@@ -14,7 +14,8 @@ interface Teacher {
   image: string;
   flag: string;
   description: string;
-  color: string;
+  colorClass: string;
+  bgClass: string;
 }
 
 const TEACHERS: Teacher[] = [
@@ -28,7 +29,8 @@ const TEACHERS: Teacher[] = [
     image: "teacher-avatar.png",
     flag: "🇺🇸",
     description: "Sıcak ve teşvik edici",
-    color: "blue",
+    colorClass: "text-blue-600",
+    bgClass: "bg-blue-50 border-blue-200",
   },
   {
     id: "james",
@@ -40,7 +42,8 @@ const TEACHERS: Teacher[] = [
     image: "teacher-james.png",
     flag: "🇺🇸",
     description: "Güçlü ve özgüvenli",
-    color: "indigo",
+    colorClass: "text-indigo-600",
+    bgClass: "bg-indigo-50 border-indigo-200",
   },
   {
     id: "emma",
@@ -51,8 +54,9 @@ const TEACHERS: Teacher[] = [
     voice: "shimmer",
     image: "teacher-emma.png",
     flag: "🇬🇧",
-    description: "Zarif ve profesyonel",
-    color: "violet",
+    description: "Zarif ve sabırlı",
+    colorClass: "text-rose-600",
+    bgClass: "bg-rose-50 border-rose-200",
   },
   {
     id: "oliver",
@@ -63,200 +67,171 @@ const TEACHERS: Teacher[] = [
     voice: "echo",
     image: "teacher-oliver.png",
     flag: "🇬🇧",
-    description: "Deneyimli ve sakin",
-    color: "slate",
+    description: "Açık ve metodolojik",
+    colorClass: "text-teal-600",
+    bgClass: "bg-teal-50 border-teal-200",
   },
 ];
 
-interface WordScore {
-  word: string;
-  score: number;
-  ok: boolean;
+interface WordScore { word: string; score: number; ok: boolean }
+
+interface Message {
+  id: string;
+  role: "user" | "teacher";
+  text: string;
+  wordScores?: WordScore[];
+  audioBase64?: string;
 }
 
-interface AnalysisResult {
-  hasErrors: boolean;
-  corrected: string;
-  original: string;
-  whisperText: string;
-  feedback: string;
-  score: number;
-  pronunciationIssues: string[];
-  wordScores: WordScore[];
-  azureScores: null;
-  audioBase64: string;
-}
+type Phase = "idle" | "recording" | "processing";
 
-function SoundWave({ active }: { active: boolean }) {
-  const bars = [0.4, 0.7, 1, 0.8, 0.5, 0.9, 0.6, 1, 0.7, 0.4];
+function WordScoreSpan({ word, score, ok }: WordScore) {
+  const color = score >= 82
+    ? "text-green-700"
+    : score >= 65
+    ? "text-amber-600"
+    : "text-red-600";
+  const underline = !ok ? "underline decoration-dotted" : "";
   return (
-    <div className="flex items-center justify-center gap-0.5 h-8">
-      {bars.map((h, i) => (
-        <motion.div
-          key={i}
-          className="w-1 rounded-full bg-blue-400"
-          animate={active ? { scaleY: [h, h * 0.3, h * 1.2, h * 0.5, h] } : { scaleY: 0.15 }}
-          transition={active ? {
-            repeat: Infinity,
-            duration: 0.6,
-            delay: i * 0.06,
-            ease: "easeInOut",
-          } : { duration: 0.3 }}
-          style={{ height: 28, originY: "bottom" }}
-        />
-      ))}
-    </div>
+    <span
+      className={`${color} ${underline} cursor-default`}
+      title={`${score}% doğruluk`}
+    >
+      {word}{" "}
+    </span>
   );
 }
 
-function TeacherAvatar({ isSpeaking, isListening, image }: { isSpeaking: boolean; isListening: boolean; image: string }) {
-  const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
+function UserBubble({ message }: { message: Message }) {
+  const words = message.wordScores || [];
+  const hasScores = words.length > 0;
   return (
-    <div className="relative flex items-center justify-center">
-      {/* Outer pulse rings */}
-      {(isSpeaking || isListening) && (
-        <>
-          <motion.div
-            className={`absolute rounded-full ${isSpeaking ? "bg-blue-400" : "bg-red-400"}`}
-            style={{ width: 220, height: 220 }}
-            animate={{ scale: [1, 1.15, 1], opacity: [0.15, 0.3, 0.15] }}
-            transition={{ repeat: Infinity, duration: isSpeaking ? 1.2 : 0.8 }}
-          />
-          <motion.div
-            className={`absolute rounded-full ${isSpeaking ? "bg-blue-300" : "bg-red-300"}`}
-            style={{ width: 200, height: 200 }}
-            animate={{ scale: [1, 1.08, 1], opacity: [0.2, 0.4, 0.2] }}
-            transition={{ repeat: Infinity, duration: isSpeaking ? 1.2 : 0.8, delay: 0.15 }}
-          />
-        </>
-      )}
-
-      {/* Photo in circle */}
-      <motion.div
-        className="relative rounded-full overflow-hidden shadow-xl border-4 border-white"
-        style={{ width: 180, height: 180 }}
-        animate={isSpeaking ? { scale: [1, 1.015, 1] } : { scale: 1 }}
-        transition={{ repeat: isSpeaking ? Infinity : 0, duration: 0.7 }}
-      >
-        <img
-          src={`${BASE}/images/${image}`}
-          alt="Teacher"
-          className="w-full h-full object-cover object-top"
-        />
-        {/* Subtle overlay when listening */}
-        {isListening && (
-          <motion.div
-            className="absolute inset-0 bg-red-500 opacity-10"
-            animate={{ opacity: [0.05, 0.15, 0.05] }}
-            transition={{ repeat: Infinity, duration: 0.8 }}
-          />
+    <div className="flex justify-end mb-3">
+      <div className="max-w-[75%]">
+        <div className="bg-blue-600 text-white rounded-2xl rounded-tr-sm px-4 py-2.5 text-sm shadow-sm">
+          {hasScores ? (
+            <span>
+              {words.map((ws, i) => (
+                <WordScoreSpan key={i} {...ws} />
+              ))}
+            </span>
+          ) : (
+            message.text
+          )}
+        </div>
+        {hasScores && (
+          <div className="flex gap-3 mt-1 px-1 text-xs text-gray-400">
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500 inline-block" />İyi</span>
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400 inline-block" />Dikkat</span>
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500 inline-block" />Hatalı</span>
+          </div>
         )}
-      </motion.div>
-
-      {/* Speaking badge */}
-      {isSpeaking && (
-        <motion.div
-          className="absolute -bottom-1 left-1/2 -translate-x-1/2 bg-white rounded-full px-3 py-1 shadow-lg border border-blue-100 flex items-center gap-1.5"
-          initial={{ opacity: 0, y: 6 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
-          <SoundWave active={isSpeaking} />
-        </motion.div>
-      )}
-
-      {/* Mic active badge */}
-      {isListening && (
-        <motion.div
-          className="absolute -bottom-1 left-1/2 -translate-x-1/2 bg-red-500 rounded-full px-3 py-1.5 shadow-lg"
-          initial={{ opacity: 0, y: 6 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
-          <motion.div
-            animate={{ scale: [1, 1.2, 1] }}
-            transition={{ repeat: Infinity, duration: 0.5 }}
-          >
-            <Mic className="w-4 h-4 text-white" />
-          </motion.div>
-        </motion.div>
-      )}
+      </div>
     </div>
   );
 }
 
-type Phase = "select" | "idle" | "listening" | "processing" | "done";
+function TeacherBubble({
+  message,
+  teacher,
+  onPlay,
+}: {
+  message: Message;
+  teacher: Teacher;
+  onPlay: (base64: string) => void;
+}) {
+  const imageSrc = `/images/${teacher.image}`;
+  return (
+    <div className="flex items-start gap-2.5 mb-3">
+      <img
+        src={imageSrc}
+        alt={teacher.name}
+        className="w-8 h-8 rounded-full object-cover flex-shrink-0 mt-0.5 border-2 border-white shadow"
+      />
+      <div className="max-w-[75%]">
+        <div className={`rounded-2xl rounded-tl-sm px-4 py-2.5 text-sm border shadow-sm ${teacher.bgClass}`}>
+          <p className="text-gray-800 leading-relaxed">{message.text}</p>
+        </div>
+        {message.audioBase64 && (
+          <button
+            onClick={() => onPlay(message.audioBase64!)}
+            className={`mt-1 ml-1 flex items-center gap-1 text-xs ${teacher.colorClass} opacity-70 hover:opacity-100`}
+          >
+            <Volume2 size={12} /> Tekrar dinle
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function TeacherSelectScreen({ onSelect }: { onSelect: (t: Teacher) => void }) {
+  return (
+    <div className="max-w-2xl mx-auto px-4 py-8">
+      <div className="mb-8 text-center">
+        <h1 className="text-2xl font-bold text-gray-900">AI Konuşma Koçu</h1>
+        <p className="text-gray-500 text-sm mt-2">
+          Seçtiğin öğretmenle İngilizce sohbet et. Telaffuz hatalarını nazikçe düzeltir.
+        </p>
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        {TEACHERS.map((t) => (
+          <button
+            key={t.id}
+            onClick={() => onSelect(t)}
+            className="flex flex-col items-center gap-3 p-5 rounded-2xl border-2 border-gray-100 hover:border-blue-300 hover:shadow-md bg-white transition-all text-left"
+          >
+            <img
+              src={`/images/${t.image}`}
+              alt={t.name}
+              className="w-20 h-20 rounded-full object-cover shadow"
+            />
+            <div className="text-center">
+              <p className="font-semibold text-gray-900">{t.flag} {t.name}</p>
+              <p className="text-xs text-gray-400 mt-0.5">{t.accentLabel} · {t.gender}</p>
+              <p className="text-xs text-gray-500 mt-1 italic">{t.description}</p>
+            </div>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default function PronunciationCoach() {
-  const [phase, setPhase] = useState<Phase>("select");
-  const [selectedTeacher, setSelectedTeacher] = useState<Teacher>(TEACHERS[0]);
-  const [result, setResult] = useState<AnalysisResult | null>(null);
-  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [screen, setScreen] = useState<"select" | "chat">("select");
+  const [teacher, setTeacher] = useState<Teacher>(TEACHERS[0]);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [phase, setPhase] = useState<Phase>("idle");
   const [error, setError] = useState("");
 
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const lastAudioBase64Ref = useRef<string>("");
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const bottomRef = useRef<HTMLDivElement | null>(null);
 
   const getApiBase = () => {
     const base = import.meta.env.BASE_URL.replace(/\/$/, "");
     return base.replace("/sphere-english", "/api-server");
   };
 
-  const playAudio = (audioBase64: string) => {
+  const playAudio = useCallback((base64: string) => {
     if (audioRef.current) {
       audioRef.current.pause();
+      audioRef.current.src = "";
     }
-    lastAudioBase64Ref.current = audioBase64;
-    const blob = new Blob(
-      [Uint8Array.from(atob(audioBase64), (c) => c.charCodeAt(0))],
-      { type: "audio/mpeg" }
-    );
+    const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+    const blob = new Blob([bytes], { type: "audio/mpeg" });
     const url = URL.createObjectURL(blob);
     const audio = new Audio(url);
     audioRef.current = audio;
-    setIsSpeaking(true);
-    audio.play();
-    audio.onended = () => {
-      setIsSpeaking(false);
-      URL.revokeObjectURL(url);
-    };
-    audio.onerror = () => {
-      setIsSpeaking(false);
-    };
-  };
+    audio.play().catch(() => {});
+    audio.onended = () => URL.revokeObjectURL(url);
+  }, []);
 
-  const replayAudio = () => {
-    if (lastAudioBase64Ref.current) {
-      playAudio(lastAudioBase64Ref.current);
-    }
-  };
-
-  const analyzeAudio = async (audioBlob: Blob) => {
-    setPhase("processing");
-    setError("");
-    try {
-      const token = localStorage.getItem(TOKEN_KEY);
-      const formData = new FormData();
-      formData.append("voice", selectedTeacher.voice);
-      formData.append("audio", audioBlob, "audio.webm");
-      const res = await fetch(`${getApiBase()}/api/pronunciation/analyze`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-        body: formData,
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error((err as any).error || "Analiz başarısız");
-      }
-      const data: AnalysisResult = await res.json();
-      setResult(data);
-      setPhase("done");
-      if (data.audioBase64) playAudio(data.audioBase64);
-    } catch (e: any) {
-      setError(e?.message || "Analiz yapılamadı. Lütfen tekrar deneyin.");
-      setPhase("idle");
-    }
+  const scrollToBottom = () => {
+    setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 80);
   };
 
   const stopStream = () => {
@@ -264,26 +239,80 @@ export default function PronunciationCoach() {
     streamRef.current = null;
   };
 
-  const handleStop = () => {
-    const mr = mediaRecorderRef.current;
-    if (mr && mr.state === "recording") {
-      mr.onstop = () => {
-        const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
-        stopStream();
-        analyzeAudio(blob);
+  const sendAudio = useCallback(async (blob: Blob) => {
+    setPhase("processing");
+    setError("");
+
+    const history = messages.map((m) => ({
+      role: m.role === "user" ? "user" : "assistant",
+      content: m.text,
+    }));
+
+    try {
+      const token = localStorage.getItem(TOKEN_KEY);
+      const formData = new FormData();
+      formData.append("audio", blob, "audio.webm");
+      formData.append("voice", teacher.voice);
+      formData.append("teacherName", teacher.name);
+      formData.append("history", JSON.stringify(history));
+
+      const res = await fetch(`${getApiBase()}/api/pronunciation/chat`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error((err as any).error || "Bir hata oluştu.");
+      }
+
+      const data = await res.json() as {
+        userText: string;
+        wordScores: WordScore[];
+        reply: string;
+        audioBase64: string;
       };
-      mr.stop();
-    } else {
-      stopStream();
+
+      const userId = `u-${Date.now()}`;
+      const teacherId = `t-${Date.now() + 1}`;
+
+      setMessages((prev) => [
+        ...prev,
+        { id: userId, role: "user", text: data.userText, wordScores: data.wordScores },
+        { id: teacherId, role: "teacher", text: data.reply, audioBase64: data.audioBase64 },
+      ]);
+
+      scrollToBottom();
+      if (data.audioBase64) playAudio(data.audioBase64);
+    } catch (e: any) {
+      setError(e?.message || "Bir hata oluştu.");
+    } finally {
       setPhase("idle");
     }
-    mediaRecorderRef.current = null;
-  };
+  }, [messages, teacher, playAudio]);
 
-  const handleStart = async () => {
-    setResult(null);
+  const handleMicPress = async () => {
+    if (phase === "recording") {
+      const mr = mediaRecorderRef.current;
+      if (mr && mr.state === "recording") {
+        mr.onstop = () => {
+          const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+          stopStream();
+          sendAudio(blob);
+        };
+        mr.stop();
+      } else {
+        stopStream();
+        setPhase("idle");
+      }
+      mediaRecorderRef.current = null;
+      return;
+    }
+
     setError("");
     audioChunksRef.current = [];
+
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
@@ -296,25 +325,25 @@ export default function PronunciationCoach() {
       };
       recorder.start(200);
       mediaRecorderRef.current = recorder;
-      setPhase("listening");
+      setPhase("recording");
     } catch {
-      setError("Mikrofon erişimi reddedildi. Tarayıcı ayarlarından mikrofona izin verin.");
+      setError("Mikrofon erişimi reddedildi.");
     }
   };
 
-  const reset = () => {
+  const handleSelectTeacher = (t: Teacher) => {
+    setTeacher(t);
+    setMessages([]);
+    setScreen("chat");
+  };
+
+  const handleBack = () => {
     stopStream();
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
-      try { mediaRecorderRef.current.stop(); } catch {}
-      mediaRecorderRef.current = null;
-    }
-    if (audioRef.current) {
-      audioRef.current.pause();
-      setIsSpeaking(false);
-    }
-    setResult(null);
-    setError("");
+    if (audioRef.current) { audioRef.current.pause(); }
+    setMessages([]);
+    setScreen("select");
     setPhase("idle");
+    setError("");
   };
 
   useEffect(() => {
@@ -324,280 +353,152 @@ export default function PronunciationCoach() {
     };
   }, []);
 
-  const stateLabel: Record<Phase, string> = {
-    select: "Öğretmen seçin",
-    idle: "Konuşmak için butona basın",
-    listening: "Dinliyorum... İngilizce konuşun",
-    processing: "Analiz ediliyor...",
-    done: "Analiz tamamlandı",
-  };
-
-  if (phase === "select") {
-    return (
-      <div className="max-w-2xl mx-auto px-4 py-6">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">AI Telaffuz Koçu</h1>
-          <p className="text-gray-500 text-sm mt-1">
-            Sizi koçluk yapacak öğretmeni seçin. Her öğretmenin farklı aksanı ve sesi var.
-          </p>
-        </div>
-        <div className="grid grid-cols-2 gap-4">
-          {TEACHERS.map((teacher) => (
-            <motion.button
-              key={teacher.id}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => {
-                setSelectedTeacher(teacher);
-                setPhase("idle");
-              }}
-              className="bg-white border-2 border-gray-100 hover:border-blue-300 rounded-2xl p-5 flex flex-col items-center gap-3 shadow-sm hover:shadow-md transition-all text-left group"
-            >
-              <div className="relative">
-                <img
-                  src={`/images/${teacher.image}`}
-                  alt={teacher.name}
-                  className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-md group-hover:shadow-blue-100 transition-shadow"
-                />
-                <span className="absolute -bottom-1 -right-1 text-xl">{teacher.flag}</span>
-              </div>
-              <div className="text-center">
-                <p className="text-lg font-bold text-gray-900">{teacher.name}</p>
-                <p className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full inline-block mt-1">
-                  {teacher.flag} {teacher.accentLabel} Aksanı
-                </p>
-              </div>
-            </motion.button>
-          ))}
-        </div>
-      </div>
-    );
+  if (screen === "select") {
+    return <TeacherSelectScreen onSelect={handleSelectTeacher} />;
   }
 
+  const isRecording = phase === "recording";
+  const isProcessing = phase === "processing";
+  const canTap = phase === "idle" || phase === "recording";
+
   return (
-    <div className="max-w-2xl mx-auto px-4 py-6">
-      <div className="mb-6">
-        <div className="flex items-start justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">AI Telaffuz Koçu</h1>
-            <p className="text-gray-500 text-sm mt-1">
-              İngilizce konuşun — yapay zeka gramer ve telaffuzunuzu analiz edip sesli geri bildirim verecek.
-            </p>
-          </div>
-          <button
-            onClick={() => {
-              reset();
-              setPhase("select");
-            }}
-            className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-blue-600 bg-gray-50 hover:bg-blue-50 border border-gray-200 hover:border-blue-200 px-3 py-1.5 rounded-xl transition-all mt-1 shrink-0"
-          >
-            <img
-              src={`/images/${selectedTeacher.image}`}
-              alt={selectedTeacher.name}
-              className="w-5 h-5 rounded-full object-cover"
-            />
-            {selectedTeacher.name} {selectedTeacher.flag}
-            <span className="text-gray-300">|</span>
-            <span>Değiştir</span>
-          </button>
+    <div className="flex flex-col h-[calc(100vh-64px)] max-w-2xl mx-auto">
+      {/* Header */}
+      <div className={`flex items-center gap-3 px-4 py-3 border-b border-gray-100 bg-white`}>
+        <button
+          onClick={handleBack}
+          className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition"
+        >
+          <ChevronLeft size={20} />
+        </button>
+        <img
+          src={`/images/${teacher.image}`}
+          alt={teacher.name}
+          className="w-9 h-9 rounded-full object-cover shadow"
+        />
+        <div>
+          <p className="font-semibold text-gray-900 text-sm">{teacher.flag} {teacher.name}</p>
+          <p className="text-xs text-gray-400">{teacher.accentLabel} · AI Konuşma Koçu</p>
+        </div>
+        <div className="ml-auto flex items-center gap-1.5">
+          {isProcessing && (
+            <span className="flex items-center gap-1 text-xs text-gray-400">
+              <span className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse" />
+              Yanıt hazırlanıyor...
+            </span>
+          )}
+          {isRecording && (
+            <span className="flex items-center gap-1 text-xs text-red-500">
+              <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-ping" />
+              Dinliyorum
+            </span>
+          )}
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="bg-gradient-to-b from-blue-50 to-white px-6 pt-8 pb-4 flex flex-col items-center">
-          <TeacherAvatar isSpeaking={isSpeaking} isListening={phase === "listening"} image={selectedTeacher.image} />
-          <p className="mt-3 text-sm font-semibold text-gray-700">
-            {selectedTeacher.name} {selectedTeacher.flag}
-            <span className="ml-1.5 text-xs font-normal text-gray-400">{selectedTeacher.accentLabel} Aksanı</span>
-          </p>
-          <motion.p
-            key={isSpeaking ? "speaking" : phase}
-            initial={{ opacity: 0, y: 4 }}
-            animate={{ opacity: 1, y: 0 }}
-            className={`mt-1 text-sm font-medium ${
-              phase === "listening" ? "text-red-500" :
-              phase === "processing" ? "text-blue-500" :
-              phase === "done" ? "text-green-600" : "text-gray-400"
-            }`}
-          >
-            {isSpeaking ? "Geri bildirim veriliyor..." : stateLabel[phase]}
-          </motion.p>
-        </div>
-
-        {/* Result */}
-        <AnimatePresence>
-          {result && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              className="px-6 py-5"
-            >
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  {result.hasErrors ? (
-                    <AlertCircle className="w-5 h-5 text-amber-500" />
-                  ) : (
-                    <CheckCircle className="w-5 h-5 text-green-500" />
-                  )}
-                  <span className="font-semibold text-gray-800">
-                    {result.hasErrors ? "Düzeltme Önerisi" : "Mükemmel!"}
-                  </span>
-                </div>
-                <div className={`text-2xl font-bold ${
-                  result.score >= 85 ? "text-green-600" :
-                  result.score >= 65 ? "text-amber-500" : "text-red-500"
-                }`}>
-                  {result.score}/100
-                </div>
-              </div>
-
-              {/* Correct sentence — always shown, with replay button */}
-              <div className="mb-4 p-4 rounded-xl bg-blue-50 border border-blue-100">
-                <div className="flex items-center justify-between mb-1">
-                  <p className="text-xs font-medium text-blue-400">
-                    {result.hasErrors ? "Doğru İfade" : "Söylediğiniz (Doğru!)"}
-                  </p>
-                  <button
-                    onClick={replayAudio}
-                    disabled={isSpeaking}
-                    className="flex items-center gap-1 text-xs text-blue-500 hover:text-blue-700 disabled:opacity-40 font-medium transition-colors"
-                  >
-                    {isSpeaking ? (
-                      <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 0.5 }}>
-                        <Volume2 className="w-3.5 h-3.5" />
-                      </motion.div>
-                    ) : (
-                      <Play className="w-3.5 h-3.5" />
-                    )}
-                    {isSpeaking ? "Oynatılıyor..." : "Tekrar Dinle"}
-                  </button>
-                </div>
-                <p className="text-blue-900 font-semibold text-lg">"{result.corrected}"</p>
-              </div>
-
-              {/* Word-level pronunciation scores from Whisper */}
-              {result.wordScores && result.wordScores.length > 0 && (
-                <div className="mb-4 p-4 rounded-xl bg-slate-50 border border-slate-100">
-                  <p className="text-xs font-medium text-slate-400 mb-3">🔬 Kelime Bazında Telaffuz Analizi</p>
-                  <div className="flex flex-wrap gap-2">
-                    {result.wordScores.map((ws, i) => (
-                      <div key={i} className="flex flex-col items-center gap-0.5">
-                        <span className={`text-sm font-semibold px-2.5 py-1 rounded-lg ${
-                          ws.score >= 90
-                            ? "bg-green-100 text-green-700"
-                            : ws.score >= 75
-                            ? "bg-amber-100 text-amber-700"
-                            : "bg-red-100 text-red-700"
-                        }`}>
-                          {ws.word}
-                        </span>
-                        <span className={`text-xs font-medium ${
-                          ws.score >= 90 ? "text-green-500" : ws.score >= 75 ? "text-amber-500" : "text-red-500"
-                        }`}>{ws.score}%</span>
-                      </div>
-                    ))}
-                  </div>
-                  <p className="text-xs text-slate-400 mt-2">
-                    🟢 Mükemmel · 🟡 Geliştirilebilir · 🔴 Yeniden Deneyin
-                  </p>
-                </div>
-              )}
-
-              {result.pronunciationIssues && result.pronunciationIssues.length > 0 && (
-                <div className="mb-4 p-4 rounded-xl bg-orange-50 border border-orange-100">
-                  <p className="text-xs font-medium text-orange-400 mb-2">⚠️ Telaffuz Sorunu Tespit Edildi</p>
-                  <div className="flex flex-wrap gap-2">
-                    {result.pronunciationIssues.map((word) => (
-                      <span key={word} className="bg-orange-100 text-orange-700 text-sm font-semibold px-2.5 py-1 rounded-lg">
-                        {word}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              <div className={`p-4 rounded-xl ${
-                result.hasErrors ? "bg-amber-50 border border-amber-100" : "bg-green-50 border border-green-100"
-              }`}>
-                <p className="text-xs font-medium mb-1 text-gray-400">Geri Bildirim</p>
-                <p className={`text-sm ${result.hasErrors ? "text-amber-800" : "text-green-800"}`}>
-                  {result.feedback}
-                </p>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {error && (
-          <div className="mx-6 mb-4 p-3 bg-red-50 border border-red-100 rounded-xl text-sm text-red-600">
-            {error}
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto px-4 py-4 bg-gray-50">
+        {messages.length === 0 && (
+          <div className="flex flex-col items-center justify-center h-full text-center gap-3">
+            <img
+              src={`/images/${teacher.image}`}
+              alt={teacher.name}
+              className="w-20 h-20 rounded-full shadow-lg"
+            />
+            <div>
+              <p className="text-gray-700 font-medium">Merhaba! Ben {teacher.name}.</p>
+              <p className="text-gray-400 text-sm mt-1">
+                Mikrofona basarak benimle İngilizce konuşmaya başla.
+              </p>
+              <p className="text-gray-400 text-sm">Telaffuz hatalarını nazikçe düzelteceğim.</p>
+            </div>
           </div>
         )}
-
-        {/* Controls */}
-        <div className="px-6 pb-6 pt-2 flex items-center justify-center gap-4">
-          {phase === "done" ? (
-            <button
-              onClick={reset}
-              className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium transition-colors"
+        <AnimatePresence initial={false}>
+          {messages.map((msg) => (
+            <motion.div
+              key={msg.id}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.25 }}
             >
-              <RefreshCw className="w-4 h-4" />
-              Tekrar Dene
-            </button>
-          ) : phase === "listening" ? (
-            <motion.button
-              onClick={handleStop}
-              whileTap={{ scale: 0.95 }}
-              className="flex items-center gap-3 px-8 py-4 rounded-2xl font-semibold text-white shadow-md bg-red-500 hover:bg-red-600 shadow-red-200 transition-all"
-            >
-              <motion.div
-                animate={{ scale: [1, 1.3, 1] }}
-                transition={{ repeat: Infinity, duration: 0.6 }}
-              >
-                <MicOff className="w-5 h-5" />
-              </motion.div>
-              Durdurun
-            </motion.button>
-          ) : phase === "processing" ? (
-            <button
-              disabled
-              className="flex items-center gap-3 px-8 py-4 rounded-2xl font-semibold text-white bg-blue-400 opacity-80 cursor-not-allowed"
-            >
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
-              >
-                <RefreshCw className="w-5 h-5" />
-              </motion.div>
-              Analiz ediliyor...
-            </button>
-          ) : (
-            <motion.button
-              onClick={handleStart}
-              disabled={isSpeaking}
-              whileTap={{ scale: 0.95 }}
-              className="flex items-center gap-3 px-8 py-4 rounded-2xl font-semibold text-white shadow-md bg-blue-600 hover:bg-blue-700 shadow-blue-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <Mic className="w-5 h-5" />
-              Konuşmaya Başla
-            </motion.button>
-          )}
-        </div>
+              {msg.role === "user" ? (
+                <UserBubble message={msg} />
+              ) : (
+                <TeacherBubble message={msg} teacher={teacher} onPlay={playAudio} />
+              )}
+            </motion.div>
+          ))}
+        </AnimatePresence>
+        {isProcessing && (
+          <div className="flex items-start gap-2.5 mb-3">
+            <img
+              src={`/images/${teacher.image}`}
+              alt={teacher.name}
+              className="w-8 h-8 rounded-full object-cover flex-shrink-0 border-2 border-white shadow"
+            />
+            <div className={`rounded-2xl rounded-tl-sm px-4 py-3 border shadow-sm ${teacher.bgClass}`}>
+              <div className="flex gap-1 items-center">
+                <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce [animation-delay:0ms]" />
+                <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce [animation-delay:150ms]" />
+                <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce [animation-delay:300ms]" />
+              </div>
+            </div>
+          </div>
+        )}
+        <div ref={bottomRef} />
       </div>
 
-      <div className="mt-6 grid grid-cols-3 gap-3">
-        {[
-          { emoji: "🎯", title: "Cümle Kurun", desc: "Tek kelime değil, tam cümle konuşun" },
-          { emoji: "🔊", title: "Net Konuşun", desc: "Mikrofona yakın ve net konuşun" },
-          { emoji: "📈", title: "Pratik Yapın", desc: "Her gün 5 dakika büyük ilerleme sağlar" },
-        ].map((tip) => (
-          <div key={tip.title} className="bg-white rounded-xl p-3 border border-gray-100 shadow-sm text-center">
-            <div className="text-2xl mb-1">{tip.emoji}</div>
-            <p className="text-xs font-semibold text-gray-700">{tip.title}</p>
-            <p className="text-xs text-gray-400 mt-0.5">{tip.desc}</p>
-          </div>
-        ))}
+      {/* Error */}
+      <AnimatePresence>
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className="px-4 py-2 bg-red-50 border-t border-red-100 text-red-600 text-xs text-center"
+          >
+            {error}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Input bar */}
+      <div className="px-4 py-4 bg-white border-t border-gray-100 flex items-center justify-center gap-4">
+        <div className="text-center text-xs text-gray-400 w-28">
+          {isRecording
+            ? "Konuşmayı bitirmek için dur"
+            : isProcessing
+            ? "Lütfen bekleyin..."
+            : "Konuşmak için bas"}
+        </div>
+
+        <button
+          onClick={canTap ? handleMicPress : undefined}
+          disabled={isProcessing}
+          className={`relative w-16 h-16 rounded-full flex items-center justify-center shadow-lg transition-all duration-200 ${
+            isRecording
+              ? "bg-red-500 hover:bg-red-600 scale-110"
+              : isProcessing
+              ? "bg-gray-300 cursor-not-allowed"
+              : "bg-blue-600 hover:bg-blue-700 hover:scale-105"
+          }`}
+        >
+          {isRecording ? (
+            <MicOff size={26} className="text-white" />
+          ) : (
+            <Mic size={26} className="text-white" />
+          )}
+          {isRecording && (
+            <span className="absolute inset-0 rounded-full bg-red-400 animate-ping opacity-30" />
+          )}
+        </button>
+
+        <div className="w-28 text-xs text-gray-400 text-center">
+          {messages.length > 0 && !isRecording && !isProcessing && (
+            <span>{Math.ceil(messages.length / 2)} tur</span>
+          )}
+        </div>
       </div>
     </div>
   );

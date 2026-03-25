@@ -10,8 +10,6 @@ const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 
 const ALLOWED_VOICES = ["nova", "onyx", "shimmer", "echo", "alloy", "fable"] as const;
 type Voice = typeof ALLOWED_VOICES[number];
 
-// ─── Whisper verbose — word-level confidence ───────────────────────────────
-
 interface WhisperWord { word: string; start: number; end: number; probability: number }
 
 async function transcribeVerbose(
@@ -42,52 +40,107 @@ async function transcribeVerbose(
   }
 }
 
-// ─── AssemblyAI — independent word-level confidence ───────────────────────
+// ─── /pronunciation/chat — conversational AI teacher ─────────────────────
 
-async function transcribeAssemblyAI(
-  audioBuffer: Buffer,
-  mimeType: string
-): Promise<{ text: string; words: { text: string; confidence: number }[] } | null> {
-  const apiKey = process.env.ASSEMBLYAI_API_KEY;
-  if (!apiKey) return null;
-  try {
-    const uploadRes = await fetch("https://api.assemblyai.com/v2/upload", {
-      method: "POST",
-      headers: { authorization: apiKey, "content-type": mimeType || "audio/webm" },
-      body: audioBuffer,
-    });
-    if (!uploadRes.ok) return null;
-    const { upload_url } = await uploadRes.json() as { upload_url: string };
+interface HistoryMessage { role: "user" | "assistant"; content: string }
 
-    const transcriptRes = await fetch("https://api.assemblyai.com/v2/transcript", {
-      method: "POST",
-      headers: { authorization: apiKey, "content-type": "application/json" },
-      body: JSON.stringify({ audio_url: upload_url, language_code: "en", punctuate: false }),
-    });
-    if (!transcriptRes.ok) return null;
-    const { id } = await transcriptRes.json() as { id: string };
+router.post(
+  "/pronunciation/chat",
+  authMiddleware,
+  upload.single("audio"),
+  async (req: Request, res: Response) => {
+    try {
+      const voice = req.body.voice as Voice;
+      const safeVoice: Voice = ALLOWED_VOICES.includes(voice) ? voice : "nova";
+      const teacherName: string = req.body.teacherName || "Sarah";
 
-    for (let i = 0; i < 20; i++) {
-      await new Promise((r) => setTimeout(r, 1000));
-      const poll = await (await fetch(`https://api.assemblyai.com/v2/transcript/${id}`, {
-        headers: { authorization: apiKey },
-      })).json() as any;
-      if (poll.status === "completed") {
-        return {
-          text: (poll.text || "").trim(),
-          words: (poll.words || []).map((w: any) => ({ text: w.text as string, confidence: w.confidence as number })),
-        };
+      let history: HistoryMessage[] = [];
+      try {
+        history = JSON.parse(req.body.history || "[]");
+      } catch {}
+
+      if (!req.file || req.file.buffer.length < 500) {
+        return res.status(400).json({ error: "Ses kaydı bulunamadı." });
       }
-      if (poll.status === "error") return null;
-    }
-    return null;
-  } catch (e: any) {
-    console.warn("AssemblyAI error:", e?.message);
-    return null;
-  }
-}
 
-// ─── Route ────────────────────────────────────────────────────────────────
+      const mimeType = req.file.mimetype || "audio/webm";
+
+      // ── Transcribe with Whisper verbose ──
+      const whisperResult = await transcribeVerbose(req.file.buffer, mimeType);
+      const userText = whisperResult?.text || "";
+
+      if (!userText) {
+        return res.status(400).json({ error: "Ses anlaşılamadı. Lütfen tekrar deneyin." });
+      }
+
+      // ── Word-level scores ──
+      const whisperWords = whisperResult?.words || [];
+      const wordScores = whisperWords
+        .filter((w) => w.word.length > 0)
+        .map((w) => ({
+          word: w.word,
+          score: Math.round(w.probability * 100),
+          ok: w.probability >= 0.82,
+        }))
+        .filter((w) => w.word.trim().length > 0);
+
+      // ── Identify mispronounced words ──
+      const badWords = whisperWords
+        .filter((w) => w.probability < 0.82 && w.word.trim().length > 1)
+        .map((w) => `"${w.word.trim()}" (confidence: ${Math.round(w.probability * 100)}%)`)
+        .join(", ");
+
+      // ── Build GPT conversation history ──
+      const systemPrompt = `You are ${teacherName}, a warm and encouraging English conversation teacher.
+Your role is to have natural, flowing conversations with the student in English.
+The student is learning English and practicing speaking.
+
+IMPORTANT RULES:
+- Always respond in English only.
+- Keep your responses SHORT (2-4 sentences max). Be conversational, not lecture-y.
+- If there are mispronounced words (listed below), mention 1 at most per turn — weave it in naturally like: "By the way, the word '...' is pronounced like '...'" — then continue the conversation.
+- If pronunciation is fine, just have a natural conversation. Ask follow-up questions to keep things going.
+- Be encouraging and friendly. Never harsh.
+- If the student seems to be struggling, slow down and help.${
+  badWords
+    ? `\n\nPRONUNCIATION ISSUES DETECTED (Whisper low-confidence): ${badWords}\nMention the most important one naturally in your reply if relevant.`
+    : "\n\nPRONUNCIATION: No issues detected. Just have a natural conversation."
+}`;
+
+      const gptMessages: { role: "system" | "user" | "assistant"; content: string }[] = [
+        { role: "system", content: systemPrompt },
+        ...history.slice(-10).map((m) => ({ role: m.role as "user" | "assistant", content: m.content })),
+        { role: "user", content: userText },
+      ];
+
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: gptMessages,
+        temperature: 0.75,
+        max_tokens: 150,
+      });
+
+      const reply = completion.choices[0].message.content?.trim() || "I see! Tell me more.";
+
+      // ── TTS ──
+      const ttsResponse = await openai.audio.speech.create({
+        model: "tts-1",
+        voice: safeVoice,
+        input: reply,
+        speed: 0.9,
+      });
+      const audioBase64 = Buffer.from(await ttsResponse.arrayBuffer()).toString("base64");
+
+      return res.json({ userText, wordScores, reply, audioBase64 });
+
+    } catch (err: any) {
+      console.error("Pronunciation chat error:", err?.message || err);
+      return res.status(500).json({ error: "Bir hata oluştu. Lütfen tekrar deneyin." });
+    }
+  }
+);
+
+// ─── Legacy /pronunciation/analyze (kept for compatibility) ─────────────
 
 router.post(
   "/pronunciation/analyze",
@@ -103,24 +156,13 @@ router.post(
       }
 
       const mimeType = req.file.mimetype || "audio/webm";
+      const whisperResult = await transcribeVerbose(req.file.buffer, mimeType);
+      const primaryText = whisperResult?.text || "";
 
-      // ── Transcribe: Whisper + AssemblyAI in parallel ──
-      const [whisperResult, assemblyResult] = await Promise.all([
-        transcribeVerbose(req.file.buffer, mimeType),
-        transcribeAssemblyAI(req.file.buffer, mimeType),
-      ]);
-
-      const whisperText = whisperResult?.text || "";
-      const assemblyText = assemblyResult?.text || "";
-
-      if (!whisperText && !assemblyText) {
+      if (!primaryText) {
         return res.status(400).json({ error: "Ses anlaşılamadı. Lütfen daha net konuşun." });
       }
 
-      // ── Primary transcript: prefer Whisper ──
-      const primaryText = whisperText || assemblyText;
-
-      // ── Word-level scores from Whisper ──
       const whisperWords = whisperResult?.words || [];
       const wordScores = whisperWords
         .filter((w) => w.word.length > 0)
@@ -131,89 +173,22 @@ router.post(
         }))
         .filter((w) => w.word.length > 0);
 
-      // ── Pronunciation issues: Whisper low-confidence + Whisper vs AssemblyAI mismatch ──
-      const lowConfidenceWords = whisperWords
-        .filter((w) => w.probability < 0.80 && w.word.trim().length > 1)
-        .map((w) => w.word.trim().toLowerCase());
-
-      // Compare Whisper vs AssemblyAI transcripts for mismatch
-      const wTokens = primaryText.toLowerCase().replace(/[^a-z\s']/g, "").split(/\s+/).filter(Boolean);
-      const aTokens = assemblyText.toLowerCase().replace(/[^a-z\s']/g, "").split(/\s+/).filter(Boolean);
-      const mismatched: string[] = [];
-      if (assemblyText) {
-        const minLen = Math.min(wTokens.length, aTokens.length);
-        for (let i = 0; i < minLen; i++) {
-          if (wTokens[i] !== aTokens[i]) mismatched.push(wTokens[i]);
-        }
-        // Words in Whisper not found in AssemblyAI
-        wTokens.forEach((w) => { if (!aTokens.includes(w)) mismatched.push(w); });
-      }
-
-      const pronunciationIssues = Array.from(new Set([...lowConfidenceWords, ...mismatched]));
-
-      // ── GPT: grammar + pronunciation feedback ──
-      const whisperInfo = `Whisper transkripti: "${whisperText}"${
-        whisperWords.length ? ` | Düşük güvenli kelimeler: ${lowConfidenceWords.join(", ") || "yok"}` : ""
-      }`;
-      const assemblyInfo = assemblyText ? `AssemblyAI transkripti: "${assemblyText}"` : "";
-      const mismatchInfo = mismatched.length > 0 ? `İki sistem arası uyumsuz kelimeler: ${[...new Set(mismatched)].join(", ")}` : "";
-
-      const completion = await openai.chat.completions.create({
-        model: "gpt-4o-mini",
-        messages: [
-          {
-            role: "system",
-            content: `Sen İngilizce konuşma koçusun. Öğrencinin sesinden elde edilen transkriptleri analiz et.
-
-ÖNEMLİ KISITLAMALAR:
-- Bu bir KONUŞMA analizidir. Büyük/küçük harf, noktalama işareti ASLA hata sayılmaz.
-- Sadece konuşmada duyulabilecek hatalar: yanlış kelime seçimi, eksik/fazla kelime, yanlış zaman kipi.
-- Telaffuz hatası: iki sistem farklı kelime duymuşsa veya Whisper güveni düşükse.
-
-${whisperInfo}
-${assemblyInfo}
-${mismatchInfo}
-
-JSON döndür:
-- hasErrors: boolean
-- corrected: string (doğru hali, yoksa Whisper transkripsiyonunun kendisi)
-- feedback: string (1-2 cümle Türkçe. Telaffuz sorunları varsa belirt, gramer hatasını açıkla.)
-- score: number (0-100. Telaffuz sorunu -10, gramer hatası -15. Sorun yoksa 100.)
-- pronunciationIssues: string[] (sorunlu kelimeler, yoksa boş dizi)`,
-          },
-          {
-            role: "user",
-            content: `Öğrenci şunu söyledi: "${primaryText}"`,
-          },
-        ],
-        response_format: { type: "json_object" },
-        temperature: 0.2,
-        max_tokens: 300,
-      });
-
-      const gptResult = JSON.parse(completion.choices[0].message.content || "{}");
-
-      // ── TTS ──
-      const ttsText = gptResult.corrected || primaryText;
       const ttsResponse = await openai.audio.speech.create({
         model: "tts-1",
         voice: safeVoice,
-        input: ttsText,
+        input: primaryText,
         speed: 0.85,
       });
       const audioBase64 = Buffer.from(await ttsResponse.arrayBuffer()).toString("base64");
 
       return res.json({
-        hasErrors: gptResult.hasErrors ?? false,
-        corrected: gptResult.corrected || primaryText,
+        hasErrors: false,
+        corrected: primaryText,
         original: primaryText,
-        whisperText,
-        assemblyText,
-        feedback: gptResult.feedback || "",
-        score: gptResult.score ?? 100,
-        pronunciationIssues: Array.from(new Set([...(gptResult.pronunciationIssues ?? []), ...pronunciationIssues])),
+        feedback: "",
+        score: 100,
+        pronunciationIssues: [],
         wordScores,
-        azureScores: null,
         audioBase64,
       });
     } catch (err: any) {
