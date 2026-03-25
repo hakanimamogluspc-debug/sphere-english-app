@@ -380,7 +380,6 @@ export default function PronunciationCoach() {
                 <p className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full inline-block mt-1">
                   {teacher.flag} {teacher.accentLabel} Aksanı
                 </p>
-                <p className="text-xs text-gray-400 mt-1">{teacher.gender} · {teacher.description}</p>
               </div>
             </motion.button>
           ))}
