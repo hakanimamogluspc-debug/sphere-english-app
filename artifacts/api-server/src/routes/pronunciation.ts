@@ -132,22 +132,39 @@ router.post(
         assemblyResult = await assessWithAssemblyAI(req.file!.buffer, req.file!.mimetype || "audio/webm");
       }
 
-      // ── Combine pronunciation issues ──
+      // ── Combine pronunciation issues (Whisper low-confidence + words Whisper missed) ──
+      const wsWordList = webSpeechText.toLowerCase().replace(/[^a-z\s']/g, "").split(/\s+/).filter(Boolean);
+      const whisperTranscriptWords = (whisperResult?.text || "").toLowerCase().replace(/[^a-z\s']/g, "").split(/\s+/).filter(Boolean);
+      const missedByWhisper = wsWordList.filter((w) => !whisperTranscriptWords.includes(w));
+
       const mispronounced = Array.from(new Set([
         ...(whisperResult?.mispronounced || []),
         ...(assemblyResult?.mispronounced || []),
+        ...missedByWhisper,
       ]));
 
       const whisperText = whisperResult?.text || webSpeechText;
 
-      // ── Word scores for UI ──
-      const wordScores = whisperResult?.words
-        .filter((w) => w.word.length > 0)
-        .map((w) => ({
-          word: w.word,
-          score: Math.round(w.probability * 100),
-          ok: w.probability >= 0.80,
-        })) || [];
+      // ── Word scores for UI: align Web Speech words with Whisper output ──
+      const wsWords = webSpeechText.toLowerCase().replace(/[^a-z\s']/g, "").split(/\s+/).filter(Boolean);
+      const whisperWords = (whisperResult?.text || "").toLowerCase().replace(/[^a-z\s']/g, "").split(/\s+/).filter(Boolean);
+
+      const wordScores = wsWords.map((word) => {
+        const match = whisperWords.find((w) => w === word);
+        // Also check Whisper word-level probability if available
+        const whisperWord = whisperResult?.words.find((w) =>
+          w.word.toLowerCase().replace(/[^a-z']/g, "") === word
+        );
+        let score: number;
+        if (match) {
+          // Word found in Whisper transcript — use its probability if available
+          score = whisperWord ? Math.round(whisperWord.probability * 100) : 95;
+        } else {
+          // Word NOT found in Whisper — clear pronunciation issue
+          score = whisperWord ? Math.round(whisperWord.probability * 100) : 45;
+        }
+        return { word, score, ok: score >= 80 };
+      });
 
       // ── GPT grammar + pronunciation feedback ──
       const pronunciationContext = mispronounced.length > 0
