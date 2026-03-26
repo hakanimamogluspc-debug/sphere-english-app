@@ -108,22 +108,22 @@ function UserBubble({ message }: { message: Message }) {
   return (
     <div className="flex justify-end mb-3">
       <div className="max-w-[75%]">
-        <div className="bg-blue-600 text-white rounded-2xl rounded-tr-sm px-4 py-2.5 text-sm shadow-sm">
-          {hasScores ? (
+        {hasScores ? (
+          <div className="bg-white border border-gray-200 rounded-2xl rounded-tr-sm px-4 py-2.5 text-sm shadow-sm">
             <span>
               {words.map((ws, i) => (
                 <WordScoreSpan key={i} {...ws} />
               ))}
             </span>
-          ) : (
-            message.text
-          )}
-        </div>
-        {hasScores && (
-          <div className="flex gap-3 mt-1 px-1 text-xs text-gray-400">
-            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500 inline-block" />İyi</span>
-            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400 inline-block" />Dikkat</span>
-            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500 inline-block" />Hatalı</span>
+            <div className="flex gap-3 mt-2 pt-2 border-t border-gray-100 text-xs text-gray-400">
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500 inline-block" />İyi</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400 inline-block" />Dikkat</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500 inline-block" />Hatalı</span>
+            </div>
+          </div>
+        ) : (
+          <div className="bg-blue-600 text-white rounded-2xl rounded-tr-sm px-4 py-2.5 text-sm shadow-sm">
+            {message.text}
           </div>
         )}
       </div>
