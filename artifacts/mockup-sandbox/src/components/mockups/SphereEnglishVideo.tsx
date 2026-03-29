@@ -161,8 +161,8 @@ export default function SphereEnglishVideo() {
         }}
         transition={springSmooth}
       >
-        <div className="w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center">
-          <img src={LOGO_SRC} alt="Sphere English" className="w-10 h-10 object-contain" />
+        <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shadow-md p-1">
+          <img src={LOGO_SRC} alt="Sphere English" className="w-full h-full object-contain" />
         </div>
         <div className="text-white font-bold text-2xl tracking-tight" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
           SPHERE <span className="font-normal opacity-80">ENGLISH</span>
@@ -207,9 +207,9 @@ function Scene0() {
         initial={{ y: 50, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.3, ...springSmooth }}
-        className="w-36 h-36 mb-8 flex items-center justify-center drop-shadow-[0_0_40px_rgba(37,99,235,0.6)]"
+        className="w-36 h-36 mb-8 rounded-3xl bg-white flex items-center justify-center shadow-[0_0_60px_rgba(255,255,255,0.3)] p-4"
       >
-        <img src={LOGO_SRC} alt="Sphere English" className="w-36 h-36 object-contain" />
+        <img src={LOGO_SRC} alt="Sphere English" className="w-full h-full object-contain" />
       </motion.div>
       
       <motion.div className="flex items-center gap-4 mb-6">
@@ -634,9 +634,9 @@ function Scene5() {
         initial={{ scale: 0.5, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ delay: 0.2, ...springBouncy }}
-        className="w-44 h-44 mb-10 flex items-center justify-center drop-shadow-[0_0_60px_rgba(37,99,235,0.7)]"
+        className="w-44 h-44 mb-10 rounded-[2.5rem] bg-white flex items-center justify-center shadow-[0_0_80px_rgba(255,255,255,0.35)] p-5"
       >
-        <img src={LOGO_SRC} alt="Sphere English" className="w-44 h-44 object-contain" />
+        <img src={LOGO_SRC} alt="Sphere English" className="w-full h-full object-contain" />
       </motion.div>
       
       <motion.h1 
