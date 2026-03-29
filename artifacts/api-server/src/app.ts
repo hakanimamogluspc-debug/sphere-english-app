@@ -58,6 +58,15 @@ app.use(
   })
 );
 
+// ─── Permissions-Policy (helmet'te yerleşik değil) ────────────────────────────
+app.use((_req, res, next) => {
+  res.setHeader(
+    "Permissions-Policy",
+    "camera=(), geolocation=(), payment=(), usb=(), microphone=(self)"
+  );
+  next();
+});
+
 // ─── HTTPS Yönlendirme (Production) ───────────────────────────────────────────
 if (process.env.NODE_ENV === "production") {
   app.use((req, res, next) => {
