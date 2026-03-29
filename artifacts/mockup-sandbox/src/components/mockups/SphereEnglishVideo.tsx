@@ -1,16 +1,18 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Mic, Star, Award, TrendingUp, Calendar, BookOpen, MessageSquare, Play, PlayCircle, Plus } from "lucide-react";
+import { Mic, Star, Award, TrendingUp, Calendar, MessageSquare, Play, PlayCircle, Plus } from "lucide-react";
 
-// In a real environment, we'd import these, but we'll use absolute paths or imports if possible
-// For this sandbox, let's assume these are available or we can use generated URLs
-const teacherSarah = "/images/teacher_sarah.png";
-const teacherJames = "/images/teacher_james.png";
-const teacherEmma = "/images/teacher_emma.png";
-const teacherOliver = "/images/teacher_oliver.png";
-const bg1 = "/images/video_bg_1.png";
-const bg2 = "/images/video_bg_2.png";
-const bg3 = "/images/video_bg_3.png";
+const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
+const LOGO_SRC = `${BASE}/images/sphere-logo.png`;
+const AUDIO_SRCS = [0,1,2,3,4,5].map((i) => `${BASE}/audio/vo_${i}.mp3`);
+
+const teacherSarah = `${BASE}/images/teacher_sarah.png`;
+const teacherJames = `${BASE}/images/teacher_james.png`;
+const teacherEmma = `${BASE}/images/teacher_emma.png`;
+const teacherOliver = `${BASE}/images/teacher_oliver.png`;
+const bg1 = `${BASE}/images/video_bg_1.png`;
+const bg2 = `${BASE}/images/video_bg_2.png`;
+const bg3 = `${BASE}/images/video_bg_3.png`;
 
 const SCENE_DURATIONS = [
   5000, // 0: Opening
@@ -59,15 +61,27 @@ const Voiceover = ({ currentScene }: { currentScene: number }) => {
 export default function SphereEnglishVideo() {
   const [currentScene, setCurrentScene] = useState(0);
   const [progress, setProgress] = useState(0);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
-    // Inject Google Fonts
     const link = document.createElement('link');
     link.href = 'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap';
     link.rel = 'stylesheet';
     document.head.appendChild(link);
     return () => { document.head.removeChild(link); };
   }, []);
+
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+    const audio = new Audio(AUDIO_SRCS[currentScene]);
+    audio.volume = 1;
+    audioRef.current = audio;
+    audio.play().catch(() => {});
+    return () => { audio.pause(); };
+  }, [currentScene]);
 
   useEffect(() => {
     let start = Date.now();
@@ -147,8 +161,8 @@ export default function SphereEnglishVideo() {
         }}
         transition={springSmooth}
       >
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#2563EB] to-[#1d4ed8] flex items-center justify-center shadow-lg">
-          <BookOpen className="text-white w-5 h-5" />
+        <div className="w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center">
+          <img src={LOGO_SRC} alt="Sphere English" className="w-10 h-10 object-contain" />
         </div>
         <div className="text-white font-bold text-2xl tracking-tight" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
           SPHERE <span className="font-normal opacity-80">ENGLISH</span>
@@ -193,9 +207,9 @@ function Scene0() {
         initial={{ y: 50, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.3, ...springSmooth }}
-        className="w-32 h-32 mb-8 rounded-3xl bg-gradient-to-br from-[#2563EB] to-[#1d4ed8] flex items-center justify-center shadow-[0_0_80px_rgba(37,99,235,0.4)]"
+        className="w-36 h-36 mb-8 flex items-center justify-center drop-shadow-[0_0_40px_rgba(37,99,235,0.6)]"
       >
-        <BookOpen className="text-white w-16 h-16" />
+        <img src={LOGO_SRC} alt="Sphere English" className="w-36 h-36 object-contain" />
       </motion.div>
       
       <motion.div className="flex items-center gap-4 mb-6">
@@ -620,9 +634,9 @@ function Scene5() {
         initial={{ scale: 0.5, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ delay: 0.2, ...springBouncy }}
-        className="w-40 h-40 mb-10 rounded-[2.5rem] bg-gradient-to-br from-[#2563EB] to-[#1d4ed8] flex items-center justify-center shadow-[0_0_100px_rgba(37,99,235,0.6)]"
+        className="w-44 h-44 mb-10 flex items-center justify-center drop-shadow-[0_0_60px_rgba(37,99,235,0.7)]"
       >
-        <BookOpen className="text-white w-20 h-20" />
+        <img src={LOGO_SRC} alt="Sphere English" className="w-44 h-44 object-contain" />
       </motion.div>
       
       <motion.h1 
