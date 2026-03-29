@@ -4,7 +4,17 @@ import multer from "multer";
 import { authMiddleware } from "../middlewares/auth.js";
 
 const router = Router();
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+let _openai: OpenAI | null = null;
+function getOpenAI(): OpenAI {
+  if (!_openai) {
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) throw new Error("OPENAI_API_KEY ortam değişkeni ayarlanmamış");
+    _openai = new OpenAI({ apiKey });
+  }
+  return _openai;
+}
+
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
 
 const ALLOWED_VOICES = ["nova", "onyx", "shimmer", "echo", "alloy", "fable"] as const;
@@ -18,7 +28,7 @@ async function transcribeVerbose(
 ): Promise<{ text: string; words: WhisperWord[] } | null> {
   try {
     const audioFile = new File([audioBuffer], "audio.webm", { type: mimeType || "audio/webm" });
-    const res = await openai.audio.transcriptions.create({
+    const res = await getOpenAI().audio.transcriptions.create({
       model: "whisper-1",
       file: audioFile,
       language: "en",
@@ -113,7 +123,7 @@ IMPORTANT RULES:
         { role: "user", content: userText },
       ];
 
-      const completion = await openai.chat.completions.create({
+      const completion = await getOpenAI().chat.completions.create({
         model: "gpt-4o-mini",
         messages: gptMessages,
         temperature: 0.75,
@@ -123,7 +133,7 @@ IMPORTANT RULES:
       const reply = completion.choices[0].message.content?.trim() || "I see! Tell me more.";
 
       // ── TTS ──
-      const ttsResponse = await openai.audio.speech.create({
+      const ttsResponse = await getOpenAI().audio.speech.create({
         model: "tts-1",
         voice: safeVoice,
         input: reply,
@@ -173,7 +183,7 @@ router.post(
         }))
         .filter((w) => w.word.length > 0);
 
-      const ttsResponse = await openai.audio.speech.create({
+      const ttsResponse = await getOpenAI().audio.speech.create({
         model: "tts-1",
         voice: safeVoice,
         input: primaryText,
