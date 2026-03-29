@@ -1,5 +1,6 @@
 import express, { type Express } from "express";
 import cors from "cors";
+import helmet from "helmet";
 import pinoHttp from "pino-http";
 import path from "path";
 import fs from "fs";
@@ -30,29 +31,64 @@ app.use(
 );
 app.set("trust proxy", 1);
 
-// ─── HTTPS Yönlendirme + HSTS (Production) ────────────────────────────────────
+// ─── Helmet — güvenlik HTTP başlıkları ────────────────────────────────────────
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "'unsafe-inline'", "https://www.googletagmanager.com"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        imgSrc: ["'self'", "data:", "https:"],
+        fontSrc: ["'self'", "data:"],
+        connectSrc: ["'self'", "https://app.sphereenglish.com"],
+        frameSrc: ["'none'"],
+        objectSrc: ["'none'"],
+        upgradeInsecureRequests: [],
+      },
+    },
+    hsts: {
+      maxAge: 63072000,
+      includeSubDomains: true,
+      preload: true,
+    },
+    referrerPolicy: { policy: "strict-origin-when-cross-origin" },
+    frameguard: { action: "sameorigin" },
+    permittedCrossDomainPolicies: false,
+  })
+);
+
+// ─── HTTPS Yönlendirme (Production) ───────────────────────────────────────────
 if (process.env.NODE_ENV === "production") {
   app.use((req, res, next) => {
     const proto = req.headers["x-forwarded-proto"];
     if (proto && proto !== "https") {
       return res.redirect(301, `https://${req.headers.host}${req.url}`);
     }
-    // HSTS: tarayıcıya 1 yıl boyunca yalnızca HTTPS kullanmasını söyle
-    res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
     next();
   });
 }
 
+// ─── CORS — yalnızca izin verilen origin'ler ──────────────────────────────────
+const ALLOWED_ORIGINS = [
+  "https://app.sphereenglish.com",
+  "https://www.sphereenglish.com",
+  "https://sphereenglish.com",
+  "http://localhost:5173",
+  "http://localhost:3000",
+];
+
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow same-origin requests and configured domains
-    if (!origin || origin.includes("sphereenglish.com") || origin.includes("localhost")) {
+    if (!origin || ALLOWED_ORIGINS.includes(origin)) {
       callback(null, true);
     } else {
-      callback(null, false);
+      callback(new Error(`CORS: origin '${origin}' not allowed`));
     }
   },
   credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
