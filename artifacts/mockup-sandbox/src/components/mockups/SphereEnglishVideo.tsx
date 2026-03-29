@@ -293,7 +293,7 @@ function Scene1() {
             }}
           >
             {[
-              { icon: BookOpen, text: "Kişiselleştirilmiş Dersler" },
+              { icon: Star, text: "Kişiselleştirilmiş Dersler" },
               { icon: PlayCircle, text: "Canlı Sınıflar" },
               { icon: Award, text: "İnteraktif Quizler" }
             ].map((item, i) => (
