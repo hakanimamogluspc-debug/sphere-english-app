@@ -25,10 +25,14 @@ interface WhisperWord { word: string; start: number; end: number; probability: n
 async function transcribeVerbose(
   audioBuffer: Buffer,
   mimeType: string
-): Promise<{ text: string; words: WhisperWord[] } | null> {
+): Promise<{ text: string; words: WhisperWord[]; apiError?: boolean } | null> {
   try {
     const safeMime = (mimeType || "audio/webm").split(";")[0] || "audio/webm";
-    const audioFile = new File([audioBuffer], "audio.webm", { type: safeMime });
+    const ext = safeMime.includes("mp4") || safeMime.includes("m4a") ? "m4a"
+      : safeMime.includes("ogg") ? "ogg"
+      : safeMime.includes("wav") ? "wav"
+      : "webm";
+    const audioFile = new File([audioBuffer], `audio.${ext}`, { type: safeMime });
     const res = await getOpenAI().audio.transcriptions.create({
       model: "whisper-1",
       file: audioFile,
@@ -45,11 +49,11 @@ async function transcribeVerbose(
       probability: w.probability ?? 1,
     }));
     const text = (data.text || "").trim();
-    console.info(`Whisper transcription: "${text}" (${words.length} words, buffer: ${audioBuffer.length} bytes)`);
+    console.info(`Whisper transcription: "${text}" (${words.length} words, buffer: ${audioBuffer.length} bytes, type: ${safeMime})`);
     return { text, words };
   } catch (e: any) {
-    console.error("Whisper transcription failed:", e?.message || e);
-    return null;
+    console.error("Whisper transcription failed:", e?.status, e?.message || e);
+    return { text: "", words: [], apiError: true };
   }
 }
 
@@ -72,18 +76,25 @@ router.post(
         history = JSON.parse(req.body.history || "[]");
       } catch {}
 
-      if (!req.file || req.file.buffer.length < 500) {
-        return res.status(400).json({ error: "Ses kaydı bulunamadı." });
+      if (!req.file || req.file.buffer.length < 3000) {
+        console.warn(`Audio too small: ${req.file?.buffer?.length ?? 0} bytes`);
+        return res.status(400).json({ error: "Ses kaydı çok kısa. En az 2 saniye konuşun." });
       }
 
       const mimeType = req.file.mimetype || "audio/webm";
+      console.info(`Received audio: ${req.file.buffer.length} bytes, type: ${mimeType}`);
 
       // ── Transcribe with Whisper verbose ──
       const whisperResult = await transcribeVerbose(req.file.buffer, mimeType);
+
+      if (whisperResult?.apiError) {
+        return res.status(500).json({ error: "Yapay zeka servisi şu an ulaşılamıyor. Lütfen biraz bekleyip tekrar deneyin." });
+      }
+
       const userText = whisperResult?.text || "";
 
       if (!userText) {
-        return res.status(400).json({ error: "Ses anlaşılamadı. Lütfen tekrar deneyin." });
+        return res.status(400).json({ error: "Ses anlaşılamadı. Daha yüksek ve net konuşmayı deneyin." });
       }
 
       // ── Word-level scores ──

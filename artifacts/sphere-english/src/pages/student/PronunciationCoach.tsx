@@ -85,6 +85,8 @@ interface Message {
 
 type Phase = "idle" | "recording" | "processing";
 
+const MIN_RECORD_MS = 2000;
+
 function WordScoreSpan({ word, score, ok }: WordScore) {
   const color = score >= 82
     ? "text-green-700"
@@ -210,6 +212,9 @@ export default function PronunciationCoach() {
   const streamRef = useRef<MediaStream | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const bottomRef = useRef<HTMLDivElement | null>(null);
+  const recordStartRef = useRef<number>(0);
+  const [recordSecs, setRecordSecs] = useState(0);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const getApiBase = () => {
     const base = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -237,6 +242,19 @@ export default function PronunciationCoach() {
   const stopStream = () => {
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
+  };
+
+  const startTimer = () => {
+    recordStartRef.current = Date.now();
+    setRecordSecs(0);
+    timerRef.current = setInterval(() => {
+      setRecordSecs(Math.floor((Date.now() - recordStartRef.current) / 1000));
+    }, 200);
+  };
+
+  const stopTimer = () => {
+    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
+    setRecordSecs(0);
   };
 
   const sendAudio = useCallback(async (blob: Blob) => {
@@ -294,16 +312,23 @@ export default function PronunciationCoach() {
 
   const handleMicPress = async () => {
     if (phase === "recording") {
+      const elapsed = Date.now() - recordStartRef.current;
+      if (elapsed < MIN_RECORD_MS) {
+        return;
+      }
       const mr = mediaRecorderRef.current;
       if (mr && mr.state === "recording") {
         mr.onstop = () => {
-          const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+          const mimeType = mr.mimeType || "audio/webm";
+          const blob = new Blob(audioChunksRef.current, { type: mimeType });
           stopStream();
+          stopTimer();
           sendAudio(blob);
         };
         mr.stop();
       } else {
         stopStream();
+        stopTimer();
         setPhase("idle");
       }
       mediaRecorderRef.current = null;
@@ -314,17 +339,22 @@ export default function PronunciationCoach() {
     audioChunksRef.current = [];
 
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
       streamRef.current = stream;
       const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
         ? "audio/webm;codecs=opus"
-        : "audio/webm";
-      const recorder = new MediaRecorder(stream, { mimeType });
+        : MediaRecorder.isTypeSupported("audio/webm")
+        ? "audio/webm"
+        : "";
+      const recorder = mimeType
+        ? new MediaRecorder(stream, { mimeType })
+        : new MediaRecorder(stream);
       recorder.ondataavailable = (e) => {
         if (e.data.size > 0) audioChunksRef.current.push(e.data);
       };
-      recorder.start(200);
+      recorder.start(100);
       mediaRecorderRef.current = recorder;
+      startTimer();
       setPhase("recording");
     } catch {
       setError("Mikrofon erişimi reddedildi.");
@@ -339,6 +369,7 @@ export default function PronunciationCoach() {
 
   const handleBack = () => {
     stopStream();
+    stopTimer();
     if (audioRef.current) { audioRef.current.pause(); }
     setMessages([]);
     setScreen("select");
@@ -349,6 +380,7 @@ export default function PronunciationCoach() {
   useEffect(() => {
     return () => {
       stopStream();
+      stopTimer();
       if (audioRef.current) audioRef.current.pause();
     };
   }, []);
@@ -359,7 +391,9 @@ export default function PronunciationCoach() {
 
   const isRecording = phase === "recording";
   const isProcessing = phase === "processing";
-  const canTap = phase === "idle" || phase === "recording";
+  const elapsedMs = isRecording ? recordSecs * 1000 : 0;
+  const canStop = isRecording && (Date.now() - recordStartRef.current) >= MIN_RECORD_MS;
+  const canTap = phase === "idle" || canStop;
 
   return (
     <div className="flex flex-col h-[calc(100vh-64px)] max-w-2xl mx-auto">
@@ -466,33 +500,44 @@ export default function PronunciationCoach() {
       {/* Input bar */}
       <div className="px-4 py-4 bg-white border-t border-gray-100 flex items-center justify-center gap-4">
         <div className="text-center text-xs text-gray-400 w-28">
-          {isRecording
-            ? "Konuşmayı bitirmek için dur"
+          {isRecording && !canStop
+            ? <span className="text-amber-500 font-medium">Konuşmaya devam et...</span>
+            : isRecording
+            ? "Durdurmak için bas"
             : isProcessing
             ? "Lütfen bekleyin..."
             : "Konuşmak için bas"}
         </div>
 
-        <button
-          onClick={canTap ? handleMicPress : undefined}
-          disabled={isProcessing}
-          className={`relative w-16 h-16 rounded-full flex items-center justify-center shadow-lg transition-all duration-200 ${
-            isRecording
-              ? "bg-red-500 hover:bg-red-600 scale-110"
-              : isProcessing
-              ? "bg-gray-300 cursor-not-allowed"
-              : "bg-blue-600 hover:bg-blue-700 hover:scale-105"
-          }`}
-        >
-          {isRecording ? (
-            <MicOff size={26} className="text-white" />
-          ) : (
-            <Mic size={26} className="text-white" />
-          )}
+        <div className="flex flex-col items-center gap-1">
+          <button
+            onClick={canTap ? handleMicPress : undefined}
+            disabled={isProcessing || (isRecording && !canStop)}
+            className={`relative w-16 h-16 rounded-full flex items-center justify-center shadow-lg transition-all duration-200 ${
+              isRecording && canStop
+                ? "bg-red-500 hover:bg-red-600 scale-110 cursor-pointer"
+                : isRecording && !canStop
+                ? "bg-red-400 scale-110 cursor-not-allowed"
+                : isProcessing
+                ? "bg-gray-300 cursor-not-allowed"
+                : "bg-blue-600 hover:bg-blue-700 hover:scale-105 cursor-pointer"
+            }`}
+          >
+            {isRecording ? (
+              <MicOff size={26} className="text-white" />
+            ) : (
+              <Mic size={26} className="text-white" />
+            )}
+            {isRecording && (
+              <span className="absolute inset-0 rounded-full bg-red-400 animate-ping opacity-30" />
+            )}
+          </button>
           {isRecording && (
-            <span className="absolute inset-0 rounded-full bg-red-400 animate-ping opacity-30" />
+            <span className={`text-xs font-mono font-semibold tabular-nums ${canStop ? "text-red-500" : "text-amber-500"}`}>
+              {recordSecs}s
+            </span>
           )}
-        </button>
+        </div>
 
         <div className="w-28 text-xs text-gray-400 text-center">
           {messages.length > 0 && !isRecording && !isProcessing && (
