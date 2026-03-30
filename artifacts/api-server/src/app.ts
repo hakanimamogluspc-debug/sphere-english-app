@@ -88,9 +88,17 @@ const ALLOWED_ORIGINS = [
   "http://localhost:3000",
 ];
 
+const isAllowedOrigin = (origin: string | undefined): boolean => {
+  if (!origin) return true;
+  if (ALLOWED_ORIGINS.includes(origin)) return true;
+  // Replit geliştirme ortamı
+  if (origin.endsWith(".riker.replit.dev") || origin.endsWith(".replit.dev")) return true;
+  return false;
+};
+
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin || ALLOWED_ORIGINS.includes(origin)) {
+    if (isAllowedOrigin(origin)) {
       callback(null, true);
     } else {
       callback(new Error(`CORS: origin '${origin}' not allowed`));
