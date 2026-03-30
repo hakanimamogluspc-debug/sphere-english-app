@@ -42,6 +42,7 @@ app.use(
         imgSrc: ["'self'", "data:", "https:"],
         fontSrc: ["'self'", "data:"],
         connectSrc: ["'self'", "https://app.sphereenglish.com"],
+        mediaSrc: ["'self'", "blob:", "data:"],
         frameSrc: ["'none'"],
         objectSrc: ["'none'"],
         upgradeInsecureRequests: [],

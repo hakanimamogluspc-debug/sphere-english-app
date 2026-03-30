@@ -27,7 +27,8 @@ async function transcribeVerbose(
   mimeType: string
 ): Promise<{ text: string; words: WhisperWord[] } | null> {
   try {
-    const audioFile = new File([audioBuffer], "audio.webm", { type: mimeType || "audio/webm" });
+    const safeMime = (mimeType || "audio/webm").split(";")[0] || "audio/webm";
+    const audioFile = new File([audioBuffer], "audio.webm", { type: safeMime });
     const res = await getOpenAI().audio.transcriptions.create({
       model: "whisper-1",
       file: audioFile,
@@ -43,9 +44,11 @@ async function transcribeVerbose(
       end: w.end ?? 0,
       probability: w.probability ?? 1,
     }));
-    return { text: (data.text || "").trim(), words };
+    const text = (data.text || "").trim();
+    console.info(`Whisper transcription: "${text}" (${words.length} words, buffer: ${audioBuffer.length} bytes)`);
+    return { text, words };
   } catch (e: any) {
-    console.warn("Whisper verbose error:", e?.message);
+    console.error("Whisper transcription failed:", e?.message || e);
     return null;
   }
 }
