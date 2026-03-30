@@ -17,6 +17,10 @@ RUN pnpm --filter @workspace/api-server build
 
 ENV NODE_ENV=production
 ENV PORT=8080
+
+ARG OPENAI_API_KEY
+ENV OPENAI_API_KEY=${OPENAI_API_KEY}
+
 EXPOSE 8080
 
-CMD ["node", "--enable-source-maps", "artifacts/api-server/dist/index.mjs"]
+CMD ["/bin/sh", "-c", "/usr/local/bin/pnpm --filter @workspace/db push --force && node --enable-source-maps artifacts/api-server/dist/index.mjs"]
