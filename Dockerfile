@@ -1,4 +1,5 @@
 FROM node:20-alpine AS base
+RUN apk add --no-cache ffmpeg
 RUN npm install -g pnpm@9
 
 WORKDIR /app

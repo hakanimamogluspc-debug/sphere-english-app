@@ -2,6 +2,13 @@ import { Router, Request, Response } from "express";
 import OpenAI from "openai";
 import multer from "multer";
 import { authMiddleware } from "../middlewares/auth.js";
+import { execFile } from "child_process";
+import { promisify } from "util";
+import fs from "fs";
+import os from "os";
+import path from "path";
+
+const execFileAsync = promisify(execFile);
 
 const router = Router();
 
@@ -22,17 +29,45 @@ type Voice = typeof ALLOWED_VOICES[number];
 
 interface WhisperWord { word: string; start: number; end: number; probability: number }
 
+async function convertToMp3(inputBuffer: Buffer): Promise<Buffer> {
+  const tmpIn = path.join(os.tmpdir(), `audio_in_${Date.now()}.webm`);
+  const tmpOut = path.join(os.tmpdir(), `audio_out_${Date.now()}.mp3`);
+  try {
+    fs.writeFileSync(tmpIn, inputBuffer);
+    await execFileAsync("ffmpeg", [
+      "-y", "-i", tmpIn,
+      "-ar", "16000", "-ac", "1", "-b:a", "64k",
+      tmpOut
+    ]);
+    const mp3Buffer = fs.readFileSync(tmpOut);
+    return mp3Buffer;
+  } finally {
+    try { fs.unlinkSync(tmpIn); } catch {}
+    try { fs.unlinkSync(tmpOut); } catch {}
+  }
+}
+
 async function transcribeVerbose(
   audioBuffer: Buffer,
   mimeType: string
 ): Promise<{ text: string; words: WhisperWord[]; apiError?: boolean } | null> {
   try {
-    const safeMime = (mimeType || "audio/webm").split(";")[0] || "audio/webm";
-    const ext = safeMime.includes("mp4") || safeMime.includes("m4a") ? "m4a"
-      : safeMime.includes("ogg") ? "ogg"
-      : safeMime.includes("wav") ? "wav"
-      : "webm";
-    const audioFile = new File([audioBuffer], `audio.${ext}`, { type: safeMime });
+    let finalBuffer = audioBuffer;
+    let finalExt = "mp3";
+    let finalMime = "audio/mpeg";
+
+    // Her zaman mp3'e dönüştür — Whisper en güvenilir bu formatta çalışır
+    try {
+      finalBuffer = await convertToMp3(audioBuffer);
+      console.info(`ffmpeg dönüşüm tamamlandı: ${audioBuffer.length} → ${finalBuffer.length} bytes`);
+    } catch (convErr: any) {
+      console.warn("ffmpeg dönüşüm başarısız, orijinal buffer deneniyor:", convErr?.message);
+      // Dönüşüm başarısız olursa orijinal webm ile dene
+      finalExt = "webm";
+      finalMime = "audio/webm";
+    }
+
+    const audioFile = new File([finalBuffer], `audio.${finalExt}`, { type: finalMime });
     const res = await getOpenAI().audio.transcriptions.create({
       model: "whisper-1",
       file: audioFile,
@@ -49,7 +84,7 @@ async function transcribeVerbose(
       probability: w.probability ?? 1,
     }));
     const text = (data.text || "").trim();
-    console.info(`Whisper transcription: "${text}" (${words.length} words, buffer: ${audioBuffer.length} bytes, type: ${safeMime})`);
+    console.info(`Whisper transcription: "${text}" (${words.length} words, ${finalBuffer.length} bytes)`);
     return { text, words };
   } catch (e: any) {
     console.error("Whisper transcription failed:", e?.status, e?.message || e);
