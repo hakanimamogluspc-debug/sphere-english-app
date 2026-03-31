@@ -56,13 +56,11 @@ async function transcribeVerbose(
     let finalExt = "mp3";
     let finalMime = "audio/mpeg";
 
-    // Her zaman mp3'e dönüştür — Whisper en güvenilir bu formatta çalışır
     try {
       finalBuffer = await convertToMp3(audioBuffer);
       console.info(`ffmpeg dönüşüm tamamlandı: ${audioBuffer.length} → ${finalBuffer.length} bytes`);
     } catch (convErr: any) {
       console.warn("ffmpeg dönüşüm başarısız, orijinal buffer deneniyor:", convErr?.message);
-      // Dönüşüm başarısız olursa orijinal webm ile dene
       finalExt = "webm";
       finalMime = "audio/webm";
     }
@@ -89,6 +87,88 @@ async function transcribeVerbose(
   } catch (e: any) {
     console.error("Whisper transcription failed:", e?.status, e?.message || e);
     return { text: "", words: [], apiError: true };
+  }
+}
+
+export interface GrammarError {
+  original: string;
+  corrected: string;
+  explanation: string;
+}
+
+export interface VocabularySuggestion {
+  original: string;
+  better: string;
+  explanation: string;
+}
+
+export interface SpeechAnalysis {
+  grammarErrors: GrammarError[];
+  vocabularySuggestions: VocabularySuggestion[];
+  pronunciationTips: string[];
+  overallScore: number;
+  correctedText: string;
+}
+
+async function analyzeSpeech(
+  text: string,
+  lowConfWords: string[]
+): Promise<SpeechAnalysis> {
+  const pronSection = lowConfWords.length > 0
+    ? `\nLow-confidence words (possible pronunciation issues): ${lowConfWords.join(", ")}`
+    : "";
+
+  const systemPrompt = `You are an expert English language coach analyzing a student's spoken English. 
+Analyze the transcribed speech for grammar errors, vocabulary issues, and pronunciation tips.
+Always respond in valid JSON only — no extra text.
+
+Return this exact JSON structure:
+{
+  "grammarErrors": [
+    { "original": "<exact wrong phrase>", "corrected": "<correct version>", "explanation": "<short Turkish explanation>" }
+  ],
+  "vocabularySuggestions": [
+    { "original": "<basic/wrong word>", "better": "<better alternative>", "explanation": "<short Turkish explanation>" }
+  ],
+  "pronunciationTips": ["<tip in Turkish about a specific word or sound>"],
+  "overallScore": <40-100>,
+  "correctedText": "<full corrected version of the text>"
+}
+
+Rules:
+- grammarErrors: Only real grammar mistakes (wrong tense, missing article, wrong preposition, subject-verb disagreement, etc). Max 4.
+- vocabularySuggestions: Only if there are clearly weak or incorrect word choices. Max 3.
+- pronunciationTips: Based on the low-confidence words list. Give phonetic tip in Turkish. Max 2. Empty array if no issues.
+- overallScore: 40-100. Good speech = 80+. Many errors = 40-60.
+- correctedText: The full corrected sentence(s) in English.
+- All explanations must be in Turkish. correctedText must be in English.`;
+
+  const userMsg = `Transcribed speech: "${text}"${pronSection}`;
+
+  try {
+    const completion = await getOpenAI().chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userMsg },
+      ],
+      temperature: 0.2,
+      max_tokens: 800,
+    });
+
+    const raw = completion.choices[0]?.message?.content ?? "";
+    const match = raw.match(/\{[\s\S]*\}/);
+    if (!match) throw new Error("JSON bulunamadı");
+    return JSON.parse(match[0]) as SpeechAnalysis;
+  } catch (e: any) {
+    console.error("Speech analysis failed:", e?.message);
+    return {
+      grammarErrors: [],
+      vocabularySuggestions: [],
+      pronunciationTips: [],
+      overallScore: 75,
+      correctedText: text,
+    };
   }
 }
 
@@ -143,13 +223,16 @@ router.post(
         }))
         .filter((w) => w.word.trim().length > 0);
 
-      // ── Identify mispronounced words ──
-      const badWords = whisperWords
+      // ── Low confidence words for pronunciation tips ──
+      const lowConfWords = whisperWords
         .filter((w) => w.probability < 0.82 && w.word.trim().length > 1)
-        .map((w) => `"${w.word.trim()}" (confidence: ${Math.round(w.probability * 100)}%)`)
+        .map((w) => w.word.trim());
+
+      // ── Run speech analysis (grammar + vocabulary + pronunciation) in parallel with GPT conversation ──
+      const badWordsForPrompt = lowConfWords
+        .map((w) => `"${w}"`)
         .join(", ");
 
-      // ── Build GPT conversation history ──
       const systemPrompt = `You are ${teacherName}, a warm and encouraging English conversation teacher.
 Your role is to have natural, flowing conversations with the student in English.
 The student is learning English and practicing speaking.
@@ -161,8 +244,8 @@ IMPORTANT RULES:
 - If pronunciation is fine, just have a natural conversation. Ask follow-up questions to keep things going.
 - Be encouraging and friendly. Never harsh.
 - If the student seems to be struggling, slow down and help.${
-  badWords
-    ? `\n\nPRONUNCIATION ISSUES DETECTED (Whisper low-confidence): ${badWords}\nMention the most important one naturally in your reply if relevant.`
+  badWordsForPrompt
+    ? `\n\nPRONUNCIATION ISSUES DETECTED (Whisper low-confidence): ${badWordsForPrompt}\nMention the most important one naturally in your reply if relevant.`
     : "\n\nPRONUNCIATION: No issues detected. Just have a natural conversation."
 }`;
 
@@ -172,12 +255,16 @@ IMPORTANT RULES:
         { role: "user", content: userText },
       ];
 
-      const completion = await getOpenAI().chat.completions.create({
-        model: "gpt-4o-mini",
-        messages: gptMessages,
-        temperature: 0.75,
-        max_tokens: 150,
-      });
+      // ── Run GPT conversation + speech analysis in parallel ──
+      const [completion, speechAnalysis] = await Promise.all([
+        getOpenAI().chat.completions.create({
+          model: "gpt-4o-mini",
+          messages: gptMessages,
+          temperature: 0.75,
+          max_tokens: 150,
+        }),
+        analyzeSpeech(userText, lowConfWords),
+      ]);
 
       const reply = completion.choices[0].message.content?.trim() || "I see! Tell me more.";
 
@@ -190,7 +277,7 @@ IMPORTANT RULES:
       });
       const audioBase64 = Buffer.from(await ttsResponse.arrayBuffer()).toString("base64");
 
-      return res.json({ userText, wordScores, reply, audioBase64 });
+      return res.json({ userText, wordScores, reply, audioBase64, speechAnalysis });
 
     } catch (err: any) {
       console.error("Pronunciation chat error:", err?.message || err);
