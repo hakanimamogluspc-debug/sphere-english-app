@@ -72,7 +72,8 @@ async function transcribeVerbose(
       language: "en",
       response_format: "verbose_json",
       timestamp_granularities: ["word"],
-      temperature: 0,
+      temperature: 0.1,
+      prompt: "This is an English language learner practicing conversation. They may make grammar mistakes like: she dont, he go, I am go, she dont like, they doesn't, we was. Transcribe exactly what is said, including grammar errors. Do not correct the grammar.",
     } as any);
     const data = res as any;
     const words: WhisperWord[] = (data.words || []).map((w: any) => ({
