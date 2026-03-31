@@ -21,6 +21,7 @@ import studentRouter from "./student";
 import forumRouter from "./forum";
 import materialsRouter from "./materials";
 import pronunciationRouter from "./pronunciation";
+import writingRouter from "./writing";
 
 const router: IRouter = Router();
 
@@ -46,5 +47,6 @@ router.use(leaderboardRouter);
 router.use(dashboardRouter);
 router.use(materialsRouter);
 router.use(pronunciationRouter);
+router.use(writingRouter);
 
 export default router;
