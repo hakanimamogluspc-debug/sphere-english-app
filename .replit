@@ -27,3 +27,9 @@ timeoutMs = 20000
 
 [nix]
 channel = "stable-25_05"
+
+[userenv]
+
+[userenv.shared]
+TOPVIEW_API_KEY = "sk-3AxYY1qrvbIfNmRYwA9MGuX4MSmMNbevRgW1utFzisc"
+TOPVIEW_UID = "ZOE1jxkyJ9zO1MJMaswM"
