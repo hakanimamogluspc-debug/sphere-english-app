@@ -5,16 +5,16 @@ NODE_ENV = "production"
 PORT = "3000"
 
 [phases.setup]
-nixPkgs = ["nodejs_20"]
+nixPkgs = ["nodejs_20", "ffmpeg"]
 cmds = ["npm install -g pnpm@9"]
 
 [phases.install]
 dependsOn = ["setup"]
-cmds = ["npm install --ignore-scripts"]
+cmds = ["pnpm install --frozen-lockfile"]
 
 [phases.build]
 dependsOn = ["install"]
-cmds = ["pnpm install --frozen-lockfile", "pnpm --filter @workspace/api-server build"]
+cmds = ["pnpm --filter @workspace/api-server build"]
 
 [start]
 cmd = "/usr/local/bin/pnpm --filter @workspace/db push --force 2>/dev/null; node --enable-source-maps artifacts/api-server/dist/index.mjs"
