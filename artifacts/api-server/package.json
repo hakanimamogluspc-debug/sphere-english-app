@@ -10,6 +10,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
+    "@types/nodemailer": "^7.0.11",
     "@workspace/api-zod": "workspace:*",
     "@workspace/db": "workspace:*",
     "assemblyai": "^4.28.0",
@@ -25,6 +26,7 @@
     "jsonwebtoken": "^9.0.3",
     "microsoft-cognitiveservices-speech-sdk": "^1.48.0",
     "multer": "^2.1.1",
+    "nodemailer": "^8.0.4",
     "openai": "^6.32.0",
     "pino": "^9",
     "pino-http": "^10"

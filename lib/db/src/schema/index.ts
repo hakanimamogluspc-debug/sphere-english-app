@@ -9,3 +9,4 @@ export * from "./groups";
 export * from "./speaking-clubs";
 export * from "./forum";
 export * from "./materials";
+export * from "./marketing";
