@@ -575,7 +575,7 @@ export default function PronunciationCoach() {
   const canTap = phase === "idle" || canStop;
 
   return (
-    <div className="flex flex-col h-[calc(100vh-64px)] max-w-2xl mx-auto">
+    <div className="flex flex-col h-[calc(100vh-64px)] w-full">
       {/* Header */}
       <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100 bg-white">
         <button
