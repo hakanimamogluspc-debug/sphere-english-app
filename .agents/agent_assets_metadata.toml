@@ -18,6 +18,42 @@ uri = "file://attached_assets/ref_topview_workspace.png"
 type = "image"
 title = "generated_image"
 
+[[generated]]
+id = "m2kK3UTc8cBnpIvB87JPl"
+uri = "file://attached_assets/blog_a1.png"
+type = "image"
+title = "blog cover A1"
+
+[[generated]]
+id = "y1GsG0Mu-7LYzgXXmIFze"
+uri = "file://attached_assets/blog_a2.png"
+type = "image"
+title = "blog cover A2"
+
+[[generated]]
+id = "FrQHgj2Cu7q2PBy4cJiG3"
+uri = "file://attached_assets/blog_b1.png"
+type = "image"
+title = "blog cover B1"
+
+[[generated]]
+id = "daVVDUQbZrLl9O-mUbEcf"
+uri = "file://attached_assets/blog_b2.png"
+type = "image"
+title = "blog cover B2"
+
+[[generated]]
+id = "KGjOx-WxbEISmjHJ9gwJ5"
+uri = "file://attached_assets/blog_c1.png"
+type = "image"
+title = "blog cover C1"
+
+[[generated]]
+id = "GBOkjf7ceBCL_39pB_OCn"
+uri = "file://attached_assets/blog_c2.png"
+type = "image"
+title = "blog cover C2"
+
 [[outputs]]
 id = "FsU4PAkDB_a1cFXTkO03x"
 uri = "file://artifacts/sphere-english/public/www-sitemap.xml"
@@ -41,3 +77,39 @@ id = "HZytWRVcEyP7wPrkpYNCI"
 uri = "file://attached_assets/ref_topview_workspace.png"
 type = "image"
 title = "3. Çalışma Alanı — Laptop + Tablet"
+
+[[outputs]]
+id = "-F07eGtOTWyhz8Myo4chj"
+uri = "file://attached_assets/blog_a1.png"
+type = "image"
+title = "A1 — Sıfırdan Başlayanlar"
+
+[[outputs]]
+id = "XdQ7fz1_hOdc1IPja-590"
+uri = "file://attached_assets/blog_a2.png"
+type = "image"
+title = "A2 — Temel İş Konuşması"
+
+[[outputs]]
+id = "2DICMj52F4TYy1CMIe0Xg"
+uri = "file://attached_assets/blog_b1.png"
+type = "image"
+title = "B1 — İş Sunumu"
+
+[[outputs]]
+id = "i_vmFkWU-q-4xGMwAA_G3"
+uri = "file://attached_assets/blog_b2.png"
+type = "image"
+title = "B2 — Müzakere ve Pazarlık"
+
+[[outputs]]
+id = "6NPemJkXpWA5Rojzf_CRd"
+uri = "file://attached_assets/blog_c1.png"
+type = "image"
+title = "C1 — Kurumsal Rapor"
+
+[[outputs]]
+id = "bOndxUx8en_qZad5DEN03"
+uri = "file://attached_assets/blog_c2.png"
+type = "image"
+title = "C2 — Global Liderlik"
