@@ -1,8 +1,43 @@
 uploads = []
-generated = []
+
+[[generated]]
+id = "J79kUkI1zLeNNyKXVdwEK"
+uri = "file://attached_assets/ref_topview_dashboard.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "nRfcf4AgJ7FJZR9Q7QRBA"
+uri = "file://attached_assets/ref_topview_voice.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "M6FBdmKE9g64HZMRPcb5n"
+uri = "file://attached_assets/ref_topview_workspace.png"
+type = "image"
+title = "generated_image"
 
 [[outputs]]
 id = "FsU4PAkDB_a1cFXTkO03x"
 uri = "file://artifacts/sphere-english/public/www-sitemap.xml"
 type = "unspecified"
 title = "www.sphereenglish.com Sitemap"
+
+[[outputs]]
+id = "8V88nF7s9O4Z4Xnr5fIGP"
+uri = "file://attached_assets/ref_topview_dashboard.png"
+type = "image"
+title = "1. Dashboard — Laptop üstten çekim"
+
+[[outputs]]
+id = "EjysdpWnwlKnh-2lV4dO9"
+uri = "file://attached_assets/ref_topview_voice.png"
+type = "image"
+title = "2. AI Ses Koçu — Telefon & kulaklık"
+
+[[outputs]]
+id = "HZytWRVcEyP7wPrkpYNCI"
+uri = "file://attached_assets/ref_topview_workspace.png"
+type = "image"
+title = "3. Çalışma Alanı — Laptop + Tablet"
