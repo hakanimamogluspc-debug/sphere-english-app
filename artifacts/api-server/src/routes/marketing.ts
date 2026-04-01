@@ -216,7 +216,7 @@ router.get(
         roleBreakdown: roleStats,
         levelBreakdown: levelStats,
         dailyRegistrations: dailyRegs,
-        emailConfigured: !!process.env.SMTP_HOST && !!process.env.SMTP_USER && !!process.env.SMTP_PASS,
+        emailConfigured: !!process.env.RESEND_API_KEY || (!!process.env.SMTP_HOST && !!process.env.SMTP_USER && !!process.env.SMTP_PASS),
       });
     } catch (e: any) {
       console.error("Marketing stats error:", e);
