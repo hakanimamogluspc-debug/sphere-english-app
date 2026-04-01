@@ -161,17 +161,23 @@ export default function AdminMarketing() {
   const loadAll = async () => {
     setLoading(true); setError("");
     try {
-      const [s, l, c, t] = await Promise.all([
+      const [s, l, c] = await Promise.all([
         apiFetch("/api/admin/marketing/stats"),
         apiFetch("/api/admin/marketing/leads"),
         apiFetch("/api/admin/marketing/campaigns"),
-        apiFetch("/api/admin/marketing/templates"),
       ]);
-      setStats(s); setLeads(l); setCampaigns(c); setTemplates(t);
+      setStats(s); setLeads(l); setCampaigns(c);
     } catch (e: any) {
       setError(e.message);
     } finally {
       setLoading(false);
+    }
+    // Templates ayrı yüklenir — hata olsa bile ana panel bozulmaz
+    try {
+      const t = await apiFetch("/api/admin/marketing/templates");
+      setTemplates(t);
+    } catch {
+      setTemplates([]);
     }
   };
 
