@@ -149,6 +149,15 @@ export default function AdminMarketing() {
   const [previewSample, setPreviewSample] = useState<{ email: string; name: string }[]>([]);
   const [sending, setSending] = useState(false);
   const [sendResult, setSendResult] = useState<{ ok: boolean; msg: string } | null>(null);
+  const [customVars, setCustomVars] = useState<Record<string, string>>({});
+
+  const AUTO_VARS = ["EMAIL", "AD", "SOYAD", "AD_SOYAD"];
+
+  const detectedVars = (() => {
+    const matches = body.match(/\{\{([A-Z0-9_]+)\}\}/g) || [];
+    const keys = matches.map(m => m.replace(/\{\{|\}\}/g, ""));
+    return [...new Set(keys)].filter(k => !AUTO_VARS.includes(k));
+  })();
 
   // Template upload
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -205,13 +214,19 @@ export default function AdminMarketing() {
     if (!subject.trim() || !body.trim()) {
       setSendResult({ ok: false, msg: "Konu ve içerik boş bırakılamaz." }); return;
     }
+    // Check all custom vars are filled
+    for (const v of detectedVars) {
+      if (!customVars[v]?.trim()) {
+        setSendResult({ ok: false, msg: `"{{${v}}}" için değer giriniz.` }); return;
+      }
+    }
     setSending(true); setSendResult(null);
     try {
       const data = await apiFetch("/api/admin/marketing/campaigns/send", {
-        method: "POST", body: JSON.stringify({ subject, body, filter: recipientFilter }),
+        method: "POST", body: JSON.stringify({ subject, body, filter: recipientFilter, variables: customVars }),
       });
       setSendResult({ ok: true, msg: `${data.sent} kişiye başarıyla gönderildi!${!data.smtpConfigured ? " (SMTP yapılandırılmamış — demo mod)" : ""}` });
-      setSubject(""); setBody("");
+      setSubject(""); setBody(""); setCustomVars({});
       loadAll();
     } catch (e: any) {
       setSendResult({ ok: false, msg: e.message });
@@ -635,7 +650,32 @@ export default function AdminMarketing() {
                   placeholder="E-posta içeriğini buraya yazın..."
                   className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none resize-none"
                 />
+                <p className="text-xs text-gray-400 mt-1">
+                  Otomatik doldurulan: <code className="bg-gray-100 px-1 rounded">{"{{EMAIL}}"}</code> <code className="bg-gray-100 px-1 rounded">{"{{AD}}"}</code> <code className="bg-gray-100 px-1 rounded">{"{{SOYAD}}"}</code> <code className="bg-gray-100 px-1 rounded">{"{{AD_SOYAD}}"}</code>
+                </p>
               </div>
+
+              {detectedVars.length > 0 && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-3">
+                  <p className="text-xs font-semibold text-blue-700 flex items-center gap-1.5">
+                    <Tag size={12} /> Şablon Değişkenleri — Gönderilmeden önce doldurun
+                  </p>
+                  {detectedVars.map(v => (
+                    <div key={v}>
+                      <label className="text-xs font-medium text-gray-600 mb-1 block">
+                        <code className="bg-blue-100 px-1.5 py-0.5 rounded text-blue-700">{`{{${v}}}`}</code> için değer
+                      </label>
+                      <input
+                        type={v === "SIFRE" ? "text" : "text"}
+                        value={customVars[v] || ""}
+                        onChange={e => setCustomVars(prev => ({ ...prev, [v]: e.target.value }))}
+                        placeholder={v === "SIFRE" ? "Öğretmenin başlangıç şifresi" : `${v} değeri`}
+                        className="w-full border border-blue-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400 bg-white"
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
 
               {sendResult && (
                 <div className={`flex items-center gap-2 text-sm px-3 py-2 rounded-lg ${sendResult.ok ? "bg-green-50 text-green-700" : "bg-red-50 text-red-600"}`}>

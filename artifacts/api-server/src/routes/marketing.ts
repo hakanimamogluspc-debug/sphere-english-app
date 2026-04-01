@@ -231,7 +231,7 @@ router.post(
   requireRole("admin"),
   async (req: AuthRequest, res: Response) => {
     try {
-      const { subject, body, filter } = req.body as { subject: string; body: string; filter: string };
+      const { subject, body, filter, variables } = req.body as { subject: string; body: string; filter: string; variables?: Record<string, string> };
 
       if (!subject?.trim() || !body?.trim()) {
         return res.status(400).json({ error: "Konu ve içerik zorunludur." });
@@ -262,11 +262,23 @@ router.post(
         // Send emails in batches of 10
         for (const user of recipients) {
           try {
+            // Replace per-recipient dynamic variables
+            let personalizedBody = body
+              .replace(/\{\{EMAIL\}\}/g, user.email || "")
+              .replace(/\{\{AD\}\}/g, user.firstName || "")
+              .replace(/\{\{SOYAD\}\}/g, user.lastName || "")
+              .replace(/\{\{AD_SOYAD\}\}/g, `${user.firstName || ""} ${user.lastName || ""}`.trim());
+            // Replace admin-defined custom variables (e.g. {{SIFRE}})
+            if (variables && typeof variables === "object") {
+              for (const [key, val] of Object.entries(variables)) {
+                personalizedBody = personalizedBody.replace(new RegExp(`\\{\\{${key}\\}\\}`, "g"), val);
+              }
+            }
             await transporter.sendMail({
               from: `Sphere English <${fromEmail}>`,
               to: user.email,
               subject,
-              html: buildEmailHtml(subject, body, `${user.firstName} ${user.lastName}`),
+              html: personalizedBody,
             });
             sentCount++;
           } catch (e) {
