@@ -36,17 +36,17 @@ function getTransporter() {
   const user = process.env.SMTP_USER;
   const pass = process.env.SMTP_PASS;
   if (!host || !user || !pass) return null;
+  const secure = port === 465;
   return nodemailer.createTransport({
     host,
     port,
-    secure: port === 465,
-    requireTLS: port === 587,
-    auth: { user, pass },
-    tls: { rejectUnauthorized: false },
-    connectionTimeout: 15000,
-    greetingTimeout: 10000,
-    socketTimeout: 15000,
-  });
+    secure,
+    auth: { type: "login", user, pass },
+    tls: { rejectUnauthorized: false, minVersion: "TLSv1" },
+    connectionTimeout: 20000,
+    greetingTimeout: 15000,
+    socketTimeout: 20000,
+  } as any);
 }
 
 // ─── Admin: Test SMTP connection ──────────────────────────────────────────────
