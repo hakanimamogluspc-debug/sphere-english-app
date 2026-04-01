@@ -36,7 +36,17 @@ function getTransporter() {
   const user = process.env.SMTP_USER;
   const pass = process.env.SMTP_PASS;
   if (!host || !user || !pass) return null;
-  return nodemailer.createTransport({ host, port, secure: port === 465, auth: { user, pass } });
+  return nodemailer.createTransport({
+    host,
+    port,
+    secure: port === 465,
+    requireTLS: port === 587,
+    auth: { user, pass },
+    tls: { rejectUnauthorized: false },
+    connectionTimeout: 15000,
+    greetingTimeout: 10000,
+    socketTimeout: 15000,
+  });
 }
 
 // ─── Public: Track page view (www site calls this) ───────────────────────────
@@ -257,9 +267,19 @@ router.post(
       const fromEmail = process.env.SMTP_FROM || process.env.SMTP_USER || "noreply@sphereenglish.com";
 
       let sentCount = 0;
+      const sendErrors: string[] = [];
 
       if (transporter) {
-        // Send emails in batches of 10
+        // Verify SMTP connection first
+        try {
+          await transporter.verify();
+        } catch (verifyErr: any) {
+          await db.update(emailCampaignsTable)
+            .set({ status: "failed" })
+            .where(eq(emailCampaignsTable.id, campaign.id));
+          return res.status(500).json({ error: `SMTP bağlantı hatası: ${verifyErr?.message || verifyErr}` });
+        }
+
         for (const user of recipients) {
           try {
             // Replace per-recipient dynamic variables
@@ -281,8 +301,9 @@ router.post(
               html: personalizedBody,
             });
             sentCount++;
-          } catch (e) {
+          } catch (e: any) {
             console.error(`Email failed for ${user.email}:`, e);
+            sendErrors.push(`${user.email}: ${e?.message || e}`);
           }
         }
         await db.update(emailCampaignsTable)
@@ -302,6 +323,7 @@ router.post(
         sent: sentCount,
         total: recipients.length,
         smtpConfigured: !!transporter,
+        errors: sendErrors.length > 0 ? sendErrors : undefined,
       });
     } catch (e: any) {
       console.error("Campaign send error:", e);
