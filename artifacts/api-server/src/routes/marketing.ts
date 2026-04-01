@@ -75,7 +75,27 @@ router.post(
       await transporter.verify();
       return res.json({ ok: true, config, message: "Bağlantı başarılı! SMTP hazır." });
     } catch (e: any) {
-      return res.json({ ok: false, config, error: e?.message || String(e) });
+      // Port 587 failed — try port 465 (SSL) as fallback
+      const user = process.env.SMTP_USER!;
+      const pass = process.env.SMTP_PASS!;
+      const host = process.env.SMTP_HOST!;
+      const alt = nodemailer.createTransport({
+        host, port: 465, secure: true,
+        auth: { type: "login", user, pass },
+        tls: { rejectUnauthorized: false },
+        connectionTimeout: 20000,
+        greetingTimeout: 15000,
+      } as any);
+      try {
+        await alt.verify();
+        return res.json({
+          ok: true,
+          config: { ...config, port: "587 başarısız → 465 çalışıyor" },
+          message: "Port 465 (SSL) ile bağlantı başarılı! Easypanel'de SMTP_PORT=465 yapın.",
+        });
+      } catch (e2: any) {
+        return res.json({ ok: false, config, error: `Port 587: ${e?.message} | Port 465: ${e2?.message}` });
+      }
     }
   }
 );
