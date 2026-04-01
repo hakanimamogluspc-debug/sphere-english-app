@@ -155,6 +155,8 @@ export default function AdminMarketing() {
   const [tplName, setTplName] = useState("");
   const [tplSubject, setTplSubject] = useState("");
   const [tplFile, setTplFile] = useState<File | null>(null);
+  const [tplHtmlCode, setTplHtmlCode] = useState("");
+  const [tplInputMode, setTplInputMode] = useState<"file" | "code">("code");
   const [tplUploading, setTplUploading] = useState(false);
   const [tplResult, setTplResult] = useState<{ ok: boolean; msg: string } | null>(null);
 
@@ -243,6 +245,26 @@ export default function AdminMarketing() {
       setTplName(""); setTplSubject(""); setTplFile(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
       setTplResult({ ok: true, msg: "Şablon başarıyla yüklendi!" });
+    } catch (e: any) {
+      setTplResult({ ok: false, msg: e.message });
+    } finally {
+      setTplUploading(false);
+    }
+  };
+
+  const saveHtmlCodeTemplate = async () => {
+    if (!tplName.trim() || !tplHtmlCode.trim()) {
+      setTplResult({ ok: false, msg: "Şablon adı ve HTML içeriği zorunludur." }); return;
+    }
+    setTplUploading(true); setTplResult(null);
+    try {
+      const data = await apiFetch("/api/admin/marketing/templates/html", {
+        method: "POST",
+        body: JSON.stringify({ name: tplName.trim(), subject: tplSubject.trim(), htmlContent: tplHtmlCode.trim() }),
+      });
+      setTemplates(prev => [data.template, ...prev]);
+      setTplName(""); setTplSubject(""); setTplHtmlCode("");
+      setTplResult({ ok: true, msg: "HTML şablon kaydedildi!" });
     } catch (e: any) {
       setTplResult({ ok: false, msg: e.message });
     } finally {
@@ -666,8 +688,24 @@ export default function AdminMarketing() {
         <div className="space-y-6">
           {/* Upload Card */}
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 space-y-4">
-            <h3 className="font-semibold text-gray-800 flex items-center gap-2"><FileUp size={16} /> Yeni Şablon Yükle</h3>
-            <p className="text-xs text-gray-500">HTML veya PDF dosyası yükleyin. HTML şablonları doğrudan e-posta içeriği olarak kullanılabilir.</p>
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold text-gray-800 flex items-center gap-2"><FileUp size={16} /> Yeni Şablon</h3>
+              {/* Mode Toggle */}
+              <div className="flex gap-1 bg-gray-100 p-1 rounded-lg">
+                <button
+                  onClick={() => setTplInputMode("code")}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition ${tplInputMode === "code" ? "bg-white shadow text-gray-900" : "text-gray-500 hover:text-gray-700"}`}
+                >
+                  <FileCode size={13} /> HTML Kodu
+                </button>
+                <button
+                  onClick={() => setTplInputMode("file")}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition ${tplInputMode === "file" ? "bg-white shadow text-gray-900" : "text-gray-500 hover:text-gray-700"}`}
+                >
+                  <FileUp size={13} /> Dosya Yükle
+                </button>
+              </div>
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
@@ -690,34 +728,53 @@ export default function AdminMarketing() {
               </div>
             </div>
 
-            <div>
-              <label className="text-xs font-medium text-gray-600 mb-1 block">Dosya (HTML veya PDF, maks. 5 MB) *</label>
-              <div
-                className="border-2 border-dashed border-gray-200 rounded-xl p-6 text-center cursor-pointer hover:border-blue-300 hover:bg-blue-50 transition"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                {tplFile ? (
-                  <div className="flex items-center justify-center gap-2">
-                    {tplFile.name.endsWith(".pdf") ? <FileText size={20} className="text-red-500" /> : <FileCode size={20} className="text-blue-500" />}
-                    <span className="text-sm font-medium text-gray-700">{tplFile.name}</span>
-                    <span className="text-xs text-gray-400">({(tplFile.size / 1024).toFixed(0)} KB)</span>
-                  </div>
-                ) : (
-                  <>
-                    <FileUp size={24} className="mx-auto text-gray-300 mb-2" />
-                    <p className="text-sm text-gray-400">Dosya seçmek için tıklayın</p>
-                    <p className="text-xs text-gray-300 mt-1">.html, .htm, .pdf</p>
-                  </>
-                )}
+            {/* HTML Code Mode */}
+            {tplInputMode === "code" && (
+              <div>
+                <label className="text-xs font-medium text-gray-600 mb-1 block">HTML Kodu *</label>
+                <textarea
+                  value={tplHtmlCode}
+                  onChange={e => setTplHtmlCode(e.target.value)}
+                  rows={14}
+                  placeholder={"<!DOCTYPE html>\n<html>\n<head><meta charset=\"utf-8\"></head>\n<body>\n  <h1>Merhaba!</h1>\n  <p>E-posta içeriğinizi buraya yazın.</p>\n</body>\n</html>"}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-xs font-mono outline-none resize-y bg-gray-950 text-green-400 leading-relaxed"
+                  spellCheck={false}
+                />
+                <p className="text-xs text-gray-400 mt-1">HTML kodunuzu yapıştırın veya yazın. Kaydettikten sonra "Kullan" ile e-posta composer'a yükleyebilirsiniz.</p>
               </div>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".html,.htm,.pdf"
-                className="hidden"
-                onChange={e => setTplFile(e.target.files?.[0] || null)}
-              />
-            </div>
+            )}
+
+            {/* File Upload Mode */}
+            {tplInputMode === "file" && (
+              <div>
+                <label className="text-xs font-medium text-gray-600 mb-1 block">Dosya (HTML veya PDF, maks. 5 MB) *</label>
+                <div
+                  className="border-2 border-dashed border-gray-200 rounded-xl p-6 text-center cursor-pointer hover:border-blue-300 hover:bg-blue-50 transition"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  {tplFile ? (
+                    <div className="flex items-center justify-center gap-2">
+                      {tplFile.name.endsWith(".pdf") ? <FileText size={20} className="text-red-500" /> : <FileCode size={20} className="text-blue-500" />}
+                      <span className="text-sm font-medium text-gray-700">{tplFile.name}</span>
+                      <span className="text-xs text-gray-400">({(tplFile.size / 1024).toFixed(0)} KB)</span>
+                    </div>
+                  ) : (
+                    <>
+                      <FileUp size={24} className="mx-auto text-gray-300 mb-2" />
+                      <p className="text-sm text-gray-400">Dosya seçmek için tıklayın</p>
+                      <p className="text-xs text-gray-300 mt-1">.html, .htm, .pdf</p>
+                    </>
+                  )}
+                </div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".html,.htm,.pdf"
+                  className="hidden"
+                  onChange={e => setTplFile(e.target.files?.[0] || null)}
+                />
+              </div>
+            )}
 
             {tplResult && (
               <div className={`flex items-center gap-2 text-sm px-3 py-2 rounded-lg ${tplResult.ok ? "bg-green-50 text-green-700" : "bg-red-50 text-red-600"}`}>
@@ -727,11 +784,16 @@ export default function AdminMarketing() {
             )}
 
             <button
-              onClick={uploadTemplate}
+              onClick={tplInputMode === "code" ? saveHtmlCodeTemplate : uploadTemplate}
               disabled={tplUploading}
               className="w-full bg-blue-600 text-white rounded-lg py-2.5 text-sm font-semibold hover:bg-blue-700 disabled:opacity-50 transition flex items-center justify-center gap-2"
             >
-              {tplUploading ? <><RefreshCw size={15} className="animate-spin" /> Yükleniyor...</> : <><FileUp size={15} /> Şablonu Yükle</>}
+              {tplUploading
+                ? <><RefreshCw size={15} className="animate-spin" /> Kaydediliyor...</>
+                : tplInputMode === "code"
+                  ? <><CheckCircle size={15} /> HTML Şablonu Kaydet</>
+                  : <><FileUp size={15} /> Dosyayı Yükle</>
+              }
             </button>
           </div>
 

@@ -349,6 +349,32 @@ router.post(
   }
 );
 
+// ─── Admin: Save HTML code as template ───────────────────────────────────────
+router.post(
+  "/admin/marketing/templates/html",
+  authMiddleware,
+  requireRole("admin"),
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const { name, subject, htmlContent } = req.body;
+      if (!name?.trim()) return res.status(400).json({ error: "Şablon adı zorunludur." });
+      if (!htmlContent?.trim()) return res.status(400).json({ error: "HTML içeriği boş olamaz." });
+      const [tpl] = await db.insert(emailTemplatesTable).values({
+        name: name.trim(),
+        subject: subject?.trim() || "",
+        htmlContent: htmlContent.trim(),
+        fileType: "html",
+        fileName: `${name.trim().replace(/\s+/g, "_")}.html`,
+        filePath: null,
+        createdBy: req.userId,
+      }).returning();
+      return res.json({ ok: true, template: tpl });
+    } catch (e: any) {
+      return res.status(500).json({ error: e.message || "Kaydetme başarısız." });
+    }
+  }
+);
+
 // ─── Admin: Delete template ───────────────────────────────────────────────────
 router.delete(
   "/admin/marketing/templates/:id",
