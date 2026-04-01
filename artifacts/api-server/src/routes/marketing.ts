@@ -1,8 +1,32 @@
 import { Router, Request, Response } from "express";
-import { db, usersTable, contactLeadsTable, emailCampaignsTable, pageViewsTable } from "@workspace/db";
+import { db, usersTable, contactLeadsTable, emailCampaignsTable, pageViewsTable, emailTemplatesTable } from "@workspace/db";
 import { eq, desc, gte, count, and, or, inArray, sql } from "drizzle-orm";
 import { authMiddleware, requireRole, type AuthRequest } from "../middlewares/auth.js";
 import nodemailer from "nodemailer";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
+
+const TEMPLATES_DIR = path.join(process.cwd(), "public", "templates");
+if (!fs.existsSync(TEMPLATES_DIR)) fs.mkdirSync(TEMPLATES_DIR, { recursive: true });
+
+const storage = multer.diskStorage({
+  destination: (_req, _file, cb) => cb(null, TEMPLATES_DIR),
+  filename: (_req, file, cb) => {
+    const unique = `${Date.now()}-${Math.round(Math.random() * 1e6)}`;
+    cb(null, `${unique}-${file.originalname}`);
+  },
+});
+const upload = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    const allowed = [".html", ".htm", ".pdf"];
+    const ext = path.extname(file.originalname).toLowerCase();
+    if (allowed.includes(ext)) cb(null, true);
+    else cb(new Error("Sadece HTML ve PDF dosyaları kabul edilir."));
+  },
+});
 
 const router = Router();
 
@@ -270,6 +294,99 @@ router.post(
     } catch (e: any) {
       console.error("Campaign send error:", e);
       return res.status(500).json({ error: "Kampanya gönderilemedi: " + (e?.message || "") });
+    }
+  }
+);
+
+// ─── Admin: List templates ────────────────────────────────────────────────────
+router.get(
+  "/admin/marketing/templates",
+  authMiddleware,
+  requireRole("admin"),
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const templates = await db.select().from(emailTemplatesTable).orderBy(desc(emailTemplatesTable.createdAt));
+      return res.json(templates);
+    } catch {
+      return res.status(500).json({ error: "Şablonlar alınamadı." });
+    }
+  }
+);
+
+// ─── Admin: Upload template ───────────────────────────────────────────────────
+router.post(
+  "/admin/marketing/templates",
+  authMiddleware,
+  requireRole("admin"),
+  (req: AuthRequest, res: Response, next) => {
+    upload.single("file")(req as any, res as any, next);
+  },
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const file = (req as any).file;
+      if (!file) return res.status(400).json({ error: "Dosya seçilmedi." });
+      const { name, subject } = req.body;
+      if (!name?.trim()) return res.status(400).json({ error: "Şablon adı zorunludur." });
+      const ext = path.extname(file.originalname).toLowerCase();
+      const fileType = ext === ".pdf" ? "pdf" : "html";
+      let htmlContent: string | null = null;
+      if (fileType === "html") {
+        htmlContent = fs.readFileSync(file.path, "utf-8");
+      }
+      const [tpl] = await db.insert(emailTemplatesTable).values({
+        name: name.trim(),
+        subject: subject?.trim() || "",
+        htmlContent,
+        fileType,
+        fileName: file.originalname,
+        filePath: file.filename,
+        createdBy: req.userId,
+      }).returning();
+      return res.json({ ok: true, template: tpl });
+    } catch (e: any) {
+      return res.status(500).json({ error: e.message || "Yükleme başarısız." });
+    }
+  }
+);
+
+// ─── Admin: Delete template ───────────────────────────────────────────────────
+router.delete(
+  "/admin/marketing/templates/:id",
+  authMiddleware,
+  requireRole("admin"),
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const id = Number(req.params.id);
+      const [tpl] = await db.select().from(emailTemplatesTable).where(eq(emailTemplatesTable.id, id));
+      if (tpl?.filePath) {
+        const fp = path.join(TEMPLATES_DIR, tpl.filePath);
+        if (fs.existsSync(fp)) fs.unlinkSync(fp);
+      }
+      await db.delete(emailTemplatesTable).where(eq(emailTemplatesTable.id, id));
+      return res.json({ ok: true });
+    } catch {
+      return res.status(500).json({ error: "Silme başarısız." });
+    }
+  }
+);
+
+// ─── Admin: Download/view PDF template ───────────────────────────────────────
+router.get(
+  "/admin/marketing/templates/:id/download",
+  authMiddleware,
+  requireRole("admin"),
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const id = Number(req.params.id);
+      const [tpl] = await db.select().from(emailTemplatesTable).where(eq(emailTemplatesTable.id, id));
+      if (!tpl?.filePath) return res.status(404).json({ error: "Şablon bulunamadı." });
+      const fp = path.join(TEMPLATES_DIR, tpl.filePath);
+      if (!fs.existsSync(fp)) return res.status(404).json({ error: "Dosya bulunamadı." });
+      res.setHeader("Content-Disposition", `inline; filename="${tpl.fileName}"`);
+      res.setHeader("Content-Type", tpl.fileType === "pdf" ? "application/pdf" : "text/html");
+      return res.send(fs.readFileSync(fp));
+    } catch {
+      return res.status(500).json({ error: "İndirme başarısız." });
     }
   }
 );

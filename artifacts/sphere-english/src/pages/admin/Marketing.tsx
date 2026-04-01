@@ -1,7 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Users, Mail, TrendingUp, Eye, Send, Clock, CheckCircle, AlertCircle,
-  RefreshCw, Filter, ChevronDown, BarChart3, Megaphone, Search, Tag, X
+  RefreshCw, Filter, ChevronDown, BarChart3, Megaphone, Search, Tag, X,
+  FileUp, Download, Trash2, FileText, FileCode, LayoutTemplate
 } from "lucide-react";
 
 const TOKEN_KEY = "sphere_token";
@@ -16,6 +17,17 @@ async function apiFetch(path: string, opts?: RequestInit) {
   const res = await fetch(`${getApiBase()}${path}`, {
     ...opts,
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}`, ...(opts?.headers || {}) },
+  });
+  if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || `HTTP ${res.status}`);
+  return res.json();
+}
+
+async function apiFetchForm(path: string, formData: FormData) {
+  const token = localStorage.getItem(TOKEN_KEY);
+  const res = await fetch(`${getApiBase()}${path}`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body: formData,
   });
   if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || `HTTP ${res.status}`);
   return res.json();
@@ -44,7 +56,13 @@ interface Campaign {
   sentAt?: string; createdAt: string;
 }
 
-type Tab = "overview" | "leads" | "email";
+interface EmailTemplate {
+  id: number; name: string; subject: string; htmlContent: string | null;
+  fileType: "html" | "pdf"; fileName: string; filePath: string | null;
+  createdAt: string;
+}
+
+type Tab = "overview" | "leads" | "email" | "templates";
 
 const RECIPIENT_OPTIONS = [
   { value: "all", label: "Tüm Kullanıcılar" },
@@ -112,6 +130,7 @@ export default function AdminMarketing() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [leads, setLeads] = useState<Lead[]>([]);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [templates, setTemplates] = useState<EmailTemplate[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -131,15 +150,24 @@ export default function AdminMarketing() {
   const [sending, setSending] = useState(false);
   const [sendResult, setSendResult] = useState<{ ok: boolean; msg: string } | null>(null);
 
+  // Template upload
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [tplName, setTplName] = useState("");
+  const [tplSubject, setTplSubject] = useState("");
+  const [tplFile, setTplFile] = useState<File | null>(null);
+  const [tplUploading, setTplUploading] = useState(false);
+  const [tplResult, setTplResult] = useState<{ ok: boolean; msg: string } | null>(null);
+
   const loadAll = async () => {
     setLoading(true); setError("");
     try {
-      const [s, l, c] = await Promise.all([
+      const [s, l, c, t] = await Promise.all([
         apiFetch("/api/admin/marketing/stats"),
         apiFetch("/api/admin/marketing/leads"),
         apiFetch("/api/admin/marketing/campaigns"),
+        apiFetch("/api/admin/marketing/templates"),
       ]);
-      setStats(s); setLeads(l); setCampaigns(c);
+      setStats(s); setLeads(l); setCampaigns(c); setTemplates(t);
     } catch (e: any) {
       setError(e.message);
     } finally {
@@ -194,6 +222,61 @@ export default function AdminMarketing() {
     } catch {}
   };
 
+  const uploadTemplate = async () => {
+    if (!tplFile || !tplName.trim()) {
+      setTplResult({ ok: false, msg: "Şablon adı ve dosya zorunludur." }); return;
+    }
+    setTplUploading(true); setTplResult(null);
+    try {
+      const fd = new FormData();
+      fd.append("file", tplFile);
+      fd.append("name", tplName.trim());
+      fd.append("subject", tplSubject.trim());
+      const data = await apiFetchForm("/api/admin/marketing/templates", fd);
+      setTemplates(prev => [data.template, ...prev]);
+      setTplName(""); setTplSubject(""); setTplFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      setTplResult({ ok: true, msg: "Şablon başarıyla yüklendi!" });
+    } catch (e: any) {
+      setTplResult({ ok: false, msg: e.message });
+    } finally {
+      setTplUploading(false);
+    }
+  };
+
+  const deleteTemplate = async (id: number) => {
+    if (!confirm("Bu şablonu silmek istediğinize emin misiniz?")) return;
+    try {
+      await apiFetch(`/api/admin/marketing/templates/${id}`, { method: "DELETE" });
+      setTemplates(prev => prev.filter(t => t.id !== id));
+    } catch (e: any) {
+      alert("Silme başarısız: " + e.message);
+    }
+  };
+
+  const loadTemplateIntoComposer = (tpl: EmailTemplate) => {
+    if (tpl.fileType === "pdf") {
+      alert("PDF şablonları e-posta içeriği olarak kullanılamaz. Sadece HTML şablonları içerik olarak yüklenebilir.");
+      return;
+    }
+    if (tpl.subject) setSubject(tpl.subject);
+    if (tpl.htmlContent) setBody(tpl.htmlContent);
+    setTab("email");
+  };
+
+  const downloadTemplate = (tpl: EmailTemplate) => {
+    const token = localStorage.getItem(TOKEN_KEY);
+    const url = `${getApiBase()}/api/admin/marketing/templates/${tpl.id}/download`;
+    fetch(url, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.blob())
+      .then(blob => {
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = tpl.fileName;
+        a.click();
+      });
+  };
+
   const filteredLeads = leads.filter(l => {
     const matchSearch = !leadSearch || l.name.toLowerCase().includes(leadSearch.toLowerCase()) || l.email.toLowerCase().includes(leadSearch.toLowerCase());
     const matchStatus = leadStatus === "all" || l.status === leadStatus;
@@ -237,11 +320,12 @@ export default function AdminMarketing() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 bg-gray-100 p-1 rounded-xl w-fit">
+      <div className="flex gap-1 bg-gray-100 p-1 rounded-xl w-fit flex-wrap">
         {([
           { id: "overview", label: "Genel Bakış", icon: BarChart3 },
           { id: "leads", label: `Leads (${leads.length})`, icon: Users },
           { id: "email", label: "E-posta Gönder", icon: Mail },
+          { id: "templates", label: `Şablonlar (${templates.length})`, icon: LayoutTemplate },
         ] as const).map(t => (
           <button
             key={t.id}
@@ -562,6 +646,141 @@ export default function AdminMarketing() {
                       <p>{RECIPIENT_OPTIONS.find(o => o.value === c.recipientFilter)?.label || c.recipientFilter}</p>
                       <p>{c.sentCount} / {c.recipientCount} kişi</p>
                       <p>{new Date(c.createdAt).toLocaleString("tr-TR")}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── TEMPLATES ── */}
+      {tab === "templates" && (
+        <div className="space-y-6">
+          {/* Upload Card */}
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 space-y-4">
+            <h3 className="font-semibold text-gray-800 flex items-center gap-2"><FileUp size={16} /> Yeni Şablon Yükle</h3>
+            <p className="text-xs text-gray-500">HTML veya PDF dosyası yükleyin. HTML şablonları doğrudan e-posta içeriği olarak kullanılabilir.</p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-medium text-gray-600 mb-1 block">Şablon Adı *</label>
+                <input
+                  value={tplName}
+                  onChange={e => setTplName(e.target.value)}
+                  placeholder="Örn: Hoş Geldiniz E-postası"
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-gray-600 mb-1 block">E-posta Konusu (opsiyonel)</label>
+                <input
+                  value={tplSubject}
+                  onChange={e => setTplSubject(e.target.value)}
+                  placeholder="Sphere English'e Hoş Geldiniz!"
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="text-xs font-medium text-gray-600 mb-1 block">Dosya (HTML veya PDF, maks. 5 MB) *</label>
+              <div
+                className="border-2 border-dashed border-gray-200 rounded-xl p-6 text-center cursor-pointer hover:border-blue-300 hover:bg-blue-50 transition"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                {tplFile ? (
+                  <div className="flex items-center justify-center gap-2">
+                    {tplFile.name.endsWith(".pdf") ? <FileText size={20} className="text-red-500" /> : <FileCode size={20} className="text-blue-500" />}
+                    <span className="text-sm font-medium text-gray-700">{tplFile.name}</span>
+                    <span className="text-xs text-gray-400">({(tplFile.size / 1024).toFixed(0)} KB)</span>
+                  </div>
+                ) : (
+                  <>
+                    <FileUp size={24} className="mx-auto text-gray-300 mb-2" />
+                    <p className="text-sm text-gray-400">Dosya seçmek için tıklayın</p>
+                    <p className="text-xs text-gray-300 mt-1">.html, .htm, .pdf</p>
+                  </>
+                )}
+              </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".html,.htm,.pdf"
+                className="hidden"
+                onChange={e => setTplFile(e.target.files?.[0] || null)}
+              />
+            </div>
+
+            {tplResult && (
+              <div className={`flex items-center gap-2 text-sm px-3 py-2 rounded-lg ${tplResult.ok ? "bg-green-50 text-green-700" : "bg-red-50 text-red-600"}`}>
+                {tplResult.ok ? <CheckCircle size={15} /> : <AlertCircle size={15} />}
+                {tplResult.msg}
+              </div>
+            )}
+
+            <button
+              onClick={uploadTemplate}
+              disabled={tplUploading}
+              className="w-full bg-blue-600 text-white rounded-lg py-2.5 text-sm font-semibold hover:bg-blue-700 disabled:opacity-50 transition flex items-center justify-center gap-2"
+            >
+              {tplUploading ? <><RefreshCw size={15} className="animate-spin" /> Yükleniyor...</> : <><FileUp size={15} /> Şablonu Yükle</>}
+            </button>
+          </div>
+
+          {/* Template List */}
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="px-5 py-3 border-b border-gray-100 bg-gray-50">
+              <h3 className="font-semibold text-gray-800 text-sm">Kayıtlı Şablonlar</h3>
+            </div>
+            {templates.length === 0 ? (
+              <div className="p-8 text-center text-gray-400">
+                <LayoutTemplate size={32} className="mx-auto mb-2 opacity-30" />
+                <p className="text-sm">Henüz şablon yüklenmedi.</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-gray-50">
+                {templates.map(tpl => (
+                  <div key={tpl.id} className="flex items-center gap-4 px-5 py-4 hover:bg-gray-50 transition">
+                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${tpl.fileType === "pdf" ? "bg-red-50 text-red-500" : "bg-blue-50 text-blue-500"}`}>
+                      {tpl.fileType === "pdf" ? <FileText size={18} /> : <FileCode size={18} />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-800 truncate">{tpl.name}</p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${tpl.fileType === "pdf" ? "bg-red-100 text-red-600" : "bg-blue-100 text-blue-600"}`}>
+                          {tpl.fileType.toUpperCase()}
+                        </span>
+                        <span className="text-xs text-gray-400 truncate">{tpl.fileName}</span>
+                        {tpl.subject && <span className="text-xs text-gray-400 truncate hidden md:block">· {tpl.subject}</span>}
+                      </div>
+                      <p className="text-xs text-gray-300 mt-0.5">{new Date(tpl.createdAt).toLocaleDateString("tr-TR")}</p>
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      {tpl.fileType === "html" && (
+                        <button
+                          onClick={() => loadTemplateIntoComposer(tpl)}
+                          className="text-xs bg-blue-50 text-blue-600 hover:bg-blue-100 px-3 py-1.5 rounded-lg font-medium transition flex items-center gap-1"
+                          title="Bu şablonu e-posta composer'a yükle"
+                        >
+                          <Mail size={13} /> Kullan
+                        </button>
+                      )}
+                      <button
+                        onClick={() => downloadTemplate(tpl)}
+                        className="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 transition"
+                        title="İndir"
+                      >
+                        <Download size={16} />
+                      </button>
+                      <button
+                        onClick={() => deleteTemplate(tpl.id)}
+                        className="text-gray-400 hover:text-red-500 p-1.5 rounded-lg hover:bg-red-50 transition"
+                        title="Sil"
+                      >
+                        <Trash2 size={16} />
+                      </button>
                     </div>
                   </div>
                 ))}

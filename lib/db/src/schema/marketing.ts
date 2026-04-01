@@ -36,7 +36,20 @@ export const pageViewsTable = pgTable("page_views", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+export const emailTemplatesTable = pgTable("email_templates", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  subject: text("subject").notNull().default(""),
+  htmlContent: text("html_content"),
+  fileType: text("file_type", { enum: ["html", "pdf"] }).notNull().default("html"),
+  fileName: text("file_name").notNull(),
+  filePath: text("file_path"),
+  createdBy: integer("created_by"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
 export type ContactLead = typeof contactLeadsTable.$inferSelect;
 export type InsertContactLead = typeof contactLeadsTable.$inferInsert;
 export type EmailCampaign = typeof emailCampaignsTable.$inferSelect;
 export type PageView = typeof pageViewsTable.$inferSelect;
+export type EmailTemplate = typeof emailTemplatesTable.$inferSelect;
