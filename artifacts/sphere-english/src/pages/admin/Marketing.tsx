@@ -152,11 +152,25 @@ export default function AdminMarketing() {
   const [sendResult, setSendResult] = useState<{ ok: boolean; msg: string } | null>(null);
   const [customVars, setCustomVars] = useState<Record<string, string>>({});
   const [customEmailsText, setCustomEmailsText] = useState("");
+  const [smtpTestResult, setSmtpTestResult] = useState<{ ok: boolean; config?: any; message?: string; error?: string } | null>(null);
+  const [smtpTesting, setSmtpTesting] = useState(false);
 
   const parsedCustomEmails = customEmailsText
     .split(/[\n,;]+/)
     .map(e => e.trim())
     .filter(e => e.includes("@"));
+
+  const testSmtp = async () => {
+    setSmtpTesting(true); setSmtpTestResult(null);
+    try {
+      const data = await apiFetch("/api/admin/marketing/smtp-test", { method: "POST" });
+      setSmtpTestResult(data);
+    } catch (e: any) {
+      setSmtpTestResult({ ok: false, error: e.message });
+    } finally {
+      setSmtpTesting(false);
+    }
+  };
 
   const AUTO_VARS = ["EMAIL", "AD", "SOYAD", "AD_SOYAD"];
 
@@ -620,6 +634,43 @@ export default function AdminMarketing() {
                   <br />Gerçek gönderim için: <strong>SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_FROM</strong>
                 </div>
               )}
+
+              {/* SMTP Test Paneli */}
+              <div className="border border-gray-200 rounded-lg p-3 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-medium text-gray-600">SMTP Bağlantı Testi</span>
+                  <button
+                    onClick={testSmtp}
+                    disabled={smtpTesting}
+                    className="text-xs px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition disabled:opacity-50 flex items-center gap-1.5"
+                  >
+                    {smtpTesting ? <><RefreshCw size={11} className="animate-spin" /> Test ediliyor...</> : "Bağlantıyı Test Et"}
+                  </button>
+                </div>
+
+                {smtpTestResult && (
+                  <div className={`rounded-lg p-3 text-xs space-y-1.5 ${smtpTestResult.ok ? "bg-green-50 border border-green-200" : "bg-red-50 border border-red-200"}`}>
+                    <p className={`font-semibold ${smtpTestResult.ok ? "text-green-700" : "text-red-700"}`}>
+                      {smtpTestResult.ok ? "✓ Bağlantı başarılı!" : "✗ Bağlantı başarısız"}
+                    </p>
+                    {smtpTestResult.config && (
+                      <div className="text-gray-600 space-y-0.5">
+                        <p>Host: <code className="bg-white/70 px-1 rounded">{smtpTestResult.config.host}</code></p>
+                        <p>Port: <code className="bg-white/70 px-1 rounded">{smtpTestResult.config.port}</code></p>
+                        <p>Kullanıcı: <code className="bg-white/70 px-1 rounded">{smtpTestResult.config.user}</code></p>
+                        <p>Şifre: <code className="bg-white/70 px-1 rounded">{smtpTestResult.config.passSet ? `•••• (${smtpTestResult.config.passLength} karakter)` : "YOK"}</code></p>
+                        <p>From: <code className="bg-white/70 px-1 rounded">{smtpTestResult.config.from}</code></p>
+                      </div>
+                    )}
+                    {smtpTestResult.error && (
+                      <p className="text-red-600 font-mono break-all">{smtpTestResult.error}</p>
+                    )}
+                    {smtpTestResult.message && (
+                      <p className="text-green-700">{smtpTestResult.message}</p>
+                    )}
+                  </div>
+                )}
+              </div>
 
               <div>
                 <label className="text-xs font-medium text-gray-600 mb-1 block">Alıcılar</label>

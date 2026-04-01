@@ -49,6 +49,37 @@ function getTransporter() {
   });
 }
 
+// ─── Admin: Test SMTP connection ──────────────────────────────────────────────
+router.post(
+  "/admin/marketing/smtp-test",
+  authMiddleware,
+  requireRole("admin"),
+  async (req: AuthRequest, res: Response) => {
+    const host = process.env.SMTP_HOST || "(boş)";
+    const port = process.env.SMTP_PORT || "(boş)";
+    const user = process.env.SMTP_USER || "(boş)";
+    const pass = process.env.SMTP_PASS;
+    const from = process.env.SMTP_FROM || "(boş)";
+    const config = { host, port, user, from, passSet: !!pass, passLength: pass?.length ?? 0 };
+
+    if (!pass) {
+      return res.json({ ok: false, config, error: "SMTP_PASS tanımlanmamış" });
+    }
+
+    const transporter = getTransporter();
+    if (!transporter) {
+      return res.json({ ok: false, config, error: "SMTP_HOST, SMTP_USER veya SMTP_PASS eksik" });
+    }
+
+    try {
+      await transporter.verify();
+      return res.json({ ok: true, config, message: "Bağlantı başarılı! SMTP hazır." });
+    } catch (e: any) {
+      return res.json({ ok: false, config, error: e?.message || String(e) });
+    }
+  }
+);
+
 // ─── Public: Track page view (www site calls this) ───────────────────────────
 router.post("/marketing/track", async (req: Request, res: Response) => {
   try {
