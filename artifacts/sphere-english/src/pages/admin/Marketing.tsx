@@ -75,6 +75,7 @@ const RECIPIENT_OPTIONS = [
   { value: "level:B2", label: "B2 Seviyesi" },
   { value: "level:C1", label: "C1 Seviyesi" },
   { value: "level:C2", label: "C2 Seviyesi" },
+  { value: "custom", label: "Özel E-postalar" },
 ];
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
@@ -150,6 +151,12 @@ export default function AdminMarketing() {
   const [sending, setSending] = useState(false);
   const [sendResult, setSendResult] = useState<{ ok: boolean; msg: string } | null>(null);
   const [customVars, setCustomVars] = useState<Record<string, string>>({});
+  const [customEmailsText, setCustomEmailsText] = useState("");
+
+  const parsedCustomEmails = customEmailsText
+    .split(/[\n,;]+/)
+    .map(e => e.trim())
+    .filter(e => e.includes("@"));
 
   const AUTO_VARS = ["EMAIL", "AD", "SOYAD", "AD_SOYAD"];
 
@@ -198,7 +205,10 @@ export default function AdminMarketing() {
   const previewRecipients = async () => {
     try {
       const data = await apiFetch("/api/admin/marketing/campaigns/preview", {
-        method: "POST", body: JSON.stringify({ filter: recipientFilter }),
+        method: "POST", body: JSON.stringify({
+          filter: recipientFilter,
+          customEmails: recipientFilter === "custom" ? parsedCustomEmails : undefined,
+        }),
       });
       setPreviewCount(data.count);
       setPreviewSample(data.sample || []);
@@ -208,11 +218,14 @@ export default function AdminMarketing() {
   useEffect(() => {
     setPreviewCount(null);
     setPreviewSample([]);
-  }, [recipientFilter]);
+  }, [recipientFilter, customEmailsText]);
 
   const sendCampaign = async () => {
     if (!subject.trim() || !body.trim()) {
       setSendResult({ ok: false, msg: "Konu ve içerik boş bırakılamaz." }); return;
+    }
+    if (recipientFilter === "custom" && parsedCustomEmails.length === 0) {
+      setSendResult({ ok: false, msg: "En az bir geçerli e-posta adresi girin." }); return;
     }
     // Check all custom vars are filled
     for (const v of detectedVars) {
@@ -223,10 +236,15 @@ export default function AdminMarketing() {
     setSending(true); setSendResult(null);
     try {
       const data = await apiFetch("/api/admin/marketing/campaigns/send", {
-        method: "POST", body: JSON.stringify({ subject, body, filter: recipientFilter, variables: customVars }),
+        method: "POST", body: JSON.stringify({
+          subject, body, filter: recipientFilter, variables: customVars,
+          customEmails: recipientFilter === "custom" ? parsedCustomEmails : undefined,
+        }),
       });
-      setSendResult({ ok: true, msg: `${data.sent} kişiye başarıyla gönderildi!${!data.smtpConfigured ? " (SMTP yapılandırılmamış — demo mod)" : ""}` });
-      setSubject(""); setBody(""); setCustomVars({});
+      let msg = `${data.sent} / ${data.total} kişiye gönderildi!${!data.smtpConfigured ? " (demo mod)" : ""}`;
+      if (data.errors?.length) msg += ` — ${data.errors.length} hata: ${data.errors[0]}`;
+      setSendResult({ ok: data.sent > 0, msg });
+      setSubject(""); setBody(""); setCustomVars({}); setCustomEmailsText("");
       loadAll();
     } catch (e: any) {
       setSendResult({ ok: false, msg: e.message });
@@ -607,15 +625,34 @@ export default function AdminMarketing() {
                 <label className="text-xs font-medium text-gray-600 mb-1 block">Alıcılar</label>
                 <select
                   value={recipientFilter}
-                  onChange={e => setRecipientFilter(e.target.value)}
+                  onChange={e => { setRecipientFilter(e.target.value); setCustomEmailsText(""); }}
                   className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none"
                 >
                   {RECIPIENT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                 </select>
+
+                {recipientFilter === "custom" && (
+                  <div className="mt-2 space-y-1">
+                    <textarea
+                      value={customEmailsText}
+                      onChange={e => setCustomEmailsText(e.target.value)}
+                      rows={4}
+                      placeholder={"E-posta adreslerini girin\n(virgül, noktalı virgül veya her satıra bir tane)"}
+                      className="w-full border border-blue-200 rounded-lg px-3 py-2 text-sm outline-none resize-none focus:border-blue-400 bg-blue-50"
+                    />
+                    {parsedCustomEmails.length > 0 && (
+                      <p className="text-xs text-blue-600 font-medium">
+                        {parsedCustomEmails.length} adres tanımlandı
+                      </p>
+                    )}
+                  </div>
+                )}
+
                 <div className="flex items-center gap-2 mt-1.5">
                   <button
                     onClick={previewRecipients}
-                    className="text-xs text-blue-500 hover:text-blue-700 underline"
+                    disabled={recipientFilter === "custom" && parsedCustomEmails.length === 0}
+                    className="text-xs text-blue-500 hover:text-blue-700 underline disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     Alıcı sayısını önizle
                   </button>
@@ -625,7 +662,7 @@ export default function AdminMarketing() {
                 </div>
                 {previewSample.length > 0 && (
                   <div className="mt-2 text-xs text-gray-400">
-                    Örnek: {previewSample.map(s => s.name).join(", ")}
+                    Örnek: {previewSample.map(s => s.email).join(", ")}
                     {previewCount! > 5 && " ...ve daha fazlası"}
                   </div>
                 )}

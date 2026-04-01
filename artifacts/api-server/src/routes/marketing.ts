@@ -210,16 +210,27 @@ router.post(
   requireRole("admin"),
   async (req: AuthRequest, res: Response) => {
     try {
-      const { filter } = req.body as { filter: string };
-      const users = await getFilteredUsers(filter);
-      return res.json({ count: users.length, sample: users.slice(0, 5).map(u => ({ email: u.email, name: `${u.firstName} ${u.lastName}` })) });
+      const { filter, customEmails } = req.body as { filter: string; customEmails?: string[] };
+      const users = await getFilteredUsers(filter, customEmails);
+      return res.json({ count: users.length, sample: users.slice(0, 5).map(u => ({ email: u.email, name: `${u.firstName} ${u.lastName}`.trim() || u.email })) });
     } catch {
       return res.status(500).json({ error: "Önizleme başarısız." });
     }
   }
 );
 
-async function getFilteredUsers(filter: string) {
+async function getFilteredUsers(filter: string, customEmails?: string[]) {
+  if (filter === "custom" && customEmails && customEmails.length > 0) {
+    const emails = customEmails.map(e => e.trim().toLowerCase()).filter(Boolean);
+    // Return synthetic user objects for custom emails (may or may not be in DB)
+    const dbUsers = await db.select().from(usersTable).where(inArray(usersTable.email, emails));
+    const dbEmails = dbUsers.map(u => u.email.toLowerCase());
+    // Add any emails not found in DB as minimal user objects
+    const extraUsers = emails
+      .filter(e => !dbEmails.includes(e))
+      .map(e => ({ email: e, firstName: "", lastName: "", role: "student" as any, id: 0, passwordHash: "", createdAt: new Date(), updatedAt: new Date(), currentLevel: null as any, profilePicture: null, isActive: true, lastLoginAt: null }));
+    return [...dbUsers, ...extraUsers];
+  }
   if (filter === "all") {
     return db.select().from(usersTable);
   }
@@ -241,13 +252,17 @@ router.post(
   requireRole("admin"),
   async (req: AuthRequest, res: Response) => {
     try {
-      const { subject, body, filter, variables } = req.body as { subject: string; body: string; filter: string; variables?: Record<string, string> };
+      const { subject, body, filter, variables, customEmails } = req.body as { subject: string; body: string; filter: string; variables?: Record<string, string>; customEmails?: string[] };
 
       if (!subject?.trim() || !body?.trim()) {
         return res.status(400).json({ error: "Konu ve içerik zorunludur." });
       }
 
-      const recipients = await getFilteredUsers(filter || "all");
+      if (filter === "custom" && (!customEmails || customEmails.length === 0)) {
+        return res.status(400).json({ error: "Özel gönderim için en az bir e-posta adresi girin." });
+      }
+
+      const recipients = await getFilteredUsers(filter || "all", customEmails);
       if (recipients.length === 0) {
         return res.status(400).json({ error: "Bu filtreye uyan alıcı bulunamadı." });
       }
