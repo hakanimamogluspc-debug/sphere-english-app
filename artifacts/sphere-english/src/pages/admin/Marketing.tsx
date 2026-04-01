@@ -159,6 +159,7 @@ export default function AdminMarketing() {
   const [tplInputMode, setTplInputMode] = useState<"file" | "code">("code");
   const [tplUploading, setTplUploading] = useState(false);
   const [tplResult, setTplResult] = useState<{ ok: boolean; msg: string } | null>(null);
+  const [previewTemplate, setPreviewTemplate] = useState<EmailTemplate | null>(null);
 
   const loadAll = async () => {
     setLoading(true); setError("");
@@ -828,6 +829,15 @@ export default function AdminMarketing() {
                     <div className="flex items-center gap-2 flex-shrink-0">
                       {tpl.fileType === "html" && (
                         <button
+                          onClick={() => setPreviewTemplate(tpl)}
+                          className="text-xs bg-gray-50 text-gray-600 hover:bg-gray-100 px-3 py-1.5 rounded-lg font-medium transition flex items-center gap-1"
+                          title="Önizle"
+                        >
+                          <Eye size={13} /> Önizle
+                        </button>
+                      )}
+                      {tpl.fileType === "html" && (
+                        <button
                           onClick={() => loadTemplateIntoComposer(tpl)}
                           className="text-xs bg-blue-50 text-blue-600 hover:bg-blue-100 px-3 py-1.5 rounded-lg font-medium transition flex items-center gap-1"
                           title="Bu şablonu e-posta composer'a yükle"
@@ -857,6 +867,91 @@ export default function AdminMarketing() {
           </div>
         </div>
       )}
+
+      {/* ── TEMPLATE PREVIEW MODAL ── */}
+      {previewTemplate && (
+        <div
+          className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4"
+          onClick={() => setPreviewTemplate(null)}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl flex flex-col"
+            style={{ maxHeight: "90vh" }}
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 flex-shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center">
+                  <FileCode size={16} className="text-blue-500" />
+                </div>
+                <div>
+                  <p className="font-semibold text-gray-900 text-sm">{previewTemplate.name}</p>
+                  {previewTemplate.subject && (
+                    <p className="text-xs text-gray-400">Konu: {previewTemplate.subject}</p>
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => { loadTemplateIntoComposer(previewTemplate); setPreviewTemplate(null); }}
+                  className="flex items-center gap-1.5 text-xs bg-blue-600 text-white px-3 py-1.5 rounded-lg font-medium hover:bg-blue-700 transition"
+                >
+                  <Mail size={13} /> E-postaya Yükle
+                </button>
+                <button
+                  onClick={() => setPreviewTemplate(null)}
+                  className="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 transition"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+            </div>
+
+            {/* Preview Tabs: Rendered / Source */}
+            <div className="flex-1 overflow-hidden flex flex-col">
+              <PreviewTabs template={previewTemplate} />
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PreviewTabs({ template }: { template: EmailTemplate }) {
+  const [view, setView] = useState<"preview" | "source">("preview");
+  return (
+    <div className="flex flex-col h-full overflow-hidden">
+      <div className="flex gap-1 px-5 pt-3 pb-0 border-b border-gray-100 flex-shrink-0">
+        <button
+          onClick={() => setView("preview")}
+          className={`px-3 py-2 text-xs font-medium border-b-2 transition ${view === "preview" ? "border-blue-500 text-blue-600" : "border-transparent text-gray-400 hover:text-gray-600"}`}
+        >
+          Görünüm
+        </button>
+        <button
+          onClick={() => setView("source")}
+          className={`px-3 py-2 text-xs font-medium border-b-2 transition ${view === "source" ? "border-blue-500 text-blue-600" : "border-transparent text-gray-400 hover:text-gray-600"}`}
+        >
+          HTML Kodu
+        </button>
+      </div>
+      <div className="flex-1 overflow-hidden">
+        {view === "preview" ? (
+          <iframe
+            srcDoc={template.htmlContent || "<p>İçerik yok</p>"}
+            className="w-full h-full border-0"
+            style={{ minHeight: "500px" }}
+            sandbox="allow-same-origin"
+            title="Şablon Önizleme"
+          />
+        ) : (
+          <pre className="w-full h-full overflow-auto p-4 text-xs font-mono bg-gray-950 text-green-400 leading-relaxed" style={{ minHeight: "500px" }}>
+            {template.htmlContent || "İçerik yok"}
+          </pre>
+        )}
+      </div>
     </div>
   );
 }
