@@ -1,6 +1,13 @@
 import nodemailer from "nodemailer";
+import { Resend } from "resend";
 import fs from "fs";
 import path from "path";
+
+function getResend(): Resend | null {
+  const key = process.env.RESEND_API_KEY;
+  if (!key) return null;
+  return new Resend(key);
+}
 
 export function createEmailTransporter() {
   const host = process.env.SMTP_HOST;
@@ -36,14 +43,28 @@ export function applyTemplateVars(html: string, vars: Record<string, string>): s
 }
 
 export async function sendEmail(to: string, subject: string, html: string): Promise<{ ok: boolean; error?: string }> {
+  const fromAddress = process.env.SMTP_FROM || "info@sphereenglish.com";
+  const from = `Sphere English <${fromAddress}>`;
+
+  const resend = getResend();
+  if (resend) {
+    try {
+      const { error } = await resend.emails.send({ from, to, subject, html });
+      if (error) return { ok: false, error: error.message };
+      return { ok: true };
+    } catch (e: any) {
+      console.error("Resend sendEmail error:", e?.message || e);
+      return { ok: false, error: e?.message || String(e) };
+    }
+  }
+
   const transporter = createEmailTransporter();
-  if (!transporter) return { ok: false, error: "SMTP yapılandırılmamış" };
-  const from = `Sphere English <${process.env.SMTP_FROM || process.env.SMTP_USER}>`;
+  if (!transporter) return { ok: false, error: "E-posta yapılandırılmamış (RESEND_API_KEY veya SMTP eksik)" };
   try {
     await transporter.sendMail({ from, to, subject, html });
     return { ok: true };
   } catch (e: any) {
-    console.error("sendEmail error:", e?.message || e);
+    console.error("sendEmail SMTP error:", e?.message || e);
     return { ok: false, error: e?.message || String(e) };
   }
 }

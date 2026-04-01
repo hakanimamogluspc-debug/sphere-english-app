@@ -34,3 +34,4 @@ channel = "stable-25_05"
 [userenv.shared]
 TOPVIEW_API_KEY = "sk-3AxYY1qrvbIfNmRYwA9MGuX4MSmMNbevRgW1utFzisc"
 TOPVIEW_UID = "ZOE1jxkyJ9zO1MJMaswM"
+RESEND_API_KEY = "re_XDWv3vMu_De8EVQHZHY1bAe8kMVbLhiDt"

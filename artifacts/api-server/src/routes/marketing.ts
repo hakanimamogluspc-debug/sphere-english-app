@@ -3,6 +3,7 @@ import { db, usersTable, contactLeadsTable, emailCampaignsTable, pageViewsTable,
 import { eq, desc, gte, count, and, or, inArray, sql } from "drizzle-orm";
 import { authMiddleware, requireRole, type AuthRequest } from "../middlewares/auth.js";
 import nodemailer from "nodemailer";
+import { Resend } from "resend";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
@@ -30,6 +31,12 @@ const upload = multer({
 
 const router = Router();
 
+function getResend(): Resend | null {
+  const key = process.env.RESEND_API_KEY;
+  if (!key) return null;
+  return new Resend(key);
+}
+
 function getTransporter() {
   const host = process.env.SMTP_HOST;
   const port = Number(process.env.SMTP_PORT || "587");
@@ -50,18 +57,48 @@ function getTransporter() {
   } as any);
 }
 
-// ─── Admin: Test SMTP connection ──────────────────────────────────────────────
+async function sendEmailViaResendOrSmtp(
+  to: string,
+  subject: string,
+  html: string,
+  fromEmail: string,
+  resend: Resend | null,
+  transporter: ReturnType<typeof getTransporter>
+): Promise<{ ok: boolean; error?: string }> {
+  const from = `Sphere English <${fromEmail}>`;
+  if (resend) {
+    const { error } = await resend.emails.send({ from, to, subject, html });
+    if (error) return { ok: false, error: error.message };
+    return { ok: true };
+  }
+  if (transporter) {
+    await transporter.sendMail({ from, to, subject, html });
+    return { ok: true };
+  }
+  return { ok: false, error: "E-posta yapılandırılmamış" };
+}
+
+// ─── Admin: Test email connection ──────────────────────────────────────────────
 router.post(
   "/admin/marketing/smtp-test",
   authMiddleware,
   requireRole("admin"),
   async (req: AuthRequest, res: Response) => {
+    const resend = getResend();
+    if (resend) {
+      return res.json({
+        ok: true,
+        config: { provider: "Resend", keySet: true },
+        message: "Resend API yapılandırılmış ve hazır. info@sphereenglish.com üzerinden gönderim aktif.",
+      });
+    }
+
     const host = process.env.SMTP_HOST || "(boş)";
     const port = process.env.SMTP_PORT || "(boş)";
     const user = process.env.SMTP_USER || "(boş)";
     const pass = process.env.SMTP_PASS;
     const from = process.env.SMTP_FROM || "(boş)";
-    const config = { host, port, user, from, passSet: !!pass, passLength: pass?.length ?? 0 };
+    const config = { provider: "SMTP", host, port, user, from, passSet: !!pass, passLength: pass?.length ?? 0 };
 
     if (!pass) {
       return res.json({ ok: false, config, error: "SMTP_PASS tanımlanmamış" });
@@ -76,27 +113,7 @@ router.post(
       await transporter.verify();
       return res.json({ ok: true, config, message: "Bağlantı başarılı! SMTP hazır." });
     } catch (e: any) {
-      // Port 587 failed — try port 465 (SSL) as fallback
-      const user = process.env.SMTP_USER!;
-      const pass = process.env.SMTP_PASS!;
-      const host = process.env.SMTP_HOST!;
-      const alt = nodemailer.createTransport({
-        host, port: 465, secure: true,
-        auth: { type: "login", user, pass },
-        tls: { rejectUnauthorized: false },
-        connectionTimeout: 20000,
-        greetingTimeout: 15000,
-      } as any);
-      try {
-        await alt.verify();
-        return res.json({
-          ok: true,
-          config: { ...config, port: "587 başarısız → 465 çalışıyor" },
-          message: "Port 465 (SSL) ile bağlantı başarılı! Easypanel'de SMTP_PORT=465 yapın.",
-        });
-      } catch (e2: any) {
-        return res.json({ ok: false, config, error: `Port 587: ${e?.message} | Port 465: ${e2?.message}` });
-      }
+      return res.json({ ok: false, config, error: `SMTP hatası: ${e?.message}` });
     }
   }
 );
@@ -330,44 +347,44 @@ router.post(
         createdBy: req.userId,
       }).returning();
 
-      const transporter = getTransporter();
-      const fromEmail = process.env.SMTP_FROM || process.env.SMTP_USER || "noreply@sphereenglish.com";
+      const resend = getResend();
+      const transporter = resend ? null : getTransporter();
+      const fromEmail = process.env.SMTP_FROM || "info@sphereenglish.com";
 
       let sentCount = 0;
       const sendErrors: string[] = [];
 
-      if (transporter) {
-        // Verify SMTP connection first
-        try {
-          await transporter.verify();
-        } catch (verifyErr: any) {
-          await db.update(emailCampaignsTable)
-            .set({ status: "failed" })
-            .where(eq(emailCampaignsTable.id, campaign.id));
-          return res.status(500).json({ error: `SMTP bağlantı hatası: ${verifyErr?.message || verifyErr}` });
+      if (resend || transporter) {
+        // Verify SMTP connection first (only if using SMTP)
+        if (!resend && transporter) {
+          try {
+            await transporter.verify();
+          } catch (verifyErr: any) {
+            await db.update(emailCampaignsTable)
+              .set({ status: "failed" })
+              .where(eq(emailCampaignsTable.id, campaign.id));
+            return res.status(500).json({ error: `SMTP bağlantı hatası: ${verifyErr?.message || verifyErr}` });
+          }
         }
 
         for (const user of recipients) {
           try {
-            // Replace per-recipient dynamic variables
             let personalizedBody = body
               .replace(/\{\{EMAIL\}\}/g, user.email || "")
               .replace(/\{\{AD\}\}/g, user.firstName || "")
               .replace(/\{\{SOYAD\}\}/g, user.lastName || "")
               .replace(/\{\{AD_SOYAD\}\}/g, `${user.firstName || ""} ${user.lastName || ""}`.trim());
-            // Replace admin-defined custom variables (e.g. {{SIFRE}})
             if (variables && typeof variables === "object") {
               for (const [key, val] of Object.entries(variables)) {
                 personalizedBody = personalizedBody.replace(new RegExp(`\\{\\{${key}\\}\\}`, "g"), val);
               }
             }
-            await transporter.sendMail({
-              from: `Sphere English <${fromEmail}>`,
-              to: user.email,
-              subject,
-              html: personalizedBody,
-            });
-            sentCount++;
+            const result = await sendEmailViaResendOrSmtp(user.email, subject, personalizedBody, fromEmail, resend, transporter);
+            if (result.ok) {
+              sentCount++;
+            } else {
+              sendErrors.push(`${user.email}: ${result.error}`);
+            }
           } catch (e: any) {
             console.error(`Email failed for ${user.email}:`, e);
             sendErrors.push(`${user.email}: ${e?.message || e}`);
@@ -377,7 +394,6 @@ router.post(
           .set({ status: "sent", sentCount, sentAt: new Date() })
           .where(eq(emailCampaignsTable.id, campaign.id));
       } else {
-        // SMTP not configured — mark as sent (demo mode)
         await db.update(emailCampaignsTable)
           .set({ status: "sent", sentCount: recipients.length, sentAt: new Date() })
           .where(eq(emailCampaignsTable.id, campaign.id));
@@ -389,7 +405,7 @@ router.post(
         campaignId: campaign.id,
         sent: sentCount,
         total: recipients.length,
-        smtpConfigured: !!transporter,
+        provider: resend ? "resend" : transporter ? "smtp" : "demo",
         errors: sendErrors.length > 0 ? sendErrors : undefined,
       });
     } catch (e: any) {
