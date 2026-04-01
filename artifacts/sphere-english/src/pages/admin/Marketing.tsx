@@ -255,7 +255,7 @@ export default function AdminMarketing() {
           customEmails: recipientFilter === "custom" ? parsedCustomEmails : undefined,
         }),
       });
-      let msg = `${data.sent} / ${data.total} kişiye gönderildi!${!data.smtpConfigured ? " (demo mod)" : ""}`;
+      let msg = `${data.sent} / ${data.total} kişiye gönderildi!${data.provider === "demo" ? " (demo mod)" : ""}`;
       if (data.errors?.length) msg += ` — ${data.errors.length} hata: ${data.errors[0]}`;
       setSendResult({ ok: data.sent > 0, msg });
       setSubject(""); setBody(""); setCustomVars({}); setCustomEmailsText("");
@@ -419,7 +419,7 @@ export default function AdminMarketing() {
           {!stats.emailConfigured && (
             <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex items-center gap-2 text-sm text-amber-700">
               <AlertCircle size={16} />
-              <span>SMTP yapılandırılmamış. E-posta gönderimi demo modda çalışıyor. Gerçek e-posta için <strong>SMTP_HOST, SMTP_USER, SMTP_PASS</strong> ortam değişkenlerini ayarlayın.</span>
+              <span>E-posta yapılandırılmamış. Gönderim demo modda çalışıyor. Gerçek e-posta için <strong>RESEND_API_KEY</strong> ortam değişkenini ayarlayın.</span>
             </div>
           )}
 
@@ -630,8 +630,8 @@ export default function AdminMarketing() {
 
               {!stats?.emailConfigured && (
                 <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-xs text-amber-700">
-                  ⚠️ SMTP yapılandırılmamış. E-postalar gerçekten gönderilmeyecek — kayıt tutulacak (demo mod).
-                  <br />Gerçek gönderim için: <strong>SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_FROM</strong>
+                  ⚠️ E-posta yapılandırılmamış. E-postalar gerçekten gönderilmeyecek — kayıt tutulacak (demo mod).
+                  <br />Gerçek gönderim için: <strong>RESEND_API_KEY</strong>
                 </div>
               )}
 
