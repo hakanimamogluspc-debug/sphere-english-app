@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import { db, usersTable } from "@workspace/db";
 import { eq, ilike, and, or, count, sql } from "drizzle-orm";
 import { authMiddleware, requireRole, type AuthRequest } from "../middlewares/auth.js";
+import { sendEmail, loadEmailTemplate, applyTemplateVars } from "../lib/email.js";
 
 const router = Router();
 
@@ -63,7 +64,7 @@ router.get("/users/:id", authMiddleware, async (req: AuthRequest, res) => {
 
 // Create user (admin only)
 router.post("/users", authMiddleware, requireRole("admin"), async (req: AuthRequest, res) => {
-  const { email, password, firstName, lastName, role, phone, currentLevel } = req.body;
+  const { email, password, firstName, lastName, role, phone, currentLevel, sendWelcomeEmail } = req.body;
   if (!email || !password || !firstName || !lastName) {
     res.status(400).json({ error: "Required fields missing" });
     return;
@@ -74,7 +75,28 @@ router.post("/users", authMiddleware, requireRole("admin"), async (req: AuthRequ
     role: role || "student", phone: phone || null, currentLevel: currentLevel || null,
   }).returning();
   const { password: _, ...userWithoutPassword } = user;
-  res.status(201).json(userWithoutPassword);
+
+  // Otomatik hoş geldin maili — öğretmen rolü + onay kutusu işaretli ise
+  if (role === "teacher" && sendWelcomeEmail !== false) {
+    try {
+      const template = loadEmailTemplate("ogretmen-hosgeldiniz.html");
+      if (template) {
+        const html = applyTemplateVars(template, {
+          EMAIL: email.toLowerCase(),
+          SIFRE: password,
+          AD: firstName,
+          SOYAD: lastName,
+          AD_SOYAD: `${firstName} ${lastName}`.trim(),
+        });
+        await sendEmail(email.toLowerCase(), "Sphere English'e Hoş Geldiniz!", html);
+      }
+    } catch (e) {
+      console.error("Welcome email failed:", e);
+      // Hata olsa bile kullanıcı oluşturma başarılı
+    }
+  }
+
+  res.status(201).json({ ...userWithoutPassword, welcomeEmailSent: role === "teacher" && sendWelcomeEmail !== false });
 });
 
 // Update user

@@ -1,12 +1,13 @@
 import { useState } from "react";
-import { useGetUsers, useCreateUser, useDeleteUser } from "@workspace/api-client-react";
+import { useGetUsers, useDeleteUser } from "@workspace/api-client-react";
 import { Card, CardContent, Button, Input, Badge, Modal, Label } from "@/components/ui/core";
-import { Search, Plus, Trash2, Edit, KeyRound } from "lucide-react";
+import { Search, Plus, Trash2, Edit, KeyRound, Mail } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
 import { API } from "@/lib/api-url";
+import { useToast } from "@/hooks/use-toast";
 
 const createSchema = z.object({
   firstName: z.string().min(2, "En az 2 karakter"),
@@ -16,6 +17,7 @@ const createSchema = z.object({
   role: z.enum(["admin", "teacher", "student", "corporate"]),
   phone: z.string().optional(),
   currentLevel: z.string().optional(),
+  sendWelcomeEmail: z.boolean().optional(),
 });
 
 const editSchema = z.object({
@@ -54,6 +56,7 @@ type User = {
 const LEVELS = ["A1", "A2", "B1", "B2", "C1", "C2"];
 
 export default function AdminUsers() {
+  const { toast } = useToast();
   const [search, setSearch] = useState("");
   const { data: usersData, isLoading } = useGetUsers({ search });
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -61,15 +64,17 @@ export default function AdminUsers() {
   const [passwordUser, setPasswordUser] = useState<User | null>(null);
   const [isEditLoading, setIsEditLoading] = useState(false);
   const [isPasswordLoading, setIsPasswordLoading] = useState(false);
+  const [isCreateLoading, setIsCreateLoading] = useState(false);
 
-  const createMutation = useCreateUser();
   const deleteMutation = useDeleteUser();
   const queryClient = useQueryClient();
 
   const createForm = useForm<CreateForm>({
     resolver: zodResolver(createSchema),
-    defaultValues: { role: "student" }
+    defaultValues: { role: "student", sendWelcomeEmail: true }
   });
+
+  const watchRole = createForm.watch("role");
 
   const editForm = useForm<EditForm>({
     resolver: zodResolver(editSchema),
@@ -80,10 +85,32 @@ export default function AdminUsers() {
   });
 
   const onCreateSubmit = async (data: CreateForm) => {
-    await createMutation.mutateAsync({ data });
-    queryClient.invalidateQueries({ queryKey: ["/api/users"] });
-    setIsCreateOpen(false);
-    createForm.reset();
+    setIsCreateLoading(true);
+    try {
+      const token = localStorage.getItem("sphere_token");
+      const res = await fetch(`${API}/users`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || "Kullanıcı oluşturulamadı");
+      }
+      const result = await res.json();
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      setIsCreateOpen(false);
+      createForm.reset({ role: "student", sendWelcomeEmail: true });
+      if (data.role === "teacher" && data.sendWelcomeEmail) {
+        toast({ title: result.welcomeEmailSent ? "Öğretmen oluşturuldu — hoş geldin e-postası gönderildi!" : "Öğretmen oluşturuldu (e-posta gönderilemedi, SMTP kontrol edin)" });
+      } else {
+        toast({ title: "Kullanıcı oluşturuldu!" });
+      }
+    } catch (e: any) {
+      toast({ title: "Hata", description: e.message, variant: "destructive" });
+    } finally {
+      setIsCreateLoading(false);
+    }
   };
 
   const openEdit = (user: User) => {
@@ -294,7 +321,23 @@ export default function AdminUsers() {
               </select>
             </div>
           </div>
-          <Button type="submit" className="w-full mt-6" isLoading={createMutation.isPending}>Kullanıcı Oluştur</Button>
+
+          {watchRole === "teacher" && (
+            <label className="flex items-center gap-3 p-3 rounded-xl border-2 border-blue-200 bg-blue-50 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                {...createForm.register("sendWelcomeEmail")}
+                className="h-4 w-4 rounded accent-blue-600"
+              />
+              <div className="flex items-center gap-2 text-sm">
+                <Mail size={15} className="text-blue-600 flex-shrink-0" />
+                <span className="font-medium text-blue-800">Hoş geldin e-postası gönder</span>
+              </div>
+              <span className="text-xs text-blue-500 ml-auto">şifre dahil</span>
+            </label>
+          )}
+
+          <Button type="submit" className="w-full mt-2" isLoading={isCreateLoading}>Kullanıcı Oluştur</Button>
         </form>
       </Modal>
 
