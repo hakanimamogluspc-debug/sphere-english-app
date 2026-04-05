@@ -117,8 +117,8 @@ function Router() {
       <Route path="/certificates"><LayoutWrapper component={Certificates} /></Route>
       <Route path="/student/speaking-club"><LayoutWrapper component={StudentSpeakingClub} allowedRoles={['student']} /></Route>
       <Route path="/student/materials"><LayoutWrapper component={StudentMaterials} allowedRoles={['student']} /></Route>
-      <Route path="/student/pronunciation-coach"><LayoutWrapper component={PronunciationCoach} allowedRoles={['student']} /></Route>
-      <Route path="/student/writing-coach"><LayoutWrapper component={WritingCoach} allowedRoles={['student']} /></Route>
+      <Route path="/student/pronunciation-coach"><LayoutWrapper component={PronunciationCoach} allowedRoles={['student', 'admin']} /></Route>
+      <Route path="/student/writing-coach"><LayoutWrapper component={WritingCoach} allowedRoles={['student', 'admin']} /></Route>
       <Route path="/forum"><LayoutWrapper component={Forum} /></Route>
 
       {/* Teacher Routes */}
