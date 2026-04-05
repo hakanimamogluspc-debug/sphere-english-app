@@ -45,6 +45,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       { name: 'Kurumlar', href: '/admin/companies', icon: Building2 },
       { name: 'Kullanıcılar', href: '/admin/users', icon: Users },
       { name: 'Öğretmenler', href: '/admin/teachers', icon: GraduationCap },
+      { name: 'Öğrenciler', href: '/admin/students', icon: Users },
       { name: 'Gruplar', href: '/admin/groups', icon: Users },
       { name: 'Tüm Kurslar', href: '/admin/courses', icon: BookOpen },
       { name: 'Materyaller', href: '/admin/materials', icon: FolderOpen },

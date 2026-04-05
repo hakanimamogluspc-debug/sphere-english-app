@@ -1,6 +1,6 @@
 import { Router } from "express";
 import bcrypt from "bcryptjs";
-import { db, usersTable } from "@workspace/db";
+import { db, usersTable, enrollmentsTable, coursesTable, lessonsTable, lessonProgressTable } from "@workspace/db";
 import { eq, ilike, and, or, count, sql } from "drizzle-orm";
 import { authMiddleware, requireRole, type AuthRequest } from "../middlewares/auth.js";
 import { sendEmail, loadEmailTemplate, applyTemplateVars } from "../lib/email.js";
@@ -16,7 +16,12 @@ router.get("/users", authMiddleware, requireRole("admin"), async (req: AuthReque
   if (role && role !== "null") conditions.push(eq(usersTable.role, role as string));
   if (search) {
     const s = `%${search}%`;
-    conditions.push(or(ilike(usersTable.firstName, s), ilike(usersTable.lastName, s), ilike(usersTable.email, s)));
+    conditions.push(or(
+      ilike(usersTable.firstName, s),
+      ilike(usersTable.lastName, s),
+      ilike(usersTable.email, s),
+      ilike(usersTable.studentNumber, s),
+    ));
   }
 
   const query = conditions.length > 0 ? and(...conditions) : undefined;
@@ -39,6 +44,43 @@ router.get("/users", authMiddleware, requireRole("admin"), async (req: AuthReque
   const [{ total }] = await db.select({ total: count() }).from(usersTable).where(query);
 
   res.json({ users, total: Number(total), page: Number(page), limit: Number(limit) });
+});
+
+// Admin: get student enrollments with progress
+router.get("/admin/students/:id/enrollments", authMiddleware, requireRole("admin"), async (req: AuthRequest, res) => {
+  const studentId = parseInt(req.params.id);
+  const enrollments = await db
+    .select({
+      enrollmentId: enrollmentsTable.id,
+      courseId: coursesTable.id,
+      courseTitle: coursesTable.title,
+      enrolledAt: enrollmentsTable.enrolledAt,
+    })
+    .from(enrollmentsTable)
+    .innerJoin(coursesTable, eq(enrollmentsTable.courseId, coursesTable.id))
+    .where(eq(enrollmentsTable.studentId, studentId));
+
+  const result = await Promise.all(
+    enrollments.map(async (e) => {
+      const [{ total }] = await db
+        .select({ total: count() })
+        .from(lessonsTable)
+        .where(eq(lessonsTable.courseId, e.courseId));
+      const [{ completed }] = await db
+        .select({ completed: count() })
+        .from(lessonProgressTable)
+        .where(and(eq(lessonProgressTable.userId, studentId), eq(lessonProgressTable.completed, true)));
+      return {
+        id: e.enrollmentId,
+        courseTitle: e.courseTitle,
+        totalLessons: Number(total),
+        completedLessons: Number(completed),
+        enrolledAt: e.enrolledAt,
+      };
+    })
+  );
+
+  res.json(result);
 });
 
 // Get user by ID
