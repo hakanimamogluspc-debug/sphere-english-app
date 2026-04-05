@@ -90,7 +90,14 @@ export default function Leaderboard() {
                           {entry.firstName} {entry.lastName}
                           {isCurrentUser && <span className="ml-2 text-xs text-primary font-medium">(Siz)</span>}
                         </p>
-                        <p className="text-xs text-muted-foreground">{entry.currentLevel || 'A1'} Seviyesi</p>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {(entry as any).studentNumber && (
+                            <span className="text-xs font-mono text-indigo-500 bg-indigo-50 px-1.5 py-0.5 rounded">
+                              #{(entry as any).studentNumber}
+                            </span>
+                          )}
+                          <span className="text-xs text-muted-foreground">{entry.currentLevel || 'A1'} Seviyesi</span>
+                        </div>
                       </div>
 
                       <div className="flex items-center gap-4 shrink-0">

@@ -18,6 +18,7 @@ router.get("/leaderboard", authMiddleware, async (req: AuthRequest, res) => {
     streak: usersTable.streak,
     badges: usersTable.badges,
     role: usersTable.role,
+    studentNumber: usersTable.studentNumber,
   }).from(usersTable).where(eq(usersTable.role, "student")).orderBy(desc(usersTable.totalPoints)).limit(50);
 
   const users = await query;
@@ -36,6 +37,7 @@ router.get("/leaderboard", authMiddleware, async (req: AuthRequest, res) => {
     streak: u.streak,
     badges: (u.badges || []).length,
     isCurrentUser: u.id === req.userId,
+    studentNumber: u.studentNumber || null,
   }));
 
   res.json(entries);
