@@ -392,7 +392,7 @@ router.post(
 );
 
 // ── Translation endpoint ────────────────────────────────────────────────────
-router.post("/translate", authMiddleware, async (req: Request, res: Response) => {
+router.post("/pronunciation/translate", authMiddleware, async (req: Request, res: Response) => {
   try {
     const { text } = req.body as { text?: string };
     if (!text || typeof text !== "string" || text.trim().length === 0) {
