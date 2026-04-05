@@ -492,7 +492,7 @@ function TeacherBubble({ message, teacher, onPlay, getApiBase }: { message: Mess
     setTranslating(true);
     try {
       const token = localStorage.getItem("sphere_token");
-      const res = await fetch(`${getApiBase()}/pronunciation/translate`, {
+      const res = await fetch(`${getApiBase()}/api/pronunciation/translate`, {
         method: "POST",
         headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: JSON.stringify({ text: message.text }),
