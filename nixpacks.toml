@@ -17,4 +17,4 @@ dependsOn = ["install"]
 cmds = ["pnpm --filter @workspace/api-server build"]
 
 [start]
-cmd = "/usr/local/bin/pnpm --filter @workspace/db push --force 2>/dev/null; node --enable-source-maps artifacts/api-server/dist/index.mjs"
+cmd = "node -e \"const{Pool}=require('pg');const p=new Pool({connectionString:process.env.DATABASE_URL});p.query(\\\"ALTER TABLE users ADD COLUMN IF NOT EXISTS student_number VARCHAR(20)\\\").then(()=>{console.log('migration ok');p.end();}).catch(e=>{console.error('migration warn:',e.message);p.end();})\" 2>/dev/null; /usr/local/bin/pnpm --filter @workspace/db push --force 2>/dev/null; node --enable-source-maps artifacts/api-server/dist/index.mjs"
