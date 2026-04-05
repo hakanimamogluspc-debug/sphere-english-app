@@ -186,6 +186,7 @@ router.post(
       const voice = req.body.voice as Voice;
       const safeVoice: Voice = ALLOWED_VOICES.includes(voice) ? voice : "nova";
       const teacherName: string = req.body.teacherName || "Sarah";
+      const coachSystemPrompt: string = req.body.systemPrompt || "";
 
       let history: HistoryMessage[] = [];
       try {
@@ -234,17 +235,19 @@ router.post(
         .map((w) => `"${w}"`)
         .join(", ");
 
-      const systemPrompt = `You are ${teacherName}, a warm and encouraging English conversation teacher.
-Your role is to have natural, flowing conversations with the student in English.
-The student is learning English and practicing speaking.
+      const basePersonality = coachSystemPrompt
+        ? coachSystemPrompt
+        : `You are ${teacherName}, a warm and encouraging English conversation teacher.`;
 
-IMPORTANT RULES:
+      const systemPrompt = `${basePersonality}
+
+CONVERSATION RULES:
 - Always respond in English only.
 - Keep your responses SHORT (2-4 sentences max). Be conversational, not lecture-y.
-- If there are mispronounced words (listed below), mention 1 at most per turn — weave it in naturally like: "By the way, the word '...' is pronounced like '...'" — then continue the conversation.
+- Stay in character at all times — your personality, vocabulary, and communication style should reflect your background.
+- If there are mispronounced words (listed below), mention 1 at most per turn — weave it in naturally — then continue the conversation.
 - If pronunciation is fine, just have a natural conversation. Ask follow-up questions to keep things going.
-- Be encouraging and friendly. Never harsh.
-- If the student seems to be struggling, slow down and help.${
+- Never be harsh. Be constructive and encouraging.${
   badWordsForPrompt
     ? `\n\nPRONUNCIATION ISSUES DETECTED (Whisper low-confidence): ${badWordsForPrompt}\nMention the most important one naturally in your reply if relevant.`
     : "\n\nPRONUNCIATION: No issues detected. Just have a natural conversation."

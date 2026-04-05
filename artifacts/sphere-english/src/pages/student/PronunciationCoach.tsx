@@ -8,22 +8,82 @@ const TOKEN_KEY = "sphere_token";
 interface Teacher {
   id: string; name: string; accent: string; accentLabel: string;
   gender: string; voice: string; image: string; flag: string;
-  description: string; color: string; gradient: string; ringColor: string;
+  description: string; specialty: string; ageRange: string;
+  color: string; gradient: string; ringColor: string;
+  systemPrompt: string;
 }
 
 const TEACHERS: Teacher[] = [
-  { id: "sarah", name: "Sarah", accent: "american", accentLabel: "Amerikan", gender: "Kadın",
-    voice: "nova", image: "teacher-avatar.png", flag: "🇺🇸", description: "Sıcak ve teşvik edici",
-    color: "#3B82F6", gradient: "from-blue-400 to-blue-600", ringColor: "ring-blue-400" },
-  { id: "james", name: "James", accent: "american", accentLabel: "Amerikan", gender: "Erkek",
-    voice: "onyx", image: "teacher-james.png", flag: "🇺🇸", description: "Güçlü ve özgüvenli",
-    color: "#6366F1", gradient: "from-indigo-400 to-indigo-600", ringColor: "ring-indigo-400" },
-  { id: "emma", name: "Emma", accent: "british", accentLabel: "İngiliz", gender: "Kadın",
-    voice: "shimmer", image: "teacher-emma.png", flag: "🇬🇧", description: "Zarif ve sabırlı",
-    color: "#F43F5E", gradient: "from-rose-400 to-rose-600", ringColor: "ring-rose-400" },
-  { id: "oliver", name: "Oliver", accent: "british", accentLabel: "İngiliz", gender: "Erkek",
-    voice: "echo", image: "teacher-oliver.png", flag: "🇬🇧", description: "Açık ve metodolojik",
-    color: "#14B8A6", gradient: "from-teal-400 to-teal-600", ringColor: "ring-teal-400" },
+  {
+    id: "sterling", name: "Mr. Sterling", accent: "british-rp", accentLabel: "Üst Segment İngiliz (RP)",
+    gender: "Erkek", voice: "onyx", image: "coach-sterling.svg", flag: "🇬🇧",
+    description: "Otoriter, az ve öz konuşan", specialty: "CEO & Stratejik Yönetim", ageRange: "55-60",
+    color: "#1E3A5F", gradient: "from-slate-700 to-slate-900", ringColor: "ring-slate-700",
+    systemPrompt: `You are Mr. Sterling, a senior British executive coach with a refined RP accent. Age 55-60. You speak in a boardroom style — authoritative, concise, and precise. You use formal business English, power phrases, and executive vocabulary. You rarely use small talk. Correct the student's grammar and vocabulary firmly but constructively. Focus on professional presentation and leadership language.`,
+  },
+  {
+    id: "jake", name: "Jake", accent: "american-west-coast", accentLabel: "Modern Amerikan (West Coast)",
+    gender: "Erkek", voice: "alloy", image: "coach-jake.svg", flag: "🇺🇸",
+    description: "Enerjik, kreatif jargon, hızlı konuşan", specialty: "Pazarlama & Dijital Medya", ageRange: "28-32",
+    color: "#EA580C", gradient: "from-orange-500 to-orange-700", ringColor: "ring-orange-500",
+    systemPrompt: `You are Jake, a dynamic West Coast American marketing and digital media coach. Age 28-32. You speak fast, use creative and startup jargon, slang, and marketing buzzwords naturally. You're upbeat and enthusiastic. Teach the student marketing vocabulary, digital media terms, and casual-professional American English. Keep the energy high.`,
+  },
+  {
+    id: "david", name: "David", accent: "american-new-york", accentLabel: "New York (Wall Street)",
+    gender: "Erkek", voice: "echo", image: "coach-david.svg", flag: "🇺🇸",
+    description: "Analitik, sayılarla konuşan, resmi ve ciddi", specialty: "Finans & Yatırım Analizi", ageRange: "40-45",
+    color: "#0369A1", gradient: "from-sky-600 to-sky-800", ringColor: "ring-sky-600",
+    systemPrompt: `You are David, a Wall Street finance and investment analyst coach from New York. Age 40-45. You speak analytically, using financial terminology, numbers, percentages, and data-driven language. You are formal, serious, and precise. Teach the student financial English, investment vocabulary, and how to discuss data professionally.`,
+  },
+  {
+    id: "emma", name: "Emma", accent: "british-standard", accentLabel: "Standart İngiliz (London)",
+    gender: "Kadın", voice: "shimmer", image: "coach-emma-hr.svg", flag: "🇬🇧",
+    description: "Empatik, mülakat teknikleri uzmanı", specialty: "İnsan Kaynakları (HR)", ageRange: "35-38",
+    color: "#BE185D", gradient: "from-pink-600 to-pink-800", ringColor: "ring-pink-600",
+    systemPrompt: `You are Emma, a London-based HR professional and interview coach. Age 35-38. You speak with clear Standard British English, excellent articulation, and an empathetic tone. You specialise in interview techniques, professional communication, and workplace English. Teach the student how to express themselves confidently in HR and interview scenarios.`,
+  },
+  {
+    id: "raj", name: "Raj", accent: "indian-english", accentLabel: "Hint-İngiliz (Global Tech)",
+    gender: "Erkek", voice: "fable", image: "coach-raj.svg", flag: "🇮🇳",
+    description: "Teknik terimlere hakim, küresel teknoloji aksanı", specialty: "BT & Yazılım Geliştirme", ageRange: "30-35",
+    color: "#7C3AED", gradient: "from-violet-600 to-violet-800", ringColor: "ring-violet-600",
+    systemPrompt: `You are Raj, a global tech professional and software development coach with an Indian-English accent. Age 30-35. You are deeply technical, fluent in software engineering terminology, agile vocabulary, and global tech communication. You help the student master technical English used in code reviews, stand-ups, client calls, and documentation.`,
+  },
+  {
+    id: "hans", name: "Hans", accent: "euro-english", accentLabel: "Alman-İngiliz (Euro-English)",
+    gender: "Erkek", voice: "alloy", image: "coach-hans.svg", flag: "🇩🇪",
+    description: "Metodik, yapılandırılmış cümleler, endüstriyel dil", specialty: "Lojistik & Operasyon", ageRange: "45-50",
+    color: "#374151", gradient: "from-gray-600 to-gray-800", ringColor: "ring-gray-600",
+    systemPrompt: `You are Hans, a German logistics and operations expert who speaks precise Euro-English. Age 45-50. You are methodical, structured, and use systematic language with clear steps and industrial vocabulary. You speak in well-organised sentences. Teach the student operations management English, supply chain vocabulary, and how to communicate efficiently in a European business context.`,
+  },
+  {
+    id: "elena", name: "Elena", accent: "diplomatic-english", accentLabel: "Doğu Avrupa-İngiliz (Diplomatik)",
+    gender: "Kadın", voice: "nova", image: "coach-elena.svg", flag: "🇪🇺",
+    description: "Hukuki terimler, sözleşme dili, net ve yavaş", specialty: "Uluslararası Hukuk", ageRange: "42-46",
+    color: "#065F46", gradient: "from-emerald-700 to-emerald-900", ringColor: "ring-emerald-700",
+    systemPrompt: `You are Elena, an international law and diplomacy coach with an East European-inflected English. Age 42-46. You speak very clearly and deliberately, using precise legal terminology, contract language, and diplomatic phrasing. You are composed and thorough. Teach the student legal English, formal agreement language, and diplomatic communication.`,
+  },
+  {
+    id: "alistair", name: "Alistair", accent: "scottish", accentLabel: "İskoç (Hafif ve Karizmatik)",
+    gender: "Erkek", voice: "echo", image: "coach-alistair.svg", flag: "🏴󠁧󠁢󠁳󠁣󠁴󠁿",
+    description: "İkna kabiliyeti yüksek, deyimsel kullanım", specialty: "Satış & Müzakere", ageRange: "38-42",
+    color: "#B91C1C", gradient: "from-red-600 to-red-800", ringColor: "ring-red-600",
+    systemPrompt: `You are Alistair, a charismatic Scottish sales and negotiation coach. Age 38-42. You have a light Scottish accent and a warm, persuasive communication style. You use idiomatic expressions, rhetorical techniques, and high-impact sales language. Teach the student how to negotiate confidently, close deals, and use persuasive English effectively.`,
+  },
+  {
+    id: "chloe", name: "Chloe", accent: "australian", accentLabel: "Avusturalyalı (Friendly Business)",
+    gender: "Kadın", voice: "nova", image: "coach-chloe.svg", flag: "🇦🇺",
+    description: "Çözüm odaklı, samimi ama profesyonel", specialty: "Müşteri İlişkileri (CRM)", ageRange: "25-30",
+    color: "#D97706", gradient: "from-amber-500 to-amber-700", ringColor: "ring-amber-500",
+    systemPrompt: `You are Chloe, an Australian customer relations and CRM coach. Age 25-30. You are friendly, warm, and solution-focused. You use phrasal verbs naturally and balance professionalism with approachability. Teach the student how to handle customer interactions, resolve complaints gracefully, and use service-oriented English in a genuine, engaging way.`,
+  },
+  {
+    id: "james", name: "James", accent: "american-midwest", accentLabel: "Amerikan (Midwest / Endüstriyel)",
+    gender: "Erkek", voice: "onyx", image: "coach-james-mfg.svg", flag: "🇺🇸",
+    description: "Pratik, direkt, üretim süreçleri jargonu", specialty: "Üretim & Fabrika Yönetimi", ageRange: "50-55",
+    color: "#78350F", gradient: "from-amber-900 to-stone-800", ringColor: "ring-amber-900",
+    systemPrompt: `You are James, a Midwest American manufacturing and factory management coach. Age 50-55. You speak plainly, directly, and practically. You use industrial vocabulary, safety language, and production process terminology. You are no-nonsense and results-oriented. Teach the student how to communicate clearly in factory and operations environments, including safety briefings and production reporting.`,
+  },
 ];
 
 interface WordScore { word: string; score: number; ok: boolean }
@@ -223,17 +283,17 @@ function TeacherSelectScreen({ onSelect }: { onSelect: (t: Teacher) => void }) {
           </motion.div>
         </div>
 
-        <div className="grid grid-cols-2 gap-5">
+        <div className="grid grid-cols-2 gap-3">
           {TEACHERS.map((t, i) => (
             <motion.button
               key={t.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.1, duration: 0.4 }}
+              transition={{ delay: i * 0.07, duration: 0.35 }}
               onHoverStart={() => setHovered(t.id)}
               onHoverEnd={() => setHovered(null)}
               onClick={() => onSelect(t)}
-              className="relative flex flex-col items-center gap-4 p-6 rounded-2xl bg-white shadow-sm border-2 border-gray-100 hover:shadow-xl transition-all overflow-hidden text-center"
+              className="relative flex flex-col items-center gap-2.5 p-4 rounded-2xl bg-white shadow-sm border-2 border-gray-100 hover:shadow-xl transition-all overflow-hidden text-center"
               style={{ borderColor: hovered === t.id ? t.color : undefined }}
             >
               {/* Gradient bg on hover */}
@@ -248,16 +308,11 @@ function TeacherSelectScreen({ onSelect }: { onSelect: (t: Teacher) => void }) {
               <div className="relative z-10">
                 <motion.div
                   className="relative rounded-full overflow-hidden shadow-lg"
-                  style={{ width: 96, height: 96 }}
-                  animate={hovered === t.id
-                    ? { scale: [1, 1.04, 1, 1.03, 1] }
-                    : { scale: 1 }}
-                  transition={hovered === t.id
-                    ? { duration: 1.5, repeat: Infinity, ease: "easeInOut" }
-                    : { duration: 0.3 }}
+                  style={{ width: 72, height: 72 }}
+                  animate={hovered === t.id ? { scale: [1, 1.04, 1, 1.03, 1] } : { scale: 1 }}
+                  transition={hovered === t.id ? { duration: 1.5, repeat: Infinity, ease: "easeInOut" } : { duration: 0.3 }}
                 >
                   <img src={`/images/${t.image}`} alt={t.name} className="w-full h-full object-cover" />
-                  {/* Subtle glow overlay */}
                   <motion.div
                     className="absolute inset-0"
                     style={{ background: `radial-gradient(circle at 40% 35%, ${t.color}33, transparent 70%)` }}
@@ -265,28 +320,22 @@ function TeacherSelectScreen({ onSelect }: { onSelect: (t: Teacher) => void }) {
                     transition={{ duration: 0.3 }}
                   />
                 </motion.div>
-
-                {/* Pulse ring on hover */}
                 <AnimatePresence>
                   {hovered === t.id && (
-                    <motion.div
-                      key="ring"
-                      className="absolute inset-0 rounded-full"
+                    <motion.div key="ring" className="absolute inset-0 rounded-full"
                       style={{ border: `2px solid ${t.color}` }}
-                      initial={{ scale: 1, opacity: 0.8 }}
-                      animate={{ scale: 1.35, opacity: 0 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 0.9, repeat: Infinity }}
-                    />
+                      initial={{ scale: 1, opacity: 0.8 }} animate={{ scale: 1.35, opacity: 0 }} exit={{ opacity: 0 }}
+                      transition={{ duration: 0.9, repeat: Infinity }} />
                   )}
                 </AnimatePresence>
               </div>
 
               {/* Info */}
-              <div className="relative z-10">
-                <p className="font-bold text-gray-900 text-base">{t.flag} {t.name}</p>
-                <p className="text-xs text-gray-400 mt-0.5">{t.accentLabel} · {t.gender}</p>
-                <p className="text-xs mt-2 italic" style={{ color: t.color }}>{t.description}</p>
+              <div className="relative z-10 w-full">
+                <p className="font-bold text-gray-900 text-sm">{t.flag} {t.name}</p>
+                <p className="text-[10px] font-semibold mt-0.5 px-2 py-0.5 rounded-full inline-block" style={{ background: `${t.color}18`, color: t.color }}>{t.specialty}</p>
+                <p className="text-[10px] text-gray-400 mt-1">{t.accentLabel}</p>
+                <p className="text-[10px] mt-1 italic" style={{ color: t.color }}>{t.description}</p>
               </div>
 
               {/* Hover CTA */}
@@ -530,6 +579,7 @@ export default function PronunciationCoach() {
       formData.append("audio", blob, "audio.webm");
       formData.append("voice", teacher.voice);
       formData.append("teacherName", teacher.name);
+      formData.append("systemPrompt", teacher.systemPrompt);
       formData.append("history", JSON.stringify(history));
 
       const res = await fetch(`${getApiBase()}/api/pronunciation/chat`, {
