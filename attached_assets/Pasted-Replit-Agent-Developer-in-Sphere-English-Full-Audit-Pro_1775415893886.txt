@@ -1,0 +1,43 @@
+Replit Agent / Developer İçin "Sphere English Full-Audit" Promptu
+Role: Senior EdTech Developer & UX Strategist
+Task: Comprehensive Audit & Fix for sphereenglish.com (Main) & app.sphereenglish.com (LMS)
+Methodology: Chain-of-Thought (Educational Flow Analysis)
+
+Context:
+Sphere English projemiz; kurumsal İngilizce eğitimi veren, MEB standartlarına uyumlu bir Akıllı Öğrenme Yönetim Sistemi (LMS) platformudur. Tanıtım sitemiz ve uygulama panelimiz arasındaki teknik/görsel uyumu ve işlevselliği şu adımlarla analiz etmeni istiyorum:
+
+Adım 1 - Marka ve Görsel Bütünlük (Cross-Domain Consistency):
+
+Analiz: sphereenglish.com (Tanıtım) ile app.sphereenglish.com (LMS) arasındaki logo, font ve renk paleti uyumunu kontrol et.
+
+Eylem: Kurumsal kimliğimize uygun olarak; minimalist, modern ve profesyonel bir "Premium" estetiğin her iki tarafta da korunduğundan emin ol. (Varsa CSS uyumsuzluklarını raporla).
+
+Adım 2 - Kayıt ve Giriş Akışı (User Onboarding):
+
+Analiz: Bir kullanıcının ana siteden "Giriş Yap" veya "Kaydol" dediğinde uygulama paneline (subdomain) aktarılma sürecini simüle et.
+
+Eylem: Oturum açma (SSO veya Token geçişi) sırasında bir kopukluk olup olmadığını, yönlendirmelerin (Redirects) hatasız çalışıp çalışmadığını kontrol et.
+
+Adım 3 - LMS Fonksiyonel Analizi (Core Features):
+
+Analiz: "Sphere English Akıllı Öğrenme Yönetim Sistemi" içindeki ders materyalleri, video izleme ve sınav modüllerini adım adım test et.
+
+Eylem: - Öğrenci bir dersi bitirdiğinde ilerleme durumu (Progress Bar) DB'ye doğru yazılıyor mu?
+
+MEB yönetmeliklerine uygun raporlama altyapısı (katılım süreleri vb.) teknik olarak hazır mı?
+
+Video oynatıcı ve doküman görüntüleyici mobil cihazlarda "Responsive" (duyarlı) çalışıyor mu?
+
+Adım 4 - Güvenlik ve Veri Gizliliği:
+
+Analiz: Öğrenci verilerinin ve kurumsal eğitim içeriklerinin korunmasını incele.
+
+Eylem: Video içeriklerinin doğrudan indirilmesini engelleyen önlemler var mı? Şifreleme altyapısı (Bcrypt/SHA-256) Olivamore projesindeki gibi güncel mi?
+
+Adım 5 - SEO ve Performans:
+
+Analiz: Ana sitenin (sphereenglish.com) Google sıralaması için SEO ayarlarını ve sayfa hızını (Lighthouse skorları) değerlendir.
+
+Eylem: Meta etiketleri, alt-text açıklamaları ve hızlı yükleme için görsel optimizasyonlarını kontrol et.
+
+Lütfen bulduğun hataları "Kritik", "Geliştirilebilir" ve "Tasarım Önerisi" olarak kategorize et ve her biri için düzeltme kodlarını hazırla.

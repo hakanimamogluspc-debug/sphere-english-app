@@ -12,6 +12,7 @@ import { DashboardLayout } from "./components/layout/DashboardLayout";
 import Dashboard from "./pages/dashboard";
 import CourseList from "./pages/courses/CourseList";
 import CourseDetail from "./pages/courses/CourseDetail";
+import LessonPlayer from "./pages/courses/LessonPlayer";
 import AdminUsers from "./pages/admin/Users";
 import AdminCourses from "./pages/admin/Courses";
 import Announcements from "./pages/admin/Announcements";
@@ -105,6 +106,7 @@ function Router() {
 
       {/* Student Routes */}
       <Route path="/courses"><LayoutWrapper component={CourseList} /></Route>
+      <Route path="/courses/:courseId/lessons/:lessonId"><LayoutWrapper component={LessonPlayer} /></Route>
       <Route path="/courses/:id"><LayoutWrapper component={CourseDetail} /></Route>
       <Route path="/progress"><LayoutWrapper component={ProgressPage} /></Route>
       <Route path="/live-classes"><LayoutWrapper component={LiveClasses} /></Route>

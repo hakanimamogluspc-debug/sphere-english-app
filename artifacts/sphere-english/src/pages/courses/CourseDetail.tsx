@@ -57,7 +57,12 @@ export default function CourseDetail() {
                 <div className="w-full md:w-48 bg-secondary rounded-full h-2 overflow-hidden mb-2">
                   <div className="bg-accent h-full rounded-full" style={{ width: `${course.completionPercentage || 0}%` }} />
                 </div>
-                <Button className="w-full" size="lg">Öğrenmeye Devam Et</Button>
+                <Button className="w-full" size="lg" onClick={() => {
+                const firstIncomplete = course.modules?.flatMap(m => m.lessons).find(l => !l.isCompleted);
+                const firstLesson = course.modules?.[0]?.lessons?.[0];
+                const target = firstIncomplete || firstLesson;
+                if (target) setLocation(`/courses/${courseId}/lessons/${target.id}`);
+              }}>Öğrenmeye Devam Et</Button>
               </div>
             ) : (
               <div className="text-center md:text-right w-full">
@@ -109,9 +114,12 @@ export default function CourseDetail() {
                       <div>
                         {course.isEnrolled ? (
                           lesson.isCompleted ? (
-                            <CheckCircle className="text-green-500" size={24} />
+                            <div className="flex items-center gap-2">
+                              <CheckCircle className="text-green-500" size={24} />
+                              <Button size="sm" variant="ghost" className="opacity-0 group-hover:opacity-100 transition-opacity text-xs" onClick={() => setLocation(`/courses/${courseId}/lessons/${lesson.id}`)}>Tekrar İzle</Button>
+                            </div>
                           ) : (
-                            <Button size="sm" variant="outline" className="opacity-0 group-hover:opacity-100 transition-opacity">Başla</Button>
+                            <Button size="sm" variant="outline" className="opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => setLocation(`/courses/${courseId}/lessons/${lesson.id}`)}>Başla</Button>
                           )
                         ) : (
                           <Lock className="text-muted-foreground/50" size={20} />

@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { db, usersTable, lessonProgressTable, enrollmentsTable, coursesTable, modulesTable, lessonsTable, quizAttemptsTable } from "@workspace/db";
-import { eq, and, gte, count } from "drizzle-orm";
+import { db, usersTable, lessonProgressTable, enrollmentsTable, coursesTable, modulesTable, lessonsTable } from "@workspace/db";
+import { eq, and, count, inArray, gte, sql } from "drizzle-orm";
 import { authMiddleware, type AuthRequest } from "../middlewares/auth.js";
 
 const router = Router();
@@ -21,7 +21,7 @@ async function buildProgressOverview(userId: number) {
   const [user] = await db.select().from(usersTable).where(eq(usersTable.id, userId)).limit(1);
   if (!user) return null;
 
-  // Course progress
+  // Course progress — fix: count only lessons belonging to each course
   const enrollments = await db.select({ courseId: enrollmentsTable.courseId }).from(enrollmentsTable).where(eq(enrollmentsTable.studentId, userId));
   const courseProgress = await Promise.all(enrollments.map(async (e) => {
     const [course] = await db.select().from(coursesTable).where(eq(coursesTable.id, e.courseId)).limit(1);
@@ -34,32 +34,71 @@ async function buildProgressOverview(userId: number) {
       totalLessons += lessons.length;
       lessonIds.push(...lessons.map(l => l.id));
     }
-    const [{ cc }] = await db.select({ cc: count() }).from(lessonProgressTable)
-      .where(and(eq(lessonProgressTable.userId, userId), eq(lessonProgressTable.completed, true)));
-    const completedLessons = Math.min(Number(cc), totalLessons);
+
+    // Fix: filter completions by lessons that belong to THIS course only
+    let completedLessons = 0;
+    if (lessonIds.length > 0) {
+      const [{ cc }] = await db.select({ cc: count() }).from(lessonProgressTable)
+        .where(and(
+          eq(lessonProgressTable.userId, userId),
+          eq(lessonProgressTable.completed, true),
+          inArray(lessonProgressTable.lessonId, lessonIds)
+        ));
+      completedLessons = Math.min(Number(cc), totalLessons);
+    }
+
     const percentage = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
+
+    // Last activity for this course
+    let lastActivity: string | null = null;
+    if (lessonIds.length > 0) {
+      const lastProgress = await db.select({ completedAt: lessonProgressTable.completedAt })
+        .from(lessonProgressTable)
+        .where(and(
+          eq(lessonProgressTable.userId, userId),
+          eq(lessonProgressTable.completed, true),
+          inArray(lessonProgressTable.lessonId, lessonIds)
+        ))
+        .orderBy(sql`${lessonProgressTable.completedAt} DESC`)
+        .limit(1);
+      lastActivity = lastProgress[0]?.completedAt?.toISOString() || null;
+    }
+
     return {
       userId, courseId: e.courseId, courseTitle: course.title,
-      completedLessons, totalLessons, percentage, lastActivity: null, userName: null,
+      completedLessons, totalLessons, percentage, lastActivity, userName: null,
     };
   }));
 
-  // Weekly activity (last 7 days)
+  // Weekly activity — real data from last 7 days
+  const sevenDaysAgo = new Date(Date.now() - 7 * 86400000);
+  const recentProgress = await db.select().from(lessonProgressTable)
+    .where(and(
+      eq(lessonProgressTable.userId, userId),
+      eq(lessonProgressTable.completed, true),
+      gte(lessonProgressTable.completedAt, sevenDaysAgo)
+    ));
+
   const weeklyActivity = [];
   for (let i = 6; i >= 0; i--) {
     const d = new Date(Date.now() - i * 86400000);
     const dateStr = d.toISOString().split("T")[0];
-    weeklyActivity.push({ date: dateStr, pointsEarned: 0, lessonsCompleted: 0 });
+    const dayProgress = recentProgress.filter(p => p.completedAt?.toISOString().split("T")[0] === dateStr);
+    weeklyActivity.push({
+      date: dateStr,
+      lessonsCompleted: dayProgress.length,
+      pointsEarned: dayProgress.reduce((sum, p) => sum + (p.pointsEarned || 0), 0),
+    });
   }
 
   // Recent activity
-  const recentProgress = await db.select().from(lessonProgressTable)
+  const recentProgressAll = await db.select().from(lessonProgressTable)
     .where(and(eq(lessonProgressTable.userId, userId), eq(lessonProgressTable.completed, true)))
-    .orderBy(lessonProgressTable.completedAt).limit(5);
+    .orderBy(sql`${lessonProgressTable.completedAt} DESC`).limit(5);
 
-  const recentActivity = recentProgress.map(p => ({
+  const recentActivity = recentProgressAll.map(p => ({
     type: "lesson_completed" as const,
-    description: "Completed a lesson",
+    description: "Bir ders tamamlandı",
     pointsEarned: p.pointsEarned,
     timestamp: p.completedAt?.toISOString() || new Date().toISOString(),
   }));
@@ -104,16 +143,27 @@ router.get("/progress/courses/:courseId", authMiddleware, async (req: AuthReques
 
   const modules = await db.select({ id: modulesTable.id }).from(modulesTable).where(eq(modulesTable.courseId, courseId));
   let totalLessons = 0;
+  let lessonIds: number[] = [];
   for (const m of modules) {
-    const [{ lc }] = await db.select({ lc: count() }).from(lessonsTable).where(eq(lessonsTable.moduleId, m.id));
-    totalLessons += Number(lc);
+    const lessons = await db.select({ id: lessonsTable.id }).from(lessonsTable).where(eq(lessonsTable.moduleId, m.id));
+    totalLessons += Number(lessons.length);
+    lessonIds.push(...lessons.map(l => l.id));
   }
 
   const result = await Promise.all(enrollments.map(async (e) => {
     const [user] = await db.select({ firstName: usersTable.firstName, lastName: usersTable.lastName }).from(usersTable).where(eq(usersTable.id, e.studentId)).limit(1);
-    const [{ cc }] = await db.select({ cc: count() }).from(lessonProgressTable)
-      .where(and(eq(lessonProgressTable.userId, e.studentId), eq(lessonProgressTable.completed, true)));
-    const completedLessons = Math.min(Number(cc), totalLessons);
+
+    let completedLessons = 0;
+    if (lessonIds.length > 0) {
+      const [{ cc }] = await db.select({ cc: count() }).from(lessonProgressTable)
+        .where(and(
+          eq(lessonProgressTable.userId, e.studentId),
+          eq(lessonProgressTable.completed, true),
+          inArray(lessonProgressTable.lessonId, lessonIds)
+        ));
+      completedLessons = Math.min(Number(cc), totalLessons);
+    }
+
     return {
       userId: e.studentId, userName: user ? `${user.firstName} ${user.lastName}` : null,
       courseId, courseTitle: course.title, completedLessons, totalLessons,
