@@ -73,7 +73,7 @@ async function transcribeVerbose(
       response_format: "verbose_json",
       timestamp_granularities: ["word"],
       temperature: 0.1,
-      prompt: "This is an English language learner practicing conversation. They may make grammar mistakes like: she dont, he go, I am go, she dont like, they doesn't, we was. Transcribe exactly what is said, including grammar errors. Do not correct the grammar.",
+      prompt: "This is an English language learner practicing conversation. They may make grammar mistakes — transcribe exactly as said, do not correct grammar. IMPORTANT: The speaker may naturally insert Turkish proper nouns such as city names (Istanbul, Ankara, Izmir, Ayvalik, Antalya, Trabzon, Bursa, Eskisehir, Bodrum, Cappadocia, Pamukkale, Konya, Gaziantep, Adana, Mersin, Erzurum, Kayseri, Samsun, Diyarbakir, Alanya, Marmaris, Kusadasi, Fethiye, Çeşme, Edirne), Turkish person names (Ahmet, Mehmet, Fatma, Ayse, Ali, Kemal, Mustafa, Hasan, Hüseyin, Elif, Zeynep, Yusuf, Ibrahim, Ömer), and other Turkish words that may sound like English words. Preserve these as proper nouns rather than mapping them to English words.",
     } as any);
     const data = res as any;
     const words: WhisperWord[] = (data.words || []).map((w: any) => ({
@@ -208,10 +208,49 @@ router.post(
         return res.status(500).json({ error: "Yapay zeka servisi şu an ulaşılamıyor. Lütfen biraz bekleyip tekrar deneyin." });
       }
 
-      const userText = whisperResult?.text || "";
+      let userText = whisperResult?.text || "";
 
       if (!userText) {
         return res.status(400).json({ error: "Ses anlaşılamadı. Daha yüksek ve net konuşmayı deneyin." });
+      }
+
+      // ── Context-aware transcript correction ──
+      // GPT checks if Whisper mis-transcribed Turkish proper nouns as English words
+      if (history.length > 0 && userText.length > 0) {
+        try {
+          const recentCtx = history.slice(-4).map(m => `${m.role === "user" ? "Student" : "Coach"}: ${m.content}`).join("\n");
+          const fixRes = await getOpenAI().chat.completions.create({
+            model: "gpt-4o-mini",
+            temperature: 0,
+            max_tokens: 200,
+            messages: [
+              {
+                role: "system",
+                content: `You are a transcript correction assistant. The student is a Turkish speaker practicing English. Whisper (speech-to-text) sometimes misreads Turkish proper nouns (city names, personal names, place names) as English words because they sound similar phonetically.
+
+Your job: Given the conversation context and the raw Whisper transcript, decide if any word(s) are likely misread Turkish proper nouns. If so, return the corrected transcript. If the transcript looks fine as-is, return it unchanged.
+
+Rules:
+- Only fix obvious phonetic mismatches (e.g. "I walk" → "Ayvalık", "Antar" → "Antalya", "Ist and bull" → "Istanbul")
+- Do NOT fix grammar errors — leave them as-is
+- Do NOT change English words
+- If unsure, return the original unchanged
+- Respond with ONLY the corrected transcript text, nothing else.`,
+              },
+              {
+                role: "user",
+                content: `Conversation so far:\n${recentCtx}\n\nRaw Whisper transcript: "${userText}"\n\nCorrected transcript:`,
+              },
+            ],
+          });
+          const fixed = recentCtx && (fixRes.choices[0]?.message?.content || "").trim();
+          if (fixed && fixed !== userText && fixed.length > 0 && fixed.length < userText.length * 3) {
+            console.info(`Transcript corrected: "${userText}" → "${fixed}"`);
+            userText = fixed;
+          }
+        } catch (e) {
+          console.warn("Transcript correction skipped:", e);
+        }
       }
 
       // ── Word-level scores ──
