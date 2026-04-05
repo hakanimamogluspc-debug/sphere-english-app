@@ -391,4 +391,31 @@ router.post(
   }
 );
 
+// ── Translation endpoint ────────────────────────────────────────────────────
+router.post("/translate", authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const { text } = req.body as { text?: string };
+    if (!text || typeof text !== "string" || text.trim().length === 0) {
+      return res.status(400).json({ error: "Metin eksik." });
+    }
+    const completion = await getOpenAI().chat.completions.create({
+      model: "gpt-4o-mini",
+      temperature: 0.2,
+      max_tokens: 400,
+      messages: [
+        {
+          role: "system",
+          content: "Translate the following English text to natural, fluent Turkish. Return ONLY the Turkish translation, nothing else.",
+        },
+        { role: "user", content: text.trim() },
+      ],
+    });
+    const translation = (completion.choices[0]?.message?.content || "").trim();
+    return res.json({ translation });
+  } catch (err: any) {
+    console.error("Translation error:", err?.message || err);
+    return res.status(500).json({ error: "Çeviri başarısız oldu." });
+  }
+});
+
 export default router;

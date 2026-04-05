@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Mic, MicOff, Volume2, ChevronLeft, ChevronDown, ChevronUp, AlertCircle, BookOpen, Mic2, RotateCcw } from "lucide-react";
+import { Mic, MicOff, Volume2, ChevronLeft, ChevronDown, ChevronUp, AlertCircle, BookOpen, Mic2, RotateCcw, Languages } from "lucide-react";
 import { motion, AnimatePresence, useAnimation } from "framer-motion";
 
 const TOKEN_KEY = "sphere_token";
@@ -483,7 +483,29 @@ function UserBubble({ message }: { message: Message }) {
   );
 }
 
-function TeacherBubble({ message, teacher, onPlay }: { message: Message; teacher: Teacher; onPlay: (b: string) => void }) {
+function TeacherBubble({ message, teacher, onPlay, getApiBase }: { message: Message; teacher: Teacher; onPlay: (b: string) => void; getApiBase: () => string }) {
+  const [translation, setTranslation] = useState<string | null>(null);
+  const [translating, setTranslating] = useState(false);
+
+  const handleTranslate = async () => {
+    if (translation !== null) { setTranslation(null); return; }
+    setTranslating(true);
+    try {
+      const token = localStorage.getItem("sphere_token");
+      const res = await fetch(`${getApiBase()}/pronunciation/translate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ text: message.text }),
+      });
+      const data = await res.json();
+      setTranslation(data.translation || "Çeviri alınamadı.");
+    } catch {
+      setTranslation("Çeviri başarısız oldu.");
+    } finally {
+      setTranslating(false);
+    }
+  };
+
   return (
     <div className="flex items-end gap-2 mb-3">
       <img src={`/images/${teacher.image}`} alt={teacher.name}
@@ -492,12 +514,24 @@ function TeacherBubble({ message, teacher, onPlay }: { message: Message; teacher
         <div className="rounded-2xl rounded-bl-sm px-3.5 py-2.5 text-sm shadow-sm bg-white border border-gray-100 text-gray-800 leading-relaxed">
           {message.text}
         </div>
-        {message.audioBase64 && (
-          <button onClick={() => onPlay(message.audioBase64!)}
-            className="mt-1 ml-1 flex items-center gap-1 text-[11px] text-gray-400 hover:text-gray-600 transition">
-            <Volume2 size={11} />Tekrar dinle
-          </button>
+        {translation !== null && (
+          <div className="mt-1.5 mx-0.5 px-3 py-2 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900 leading-relaxed">
+            {translation}
+          </div>
         )}
+        <div className="flex items-center gap-3 mt-1 ml-1">
+          {message.audioBase64 && (
+            <button onClick={() => onPlay(message.audioBase64!)}
+              className="flex items-center gap-1 text-[11px] text-gray-400 hover:text-gray-600 transition">
+              <Volume2 size={11} />Tekrar dinle
+            </button>
+          )}
+          <button onClick={handleTranslate} disabled={translating}
+            className="flex items-center gap-1 text-[11px] text-indigo-400 hover:text-indigo-600 transition disabled:opacity-50">
+            <Languages size={11} />
+            {translating ? "Çevriliyor..." : translation !== null ? "Gizle" : "Çevir"}
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -740,7 +774,7 @@ export default function PronunciationCoach() {
             <motion.div key={msg.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
               {msg.role === "user"
                 ? <UserBubble message={msg} />
-                : <TeacherBubble message={msg} teacher={teacher} onPlay={playAudio} />}
+                : <TeacherBubble message={msg} teacher={teacher} onPlay={playAudio} getApiBase={getApiBase} />}
             </motion.div>
           ))}
         </AnimatePresence>
