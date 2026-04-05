@@ -43,13 +43,11 @@ const MIN_RECORD_MS = 2000;
 
 // ─── Animated Coach Avatar ────────────────────────────────────────────────────
 function CoachAvatar({
-  teacher, phase, mouthLevel,
-}: { teacher: Teacher; phase: Phase; mouthLevel: number }) {
+  teacher, phase,
+}: { teacher: Teacher; phase: Phase }) {
   const isListening = phase === "recording";
   const isSpeaking = phase === "speaking";
   const isProcessing = phase === "processing";
-
-  const mouthOpenPct = Math.min(mouthLevel * 2.5, 1);
 
   return (
     <div className="flex flex-col items-center gap-3 select-none">
@@ -130,26 +128,6 @@ function CoachAvatar({
             alt={teacher.name}
             className="w-full h-full object-cover"
           />
-
-          {/* Mouth animation overlay — speaking */}
-          <AnimatePresence>
-            {isSpeaking && mouthOpenPct > 0.05 && (
-              <motion.div
-                key="mouth"
-                className="absolute bottom-[28%] left-1/2 -translate-x-1/2"
-                style={{
-                  width: 28 + mouthOpenPct * 14,
-                  height: 6 + mouthOpenPct * 14,
-                  background: "rgba(0,0,0,0.55)",
-                  borderRadius: "50%",
-                  filter: "blur(1px)",
-                }}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 0.7 }}
-                exit={{ opacity: 0 }}
-              />
-            )}
-          </AnimatePresence>
 
           {/* Gradient overlay at bottom */}
           <div
@@ -483,15 +461,10 @@ export default function PronunciationCoach() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [phase, setPhase] = useState<Phase>("idle");
   const [error, setError] = useState("");
-  const [mouthLevel, setMouthLevel] = useState(0);
-
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const audioCtxRef = useRef<AudioContext | null>(null);
-  const analyserRef = useRef<AnalyserNode | null>(null);
-  const animFrameRef = useRef<number>(0);
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const recordStartRef = useRef<number>(0);
   const [recordSecs, setRecordSecs] = useState(0);
@@ -502,57 +475,20 @@ export default function PronunciationCoach() {
     return base.replace("/sphere-english", "/api-server");
   };
 
-  // ── Web Audio mouth animation ──────────────────────────────────────────────
-  const startMouthAnimation = (audio: HTMLAudioElement) => {
-    try {
-      const ctx = new AudioContext();
-      audioCtxRef.current = ctx;
-      const source = ctx.createMediaElementSource(audio);
-      const analyser = ctx.createAnalyser();
-      analyser.fftSize = 256;
-      source.connect(analyser);
-      analyser.connect(ctx.destination);
-      analyserRef.current = analyser;
-
-      const data = new Uint8Array(analyser.frequencyBinCount);
-      const tick = () => {
-        analyser.getByteFrequencyData(data);
-        const avg = data.slice(0, 20).reduce((a, b) => a + b, 0) / 20;
-        setMouthLevel(avg / 255);
-        animFrameRef.current = requestAnimationFrame(tick);
-      };
-      animFrameRef.current = requestAnimationFrame(tick);
-    } catch { setMouthLevel(0); }
-  };
-
-  const stopMouthAnimation = () => {
-    cancelAnimationFrame(animFrameRef.current);
-    setMouthLevel(0);
-    if (audioCtxRef.current) {
-      audioCtxRef.current.close().catch(() => {});
-      audioCtxRef.current = null;
-    }
-    analyserRef.current = null;
-  };
-
   const playAudio = useCallback((base64: string) => {
-    stopMouthAnimation();
     if (audioRef.current) { audioRef.current.pause(); audioRef.current.src = ""; }
 
     const bytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
     const blob = new Blob([bytes], { type: "audio/mpeg" });
     const url = URL.createObjectURL(blob);
     const audio = new Audio(url);
-    audio.crossOrigin = "anonymous";
     audioRef.current = audio;
 
     setPhase("speaking");
-    startMouthAnimation(audio);
 
     audio.play().catch(() => {});
     audio.onended = () => {
       URL.revokeObjectURL(url);
-      stopMouthAnimation();
       setPhase("idle");
     };
   }, []);
@@ -629,7 +565,6 @@ export default function PronunciationCoach() {
   const handleMicPress = async () => {
     if (phase === "speaking") {
       audioRef.current?.pause();
-      stopMouthAnimation();
       setPhase("idle");
       return;
     }
@@ -676,14 +611,14 @@ export default function PronunciationCoach() {
   };
 
   const handleBack = () => {
-    stopStream(); stopTimer(); stopMouthAnimation();
+    stopStream(); stopTimer();
     if (audioRef.current) { audioRef.current.pause(); }
     setMessages([]); setScreen("select"); setPhase("idle"); setError("");
   };
 
   useEffect(() => {
     return () => {
-      stopStream(); stopTimer(); stopMouthAnimation();
+      stopStream(); stopTimer();
       if (audioRef.current) audioRef.current.pause();
     };
   }, []);
@@ -717,7 +652,7 @@ export default function PronunciationCoach() {
       {/* ── Coach Avatar Area ── */}
       <div className="flex-shrink-0 flex flex-col items-center pt-5 pb-4 bg-white border-b border-gray-100"
         style={{ background: `linear-gradient(180deg, ${teacher.color}08 0%, white 100%)` }}>
-        <CoachAvatar teacher={teacher} phase={phase} mouthLevel={mouthLevel} />
+        <CoachAvatar teacher={teacher} phase={phase} />
       </div>
 
       {/* ── Chat Messages ── */}
