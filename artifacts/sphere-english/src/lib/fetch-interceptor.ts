@@ -2,23 +2,23 @@ const originalFetch = window.fetch;
 
 window.fetch = async (...args) => {
   let [resource, config] = args;
-  
-  const token = localStorage.getItem("sphere_token");
-  
-  if (token) {
-    config = config || {};
 
-    const existing =
-      config.headers instanceof Headers
-        ? Object.fromEntries((config.headers as Headers).entries())
-        : (config.headers as Record<string, string>) || {};
+  const existingHeaders =
+    config?.headers instanceof Headers
+      ? Object.fromEntries((config.headers as Headers).entries())
+      : (config?.headers as Record<string, string>) || {};
 
-    config.headers = {
-      ...existing,
-      Authorization: `Bearer ${token}`,
-    };
+  // Only add token from localStorage if Authorization not already set
+  if (!existingHeaders["authorization"] && !existingHeaders["Authorization"]) {
+    try {
+      const token = localStorage.getItem("sphere_token");
+      if (token) {
+        config = config || {};
+        config.headers = { ...existingHeaders, Authorization: `Bearer ${token}` };
+      }
+    } catch { /* localStorage blocked in some iframe contexts — token provided via setAuthTokenGetter */ }
   }
-  
+
   return originalFetch(resource, config);
 };
 
