@@ -552,11 +552,44 @@ export default function PronunciationCoach() {
   const recordStartRef = useRef<number>(0);
   const [recordSecs, setRecordSecs] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const chatStartTimeRef = useRef<number>(0);
+  const streakAwardedRef = useRef(false);
+  const practiceTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [practiceToast, setPracticeToast] = useState<{ streak: number; points: number } | null>(null);
 
   const getApiBase = () => {
     const base = import.meta.env.BASE_URL.replace(/\/$/, "");
     return base.replace("/sphere-english", "/api-server");
   };
+
+  // 10 dakika AI koç pratiği → streak güncelle
+  useEffect(() => {
+    if (screen === "chat") {
+      chatStartTimeRef.current = Date.now();
+      streakAwardedRef.current = false;
+      practiceTimerRef.current = setInterval(async () => {
+        const elapsed = (Date.now() - chatStartTimeRef.current) / 1000;
+        if (elapsed >= 600 && !streakAwardedRef.current) {
+          streakAwardedRef.current = true;
+          try {
+            const token = localStorage.getItem("sphere_token");
+            const res = await fetch(`${getApiBase()}/api/pronunciation/practice-streak`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+            });
+            const data = await res.json();
+            if (data.streakUpdated) {
+              setPracticeToast({ streak: data.streak, points: data.pointsEarned });
+              setTimeout(() => setPracticeToast(null), 5000);
+            }
+          } catch {}
+        }
+      }, 30000);
+    } else {
+      if (practiceTimerRef.current) { clearInterval(practiceTimerRef.current); practiceTimerRef.current = null; }
+    }
+    return () => { if (practiceTimerRef.current) { clearInterval(practiceTimerRef.current); practiceTimerRef.current = null; } };
+  }, [screen]);
 
   const playAudio = useCallback((base64: string) => {
     if (audioRef.current) { audioRef.current.pause(); audioRef.current.src = ""; }
@@ -718,6 +751,16 @@ export default function PronunciationCoach() {
 
   return (
     <div className="flex flex-col h-[calc(100vh-64px)] bg-gray-50">
+      {/* ── Practice streak toast ── */}
+      <AnimatePresence>
+        {practiceToast && (
+          <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}
+            className="absolute top-16 left-1/2 -translate-x-1/2 z-50 bg-green-600 text-white text-sm font-medium px-4 py-2.5 rounded-2xl shadow-lg flex items-center gap-2 pointer-events-none">
+            🔥 Harika! 10 dk pratik tamamlandı — Seri: {practiceToast.streak} gün +{practiceToast.points} puan!
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* ── Header (avatar + status entegre) ── */}
       <div className="flex items-center gap-3 px-4 py-2 bg-white border-b border-gray-100 flex-shrink-0">
         <button onClick={handleBack} className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition">
