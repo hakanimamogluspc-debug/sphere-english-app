@@ -1,0 +1,41 @@
+Replit Agent / Developer İçin "Hyper-Realistic AI Coach" Promptu
+Role: Senior Creative Technologist & UI/UX Expert ( specializing in AI Video & Interaction)
+Task: Elevate user immersion by creating a "real person" coaching experience in the AI Speaking Coach app.
+Methodology: Chain-of-Thought (Immersive Sequence Analysis)
+
+Context:
+Mevcut durağan koç seçim (image_1.png) ve koçluk ekranlarını (image_0.png), koçun kullanıcıyla gerçek zamanlı, görsel ve işitsel olarak etkileşime girdiği "hiper-gerçekçi" bir deneyime dönüştürmek istiyoruz.
+
+Lütfen şu CoT adımlarını izleyerek sistemi geliştir:
+
+Adım 1 - Durağan Görsellerden Dinamik AI Avatarlara Geçiş (Selection Screen Upgrade):
+
+Analiz: image_1.png'daki koç görselleri durağan fotoğraf. Kullanıcı bir koçu seçtiğinde, o koçun "canlandığını" hissetmeli.
+
+Eylem: - Koç kartlarını (Sarah, James, Emma, Oliver) durağan resimler yerine, 3-5 saniyelik, döngülü (looped), hafifçe gülümseyen veya başını sallayan "canlı portreler" (AI Video Portraits) ile değiştir.
+
+Fare imleci kartın üzerine geldiğinde koçun canlanmasını sağla.
+
+Adım 2 - Gerçek Zamanlı Konuşma ve Dudak Senkronizasyonu (Lip-Syncing AI Video):
+
+Analiz: image_0.png'da koçun cevabı sadece metin olarak görünüyor. "Karşımızda konuşuyor" hissi için koçun bu cevabı görsel olarak "söylemesi" gerekir.
+
+Eylem: - Koçun metin cevabını (Örn: "Hi! I'm doing well, thank you...") görsel bir AI Avatar Videosuna dönüştürmek için bir Text-to-Video API'si (Örn: HeyGen, Synthesia veya Wav2Lip) entegre et.
+
+Kullanıcının "Tekrar dinle" butonuna basmasına gerek kalmadan, koçun cevabı video olarak otomatik oynasın ve dudak hareketleri (lip-sync) mükemmel olsun.
+
+Adım 3 - UI/UX Yeniden Tasarımı (Konuşma Ekranı Odaklılık):
+
+Analiz: image_0.png'daki UI çok metin odaklı. Kullanıcının dikkati metinde değil, koçun yüzünde olmalı.
+
+Eylem: - Koçun metin balonlarını ve puan kutularını (95/100) ekranın alt kısmına veya yan taraflara çekerek, koçun AI Avatar Videosunu ekranın merkezine yerleştir (yarı-vücut veya portre görünümü).
+
+Kullanıcının konuşma metnini de koçun yüzüne odaklanmayı bozmayacak şekilde daha minimalist bir tonda sun.
+
+Adım 4 - Dinamik Etkileşim ve Geri Bildirim Görselleştirmesi:
+
+Analiz: Mevcut analiz durağan renkli noktalarla (yeşil/turuncu/kırmızı) yapılıyor.
+
+Eylem: - Kullanıcı konuşurken, koçun AI Avatarı aktif dinleme hareketleri yapsın (baş sallama, göz teması).
+
+Telaffuz hataları olduğunda (kırmızı noktalar), koçun AI Avatarı videoda o kelimeyi vurgulayacak şekilde hafif bir mimik (Örn: kaş çatmadan ziyade odaklanmış bir bakış) veya el hareketi yapsın.
