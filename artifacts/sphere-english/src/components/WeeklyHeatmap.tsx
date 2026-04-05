@@ -25,7 +25,7 @@ export default function WeeklyHeatmap() {
 
   useEffect(() => {
     const token = localStorage.getItem("sphere_token");
-    fetch(`${API}/api/reports/weekly-activity`, {
+    fetch(`${API}/reports/weekly-activity`, {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     })
       .then(r => r.json())

@@ -67,7 +67,7 @@ export default function MebReport() {
       const params = new URLSearchParams({ startDate, endDate });
       if (studentId) params.set("studentId", studentId);
 
-      const res = await fetch(`${API}/api/reports/meb?${params}`, {
+      const res = await fetch(`${API}/reports/meb?${params}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error("Rapor alınamadı");
