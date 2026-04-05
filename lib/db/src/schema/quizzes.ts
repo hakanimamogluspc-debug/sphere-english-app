@@ -7,6 +7,7 @@ import { lessonsTable, coursesTable } from "./courses";
 export const quizzesTable = pgTable("quizzes", {
   id: serial("id").primaryKey(),
   title: text("title").notNull(),
+  level: text("level", { enum: ["A1", "A2", "B1", "B2", "C1", "C2"] }),
   lessonId: integer("lesson_id").references(() => lessonsTable.id, { onDelete: "cascade" }),
   courseId: integer("course_id").references(() => coursesTable.id),
   teacherId: integer("teacher_id").references(() => usersTable.id, { onDelete: "set null" }),

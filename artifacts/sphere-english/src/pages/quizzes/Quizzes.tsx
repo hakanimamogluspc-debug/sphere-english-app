@@ -37,15 +37,26 @@ function QuizList({ onSelect }: { onSelect: (id: number) => void }) {
                   <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
                     <FileQuestion className="h-6 w-6 text-primary" />
                   </div>
-                  <Badge variant="outline">{quiz.courseId ? `Kurs ${quiz.courseId}` : 'Genel'}</Badge>
+                  {(quiz as any).level ? (
+                    <Badge className={`font-bold ${
+                      (quiz as any).level === 'A1' ? 'bg-green-100 text-green-700 border-green-300' :
+                      (quiz as any).level === 'A2' ? 'bg-teal-100 text-teal-700 border-teal-300' :
+                      (quiz as any).level === 'B1' ? 'bg-blue-100 text-blue-700 border-blue-300' :
+                      (quiz as any).level === 'B2' ? 'bg-indigo-100 text-indigo-700 border-indigo-300' :
+                      (quiz as any).level === 'C1' ? 'bg-purple-100 text-purple-700 border-purple-300' :
+                      'bg-rose-100 text-rose-700 border-rose-300'
+                    }`} variant="outline">{(quiz as any).level}</Badge>
+                  ) : (
+                    <Badge variant="outline">Genel</Badge>
+                  )}
                 </div>
                 <h3 className="text-lg font-bold mb-2 font-display">{quiz.title}</h3>
                 <div className="flex items-center gap-4 mt-auto pt-4 border-t border-border text-sm text-muted-foreground">
-                  <span className="flex items-center gap-1.5"><Clock size={14} /> {quiz.timeLimit} dk</span>
+                  <span className="flex items-center gap-1.5"><Clock size={14} /> {quiz.timeLimit ?? 15} dk</span>
                   <span className="flex items-center gap-1.5"><Target size={14} /> %{quiz.passingScore} geçme</span>
                 </div>
                 <Button className="mt-4 w-full" size="sm">
-                  Sınavı Başlat <ChevronRight size={16} className="ml-1" />
+                  Alıştırmayı Başlat <ChevronRight size={16} className="ml-1" />
                 </Button>
               </CardContent>
             </Card>

@@ -11,6 +11,14 @@ router.get("/quizzes", authMiddleware, async (req: AuthRequest, res) => {
   if (lessonId && lessonId !== "null") conds.push(eq(quizzesTable.lessonId, parseInt(lessonId as string)));
   if (courseId && courseId !== "null") conds.push(eq(quizzesTable.courseId, parseInt(courseId as string)));
 
+  // For students, automatically filter by their own level
+  if (req.userRole === "student") {
+    const [user] = await db.select({ currentLevel: usersTable.currentLevel }).from(usersTable).where(eq(usersTable.id, req.userId!)).limit(1);
+    if (user?.currentLevel) {
+      conds.push(eq(quizzesTable.level, user.currentLevel));
+    }
+  }
+
   const where = conds.length > 0 ? and(...conds) : undefined;
   const quizzes = await db.select().from(quizzesTable).where(where);
   const result = await Promise.all(quizzes.map(async (q) => {
@@ -30,9 +38,9 @@ router.get("/quizzes/:id", authMiddleware, async (req: AuthRequest, res) => {
 });
 
 router.post("/quizzes", authMiddleware, requireRole("admin", "teacher"), async (req: AuthRequest, res) => {
-  const { title, lessonId, courseId, timeLimit, passingScore, questions: qs } = req.body;
+  const { title, level, lessonId, courseId, timeLimit, passingScore, questions: qs } = req.body;
   const [quiz] = await db.insert(quizzesTable).values({
-    title, lessonId: lessonId || null, courseId: courseId || null,
+    title, level: level || null, lessonId: lessonId || null, courseId: courseId || null,
     timeLimit: timeLimit || null, passingScore: passingScore || 70,
   }).returning();
 
