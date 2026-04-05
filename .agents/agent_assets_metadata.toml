@@ -54,6 +54,66 @@ uri = "file://attached_assets/blog_c2.png"
 type = "image"
 title = "blog cover C2"
 
+[[generated]]
+id = "rCGb-DvrBz-XuO0aIctNA"
+uri = "file://artifacts/sphere-english/public/images/coach-sterling.png"
+type = "image"
+title = "mr sterling british executive coach"
+
+[[generated]]
+id = "HpinLvrc7nFJdKWwcaezX"
+uri = "file://artifacts/sphere-english/public/images/coach-jake.png"
+type = "image"
+title = "jake west coast marketing coach"
+
+[[generated]]
+id = "VqyX-SprapsRjyVcaWmNV"
+uri = "file://artifacts/sphere-english/public/images/coach-david.png"
+type = "image"
+title = "david wall street finance coach"
+
+[[generated]]
+id = "ISeo9x9nkHJDAmcj568ZC"
+uri = "file://artifacts/sphere-english/public/images/coach-emma-hr.png"
+type = "image"
+title = "emma london hr coach"
+
+[[generated]]
+id = "A7jZFnJRuuVb53Zz9gSmQ"
+uri = "file://artifacts/sphere-english/public/images/coach-raj.png"
+type = "image"
+title = "raj indian tech software coach"
+
+[[generated]]
+id = "zbbIngOUMCUmkxcBWRK5H"
+uri = "file://artifacts/sphere-english/public/images/coach-hans.png"
+type = "image"
+title = "hans german logistics coach"
+
+[[generated]]
+id = "F7fD0fcilbNGWGDxkLi_i"
+uri = "file://artifacts/sphere-english/public/images/coach-elena.png"
+type = "image"
+title = "elena east european law coach"
+
+[[generated]]
+id = "kRTOlfD0yIHKictrzkrWg"
+uri = "file://artifacts/sphere-english/public/images/coach-alistair.png"
+type = "image"
+title = "alistair scottish sales coach"
+
+[[generated]]
+id = "zK6zLRYA9OK0_dhZopaQq"
+uri = "file://artifacts/sphere-english/public/images/coach-chloe.png"
+type = "image"
+title = "chloe australian crm coach"
+
+[[generated]]
+id = "q-_tQGbi-ceSQuDp8yZJo"
+uri = "file://artifacts/sphere-english/public/images/coach-james-mfg.png"
+type = "image"
+title = "james midwest manufacturing coach"
+
 [[outputs]]
 id = "FsU4PAkDB_a1cFXTkO03x"
 uri = "file://artifacts/sphere-english/public/www-sitemap.xml"
