@@ -109,14 +109,33 @@ router.get("/users/:id", authMiddleware, async (req: AuthRequest, res) => {
 router.post("/users", authMiddleware, requireRole("admin"), async (req: AuthRequest, res) => {
   const { email, password, firstName, lastName, role, phone, currentLevel, sendWelcomeEmail } = req.body;
   if (!email || !password || !firstName || !lastName) {
-    res.status(400).json({ error: "Required fields missing" });
+    res.status(400).json({ error: "Ad, soyad, e-posta ve şifre zorunludur." });
     return;
   }
+
+  // Aynı e-posta kontrolü
+  const [existing] = await db.select({ id: usersTable.id }).from(usersTable)
+    .where(eq(usersTable.email, email.toLowerCase())).limit(1);
+  if (existing) {
+    res.status(409).json({ error: `"${email}" e-posta adresi zaten kayıtlı. Lütfen farklı bir e-posta kullanın.` });
+    return;
+  }
+
   const hashedPassword = await bcrypt.hash(password, 10);
-  const [user] = await db.insert(usersTable).values({
-    email: email.toLowerCase(), password: hashedPassword, firstName, lastName,
-    role: role || "student", phone: phone || null, currentLevel: currentLevel || null,
-  }).returning();
+  let user: any;
+  try {
+    [user] = await db.insert(usersTable).values({
+      email: email.toLowerCase(), password: hashedPassword, firstName, lastName,
+      role: role || "student", phone: phone || null, currentLevel: currentLevel || null,
+    }).returning();
+  } catch (dbErr: any) {
+    if (dbErr?.code === "23505") {
+      res.status(409).json({ error: `"${email}" e-posta adresi zaten kayıtlı.` });
+    } else {
+      res.status(500).json({ error: `Kullanıcı oluşturulamadı: ${dbErr?.message ?? "Bilinmeyen hata"}` });
+    }
+    return;
+  }
 
   // Öğrenci numarası ata: SE-YYYY-NNNN formatı
   const sYear = new Date(user.createdAt).getFullYear();
