@@ -157,7 +157,16 @@ router.post("/live-classes/:id/join", authMiddleware, async (req: AuthRequest, r
     await db.insert(liveClassAttendanceTable).values({ liveClassId, studentId, joinedAt: now });
     const [user] = await db.select().from(usersTable).where(eq(usersTable.id, studentId)).limit(1);
     if (user) {
-      await db.update(usersTable).set({ totalPoints: user.totalPoints + 15, updatedAt: new Date() }).where(eq(usersTable.id, studentId));
+      const today = new Date().toISOString().split("T")[0];
+      const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
+      const newStreak = user.lastActiveDate === yesterday ? user.streak + 1
+        : user.lastActiveDate === today ? user.streak : 1;
+      await db.update(usersTable).set({
+        totalPoints: user.totalPoints + 15,
+        streak: newStreak,
+        lastActiveDate: today,
+        updatedAt: new Date(),
+      }).where(eq(usersTable.id, studentId));
     }
   }
 
