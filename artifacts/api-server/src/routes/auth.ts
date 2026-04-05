@@ -107,8 +107,16 @@ router.post("/auth/register", async (req, res) => {
     companyId: company.id,
   }).returning();
 
-  const token = generateToken(user.id, user.role);
-  const { password: _, ...userWithoutPassword } = user;
+  // Öğrenci numarası ata: SE-YYYY-NNNN formatı
+  const year = new Date(user.createdAt).getFullYear();
+  const studentNumber = `SE-${year}-${String(user.id).padStart(4, "0")}`;
+  const [updatedUser] = await db.update(usersTable)
+    .set({ studentNumber })
+    .where(eq(usersTable.id, user.id))
+    .returning();
+
+  const token = generateToken(updatedUser.id, updatedUser.role);
+  const { password: _, ...userWithoutPassword } = updatedUser;
   const companyInfo = { id: company.id, name: company.name, code: company.code };
   res.status(201).json({ user: { ...userWithoutPassword, company: companyInfo }, token });
 });

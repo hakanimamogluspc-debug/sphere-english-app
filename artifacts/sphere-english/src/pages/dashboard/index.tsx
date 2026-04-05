@@ -27,9 +27,31 @@ function useAnnouncements() {
 function StudentDashboard() {
   const { data: stats } = useGetDashboardStats();
   const { data: progress } = useGetMyProgress();
+  const { user } = useAuth();
 
   return (
     <div className="space-y-8">
+      {/* Öğrenci Kimlik Bandı */}
+      {(user as any)?.studentNumber && (
+        <div className="flex items-center justify-between bg-primary/5 border border-primary/20 rounded-xl px-5 py-3">
+          <div className="flex items-center gap-3">
+            <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
+              <span className="text-primary font-bold text-sm">{user?.firstName?.[0]}{user?.lastName?.[0]}</span>
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-foreground">{user?.firstName} {user?.lastName}</p>
+              <p className="text-xs text-muted-foreground">Öğrenci</p>
+            </div>
+          </div>
+          <div className="text-right">
+            <p className="text-xs text-muted-foreground mb-0.5">Öğrenci No</p>
+            <span className="font-mono font-bold text-primary text-sm bg-primary/10 px-3 py-1 rounded-lg">
+              {(user as any).studentNumber}
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* İstatistik Kartları */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card className="bg-gradient-to-br from-primary to-primary/80 text-white border-0">

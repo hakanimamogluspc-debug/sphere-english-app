@@ -32,6 +32,7 @@ router.get("/users", authMiddleware, requireRole("admin"), async (req: AuthReque
     totalPoints: usersTable.totalPoints,
     streak: usersTable.streak,
     badges: usersTable.badges,
+    studentNumber: usersTable.studentNumber,
     createdAt: usersTable.createdAt,
   }).from(usersTable).where(query).limit(Number(limit)).offset(offset);
 
@@ -74,7 +75,16 @@ router.post("/users", authMiddleware, requireRole("admin"), async (req: AuthRequ
     email: email.toLowerCase(), password: hashedPassword, firstName, lastName,
     role: role || "student", phone: phone || null, currentLevel: currentLevel || null,
   }).returning();
-  const { password: _, ...userWithoutPassword } = user;
+
+  // Öğrenci numarası ata: SE-YYYY-NNNN formatı
+  const sYear = new Date(user.createdAt).getFullYear();
+  const studentNumber = `SE-${sYear}-${String(user.id).padStart(4, "0")}`;
+  const [userWithNum] = await db.update(usersTable)
+    .set({ studentNumber })
+    .where(eq(usersTable.id, user.id))
+    .returning();
+
+  const { password: _, ...userWithoutPassword } = userWithNum;
 
   // Otomatik hoş geldin maili — öğretmen rolü + onay kutusu işaretli ise
   if (role === "teacher" && sendWelcomeEmail !== false) {

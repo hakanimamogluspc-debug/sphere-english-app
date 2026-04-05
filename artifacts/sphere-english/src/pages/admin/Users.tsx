@@ -211,6 +211,7 @@ export default function AdminUsers() {
               <thead className="bg-secondary/50 text-muted-foreground">
                 <tr>
                   <th className="px-6 py-4 font-semibold">Kullanıcı</th>
+                  <th className="px-6 py-4 font-semibold">Öğrenci No</th>
                   <th className="px-6 py-4 font-semibold">Rol</th>
                   <th className="px-6 py-4 font-semibold">Seviye / Puan</th>
                   <th className="px-6 py-4 font-semibold">Kayıt Tarihi</th>
@@ -219,7 +220,7 @@ export default function AdminUsers() {
               </thead>
               <tbody className="divide-y divide-border">
                 {isLoading ? (
-                  <tr><td colSpan={5} className="p-8 text-center text-muted-foreground">Kullanıcılar yükleniyor...</td></tr>
+                  <tr><td colSpan={6} className="p-8 text-center text-muted-foreground">Kullanıcılar yükleniyor...</td></tr>
                 ) : usersData?.users?.map(user => (
                   <tr key={user.id} className="hover:bg-secondary/20 transition-colors">
                     <td className="px-6 py-4">
@@ -233,6 +234,15 @@ export default function AdminUsers() {
                           {user.phone && <p className="text-xs text-muted-foreground">{user.phone}</p>}
                         </div>
                       </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      {(user as any).studentNumber ? (
+                        <span className="inline-flex items-center gap-1.5 bg-primary/10 text-primary font-mono font-semibold text-xs px-2.5 py-1 rounded-lg">
+                          {(user as any).studentNumber}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground text-xs">—</span>
+                      )}
                     </td>
                     <td className="px-6 py-4">
                       <Badge variant={user.role === 'admin' ? 'destructive' : user.role === 'teacher' ? 'success' : user.role === 'corporate' ? 'warning' : 'default'}>
