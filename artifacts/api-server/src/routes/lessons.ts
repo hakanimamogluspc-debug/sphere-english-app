@@ -2,6 +2,7 @@ import { Router } from "express";
 import { db, lessonsTable, lessonProgressTable, usersTable } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 import { authMiddleware, requireRole, type AuthRequest } from "../middlewares/auth.js";
+import { applyActivityStreak } from "../utils/streak.js";
 
 const router = Router();
 
@@ -68,20 +69,8 @@ router.post("/lessons/:id/complete", authMiddleware, async (req: AuthRequest, re
     await db.insert(lessonProgressTable).values({ userId, lessonId, completed: true, completedAt: new Date(), pointsEarned: LESSON_POINTS });
   }
 
-  // Add points + update streak
-  const today = new Date().toISOString().split("T")[0];
-  const [user] = await db.select().from(usersTable).where(eq(usersTable.id, userId)).limit(1);
-  if (user) {
-    const lastActive = user.lastActiveDate;
-    const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
-    const newStreak = lastActive === yesterday ? user.streak + 1 : lastActive === today ? user.streak : 1;
-    await db.update(usersTable).set({
-      totalPoints: user.totalPoints + LESSON_POINTS,
-      streak: newStreak,
-      lastActiveDate: today,
-      updatedAt: new Date(),
-    }).where(eq(usersTable.id, userId));
-  }
+  // Add points + update streak (yeni kural: aktif gün +1, atlanan gün -2)
+  await applyActivityStreak(userId, LESSON_POINTS);
 
   res.json({ lessonId, completed: true, completedAt: new Date().toISOString(), pointsEarned: LESSON_POINTS });
 });

@@ -10,6 +10,7 @@ import path from "path";
 import { db } from "@workspace/db";
 import { usersTable } from "@workspace/db/schema";
 import { eq } from "drizzle-orm";
+import { applyActivityStreak, computeEffectiveStreak } from "../utils/streak.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -398,28 +399,12 @@ router.post(
 router.post("/pronunciation/practice-streak", authMiddleware, async (req: Request, res: Response) => {
   try {
     const userId = (req as any).userId as number;
-    const [user] = await db.select().from(usersTable).where(eq(usersTable.id, userId)).limit(1);
-    if (!user) return res.status(404).json({ error: "Kullanıcı bulunamadı." });
-
-    const today = new Date().toISOString().split("T")[0];
-    const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
-
-    // Bugün zaten streak alındıysa (ders ya da pratik), tekrar verme
-    if (user.lastActiveDate === today) {
-      return res.json({ streakUpdated: false, streak: user.streak, totalPoints: user.totalPoints, message: "Bugün zaten aktifsin." });
-    }
-
     const PRACTICE_POINTS = 20;
-    const newStreak = user.lastActiveDate === yesterday ? user.streak + 1 : 1;
-
-    await db.update(usersTable).set({
-      totalPoints: user.totalPoints + PRACTICE_POINTS,
-      streak: newStreak,
-      lastActiveDate: today,
-      updatedAt: new Date(),
-    }).where(eq(usersTable.id, userId));
-
-    return res.json({ streakUpdated: true, streak: newStreak, totalPoints: user.totalPoints + PRACTICE_POINTS, pointsEarned: PRACTICE_POINTS });
+    const result = await applyActivityStreak(userId, PRACTICE_POINTS);
+    if (result.alreadyActiveToday) {
+      return res.json({ streakUpdated: false, streak: result.newStreak, totalPoints: result.newTotalPoints, message: "Bugün zaten aktifsin." });
+    }
+    return res.json({ streakUpdated: true, streak: result.newStreak, totalPoints: result.newTotalPoints, pointsEarned: PRACTICE_POINTS });
   } catch (err: any) {
     console.error("Practice streak error:", err?.message || err);
     return res.status(500).json({ error: "Streak güncellenemedi." });

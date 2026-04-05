@@ -3,6 +3,7 @@ import { db, liveClassesTable, liveClassAttendanceTable, usersTable, coursesTabl
 import { eq, and, gte, lte, count, desc, ilike, or } from "drizzle-orm";
 import { authMiddleware, requireRole, type AuthRequest } from "../middlewares/auth.js";
 import { createZoomMeeting, deleteZoomMeeting, zoomConfigured } from "../services/zoom.js";
+import { applyActivityStreak } from "../utils/streak.js";
 
 const router = Router();
 
@@ -155,19 +156,7 @@ router.post("/live-classes/:id/join", authMiddleware, async (req: AuthRequest, r
 
   if (!existing) {
     await db.insert(liveClassAttendanceTable).values({ liveClassId, studentId, joinedAt: now });
-    const [user] = await db.select().from(usersTable).where(eq(usersTable.id, studentId)).limit(1);
-    if (user) {
-      const today = new Date().toISOString().split("T")[0];
-      const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
-      const newStreak = user.lastActiveDate === yesterday ? user.streak + 1
-        : user.lastActiveDate === today ? user.streak : 1;
-      await db.update(usersTable).set({
-        totalPoints: user.totalPoints + 15,
-        streak: newStreak,
-        lastActiveDate: today,
-        updatedAt: new Date(),
-      }).where(eq(usersTable.id, studentId));
-    }
+    await applyActivityStreak(studentId, 15);
   }
 
   res.json({ success: true, meetingLink: lc.meetingLink });

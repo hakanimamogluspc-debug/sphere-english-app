@@ -2,6 +2,7 @@ import { Router } from "express";
 import { db, usersTable, coursesTable, enrollmentsTable, liveClassesTable, messagesTable, certificatesTable } from "@workspace/db";
 import { eq, and, gte, count } from "drizzle-orm";
 import { authMiddleware, requireRole, type AuthRequest } from "../middlewares/auth.js";
+import { computeEffectiveStreak } from "../utils/streak.js";
 
 const router = Router();
 
@@ -20,10 +21,11 @@ router.get("/dashboard/stats", authMiddleware, async (req: AuthRequest, res) => 
 
   if (role === "student") {
     const [{ enrolled }] = await db.select({ enrolled: count() }).from(enrollmentsTable).where(eq(enrollmentsTable.studentId, userId));
+    const effectiveStreak = user ? computeEffectiveStreak(user.streak, user.lastActiveDate) : 0;
     res.json({
       role,
       totalPoints: user?.totalPoints || 0,
-      streak: user?.streak || 0,
+      streak: effectiveStreak,
       level: user?.currentLevel || null,
       enrolledCourses: Number(enrolled),
       completedLessons: 0,
