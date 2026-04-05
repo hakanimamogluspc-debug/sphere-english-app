@@ -634,25 +634,44 @@ export default function PronunciationCoach() {
 
   return (
     <div className="flex flex-col h-[calc(100vh-64px)] bg-gray-50">
-      {/* ── Header ── */}
-      <div className="flex items-center gap-3 px-4 py-2.5 bg-white border-b border-gray-100 flex-shrink-0">
+      {/* ── Header (avatar + status entegre) ── */}
+      <div className="flex items-center gap-3 px-4 py-2 bg-white border-b border-gray-100 flex-shrink-0">
         <button onClick={handleBack} className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition">
           <ChevronLeft size={20} />
         </button>
-        <img src={`/images/${teacher.image}`} alt={teacher.name} className="w-8 h-8 rounded-full object-cover shadow" />
-        <div className="flex-1 min-w-0">
-          <p className="font-semibold text-gray-900 text-sm">{teacher.flag} {teacher.name}</p>
-          <p className="text-xs text-gray-400">{teacher.accentLabel} · AI Konuşma Koçu</p>
+
+        {/* Avatar with phase ring */}
+        <div className="relative flex-shrink-0">
+          <AnimatePresence>
+            {isSpeaking && (
+              <motion.div key="hdr-speak" className="absolute inset-0 rounded-full"
+                style={{ border: `2px solid ${teacher.color}` }}
+                initial={{ opacity: 0.8, scale: 1 }} animate={{ opacity: 0, scale: 1.5 }} exit={{ opacity: 0 }}
+                transition={{ duration: 1, repeat: Infinity, ease: "easeOut" }} />
+            )}
+            {isRecording && (
+              <motion.div key="hdr-rec" className="absolute inset-0 rounded-full border-2 border-red-400"
+                animate={{ opacity: [1, 0.3, 1] }} transition={{ duration: 1, repeat: Infinity }} />
+            )}
+          </AnimatePresence>
+          <img src={`/images/${teacher.image}`} alt={teacher.name}
+            className="w-10 h-10 rounded-full object-cover shadow relative z-10" />
+          {/* Status dot */}
+          <span className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white z-20 ${
+            isRecording ? "bg-red-500" : isSpeaking ? "bg-green-400" : isProcessing ? "bg-yellow-400" : "bg-gray-300"
+          }`} />
         </div>
+
+        <div className="flex-1 min-w-0">
+          <p className="font-semibold text-gray-900 text-sm leading-tight">{teacher.flag} {teacher.name}</p>
+          <p className="text-xs leading-tight mt-0.5" style={{ color: isRecording ? "#EF4444" : isSpeaking ? "#10B981" : isProcessing ? "#F59E0B" : "#9CA3AF" }}>
+            {isRecording ? "Dinliyorum..." : isSpeaking ? "Konuşuyor..." : isProcessing ? "Düşünüyor..." : `${teacher.accentLabel} · AI Koç`}
+          </p>
+        </div>
+
         <button onClick={() => { setMessages([]); }} className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition" title="Sohbeti sıfırla">
           <RotateCcw size={15} />
         </button>
-      </div>
-
-      {/* ── Coach Avatar Area ── */}
-      <div className="flex-shrink-0 flex flex-col items-center pt-3 pb-2 bg-white border-b border-gray-100"
-        style={{ background: `linear-gradient(180deg, ${teacher.color}08 0%, white 100%)` }}>
-        <CoachAvatar teacher={teacher} phase={phase} />
       </div>
 
       {/* ── Chat Messages ── */}
