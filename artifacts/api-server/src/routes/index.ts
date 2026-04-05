@@ -23,6 +23,7 @@ import materialsRouter from "./materials";
 import pronunciationRouter from "./pronunciation";
 import writingRouter from "./writing";
 import marketingRouter from "./marketing";
+import activityRouter from "./activity";
 
 const router: IRouter = Router();
 
@@ -50,5 +51,6 @@ router.use(materialsRouter);
 router.use(pronunciationRouter);
 router.use(writingRouter);
 router.use(marketingRouter);
+router.use(activityRouter);
 
 export default router;

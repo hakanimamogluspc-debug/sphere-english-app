@@ -10,3 +10,4 @@ export * from "./speaking-clubs";
 export * from "./forum";
 export * from "./materials";
 export * from "./marketing";
+export * from "./activity-logs";

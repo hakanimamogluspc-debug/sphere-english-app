@@ -52,6 +52,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       { name: 'Speaking Club', href: '/admin/speaking-club', icon: Mic },
       { name: 'Duyurular', href: '/admin/announcements', icon: Megaphone },
       { name: 'Sistem Raporları', href: '/admin/reports', icon: LineChart },
+      { name: 'MEB Aktivite Raporu', href: '/admin/meb-report', icon: BarChart3 },
       { name: 'Pazarlama & E-posta', href: '/admin/marketing', icon: TrendingUp },
     ],
     corporate: [

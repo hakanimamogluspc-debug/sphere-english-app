@@ -1,0 +1,41 @@
+eplit Agent İçin "MEB Compliant Reporting Engine" Promptu
+Role: EdTech Compliance Officer & Backend Architect
+Task: Implementation of MEB-Ready Activity Tracking & Reporting System
+Methodology: Chain-of-Thought (Audit-Proof Logic)
+
+Context:
+Sphere English platformunun MEB özel öğretim kurumları standartlarına uyum sağlaması için, öğrencilerin ders çalışma sürelerini ve aktivitelerini saniye hassasiyetinde kaydeden bir raporlama motoruna ihtiyacımız var.
+
+Lütfen şu CoT adımlarını izleyerek sistemi inşa et:
+
+Adım 1 - Veritabanı Şeması (Logging Layer):
+
+Analiz: Sadece "tamamlandı" (boolean) değeri yetersizdir. Denetim için "zaman damgalı" (timestamp) verilere ihtiyaç var.
+
+Eylem: UserActivityLogs adında yeni bir tablo oluştur. Şu sütunları içermeli: user_id, course_id, lesson_id, start_time, end_time, duration_seconds (saf izleme süresi) ve device_info.
+
+Adım 2 - Heartbeat (Nabız) Mekanizması:
+
+Analiz: Öğrenci videoyu açıp uyuyabilir veya sekmeyi kapatabilir. Gerçek izleme süresini nasıl anlarız?
+
+Eylem: Ders oynatıcı sayfasına (Lesson Player) her 30 saniyede bir sunucuya "Hala buradayım" sinyali gönderen bir Heartbeat JS fonksiyonu ekle. Eğer video durdurulursa veya sekme pasifleşirse (Page Visibility API) sayacı durdur.
+
+Adım 3 - MEB Standartlarında Rapor Üretimi (PDF Export):
+
+Analiz: Müfettişlerin istediği format genellikle "Öğrenci Bazlı Katılım Çizelgesi"dir.
+
+Eylem: Yönetici paneline (Admin Dashboard) bir "MEB Rapor Altyapısı" ekle.
+
+Belirli bir tarih aralığında, öğrencinin toplam sistemde kalma süresini ve bitirdiği derslerin kronolojik listesini dökümleyen profesyonel bir PDF oluştur.
+
+PDF'de Olivamore projesindeki _tr() karakter düzeltmelerini ve Sphere English kurumsal logosunu kullan.
+
+Adım 4 - Veri Tutarlılığı ve Manipülasyon Engelleme:
+
+Analiz: Bir öğrenci manuel olarak "dersi bitir" butonuna basarsa ama videoyu izlememişse ne olacak?
+
+Eylem: "Dersi Tamamla" butonunu, videonun en az %90'ı izlenmeden aktif hale getirme (Server-side validation).
+
+Adım 5 - UI Görselleştirme:
+
+Eylem: Öğrenci profil sayfasında, kullanıcının o haftaki toplam çalışma saatini gösteren "Haftalık Isı Haritası" (Github benzeri) veya detaylı bir bar chart oluştur.

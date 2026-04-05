@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { TrendingUp, BookOpen, CheckCircle, Star, Flame, Zap } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
+import WeeklyHeatmap from "@/components/WeeklyHeatmap";
 
 export default function ProgressPage() {
   const { data: progress, isLoading } = useGetMyProgress();
@@ -90,29 +91,13 @@ export default function ProgressPage() {
       </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Haftalık Aktivite */}
+        {/* Haftalık Aktivite Isı Haritası */}
         <Card>
           <CardHeader>
-            <CardTitle>Haftalık Aktivite</CardTitle>
+            <CardTitle>Haftalık Çalışma Takibi</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-[250px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={progress?.weeklyActivity || []}>
-                  <defs>
-                    <linearGradient id="colorActivity" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="hsl(var(--accent))" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="hsl(var(--accent))" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
-                  <XAxis dataKey="date" tickFormatter={(v) => new Date(v).toLocaleDateString('tr-TR', {weekday: 'short'})} axisLine={false} tickLine={false} />
-                  <YAxis axisLine={false} tickLine={false} />
-                  <Tooltip contentStyle={{ borderRadius: '12px', border: 'none' }} />
-                  <Area type="monotone" dataKey="pointsEarned" stroke="hsl(var(--accent))" strokeWidth={2} fill="url(#colorActivity)" name="Puan" />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
+            <WeeklyHeatmap />
           </CardContent>
         </Card>
 
