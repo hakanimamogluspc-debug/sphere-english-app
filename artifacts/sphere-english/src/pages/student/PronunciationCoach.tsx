@@ -59,7 +59,7 @@ function CoachAvatar({
             <motion.div
               key="speak-ring"
               className="absolute rounded-full"
-              style={{ width: 220, height: 220, border: `3px solid ${teacher.color}` }}
+              style={{ width: 130, height: 130, border: `3px solid ${teacher.color}` }}
               initial={{ opacity: 0.8, scale: 1 }}
               animate={{ opacity: 0, scale: 1.4 }}
               exit={{ opacity: 0 }}
@@ -70,7 +70,7 @@ function CoachAvatar({
             <motion.div
               key="speak-ring2"
               className="absolute rounded-full"
-              style={{ width: 220, height: 220, border: `2px solid ${teacher.color}` }}
+              style={{ width: 130, height: 130, border: `2px solid ${teacher.color}` }}
               initial={{ opacity: 0.6, scale: 1 }}
               animate={{ opacity: 0, scale: 1.25 }}
               exit={{ opacity: 0 }}
@@ -85,7 +85,7 @@ function CoachAvatar({
             <motion.div
               key={`listen-${i}`}
               className="absolute rounded-full"
-              style={{ width: 200, height: 200, border: "2px solid #EF4444" }}
+              style={{ width: 120, height: 120, border: "2px solid #EF4444" }}
               initial={{ opacity: 0.7, scale: 1 }}
               animate={{ opacity: 0, scale: 1.3 + i * 0.15 }}
               exit={{ opacity: 0 }}
@@ -99,7 +99,7 @@ function CoachAvatar({
           <motion.div
             className="absolute rounded-full"
             style={{
-              width: 210, height: 210,
+              width: 125, height: 125,
               border: `3px solid transparent`,
               borderTopColor: teacher.color,
               borderRightColor: teacher.color,
@@ -112,7 +112,7 @@ function CoachAvatar({
         {/* Avatar image */}
         <motion.div
           className="relative rounded-full overflow-hidden shadow-2xl"
-          style={{ width: 180, height: 180 }}
+          style={{ width: 100, height: 100 }}
           animate={isSpeaking
             ? { scale: [1, 1.015, 1, 1.01, 1] }
             : isListening
@@ -650,7 +650,7 @@ export default function PronunciationCoach() {
       </div>
 
       {/* ── Coach Avatar Area ── */}
-      <div className="flex-shrink-0 flex flex-col items-center pt-5 pb-4 bg-white border-b border-gray-100"
+      <div className="flex-shrink-0 flex flex-col items-center pt-3 pb-2 bg-white border-b border-gray-100"
         style={{ background: `linear-gradient(180deg, ${teacher.color}08 0%, white 100%)` }}>
         <CoachAvatar teacher={teacher} phase={phase} />
       </div>
