@@ -205,21 +205,22 @@ async def _generate_hint(word: str, turkish: str, category: str) -> str:
                     {
                         "role": "system",
                         "content": (
-                            "You are a helpful English vocabulary tutor. "
-                            "Generate a single short hint (1-2 sentences) that helps someone guess an English word. "
-                            "NEVER use the word itself, its plural/conjugated forms, or its direct Turkish translation in the hint."
+                            "Sen İngilizce kelime öğretiminde uzman bir Türkçe asistansın. "
+                            "Kullanıcının İngilizce bir kelimeyi tahmin etmesine yardımcı olacak kısa bir ipucu ver (1-2 cümle). "
+                            "İpucunu TAMAMEN TÜRKÇE yaz. "
+                            "Kesinlikle kelimenin kendisini, çoğul/çekimli hallerini veya doğrudan Türkçe karşılığını kullanma."
                         ),
                     },
                     {
                         "role": "user",
                         "content": (
-                            f"Generate a helpful hint for the English word '{word}' "
-                            f"(category: {category}, Turkish: {turkish}). "
-                            f"Do NOT use '{word}' or '{turkish}' in the hint."
+                            f"'{word}' İngilizce kelimesi için Türkçe bir ipucu yaz "
+                            f"(kategori: {category}, Türkçesi: {turkish}). "
+                            f"İpucunda '{word}' veya '{turkish}' kelimelerini kullanma. Sadece Türkçe yaz."
                         ),
                     },
                 ],
-                max_tokens=80,
+                max_tokens=100,
                 temperature=0.7,
             )
             return resp.choices[0].message.content.strip()
@@ -227,18 +228,28 @@ async def _generate_hint(word: str, turkish: str, category: str) -> str:
             print(f"OpenAI error: {e}")
 
     fallback_hints = {
-        "animals": f"This is a living creature. Think about its size, habitat, and what it eats or how it moves.",
-        "food": "You might find this in a kitchen or on a restaurant menu. Think about its taste, texture or colour.",
-        "colors": "This is used to describe the appearance of objects and the world around us.",
-        "technology": "This relates to modern devices or digital concepts used in everyday life.",
-        "nature": "You can find this in the natural world, perhaps outdoors or in the environment.",
-        "emotions": "This describes a feeling or mental state that people experience in everyday life.",
-        "verbs": "This is an action — something a person or animal does.",
-        "adjectives": "This is a describing word used to tell us more about a person, place or thing.",
-        "places": "This is a location or type of building that people visit or live in.",
-        "transport": "This is a vehicle or mode of getting from one place to another.",
+        "animals": "Bu canlı bir varlık. Boyutunu, yaşadığı ortamı ve nasıl hareket ettiğini düşün.",
+        "food": "Bunu bir mutfakta veya restoran menüsünde bulabilirsin. Tadını, dokusunu veya rengini düşün.",
+        "colors": "Bu, nesnelerin ve etrafımızdaki dünyanın görünümünü tanımlamak için kullanılır.",
+        "technology": "Bu, günlük hayatta kullanılan modern cihazlar veya dijital kavramlarla ilgilidir.",
+        "nature": "Bunu doğal dünyada, belki dışarıda veya çevrede bulabilirsin.",
+        "emotions": "Bu, insanların günlük hayatta deneyimlediği bir duygu veya ruh halini tanımlar.",
+        "verbs": "Bu bir eylem — bir kişinin veya hayvanın yaptığı bir şey.",
+        "adjectives": "Bu, bir kişi, yer veya nesne hakkında daha fazla bilgi veren tanımlayıcı bir kelimedir.",
+        "places": "Bu, insanların ziyaret ettiği veya yaşadığı bir yer veya bina türüdür.",
+        "transport": "Bu, bir yerden başka bir yere gitmek için kullanılan bir araç veya ulaşım şeklidir.",
+        "family": "Bu, aile içindeki bir akrabalık ilişkisini veya rolü tanımlar.",
+        "body": "Bu, insan vücudunun bir parçasıyla ilgilidir.",
+        "clothing": "Bu, insanların giydiği veya taktığı bir şeydir.",
+        "house": "Bu, evde ya da evle ilgili bir nesne veya kavramdır.",
+        "weather": "Bu, dışarıdaki hava koşullarını veya doğa olaylarını tanımlar.",
+        "business": "Bu, iş dünyası veya ticaretle ilgili bir kavramdır.",
+        "health": "Bu, sağlık, tıp veya vücut bakımıyla ilgilidir.",
+        "education": "Bu, öğrenme, okul veya eğitimle ilgili bir kavramdır.",
+        "sports": "Bu, spor veya fiziksel aktiviteyle ilgilidir.",
+        "time": "Bu, zaman, süre veya tarihi ifade etmek için kullanılır.",
     }
-    return fallback_hints.get(category, f"This word belongs to the '{category}' category. Think about common vocabulary related to this topic!")
+    return fallback_hints.get(category, f"Bu kelime '{category}' kategorisine ait. Bu konuyla ilgili yaygın kelimeleri düşün!")
 
 
 @router.post("/game/finish")
