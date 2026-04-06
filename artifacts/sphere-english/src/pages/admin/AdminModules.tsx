@@ -39,9 +39,11 @@ const MODULE_ICONS: Record<string, React.ElementType> = {
 };
 
 const ROLE_OPTIONS = [
-  { value: "student", label: "Öğrenci", color: "bg-blue-100 text-blue-700 border-blue-200" },
-  { value: "teacher", label: "Öğretmen", color: "bg-purple-100 text-purple-700 border-purple-200" },
-  { value: "admin", label: "Admin", color: "bg-orange-100 text-orange-700 border-orange-200" },
+  { value: "student",          label: "Tüm Öğrenciler",      color: "bg-blue-100 text-blue-700 border-blue-200" },
+  { value: "bireysel_ogrenci", label: "Bireysel Öğrenci",    color: "bg-cyan-100 text-cyan-700 border-cyan-200" },
+  { value: "kurumsal_ogrenci", label: "Kurumsal Öğrenci",    color: "bg-indigo-100 text-indigo-700 border-indigo-200" },
+  { value: "teacher",          label: "Öğretmen",            color: "bg-purple-100 text-purple-700 border-purple-200" },
+  { value: "admin",            label: "Admin",               color: "bg-orange-100 text-orange-700 border-orange-200" },
 ];
 
 const CATEGORY_LABELS: Record<string, string> = {

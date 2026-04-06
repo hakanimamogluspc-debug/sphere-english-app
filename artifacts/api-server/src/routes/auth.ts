@@ -25,7 +25,7 @@ router.post("/auth/login", async (req, res) => {
     return;
   }
 
-  const token = generateToken(user.id, user.role);
+  const token = generateToken(user.id, user.role, (user as any).accountType);
   const { password: _, ...userWithoutPassword } = user;
 
   let companyInfo = null;
@@ -71,16 +71,17 @@ router.post("/auth/register", async (req, res) => {
       role: "student",
       phone: phone || null,
       companyId: null,
-    }).returning();
+      accountType: "bireysel",
+    } as any).returning();
 
     const year = new Date(user.createdAt).getFullYear();
     const studentNumber = `SE-${year}-${String(user.id).padStart(4, "0")}`;
     const [updatedUser] = await db.update(usersTable)
-      .set({ studentNumber })
+      .set({ studentNumber } as any)
       .where(eq(usersTable.id, user.id))
       .returning();
 
-    const token = generateToken(updatedUser.id, updatedUser.role);
+    const token = generateToken(updatedUser.id, updatedUser.role, "bireysel");
     const { password: _, ...userWithoutPassword } = updatedUser;
 
     res.cookie("sphere_token", token, {
@@ -148,17 +149,18 @@ router.post("/auth/register", async (req, res) => {
     role: assignedRole,
     phone: phone || null,
     companyId: company.id,
-  }).returning();
+    accountType: "kurumsal",
+  } as any).returning();
 
   // Öğrenci numarası ata: SE-YYYY-NNNN formatı
   const year = new Date(user.createdAt).getFullYear();
   const studentNumber = `SE-${year}-${String(user.id).padStart(4, "0")}`;
   const [updatedUser] = await db.update(usersTable)
-    .set({ studentNumber })
+    .set({ studentNumber } as any)
     .where(eq(usersTable.id, user.id))
     .returning();
 
-  const token = generateToken(updatedUser.id, updatedUser.role);
+  const token = generateToken(updatedUser.id, updatedUser.role, "kurumsal");
   const { password: _, ...userWithoutPassword } = updatedUser;
   const companyInfo = { id: company.id, name: company.name, code: company.code };
 

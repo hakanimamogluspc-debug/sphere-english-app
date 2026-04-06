@@ -38,6 +38,7 @@ router.get("/users", authMiddleware, requireRole("admin"), async (req: AuthReque
     streak: usersTable.streak,
     badges: usersTable.badges,
     studentNumber: usersTable.studentNumber,
+    accountType: (usersTable as any).accountType,
     createdAt: usersTable.createdAt,
   }).from(usersTable).where(query).limit(Number(limit)).offset(offset);
 

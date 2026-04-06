@@ -26,6 +26,11 @@ async function runStartupMigrations() {
       category VARCHAR(50) NOT NULL DEFAULT 'general',
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )`,
+    // account_type kolonu — bireysel/kurumsal ayrımı için
+    `ALTER TABLE users ADD COLUMN IF NOT EXISTS account_type VARCHAR(20)`,
+    // Mevcut öğrencileri sınıflandır
+    `UPDATE users SET account_type = 'bireysel' WHERE company_id IS NULL AND role = 'student' AND account_type IS NULL`,
+    `UPDATE users SET account_type = 'kurumsal' WHERE company_id IS NOT NULL AND role = 'student' AND account_type IS NULL`,
     // Varsayılan modülleri ekle (zaten varsa atla)
     `INSERT INTO feature_settings (key, label, is_enabled, visible_to, category) VALUES
       ('student-materials',           'Materyallerim',          true, ARRAY['student']::TEXT[],             'student'),

@@ -101,6 +101,16 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     if (!setting) return true; // Ayar henüz yüklenmediyse göster
     if (!setting.isEnabled) return false;
     const role = user?.role ?? "student";
+    const accountType = (user as any)?.accountType as string | undefined;
+
+    if (role === "student") {
+      // "student" = tüm öğrenciler
+      if (setting.visibleTo.includes("student")) return true;
+      // Spesifik tip kontrolü
+      if (accountType === "bireysel" && setting.visibleTo.includes("bireysel_ogrenci")) return true;
+      if (accountType === "kurumsal" && setting.visibleTo.includes("kurumsal_ogrenci")) return true;
+      return false;
+    }
     return setting.visibleTo.includes(role);
   }
 

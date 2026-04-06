@@ -182,6 +182,23 @@ export default function AdminUsers() {
     corporate: "Kurum Yetkilisi",
   };
 
+  function getUserRoleLabel(user: any): string {
+    if (user.role === "student") {
+      if (user.accountType === "bireysel") return "Bireysel Öğrenci";
+      if (user.accountType === "kurumsal") return "Kurumsal Öğrenci";
+      return "Öğrenci";
+    }
+    return roleLabel[user.role] || user.role;
+  }
+
+  function getUserBadgeVariant(user: any): "default" | "destructive" | "success" | "warning" | "outline" {
+    if (user.role === "admin") return "destructive";
+    if (user.role === "teacher") return "success";
+    if (user.role === "corporate") return "warning";
+    if (user.role === "student" && user.accountType === "bireysel") return "outline";
+    return "default";
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -245,8 +262,8 @@ export default function AdminUsers() {
                       )}
                     </td>
                     <td className="px-6 py-4">
-                      <Badge variant={user.role === 'admin' ? 'destructive' : user.role === 'teacher' ? 'success' : user.role === 'corporate' ? 'warning' : 'default'}>
-                        {roleLabel[user.role] || user.role}
+                      <Badge variant={getUserBadgeVariant(user)}>
+                        {getUserRoleLabel(user)}
                       </Badge>
                     </td>
                     <td className="px-6 py-4">
