@@ -1,0 +1,1101 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vocab Quest — Sphere English</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet" />
+  <style>
+    /* ── Design Tokens ── */
+    :root {
+      --navy-900: #07111E;
+      --navy-800: #0D1B2A;
+      --navy-700: #122240;
+      --navy-600: #1A3158;
+      --navy-500: #1E3A5F;
+      --gold-400: #E0B84A;
+      --gold-500: #C9A227;
+      --gold-600: #A07D10;
+      --gold-glow: rgba(201,162,39,0.18);
+      --cream:    #F0EAD6;
+      --cream-muted: #B8A98C;
+      --muted:    #5C7A9A;
+      --success:  #3DAA6B;
+      --error:    #C94444;
+      --warn:     #E09A27;
+      --card-border: rgba(201,162,39,0.20);
+      --shadow: 0 8px 32px rgba(0,0,0,0.45);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--navy-900);
+      color: var(--cream);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Animated background */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background: radial-gradient(ellipse at 20% 20%, rgba(201,162,39,0.06) 0%, transparent 60%),
+                  radial-gradient(ellipse at 80% 80%, rgba(30,58,95,0.5) 0%, transparent 60%);
+      pointer-events: none;
+    }
+
+    /* ── Layout ── */
+    .app { max-width: 680px; margin: 0 auto; padding: 24px 16px 48px; }
+
+    /* ── Header ── */
+    .header {
+      text-align: center;
+      padding: 32px 0 24px;
+    }
+    .header-logo {
+      font-family: 'Playfair Display', serif;
+      font-size: 2rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--gold-400), var(--gold-500));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: 0.02em;
+    }
+    .header-sub {
+      font-size: 0.8rem;
+      color: var(--muted);
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      margin-top: 4px;
+    }
+
+    /* ── Card ── */
+    .card {
+      background: var(--navy-700);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 32px 28px;
+      box-shadow: var(--shadow);
+      position: relative;
+      overflow: hidden;
+    }
+    .card::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--gold-500), transparent);
+    }
+
+    /* ── Buttons ── */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      padding: 14px 28px;
+      border-radius: 12px;
+      font-family: inherit;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s ease;
+      letter-spacing: 0.02em;
+    }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--gold-500), var(--gold-400));
+      color: var(--navy-900);
+    }
+    .btn-primary:hover:not(:disabled) {
+      background: linear-gradient(135deg, var(--gold-400), var(--gold-500));
+      box-shadow: 0 0 20px var(--gold-glow);
+      transform: translateY(-1px);
+    }
+
+    .btn-outline {
+      background: transparent;
+      color: var(--gold-500);
+      border: 1.5px solid var(--gold-500);
+    }
+    .btn-outline:hover:not(:disabled) {
+      background: var(--gold-glow);
+      transform: translateY(-1px);
+    }
+
+    .btn-ghost {
+      background: rgba(255,255,255,0.05);
+      color: var(--cream-muted);
+      border: 1.5px solid rgba(255,255,255,0.08);
+    }
+    .btn-ghost:hover:not(:disabled) { background: rgba(255,255,255,0.09); }
+
+    .btn-danger {
+      background: rgba(201,68,68,0.15);
+      color: var(--error);
+      border: 1.5px solid rgba(201,68,68,0.3);
+    }
+
+    .btn-block { width: 100%; display: flex; }
+    .btn-sm { padding: 10px 20px; font-size: 0.875rem; }
+    .btn-lg { padding: 16px 36px; font-size: 1.05rem; }
+
+    /* ── Input ── */
+    .input {
+      width: 100%;
+      background: var(--navy-800);
+      border: 1.5px solid rgba(201,162,39,0.2);
+      border-radius: 12px;
+      padding: 14px 18px;
+      color: var(--cream);
+      font-family: inherit;
+      font-size: 1rem;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .input:focus {
+      border-color: var(--gold-500);
+      box-shadow: 0 0 0 3px rgba(201,162,39,0.12);
+    }
+    .input::placeholder { color: var(--muted); }
+    .input.success { border-color: var(--success); }
+    .input.error { border-color: var(--error); }
+
+    /* ── Level Badge ── */
+    .level-badge {
+      display: inline-flex; align-items: center;
+      padding: 4px 12px;
+      border-radius: 100px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+    }
+    .level-A1 { background: rgba(61,170,107,0.15); color: #3DAA6B; border: 1px solid rgba(61,170,107,0.3); }
+    .level-A2 { background: rgba(61,140,170,0.15); color: #3D9AAA; border: 1px solid rgba(61,140,170,0.3); }
+    .level-B1 { background: rgba(97,130,201,0.15); color: #6182C9; border: 1px solid rgba(97,130,201,0.3); }
+    .level-B2 { background: rgba(147,97,201,0.15); color: #9361C9; border: 1px solid rgba(147,97,201,0.3); }
+    .level-C1 { background: rgba(201,162,39,0.15); color: var(--gold-400); border: 1px solid rgba(201,162,39,0.3); }
+    .level-C2 { background: rgba(201,68,68,0.15); color: #E07070; border: 1px solid rgba(201,68,68,0.3); }
+    .level-mixed { background: rgba(255,255,255,0.08); color: var(--cream-muted); border: 1px solid rgba(255,255,255,0.12); }
+
+    /* ── Progress Bar ── */
+    .progress-track {
+      height: 6px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 100px;
+      overflow: hidden;
+      margin: 12px 0 4px;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--gold-600), var(--gold-400));
+      border-radius: 100px;
+      transition: width 0.5s ease;
+    }
+
+    /* ── Score ── */
+    .score-display {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--gold-400);
+    }
+    .score-label { font-size: 0.78rem; color: var(--muted); font-weight: 400; }
+
+    /* ── Image Prompt Box ── */
+    .prompt-box {
+      background: var(--navy-800);
+      border: 1px solid rgba(201,162,39,0.15);
+      border-radius: 16px;
+      padding: 28px 24px;
+      margin: 20px 0;
+      position: relative;
+    }
+    .prompt-icon {
+      font-size: 2.5rem;
+      margin-bottom: 12px;
+      display: block;
+    }
+    .prompt-text {
+      font-size: 1.05rem;
+      line-height: 1.7;
+      color: var(--cream);
+      font-style: italic;
+    }
+    .prompt-category {
+      margin-top: 12px;
+      font-size: 0.78rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    /* ── Hint Box ── */
+    .hint-box {
+      background: rgba(201,162,39,0.07);
+      border: 1px solid rgba(201,162,39,0.2);
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin: 12px 0;
+      font-size: 0.92rem;
+      color: var(--gold-400);
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }
+    .hint-icon { font-size: 1.2rem; flex-shrink: 0; margin-top: 1px; }
+
+    /* ── Answer Feedback ── */
+    .feedback {
+      padding: 12px 20px;
+      border-radius: 12px;
+      margin: 12px 0;
+      font-weight: 600;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .feedback.correct {
+      background: rgba(61,170,107,0.12);
+      color: var(--success);
+      border: 1px solid rgba(61,170,107,0.25);
+    }
+    .feedback.wrong {
+      background: rgba(201,68,68,0.12);
+      color: var(--error);
+      border: 1px solid rgba(201,68,68,0.25);
+    }
+    .feedback.skipped {
+      background: rgba(224,154,39,0.12);
+      color: var(--warn);
+      border: 1px solid rgba(224,154,39,0.25);
+    }
+
+    /* ── Level Select Grid ── */
+    .level-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin: 16px 0;
+    }
+    .level-card {
+      border: 1.5px solid rgba(255,255,255,0.1);
+      border-radius: 14px;
+      padding: 16px 10px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: var(--navy-800);
+    }
+    .level-card:hover { border-color: var(--gold-500); background: rgba(201,162,39,0.06); }
+    .level-card.selected {
+      border-color: var(--gold-500);
+      background: rgba(201,162,39,0.1);
+      box-shadow: 0 0 0 3px rgba(201,162,39,0.12);
+    }
+    .level-card-badge { font-size: 1.1rem; font-weight: 700; }
+    .level-card-desc { font-size: 0.72rem; color: var(--muted); margin-top: 4px; }
+
+    /* ── Stats Row ── */
+    .stats-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin: 16px 0;
+    }
+    .stat-item { text-align: center; }
+    .stat-val { font-size: 1.6rem; font-weight: 700; color: var(--gold-400); }
+    .stat-lbl { font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
+
+    /* ── Leaderboard ── */
+    .lb-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .lb-row:last-child { border-bottom: none; }
+    .lb-rank {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 0.85rem;
+      flex-shrink: 0;
+    }
+    .lb-rank-1 { background: linear-gradient(135deg, #FFD700, #FFA500); color: #1a1a00; }
+    .lb-rank-2 { background: linear-gradient(135deg, #C0C0C0, #A8A8A8); color: #1a1a1a; }
+    .lb-rank-3 { background: linear-gradient(135deg, #CD7F32, #A0522D); color: #fff; }
+    .lb-rank-n { background: var(--navy-600); color: var(--muted); }
+    .lb-name { flex: 1; font-weight: 500; }
+    .lb-score { font-weight: 700; color: var(--gold-400); font-size: 1.1rem; }
+    .lb-meta { font-size: 0.75rem; color: var(--muted); }
+
+    /* ── Retry List ── */
+    .retry-word {
+      padding: 12px 16px;
+      border-radius: 12px;
+      background: var(--navy-800);
+      border: 1px solid rgba(255,255,255,0.06);
+      margin: 6px 0;
+    }
+    .retry-word-en { font-weight: 700; font-size: 1rem; }
+    .retry-word-tr { font-size: 0.83rem; color: var(--muted); margin-top: 2px; }
+
+    /* ── Sections ── */
+    .screen { display: none; }
+    .screen.active { display: block; }
+
+    .section-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.35rem;
+      font-weight: 700;
+      margin-bottom: 4px;
+      color: var(--cream);
+    }
+    .section-sub { font-size: 0.85rem; color: var(--muted); margin-bottom: 24px; }
+
+    label { font-size: 0.85rem; color: var(--cream-muted); margin-bottom: 6px; display: block; font-weight: 500; }
+
+    /* ── Game Header ── */
+    .game-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 8px;
+    }
+
+    /* ── Attempts Dots ── */
+    .attempts-row {
+      display: flex; gap: 6px; margin-top: 8px;
+    }
+    .attempt-dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: rgba(255,255,255,0.12);
+    }
+    .attempt-dot.used { background: var(--error); }
+    .attempt-dot.correct { background: var(--success); }
+
+    /* ── Nav Tabs ── */
+    .nav-tabs {
+      display: flex; gap: 0; border-bottom: 1px solid rgba(255,255,255,0.08);
+      margin-bottom: 24px;
+    }
+    .nav-tab {
+      padding: 10px 20px;
+      font-size: 0.88rem; font-weight: 500;
+      color: var(--muted);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+      background: none; border-top: none; border-left: none; border-right: none;
+      font-family: inherit;
+    }
+    .nav-tab.active {
+      color: var(--gold-400);
+      border-bottom-color: var(--gold-400);
+    }
+    .nav-tab:hover:not(.active) { color: var(--cream-muted); }
+
+    /* ── Toast ── */
+    .toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; }
+    .toast {
+      padding: 12px 20px;
+      border-radius: 10px;
+      font-size: 0.88rem;
+      font-weight: 500;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+      animation: slide-in 0.3s ease;
+    }
+    .toast.success { background: #1C4532; color: #68D391; border: 1px solid #2F855A; }
+    .toast.error   { background: #431C1C; color: #FC8181; border: 1px solid #822727; }
+    .toast.info    { background: var(--navy-600); color: var(--gold-400); border: 1px solid rgba(201,162,39,0.3); }
+    @keyframes slide-in { from { opacity:0; transform: translateX(20px); } to { opacity:1; transform: translateX(0); } }
+
+    /* ── Spinner ── */
+    .spinner {
+      width: 20px; height: 20px;
+      border: 2px solid rgba(201,162,39,0.3);
+      border-top-color: var(--gold-500);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      display: inline-block;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Result Circle ── */
+    .result-circle {
+      width: 120px; height: 120px;
+      border-radius: 50%;
+      border: 4px solid var(--gold-500);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      margin: 0 auto 24px;
+      background: rgba(201,162,39,0.07);
+    }
+    .result-score { font-size: 2.2rem; font-weight: 700; color: var(--gold-400); line-height: 1; }
+    .result-score-label { font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
+
+    /* ── Responsive ── */
+    @media (max-width: 480px) {
+      .card { padding: 24px 18px; }
+      .level-grid { grid-template-columns: repeat(2, 1fr); }
+      .stats-row { gap: 8px; }
+      .stat-val { font-size: 1.3rem; }
+    }
+  </style>
+</head>
+<body>
+<div class="toast-container" id="toastContainer"></div>
+
+<div class="app">
+  <div class="header">
+    <div class="header-logo">Vocab Quest</div>
+    <div class="header-sub">Sphere English — AI Kelime Oyunu</div>
+  </div>
+
+  <!-- ══════════ LANDING SCREEN ══════════ -->
+  <div class="screen active" id="screenLanding">
+    <div class="card">
+      <div class="section-title">Oyuna Başla</div>
+      <div class="section-sub">Seviyeni seç, adını yaz ve kelimeleri tahmin et!</div>
+
+      <label>Adın</label>
+      <input class="input" id="usernameInput" type="text" placeholder="İsmin..." maxlength="30" />
+
+      <label style="margin-top:20px;">Seviye Seç</label>
+      <div class="level-grid" id="levelGrid">
+        <div class="level-card" data-level="mixed" onclick="selectLevel(this)">
+          <div class="level-card-badge level-badge level-mixed">Karma</div>
+          <div class="level-card-desc">Tüm seviyeler</div>
+        </div>
+        <div class="level-card selected" data-level="A1" onclick="selectLevel(this)">
+          <div class="level-card-badge level-badge level-A1">A1</div>
+          <div class="level-card-desc">Başlangıç</div>
+        </div>
+        <div class="level-card" data-level="A2" onclick="selectLevel(this)">
+          <div class="level-card-badge level-badge level-A2">A2</div>
+          <div class="level-card-desc">Temel</div>
+        </div>
+        <div class="level-card" data-level="B1" onclick="selectLevel(this)">
+          <div class="level-card-badge level-badge level-B1">B1</div>
+          <div class="level-card-desc">Orta</div>
+        </div>
+        <div class="level-card" data-level="B2" onclick="selectLevel(this)">
+          <div class="level-card-badge level-badge level-B2">B2</div>
+          <div class="level-card-desc">Üst Orta</div>
+        </div>
+        <div class="level-card" data-level="C1" onclick="selectLevel(this)">
+          <div class="level-card-badge level-badge level-C1">C1</div>
+          <div class="level-card-desc">İleri</div>
+        </div>
+      </div>
+
+      <label style="margin-top:20px;">Tur Uzunluğu</label>
+      <div style="display:flex; gap:8px; margin-bottom:24px;">
+        <button class="btn btn-ghost btn-sm word-count-btn selected" data-count="10" onclick="selectCount(this)">10 Kelime</button>
+        <button class="btn btn-ghost btn-sm word-count-btn" data-count="15" onclick="selectCount(this)">15 Kelime</button>
+        <button class="btn btn-ghost btn-sm word-count-btn" data-count="20" onclick="selectCount(this)">20 Kelime</button>
+      </div>
+
+      <button class="btn btn-primary btn-block btn-lg" onclick="startGame()">
+        <span>🎯</span> Oyunu Başlat
+      </button>
+
+      <div style="text-align:center; margin-top:16px;">
+        <button class="btn btn-ghost btn-sm" onclick="showScreen('screenLeaderboard'); loadLeaderboard()">
+          🏆 Lider Tablosu
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ GAME SCREEN ══════════ -->
+  <div class="screen" id="screenGame">
+    <div class="card">
+      <!-- Header -->
+      <div class="game-header">
+        <div>
+          <div class="score-display">
+            <span id="currentScore">0</span>
+            <span class="score-label">puan</span>
+          </div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:0.8rem; color:var(--muted);" id="progressLabel">1 / 10</div>
+          <div style="margin-top:4px;" id="levelBadgeContainer"></div>
+        </div>
+      </div>
+
+      <!-- Progress Bar -->
+      <div class="progress-track">
+        <div class="progress-fill" id="progressFill" style="width:0%"></div>
+      </div>
+
+      <!-- Prompt -->
+      <div class="prompt-box" id="promptBox">
+        <span class="prompt-icon" id="promptIcon">🖼️</span>
+        <div class="prompt-text" id="promptText">Yükleniyor...</div>
+        <div class="prompt-category" id="promptCategory"></div>
+      </div>
+
+      <!-- Attempts Dots -->
+      <div class="attempts-row" id="attemptsDots">
+        <div class="attempt-dot" id="dot1"></div>
+        <div class="attempt-dot" id="dot2"></div>
+        <div class="attempt-dot" id="dot3"></div>
+      </div>
+
+      <!-- Hint Box -->
+      <div class="hint-box" id="hintBox" style="display:none;">
+        <span class="hint-icon">💡</span>
+        <span id="hintText"></span>
+      </div>
+
+      <!-- Feedback -->
+      <div class="feedback" id="feedbackBox" style="display:none;"></div>
+
+      <!-- Input -->
+      <div style="margin-top:16px;">
+        <input
+          class="input"
+          id="guessInput"
+          type="text"
+          placeholder="İngilizce kelimeyi yaz..."
+          autocomplete="off"
+          autocorrect="off"
+          spellcheck="false"
+          onkeydown="if(event.key==='Enter') submitGuess()"
+        />
+      </div>
+
+      <!-- Action Buttons -->
+      <div style="display:flex; gap:10px; margin-top:12px;">
+        <button class="btn btn-primary" style="flex:1;" onclick="submitGuess()" id="submitBtn">
+          Cevapla ✓
+        </button>
+        <button class="btn btn-outline btn-sm" onclick="requestHint()" id="hintBtn">
+          💡 İpucu
+        </button>
+        <button class="btn btn-ghost btn-sm" onclick="skipWord()" id="skipBtn" title="Kelimeyi atla">
+          ⏭
+        </button>
+      </div>
+
+      <div style="margin-top:16px; display:flex; justify-content:space-between; align-items:center;">
+        <span style="font-size:0.78rem; color:var(--muted);">
+          💡 Hint: <strong id="hintsCostLabel">-5 puan</strong>
+        </span>
+        <button class="btn btn-ghost btn-sm" onclick="quitGame()" style="font-size:0.75rem; padding:6px 14px; color:var(--muted);">
+          Bırak
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ RESULT SCREEN ══════════ -->
+  <div class="screen" id="screenResult">
+    <div class="card">
+      <div class="section-title" style="text-align:center;">Oyun Bitti! 🎉</div>
+
+      <div class="result-circle">
+        <div class="result-score" id="resultScore">0</div>
+        <div class="result-score-label">PUAN</div>
+      </div>
+
+      <div class="stats-row">
+        <div class="stat-item">
+          <div class="stat-val" id="resultCorrect">—</div>
+          <div class="stat-lbl">Doğru</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-val" id="resultTotal">—</div>
+          <div class="stat-lbl">Toplam</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-val" id="resultAccuracy">—</div>
+          <div class="stat-lbl">Başarı</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-val" id="resultHints">—</div>
+          <div class="stat-lbl">İpucu</div>
+        </div>
+      </div>
+
+      <!-- Retry List -->
+      <div id="retrySection" style="display:none;">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+          <div style="font-weight:600; color:var(--warn);">📝 Tekrar Listesi</div>
+          <span style="font-size:0.78rem; color:var(--muted);" id="retryCount"></span>
+        </div>
+        <div id="retryList"></div>
+      </div>
+
+      <div style="display:flex; gap:10px; margin-top:24px; flex-wrap:wrap;">
+        <button class="btn btn-primary" style="flex:1;" onclick="showScreen('screenLanding')">
+          🔄 Tekrar Oyna
+        </button>
+        <button class="btn btn-outline btn-sm" onclick="showScreen('screenLeaderboard'); loadLeaderboard()">
+          🏆 Lider Tablosu
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ LEADERBOARD SCREEN ══════════ -->
+  <div class="screen" id="screenLeaderboard">
+    <div class="card">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
+        <div class="section-title" style="margin-bottom:0;">🏆 Lider Tablosu</div>
+        <button class="btn btn-ghost btn-sm" onclick="showScreen('screenLanding')">← Geri</button>
+      </div>
+
+      <!-- Filter Tabs -->
+      <div class="nav-tabs">
+        <button class="nav-tab active" onclick="filterLB(this,'all')">Tümü</button>
+        <button class="nav-tab" onclick="filterLB(this,'A1')">A1</button>
+        <button class="nav-tab" onclick="filterLB(this,'A2')">A2</button>
+        <button class="nav-tab" onclick="filterLB(this,'B1')">B1</button>
+        <button class="nav-tab" onclick="filterLB(this,'B2')">B2</button>
+        <button class="nav-tab" onclick="filterLB(this,'C1')">C1</button>
+      </div>
+
+      <div id="leaderboardList">
+        <div style="text-align:center; color:var(--muted); padding:32px;">Yükleniyor...</div>
+      </div>
+
+      <!-- Stats Footer -->
+      <div style="margin-top:20px; padding-top:16px; border-top:1px solid rgba(255,255,255,0.06);">
+        <div class="stats-row">
+          <div class="stat-item">
+            <div class="stat-val" id="statWords">—</div>
+            <div class="stat-lbl">Toplam Kelime</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-val" id="statGames">—</div>
+            <div class="stat-lbl">Oyun Sayısı</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-val" id="statHighScore">—</div>
+            <div class="stat-lbl">En Yüksek Puan</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════
+   STATE
+════════════════════════════════════ */
+const state = {
+  sessionId: null,
+  wordId: null,
+  totalWords: 10,
+  wordsCount: 10,
+  selectedLevel: 'A1',
+  selectedCount: 10,
+  attempts: 0,
+  hintUsed: false,
+  hintsLoading: false,
+  guessLoading: false,
+  currentWordIndex: 0,
+  lbLevel: 'all',
+};
+
+const CATEGORY_ICONS = {
+  animals: '🐾', colors: '🎨', family: '👨‍👩‍👧', body: '🫀',
+  food: '🍎', clothing: '👕', house: '🏠', nature: '🌿',
+  transport: '🚗', verbs: '⚡', adjectives: '✨', time: '⏰',
+  emotions: '💭', weather: '🌤', places: '📍', technology: '💻',
+  business: '💼', health: '🩺', education: '📚', society: '🌍',
+  professional: '🤝', environment: '♻️', science: '🔬',
+  sports: '⚽', culture: '🎭', travel: '✈️', finance: '💰',
+  stationery: '✏️', communication: '💬', household: '🏠',
+  academic: '🎓', abstract: '🔮', advanced: '⭐',
+};
+
+/* ═══════════════════════════════════
+   SCREEN MANAGEMENT
+════════════════════════════════════ */
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+/* ═══════════════════════════════════
+   LEVEL & COUNT SELECTION
+════════════════════════════════════ */
+function selectLevel(el) {
+  document.querySelectorAll('.level-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  state.selectedLevel = el.dataset.level;
+}
+
+function selectCount(el) {
+  document.querySelectorAll('.word-count-btn').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+  state.selectedCount = parseInt(el.dataset.count);
+}
+
+/* ═══════════════════════════════════
+   GAME START
+════════════════════════════════════ */
+async function startGame() {
+  const username = document.getElementById('usernameInput').value.trim();
+  if (!username) { toast('Lütfen adını gir!', 'error'); return; }
+  if (username.length < 2) { toast('Ad en az 2 karakter olmalı.', 'error'); return; }
+
+  showScreen('screenGame');
+  resetGameUI();
+
+  const resp = await apiFetch('/api/game/start', 'POST', {
+    username,
+    level: state.selectedLevel,
+    words_count: state.selectedCount,
+  });
+  if (!resp) { showScreen('screenLanding'); return; }
+
+  state.sessionId = resp.session_id;
+  state.totalWords = resp.total_words;
+  await loadNextWord();
+}
+
+/* ═══════════════════════════════════
+   LOAD NEXT WORD
+════════════════════════════════════ */
+async function loadNextWord() {
+  resetWordUI();
+  document.getElementById('promptText').textContent = 'Yükleniyor...';
+  document.getElementById('promptIcon').textContent = '⏳';
+
+  const data = await apiFetch(`/api/game/word?session_id=${state.sessionId}`);
+  if (!data) return;
+
+  if (data.done) {
+    await finishGame();
+    return;
+  }
+
+  state.wordId = data.word_id;
+  state.attempts = 0;
+  state.hintUsed = false;
+  state.currentWordIndex = data.word_index;
+
+  const icon = CATEGORY_ICONS[data.category] || '📖';
+  document.getElementById('promptIcon').textContent = icon;
+  document.getElementById('promptText').textContent = data.image_prompt;
+  document.getElementById('promptCategory').textContent = `Kategori: ${data.category}`;
+
+  const levelBadge = `<span class="level-badge level-${data.level}">${data.level}</span>`;
+  document.getElementById('levelBadgeContainer').innerHTML = levelBadge;
+
+  const done = data.words_seen;
+  const total = data.total_words;
+  const pct = Math.round((done / total) * 100);
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressLabel').textContent = `${done + 1} / ${total}`;
+  document.getElementById('currentScore').textContent = data.current_score;
+
+  document.getElementById('guessInput').focus();
+}
+
+/* ═══════════════════════════════════
+   SUBMIT GUESS
+════════════════════════════════════ */
+async function submitGuess() {
+  if (state.guessLoading) return;
+  const guess = document.getElementById('guessInput').value.trim();
+  if (!guess) { toast('Bir kelime yaz!', 'error'); return; }
+
+  state.guessLoading = true;
+  document.getElementById('submitBtn').disabled = true;
+
+  const data = await apiFetch('/api/game/guess', 'POST', {
+    session_id: state.sessionId,
+    word_id: state.wordId,
+    guess,
+  });
+
+  state.guessLoading = false;
+  document.getElementById('submitBtn').disabled = false;
+  if (!data) return;
+
+  state.attempts = data.attempts;
+  updateAttemptDots(data.correct ? 'correct' : 'wrong');
+
+  const fb = document.getElementById('feedbackBox');
+  fb.style.display = 'flex';
+
+  if (data.correct) {
+    document.getElementById('guessInput').classList.add('success');
+    fb.className = 'feedback correct';
+    fb.innerHTML = `<span>✅</span> <span>Harika! <strong>${data.score_gained}</strong> puan kazandın! Türkçesi: <strong>${data.turkish}</strong></span>`;
+    toast('Doğru! +' + data.score_gained + ' puan 🎉', 'success');
+    document.getElementById('currentScore').textContent =
+      parseInt(document.getElementById('currentScore').textContent) + data.score_gained;
+    disableInput();
+    await pause(1800);
+    await loadNextWord();
+  } else if (data.added_to_retry) {
+    document.getElementById('guessInput').classList.add('error');
+    fb.className = 'feedback skipped';
+    fb.innerHTML = `<span>⚠️</span> <span>3 hak bitti! Doğru kelime: <strong>${data.correct_word}</strong> (${data.turkish}) — Tekrar listesine eklendi.</span>`;
+    disableInput();
+    await pause(2200);
+    await loadNextWord();
+  } else {
+    const remaining = 3 - data.attempts;
+    fb.className = 'feedback wrong';
+    fb.innerHTML = `<span>❌</span> <span>Yanlış! <strong>${remaining}</strong> hakkın kaldı.</span>`;
+    document.getElementById('guessInput').value = '';
+    document.getElementById('guessInput').focus();
+  }
+}
+
+/* ═══════════════════════════════════
+   SKIP WORD
+════════════════════════════════════ */
+async function skipWord() {
+  if (state.attempts === 0) state.attempts = 3;
+  for (let i = 0; i < 3; i++) {
+    await apiFetch('/api/game/guess', 'POST', {
+      session_id: state.sessionId,
+      word_id: state.wordId,
+      guess: '___skip___',
+    });
+    const data = await apiFetch(`/api/game/word?session_id=${state.sessionId}`);
+    if (!data || data.done) break;
+    if (data.word_id !== state.wordId) break;
+  }
+  await loadNextWord();
+}
+
+/* ═══════════════════════════════════
+   HINT
+════════════════════════════════════ */
+async function requestHint() {
+  if (state.hintsLoading || state.hintUsed) return;
+  state.hintsLoading = true;
+
+  const btn = document.getElementById('hintBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>';
+
+  const data = await apiFetch(`/api/game/hint?session_id=${state.sessionId}&word_id=${state.wordId}`);
+
+  state.hintsLoading = false;
+  btn.disabled = false;
+  btn.innerHTML = '💡 İpucu';
+
+  if (!data) return;
+  state.hintUsed = true;
+
+  const hintBox = document.getElementById('hintBox');
+  document.getElementById('hintText').textContent = data.hint;
+  hintBox.style.display = 'flex';
+  btn.innerHTML = '✓ Kullanıldı';
+  btn.disabled = true;
+  toast('İpucu: yanlış cevap verilirse puan -5.', 'info');
+}
+
+/* ═══════════════════════════════════
+   FINISH GAME
+════════════════════════════════════ */
+async function finishGame() {
+  const data = await apiFetch(`/api/game/finish?session_id=${state.sessionId}`, 'POST', null, true);
+  if (!data) { showScreen('screenLanding'); return; }
+
+  document.getElementById('resultScore').textContent = data.score;
+  document.getElementById('resultCorrect').textContent = data.words_correct;
+  document.getElementById('resultTotal').textContent = data.words_seen;
+  document.getElementById('resultAccuracy').textContent = data.accuracy + '%';
+  document.getElementById('resultHints').textContent = data.hints_used;
+
+  if (data.retry_list && data.retry_list.length > 0) {
+    document.getElementById('retrySection').style.display = 'block';
+    document.getElementById('retryCount').textContent = `${data.retry_list.length} kelime`;
+    const rl = document.getElementById('retryList');
+    rl.innerHTML = data.retry_list.map(w => `
+      <div class="retry-word">
+        <div class="retry-word-en">🔁 ${w.word}</div>
+        <div class="retry-word-tr">${w.turkish}</div>
+        <div style="font-size:0.75rem; color:var(--muted); margin-top:4px; font-style:italic;">${w.image_prompt.slice(0, 80)}…</div>
+      </div>
+    `).join('');
+  } else {
+    document.getElementById('retrySection').style.display = 'none';
+  }
+
+  showScreen('screenResult');
+}
+
+/* ═══════════════════════════════════
+   QUIT GAME
+════════════════════════════════════ */
+async function quitGame() {
+  if (confirm('Oyundan çıkmak istediğine emin misin?')) {
+    if (state.sessionId) await finishGame();
+    else showScreen('screenLanding');
+  }
+}
+
+/* ═══════════════════════════════════
+   LEADERBOARD
+════════════════════════════════════ */
+async function loadLeaderboard() {
+  document.getElementById('leaderboardList').innerHTML =
+    '<div style="text-align:center; color:var(--muted); padding:32px;">Yükleniyor...</div>';
+
+  const data = await apiFetch(`/api/scores/leaderboard?level=${state.lbLevel}&limit=15`);
+  const stats = await apiFetch('/api/scores/stats');
+
+  if (stats) {
+    document.getElementById('statWords').textContent = stats.total_words;
+    document.getElementById('statGames').textContent = stats.total_games;
+    document.getElementById('statHighScore').textContent = stats.high_score;
+  }
+
+  if (!data || data.leaderboard.length === 0) {
+    document.getElementById('leaderboardList').innerHTML =
+      '<div style="text-align:center; color:var(--muted); padding:32px;">Henüz kayıt yok. İlk sıraya sen gir! 🚀</div>';
+    return;
+  }
+
+  const rankClass = (r) => r === 1 ? 'lb-rank-1' : r === 2 ? 'lb-rank-2' : r === 3 ? 'lb-rank-3' : 'lb-rank-n';
+  const rankLabel = (r) => r === 1 ? '🥇' : r === 2 ? '🥈' : r === 3 ? '🥉' : r;
+
+  document.getElementById('leaderboardList').innerHTML = data.leaderboard.map(e => `
+    <div class="lb-row">
+      <div class="lb-rank ${rankClass(e.rank)}">${rankLabel(e.rank)}</div>
+      <div>
+        <div class="lb-name">${e.username}</div>
+        <div class="lb-meta">
+          <span class="level-badge level-${e.level}">${e.level}</span>
+          ${e.words_correct}/${e.total_words} doğru
+        </div>
+      </div>
+      <div class="lb-score">${e.score}</div>
+    </div>
+  `).join('');
+}
+
+function filterLB(el, level) {
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  state.lbLevel = level;
+  loadLeaderboard();
+}
+
+/* ═══════════════════════════════════
+   UI HELPERS
+════════════════════════════════════ */
+function resetGameUI() {
+  document.getElementById('currentScore').textContent = '0';
+  document.getElementById('progressFill').style.width = '0%';
+  document.getElementById('progressLabel').textContent = '1 / ' + state.selectedCount;
+  document.getElementById('levelBadgeContainer').innerHTML = '';
+}
+
+function resetWordUI() {
+  document.getElementById('guessInput').value = '';
+  document.getElementById('guessInput').className = 'input';
+  document.getElementById('guessInput').disabled = false;
+  document.getElementById('submitBtn').disabled = false;
+  document.getElementById('hintBtn').disabled = false;
+  document.getElementById('hintBtn').innerHTML = '💡 İpucu';
+  document.getElementById('hintBox').style.display = 'none';
+  document.getElementById('feedbackBox').style.display = 'none';
+  document.getElementById('dot1').className = 'attempt-dot';
+  document.getElementById('dot2').className = 'attempt-dot';
+  document.getElementById('dot3').className = 'attempt-dot';
+  state.attempts = 0;
+  state.hintUsed = false;
+}
+
+function updateAttemptDots(result) {
+  const dots = ['dot1', 'dot2', 'dot3'];
+  const idx = state.attempts - 1;
+  if (idx >= 0 && idx < 3) {
+    document.getElementById(dots[idx]).className = `attempt-dot ${result}`;
+  }
+}
+
+function disableInput() {
+  document.getElementById('guessInput').disabled = true;
+  document.getElementById('submitBtn').disabled = true;
+  document.getElementById('hintBtn').disabled = true;
+  document.getElementById('skipBtn').disabled = true;
+}
+
+function pause(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+/* ═══════════════════════════════════
+   API FETCH
+════════════════════════════════════ */
+async function apiFetch(url, method = 'GET', body = null, noBody = false) {
+  try {
+    const opts = {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+    };
+    if (body && !noBody) opts.body = JSON.stringify(body);
+    if (noBody && method === 'POST') opts.body = undefined;
+
+    const resp = await fetch(url, opts);
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({ detail: 'Sunucu hatası' }));
+      toast(err.detail || 'Bir hata oluştu', 'error');
+      return null;
+    }
+    return await resp.json();
+  } catch (e) {
+    toast('Bağlantı hatası: ' + e.message, 'error');
+    return null;
+  }
+}
+
+/* ═══════════════════════════════════
+   TOAST
+════════════════════════════════════ */
+function toast(msg, type = 'info') {
+  const container = document.getElementById('toastContainer');
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.textContent = msg;
+  container.appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
+/* ═══════════════════════════════════
+   SELECTED STATE STYLING
+════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', () => {
+  // Pre-select A1 level card
+  const cards = document.querySelectorAll('.level-card');
+  cards.forEach(c => { if (c.dataset.level === 'A1') c.classList.add('selected'); });
+});
+
+// Style selected word count buttons
+document.querySelectorAll('.word-count-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.word-count-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+  });
+});
+</script>
+
+<style>
+/* Selected button state */
+.btn-ghost.selected {
+  border-color: var(--gold-500) !important;
+  color: var(--gold-400) !important;
+  background: rgba(201,162,39,0.1) !important;
+}
+</style>
+</body>
+</html>
