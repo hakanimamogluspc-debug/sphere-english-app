@@ -45,22 +45,58 @@ router.post("/auth/login", async (req, res) => {
 });
 
 router.post("/auth/register", async (req, res) => {
-  const { email, password, firstName, lastName, role, phone, companyCode } = req.body;
+  const { email, password, firstName, lastName, role, phone, companyCode, accountType } = req.body;
   if (!email || !password || !firstName || !lastName) {
     res.status(400).json({ error: "Zorunlu alanlar eksik" });
     return;
   }
 
+  const isBireysel = accountType === "bireysel";
   const assignedRole = role === "corporate" ? "corporate" : "student";
-
-  if (!companyCode) {
-    res.status(400).json({ error: "Kurum kodu zorunludur" });
-    return;
-  }
 
   const [existing] = await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase())).limit(1);
   if (existing) {
     res.status(400).json({ error: "Bu email adresi zaten kullanımda" });
+    return;
+  }
+
+  // ── Bireysel kayıt (kurum kodu olmadan) ──────────────────────────────────
+  if (isBireysel) {
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const [user] = await db.insert(usersTable).values({
+      email: email.toLowerCase(),
+      password: hashedPassword,
+      firstName,
+      lastName,
+      role: "student",
+      phone: phone || null,
+      companyId: null,
+    }).returning();
+
+    const year = new Date(user.createdAt).getFullYear();
+    const studentNumber = `SE-${year}-${String(user.id).padStart(4, "0")}`;
+    const [updatedUser] = await db.update(usersTable)
+      .set({ studentNumber })
+      .where(eq(usersTable.id, user.id))
+      .returning();
+
+    const token = generateToken(updatedUser.id, updatedUser.role);
+    const { password: _, ...userWithoutPassword } = updatedUser;
+
+    res.cookie("sphere_token", token, {
+      httpOnly: true,
+      sameSite: "lax",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      secure: process.env.NODE_ENV === "production",
+    });
+
+    res.status(201).json({ user: { ...userWithoutPassword, company: null }, token });
+    return;
+  }
+
+  // ── Kurumsal kayıt (kurum kodu zorunlu) ──────────────────────────────────
+  if (!companyCode) {
+    res.status(400).json({ error: "Kurum kodu zorunludur" });
     return;
   }
 

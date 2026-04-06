@@ -5,35 +5,55 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button, Input, Label, Card } from "@/components/ui/core";
-import { Mail, Lock, User, AlertCircle, Phone, Hash, GraduationCap, Briefcase } from "lucide-react";
-import { motion } from "framer-motion";
+import { Mail, Lock, User, AlertCircle, Phone, Hash, GraduationCap, Briefcase, Building2, UserCircle } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
-const registerSchema = z.object({
+// ── Bireysel şema (kurum kodu yok) ────────────────────────────────────────────
+const bireyselSchema = z.object({
+  firstName: z.string().min(2, "Ad zorunludur"),
+  lastName: z.string().min(2, "Soyad zorunludur"),
+  email: z.string().email("Geçerli bir e-posta adresi giriniz"),
+  password: z.string().min(6, "Şifre en az 6 karakter olmalıdır"),
+  phone: z.string().optional(),
+});
+
+// ── Kurumsal şema (kurum kodu zorunlu) ────────────────────────────────────────
+const kurumsalSchema = z.object({
   firstName: z.string().min(2, "Ad zorunludur"),
   lastName: z.string().min(2, "Soyad zorunludur"),
   email: z.string().email("Geçerli bir e-posta adresi giriniz"),
   password: z.string().min(6, "Şifre en az 6 karakter olmalıdır"),
   phone: z.string().optional(),
   companyCode: z.string().min(3, "Kurum kodu zorunludur"),
-  role: z.enum(["student", "corporate"]),
 });
 
-type RegisterForm = z.infer<typeof registerSchema>;
+type BireyselForm = z.infer<typeof bireyselSchema>;
+type KurumsalForm = z.infer<typeof kurumsalSchema>;
 
 export default function Register() {
   const { register: registerUser } = useAuth();
   const [error, setError] = useState<string | null>(null);
-  const [selectedRole, setSelectedRole] = useState<"student" | "corporate">("student");
+  const [accountType, setAccountType] = useState<"bireysel" | "kurumsal">("bireysel");
+  const [kurumsalRole, setKurumsalRole] = useState<"student" | "corporate">("student");
 
-  const { register, handleSubmit, setValue, formState: { errors, isSubmitting } } = useForm<RegisterForm>({
-    resolver: zodResolver(registerSchema),
-    defaultValues: { role: "student" }
-  });
+  const bireyselForm = useForm<BireyselForm>({ resolver: zodResolver(bireyselSchema) });
+  const kurumsalForm = useForm<KurumsalForm>({ resolver: zodResolver(kurumsalSchema) });
 
-  const onSubmit = async (data: RegisterForm) => {
+  const isSubmitting = bireyselForm.formState.isSubmitting || kurumsalForm.formState.isSubmitting;
+
+  const onBireyselSubmit = async (data: BireyselForm) => {
     try {
       setError(null);
-      await registerUser({ ...data, role: selectedRole as any });
+      await (registerUser as any)({ ...data, role: "student", accountType: "bireysel" });
+    } catch (err: any) {
+      setError(err.message || "Kayıt olunamadı. Lütfen tekrar deneyin.");
+    }
+  };
+
+  const onKurumsalSubmit = async (data: KurumsalForm) => {
+    try {
+      setError(null);
+      await (registerUser as any)({ ...data, role: kurumsalRole, accountType: "kurumsal" });
     } catch (err: any) {
       setError(err.message || "Kayıt olunamadı. Lütfen tekrar deneyin.");
     }
@@ -46,7 +66,11 @@ export default function Register() {
         <div className="absolute inset-0 bg-gradient-to-t from-primary via-primary/50 to-transparent" />
         <div className="absolute bottom-12 left-12 right-12 text-white">
           <h3 className="text-3xl font-display font-bold mb-4">Öğrenme yolculuğunuza bugün başlayın.</h3>
-          <p className="text-lg text-white/80">Kurumunuzdan aldığınız kod ile hemen kayıt olun.</p>
+          <p className="text-lg text-white/80">
+            {accountType === "bireysel"
+              ? "Hemen ücretsiz hesap oluşturun ve İngilizce öğrenmeye başlayın."
+              : "Kurumunuzdan aldığınız kod ile hemen kayıt olun."}
+          </p>
         </div>
       </div>
 
@@ -61,89 +85,186 @@ export default function Register() {
               />
             </Link>
             <h2 className="text-3xl font-extrabold font-display text-foreground">Hesap oluştur</h2>
-            <p className="mt-2 text-muted-foreground">Kurumunuzdan aldığınız kod ile kayıt olun.</p>
+            <p className="mt-2 text-muted-foreground">
+              {accountType === "bireysel"
+                ? "Bireysel olarak ücretsiz kaydolun."
+                : "Kurumunuzdan aldığınız kod ile kayıt olun."}
+            </p>
           </div>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+          {/* ── Hesap tipi seçimi ──────────────────────────────── */}
+          <div className="flex gap-3 mb-6">
+            <button
+              type="button"
+              onClick={() => { setAccountType("bireysel"); setError(null); }}
+              className={`flex-1 flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all font-medium text-sm ${
+                accountType === "bireysel"
+                  ? "border-primary bg-primary/5 text-primary"
+                  : "border-border text-muted-foreground hover:border-primary/40"
+              }`}
+            >
+              <UserCircle className="h-7 w-7" />
+              Bireysel
+            </button>
+            <button
+              type="button"
+              onClick={() => { setAccountType("kurumsal"); setError(null); }}
+              className={`flex-1 flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all font-medium text-sm ${
+                accountType === "kurumsal"
+                  ? "border-primary bg-primary/5 text-primary"
+                  : "border-border text-muted-foreground hover:border-primary/40"
+              }`}
+            >
+              <Building2 className="h-7 w-7" />
+              Kurumsal
+            </button>
+          </div>
+
+          {/* ── Hata mesajı ────────────────────────────────────── */}
+          <AnimatePresence>
             {error && (
-              <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-xl flex items-start gap-3 text-destructive">
+              <motion.div
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                className="p-4 bg-destructive/10 border border-destructive/20 rounded-xl flex items-start gap-3 text-destructive mb-4"
+              >
                 <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
                 <p className="text-sm font-medium">{error}</p>
-              </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* ── BİREYSEL FORM ─────────────────────────────────── */}
+          <AnimatePresence mode="wait">
+            {accountType === "bireysel" && (
+              <motion.form
+                key="bireysel"
+                initial={{ opacity: 0, x: -16 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 16 }}
+                transition={{ duration: 0.2 }}
+                onSubmit={bireyselForm.handleSubmit(onBireyselSubmit)}
+                className="space-y-4"
+              >
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="b-firstName">Ad</Label>
+                    <Input id="b-firstName" icon={<User size={18} />} placeholder="Ayşe" error={bireyselForm.formState.errors.firstName?.message} {...bireyselForm.register("firstName")} />
+                  </div>
+                  <div>
+                    <Label htmlFor="b-lastName">Soyad</Label>
+                    <Input id="b-lastName" placeholder="Yılmaz" error={bireyselForm.formState.errors.lastName?.message} {...bireyselForm.register("lastName")} />
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="b-email">E-posta adresi</Label>
+                  <Input id="b-email" type="email" icon={<Mail size={18} />} placeholder="ad@ornek.com" error={bireyselForm.formState.errors.email?.message} {...bireyselForm.register("email")} />
+                </div>
+
+                <div>
+                  <Label htmlFor="b-phone">Telefon numarası <span className="text-muted-foreground font-normal">(isteğe bağlı)</span></Label>
+                  <Input id="b-phone" type="tel" icon={<Phone size={18} />} placeholder="+90 (555) 000-0000" error={bireyselForm.formState.errors.phone?.message} {...bireyselForm.register("phone")} />
+                </div>
+
+                <div>
+                  <Label htmlFor="b-password">Şifre</Label>
+                  <Input id="b-password" type="password" icon={<Lock size={18} />} placeholder="••••••••" error={bireyselForm.formState.errors.password?.message} {...bireyselForm.register("password")} />
+                </div>
+
+                <Button type="submit" className="w-full text-lg h-12 mt-2" isLoading={isSubmitting}>
+                  Hesap oluştur
+                </Button>
+              </motion.form>
             )}
 
-            <div className="flex gap-4">
-              <Card
-                className={`flex-1 p-4 cursor-pointer text-center border-2 transition-all ${selectedRole === 'student' ? 'border-primary bg-primary/5' : 'border-border'}`}
-                onClick={() => { setSelectedRole('student'); setValue('role', 'student'); }}
+            {/* ── KURUMSAL FORM ──────────────────────────────────── */}
+            {accountType === "kurumsal" && (
+              <motion.form
+                key="kurumsal"
+                initial={{ opacity: 0, x: 16 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -16 }}
+                transition={{ duration: 0.2 }}
+                onSubmit={kurumsalForm.handleSubmit(onKurumsalSubmit)}
+                className="space-y-4"
               >
-                <GraduationCap className="h-6 w-6 mx-auto mb-1 text-primary" />
-                <p className="font-bold text-foreground text-sm">Öğrenci</p>
-              </Card>
-              <Card
-                className={`flex-1 p-4 cursor-pointer text-center border-2 transition-all ${selectedRole === 'corporate' ? 'border-primary bg-primary/5' : 'border-border'}`}
-                onClick={() => { setSelectedRole('corporate'); setValue('role', 'corporate'); }}
-              >
-                <Briefcase className="h-6 w-6 mx-auto mb-1 text-primary" />
-                <p className="font-bold text-foreground text-sm">Kurum Yetkilisi</p>
-              </Card>
-            </div>
+                {/* Rol seçimi: Öğrenci / Kurum Yetkilisi */}
+                <div className="flex gap-3">
+                  <Card
+                    className={`flex-1 p-3.5 cursor-pointer text-center border-2 transition-all ${kurumsalRole === "student" ? "border-primary bg-primary/5" : "border-border"}`}
+                    onClick={() => setKurumsalRole("student")}
+                  >
+                    <GraduationCap className="h-5 w-5 mx-auto mb-1 text-primary" />
+                    <p className="font-bold text-foreground text-xs">Öğrenci</p>
+                  </Card>
+                  <Card
+                    className={`flex-1 p-3.5 cursor-pointer text-center border-2 transition-all ${kurumsalRole === "corporate" ? "border-primary bg-primary/5" : "border-border"}`}
+                    onClick={() => setKurumsalRole("corporate")}
+                  >
+                    <Briefcase className="h-5 w-5 mx-auto mb-1 text-primary" />
+                    <p className="font-bold text-foreground text-xs">Kurum Yetkilisi</p>
+                  </Card>
+                </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="firstName">Ad</Label>
-                <Input id="firstName" icon={<User size={18} />} placeholder="Ayşe" error={errors.firstName?.message} {...register("firstName")} />
-              </div>
-              <div>
-                <Label htmlFor="lastName">Soyad</Label>
-                <Input id="lastName" placeholder="Yılmaz" error={errors.lastName?.message} {...register("lastName")} />
-              </div>
-            </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="k-firstName">Ad</Label>
+                    <Input id="k-firstName" icon={<User size={18} />} placeholder="Ayşe" error={kurumsalForm.formState.errors.firstName?.message} {...kurumsalForm.register("firstName")} />
+                  </div>
+                  <div>
+                    <Label htmlFor="k-lastName">Soyad</Label>
+                    <Input id="k-lastName" placeholder="Yılmaz" error={kurumsalForm.formState.errors.lastName?.message} {...kurumsalForm.register("lastName")} />
+                  </div>
+                </div>
 
-            <div>
-              <Label htmlFor="email">E-posta adresi</Label>
-              <Input id="email" type="email" icon={<Mail size={18} />} placeholder="ad@ornek.com" error={errors.email?.message} {...register("email")} />
-            </div>
+                <div>
+                  <Label htmlFor="k-email">E-posta adresi</Label>
+                  <Input id="k-email" type="email" icon={<Mail size={18} />} placeholder="ad@ornek.com" error={kurumsalForm.formState.errors.email?.message} {...kurumsalForm.register("email")} />
+                </div>
 
-            <div>
-              <Label htmlFor="companyCode">
-                Kurum Kodu <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                id="companyCode"
-                icon={<Hash size={18} />}
-                placeholder="KUR-0001"
-                error={errors.companyCode?.message}
-                {...register("companyCode")}
-                className="font-mono uppercase"
-                onChange={(e) => {
-                  e.target.value = e.target.value.toUpperCase();
-                  register("companyCode").onChange(e);
-                }}
-              />
-              <p className="text-xs text-muted-foreground mt-1">
-                {selectedRole === 'student'
-                  ? "Kurumunuzdan ya da yöneticinizden alınan KUR-XXXX formatındaki kodu giriniz."
-                  : "Yönetmek istediğiniz kuruma ait KUR-XXXX kodunu giriniz."}
-              </p>
-            </div>
+                <div>
+                  <Label htmlFor="k-companyCode">
+                    Kurum Kodu <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="k-companyCode"
+                    icon={<Hash size={18} />}
+                    placeholder="KUR-0001"
+                    error={kurumsalForm.formState.errors.companyCode?.message}
+                    {...kurumsalForm.register("companyCode")}
+                    className="font-mono uppercase"
+                    onChange={(e) => {
+                      e.target.value = e.target.value.toUpperCase();
+                      kurumsalForm.register("companyCode").onChange(e);
+                    }}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {kurumsalRole === "student"
+                      ? "Kurumunuzdan ya da yöneticinizden alınan KUR-XXXX formatındaki kodu giriniz."
+                      : "Yönetmek istediğiniz kuruma ait KUR-XXXX kodunu giriniz."}
+                  </p>
+                </div>
 
-            <div>
-              <Label htmlFor="phone">Telefon numarası (isteğe bağlı)</Label>
-              <Input id="phone" type="tel" icon={<Phone size={18} />} placeholder="+90 (555) 000-0000" error={errors.phone?.message} {...register("phone")} />
-            </div>
+                <div>
+                  <Label htmlFor="k-phone">Telefon numarası <span className="text-muted-foreground font-normal">(isteğe bağlı)</span></Label>
+                  <Input id="k-phone" type="tel" icon={<Phone size={18} />} placeholder="+90 (555) 000-0000" {...kurumsalForm.register("phone")} />
+                </div>
 
-            <div>
-              <Label htmlFor="password">Şifre</Label>
-              <Input id="password" type="password" icon={<Lock size={18} />} placeholder="••••••••" error={errors.password?.message} {...register("password")} />
-            </div>
+                <div>
+                  <Label htmlFor="k-password">Şifre</Label>
+                  <Input id="k-password" type="password" icon={<Lock size={18} />} placeholder="••••••••" error={kurumsalForm.formState.errors.password?.message} {...kurumsalForm.register("password")} />
+                </div>
 
-            <Button type="submit" className="w-full text-lg h-12 mt-4" isLoading={isSubmitting}>
-              Hesap oluştur
-            </Button>
-          </form>
+                <Button type="submit" className="w-full text-lg h-12 mt-2" isLoading={isSubmitting}>
+                  Hesap oluştur
+                </Button>
+              </motion.form>
+            )}
+          </AnimatePresence>
 
-          <p className="mt-8 text-center text-sm text-muted-foreground">
+          <p className="mt-6 text-center text-sm text-muted-foreground">
             Zaten hesabınız var mı?{" "}
             <Link href="/login" className="font-semibold text-primary hover:text-accent transition-colors">Buradan giriş yapın</Link>
           </p>
