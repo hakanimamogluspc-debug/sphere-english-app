@@ -36,6 +36,7 @@ interface Quiz {
   questionsCount: number;
   attemptsCount: number;
   createdAt: string;
+  isOwner?: boolean;
 }
 
 interface Attempt {
@@ -286,12 +287,14 @@ export default function TeacherQuizzes() {
                       title="Atamaları gör">
                       <Eye className="h-4 w-4 text-muted-foreground" />
                     </button>
-                    <button
-                      onClick={() => { if (confirm("Bu quizi silmek istediğinize emin misiniz?")) deleteMutation.mutate(quiz.id); }}
-                      className="p-2 rounded-lg hover:bg-destructive/10 transition-colors"
-                      title="Sil">
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </button>
+                    {quiz.isOwner && (
+                      <button
+                        onClick={() => { if (confirm("Bu quizi silmek istediğinize emin misiniz?")) deleteMutation.mutate(quiz.id); }}
+                        className="p-2 rounded-lg hover:bg-destructive/10 transition-colors"
+                        title="Sil">
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </button>
+                    )}
                   </div>
                 </div>
                 <div className="flex gap-2 flex-wrap">

@@ -197,15 +197,14 @@ router.get("/teacher/progress", authMiddleware, requireRole("teacher", "admin"),
 
 // ─── Quiz Yönetimi ────────────────────────────────────────────────────────────
 
-// GET /teacher/quizzes — öğretmenin oluşturduğu quizler
+// GET /teacher/quizzes — tüm quizler (atama için), isOwner ile sahiplik bilgisi
 router.get("/teacher/quizzes", authMiddleware, requireRole("teacher", "admin"), async (req: AuthRequest, res) => {
   const teacherId = req.userId!;
-  const quizzes = await db.select().from(quizzesTable).where(eq(quizzesTable.teacherId, teacherId))
-    .orderBy(desc(quizzesTable.createdAt));
+  const quizzes = await db.select().from(quizzesTable).orderBy(desc(quizzesTable.createdAt));
   const result = await Promise.all(quizzes.map(async (q) => {
     const [{ qc }] = await db.select({ qc: count() }).from(questionsTable).where(eq(questionsTable.quizId, q.id));
     const [{ ac }] = await db.select({ ac: count() }).from(quizAttemptsTable).where(eq(quizAttemptsTable.quizId, q.id));
-    return { ...q, questionsCount: Number(qc), attemptsCount: Number(ac) };
+    return { ...q, questionsCount: Number(qc), attemptsCount: Number(ac), isOwner: q.teacherId === teacherId };
   }));
   res.json(result);
 });
