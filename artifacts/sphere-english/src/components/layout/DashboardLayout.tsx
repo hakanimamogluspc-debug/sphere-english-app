@@ -1,66 +1,90 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { Link, useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   BookOpen, LayoutDashboard, Video, FileQuestion, LineChart, 
-  Award, MessageSquare, Users, Megaphone, LogOut, Menu, Building2, BarChart3, GraduationCap, Mic, MessageCircle, FolderOpen, PenLine, TrendingUp
+  Award, MessageSquare, Users, Megaphone, LogOut, Menu, Building2, BarChart3, GraduationCap, Mic, MessageCircle, FolderOpen, PenLine, TrendingUp, Settings2
 } from "lucide-react";
 import { Avatar } from "../ui/core";
+
+const API = import.meta.env.BASE_URL.replace(/\/$/, "") + "/api";
+
+type FeatureSetting = { key: string; isEnabled: boolean; visibleTo: string[] };
+
+type NavItem = {
+  name: string;
+  href: string;
+  icon: React.ElementType;
+  moduleKey?: string;
+};
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, logout } = useAuth();
   const [location] = useLocation();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [featureSettings, setFeatureSettings] = useState<FeatureSetting[]>([]);
 
-  const navigation = {
+  useEffect(() => {
+    const token = localStorage.getItem("sphere_token");
+    if (!token) return;
+    fetch(`${API}/feature-settings`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(r => r.ok ? r.json() : [])
+      .then(d => Array.isArray(d) ? setFeatureSettings(d) : null)
+      .catch(() => {});
+  }, []);
+
+  const navigation: Record<string, NavItem[]> = {
     student: [
-      { name: 'Kontrol Paneli', href: '/dashboard', icon: LayoutDashboard },
-      { name: 'Kurslarım', href: '/courses', icon: BookOpen },
-      { name: 'Materyallerim', href: '/student/materials', icon: FolderOpen },
-      { name: 'Ders Takvimim', href: '/live-classes', icon: Video },
-      { name: 'Alıştırmalar', href: '/quizzes', icon: FileQuestion },
-      { name: 'Speaking Club', href: '/student/speaking-club', icon: Mic },
-      { name: 'Telaffuz Koçu 🤖', href: '/student/pronunciation-coach', icon: Mic },
-      { name: 'Yazma Koçu 🤖', href: '/student/writing-coach', icon: PenLine },
-      { name: 'Forum', href: '/forum', icon: MessageCircle },
-      { name: 'İlerleme Durumum', href: '/progress', icon: LineChart },
-      { name: 'Sertifikalar', href: '/certificates', icon: Award },
-      { name: 'Sıralama', href: '/leaderboard', icon: Users },
-      { name: 'Mesajlar', href: '/messages', icon: MessageSquare },
+      { name: 'Kontrol Paneli',      href: '/dashboard',                     icon: LayoutDashboard },
+      { name: 'Kurslarım',           href: '/courses',                        icon: BookOpen },
+      { name: 'Materyallerim',       href: '/student/materials',              icon: FolderOpen,    moduleKey: 'student-materials' },
+      { name: 'Ders Takvimim',       href: '/live-classes',                   icon: Video,         moduleKey: 'student-live-classes' },
+      { name: 'Alıştırmalar',        href: '/quizzes',                        icon: FileQuestion,  moduleKey: 'student-quizzes' },
+      { name: 'Speaking Club',       href: '/student/speaking-club',          icon: Mic,           moduleKey: 'student-speaking-club' },
+      { name: 'Telaffuz Koçu 🤖',    href: '/student/pronunciation-coach',    icon: Mic,           moduleKey: 'student-pronunciation-coach' },
+      { name: 'Yazma Koçu 🤖',       href: '/student/writing-coach',          icon: PenLine,       moduleKey: 'student-writing-coach' },
+      { name: 'Forum',               href: '/forum',                          icon: MessageCircle, moduleKey: 'student-forum' },
+      { name: 'İlerleme Durumum',    href: '/progress',                       icon: LineChart,     moduleKey: 'student-progress' },
+      { name: 'Sertifikalar',        href: '/certificates',                   icon: Award,         moduleKey: 'student-certificates' },
+      { name: 'Sıralama',            href: '/leaderboard',                    icon: Users,         moduleKey: 'student-leaderboard' },
+      { name: 'Mesajlar',            href: '/messages',                       icon: MessageSquare },
     ],
     teacher: [
-      { name: 'Kontrol Paneli', href: '/dashboard', icon: LayoutDashboard },
-      { name: 'Kurslarımı Yönet', href: '/teacher/courses', icon: BookOpen },
-      { name: 'Materyaller', href: '/teacher/materials', icon: FolderOpen },
-      { name: 'Canlı Oturumlar', href: '/teacher/live-classes', icon: Video },
-      { name: 'Öğrencilerim', href: '/teacher/students', icon: Users },
-      { name: 'Öğrenci İlerlemesi', href: '/teacher/progress', icon: LineChart },
-      { name: 'Quiz Yönetimi', href: '/teacher/quizzes', icon: FileQuestion },
-      { name: 'Speaking Club', href: '/teacher/speaking-club', icon: Mic },
-      { name: 'Mesajlar', href: '/teacher/messages', icon: MessageSquare },
+      { name: 'Kontrol Paneli',      href: '/dashboard',                      icon: LayoutDashboard },
+      { name: 'Kurslarımı Yönet',    href: '/teacher/courses',                icon: BookOpen },
+      { name: 'Materyaller',         href: '/teacher/materials',              icon: FolderOpen,    moduleKey: 'teacher-materials' },
+      { name: 'Canlı Oturumlar',     href: '/teacher/live-classes',           icon: Video,         moduleKey: 'teacher-live-classes' },
+      { name: 'Öğrencilerim',        href: '/teacher/students',               icon: Users },
+      { name: 'Öğrenci İlerlemesi',  href: '/teacher/progress',               icon: LineChart },
+      { name: 'Quiz Yönetimi',       href: '/teacher/quizzes',                icon: FileQuestion,  moduleKey: 'teacher-quizzes' },
+      { name: 'Speaking Club',       href: '/teacher/speaking-club',          icon: Mic,           moduleKey: 'teacher-speaking-club' },
+      { name: 'Mesajlar',            href: '/teacher/messages',               icon: MessageSquare },
     ],
     admin: [
-      { name: 'Genel Bakış', href: '/dashboard', icon: LayoutDashboard },
-      { name: 'Kurumlar', href: '/admin/companies', icon: Building2 },
-      { name: 'Kullanıcılar', href: '/admin/users', icon: Users },
-      { name: 'Öğretmenler', href: '/admin/teachers', icon: GraduationCap },
-      { name: 'Öğrenciler', href: '/admin/students', icon: Users },
-      { name: 'Gruplar', href: '/admin/groups', icon: Users },
-      { name: 'Tüm Kurslar', href: '/admin/courses', icon: BookOpen },
-      { name: 'Quiz Yönetimi', href: '/teacher/quizzes', icon: FileQuestion },
-      { name: 'Materyaller', href: '/admin/materials', icon: FolderOpen },
-      { name: 'Canlı Dersler', href: '/admin/live-classes', icon: Video },
-      { name: 'Speaking Club', href: '/admin/speaking-club', icon: Mic },
-      { name: 'Duyurular', href: '/admin/announcements', icon: Megaphone },
-      { name: 'Sistem Raporları', href: '/admin/reports', icon: LineChart },
-      { name: 'MEB Aktivite Raporu', href: '/admin/meb-report', icon: BarChart3 },
-      { name: 'Pazarlama & E-posta', href: '/admin/marketing', icon: TrendingUp },
+      { name: 'Genel Bakış',         href: '/dashboard',                      icon: LayoutDashboard },
+      { name: 'Kurumlar',            href: '/admin/companies',                icon: Building2 },
+      { name: 'Kullanıcılar',        href: '/admin/users',                    icon: Users },
+      { name: 'Öğretmenler',         href: '/admin/teachers',                 icon: GraduationCap },
+      { name: 'Öğrenciler',          href: '/admin/students',                 icon: Users },
+      { name: 'Gruplar',             href: '/admin/groups',                   icon: Users },
+      { name: 'Tüm Kurslar',         href: '/admin/courses',                  icon: BookOpen },
+      { name: 'Quiz Yönetimi',       href: '/teacher/quizzes',                icon: FileQuestion },
+      { name: 'Materyaller',         href: '/admin/materials',                icon: FolderOpen },
+      { name: 'Canlı Dersler',       href: '/admin/live-classes',             icon: Video },
+      { name: 'Speaking Club',       href: '/admin/speaking-club',            icon: Mic },
+      { name: 'Duyurular',           href: '/admin/announcements',            icon: Megaphone },
+      { name: 'Sistem Raporları',    href: '/admin/reports',                  icon: LineChart },
+      { name: 'MEB Aktivite Raporu', href: '/admin/meb-report',               icon: BarChart3 },
+      { name: 'Pazarlama & E-posta', href: '/admin/marketing',                icon: TrendingUp },
+      { name: 'Modül Yönetimi',      href: '/admin/modules',                  icon: Settings2 },
     ],
     corporate: [
-      { name: 'Genel Bakış', href: '/corporate/dashboard', icon: LayoutDashboard },
-      { name: 'Öğrencilerim', href: '/corporate/students', icon: Users },
-      { name: 'Raporlar', href: '/corporate/reports', icon: BarChart3 },
+      { name: 'Genel Bakış',         href: '/corporate/dashboard',            icon: LayoutDashboard },
+      { name: 'Öğrencilerim',        href: '/corporate/students',             icon: Users },
+      { name: 'Raporlar',            href: '/corporate/reports',              icon: BarChart3 },
     ],
   };
 
@@ -71,7 +95,17 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     corporate: "Kurum Yetkilisi",
   };
 
-  const currentNav = user ? navigation[user.role as keyof typeof navigation] || navigation.student : [];
+  function isVisible(item: NavItem): boolean {
+    if (!item.moduleKey) return true;
+    const setting = featureSettings.find(f => f.key === item.moduleKey);
+    if (!setting) return true; // Ayar henüz yüklenmediyse göster
+    if (!setting.isEnabled) return false;
+    const role = user?.role ?? "student";
+    return setting.visibleTo.includes(role);
+  }
+
+  const rawNav = user ? navigation[user.role as keyof typeof navigation] || navigation.student : [];
+  const currentNav = rawNav.filter(isVisible);
 
   const SidebarContent = () => (
     <>

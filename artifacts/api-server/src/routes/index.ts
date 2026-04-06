@@ -25,6 +25,7 @@ import pronunciationRouter from "./pronunciation";
 import writingRouter from "./writing";
 import marketingRouter from "./marketing";
 import activityRouter from "./activity";
+import featureSettingsRouter from "./feature-settings";
 
 const router: IRouter = Router();
 
@@ -54,5 +55,6 @@ router.use(pronunciationRouter);
 router.use(writingRouter);
 router.use(marketingRouter);
 router.use(activityRouter);
+router.use(featureSettingsRouter);
 
 export default router;

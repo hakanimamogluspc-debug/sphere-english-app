@@ -40,6 +40,7 @@ import AdminMaterials from "./pages/admin/AdminMaterials";
 import AdminSpeakingClub from "./pages/admin/SpeakingClub";
 import AdminMarketing from "./pages/admin/Marketing";
 import MebReport from "./pages/admin/MebReport";
+import AdminModules from "./pages/admin/AdminModules";
 import CorporateDashboard from "./pages/corporate/CorporateDashboard";
 import CorporateStudents from "./pages/corporate/CorporateStudents";
 import CorporateReports from "./pages/corporate/CorporateReports";
@@ -145,6 +146,7 @@ function Router() {
       <Route path="/admin/reports"><LayoutWrapper component={ProgressPage} allowedRoles={['admin']} /></Route>
       <Route path="/admin/meb-report"><LayoutWrapper component={MebReport} allowedRoles={['admin']} /></Route>
       <Route path="/admin/marketing"><LayoutWrapper component={AdminMarketing} allowedRoles={['admin']} /></Route>
+      <Route path="/admin/modules"><LayoutWrapper component={AdminModules} allowedRoles={['admin']} /></Route>
 
       {/* Corporate Routes */}
       <Route path="/corporate/dashboard"><LayoutWrapper component={CorporateDashboard} allowedRoles={['corporate', 'admin']} /></Route>

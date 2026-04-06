@@ -11,3 +11,4 @@ export * from "./forum";
 export * from "./materials";
 export * from "./marketing";
 export * from "./activity-logs";
+export * from "./feature-settings";
