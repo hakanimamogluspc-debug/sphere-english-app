@@ -1,9 +1,12 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useContext, useState, ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useLogin, useRegister, useGetCurrentUser } from "@workspace/api-client-react";
+import { useLogin, useRegister, useGetCurrentUser, setAuthTokenGetter } from "@workspace/api-client-react";
 import type { LoginRequest, RegisterRequest, UserProfile } from "@workspace/api-client-react";
 import { useLocation } from "wouter";
 import { setInterceptorToken, getInterceptorToken } from "@/lib/fetch-interceptor";
+
+// Modül yüklendiğinde bir kez çalışır — React lifecycle'dan bağımsız
+setAuthTokenGetter(() => getInterceptorToken());
 
 interface AuthContextType {
   user: UserProfile | null;
