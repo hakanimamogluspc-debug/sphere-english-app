@@ -48,6 +48,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       { name: 'Öğrenciler', href: '/admin/students', icon: Users },
       { name: 'Gruplar', href: '/admin/groups', icon: Users },
       { name: 'Tüm Kurslar', href: '/admin/courses', icon: BookOpen },
+      { name: 'Quiz Yönetimi', href: '/teacher/quizzes', icon: FileQuestion },
       { name: 'Materyaller', href: '/admin/materials', icon: FolderOpen },
       { name: 'Canlı Dersler', href: '/admin/live-classes', icon: Video },
       { name: 'Speaking Club', href: '/admin/speaking-club', icon: Mic },
