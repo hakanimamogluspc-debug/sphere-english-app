@@ -81,6 +81,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       { name: 'MEB Aktivite Raporu', href: '/admin/meb-report',               icon: BarChart3 },
       { name: 'Pazarlama & E-posta', href: '/admin/marketing',                icon: TrendingUp },
       { name: 'Modül Yönetimi',      href: '/admin/modules',                  icon: Settings2 },
+      { name: 'Kelime Oyunu 🎮',     href: '/student/vocab-game',             icon: Gamepad2 },
     ],
     corporate: [
       { name: 'Genel Bakış',         href: '/corporate/dashboard',            icon: LayoutDashboard },
