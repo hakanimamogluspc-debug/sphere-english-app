@@ -1,14 +1,16 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, Button, Input, Label, Badge, Modal } from "@/components/ui/core";
 import { useToast } from "@/hooks/use-toast";
 import {
-  FileQuestion, Plus, Trash2, Eye, CheckCircle2, XCircle, UserPlus, X,
+  FileQuestion, Plus, Trash2, Eye, CheckCircle2, UserPlus, X,
+  Wand2, Upload, ChevronRight, ChevronLeft, FileText, Loader2,
+  AlertCircle, Edit2, Check,
 } from "lucide-react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { abbrevName } from "@/lib/utils";
 
 const questionSchema = z.object({
@@ -69,6 +71,15 @@ interface Assignment {
   assignedAt: string;
 }
 
+interface WizardQuestion {
+  question: string;
+  options: string[];
+  correctAnswer: string;
+  points: number;
+  editing?: boolean;
+}
+
+const LEVELS = ["A1", "A2", "B1", "B2", "C1", "C2"];
 const QUESTION_TYPES = [
   { value: "multiple_choice", label: "Çoktan Seçmeli" },
   { value: "true_false", label: "Doğru / Yanlış" },
@@ -132,10 +143,348 @@ function QuestionEditor({ control, register, errors, index, watch, remove }: any
   );
 }
 
+// ── Quiz Sihirbazı ───────────────────────────────────────────────────────────
+type WizardStep = "info" | "upload" | "processing" | "preview";
+
+interface WizardState {
+  title: string;
+  level: string;
+  passingScore: number;
+  timeLimit: string;
+  questionCount: number;
+  file: File | null;
+  questions: WizardQuestion[];
+  step: WizardStep;
+  error: string | null;
+}
+
+function QuizWizard({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
+  const { toast } = useToast();
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [state, setState] = useState<WizardState>({
+    title: "",
+    level: "",
+    passingScore: 70,
+    timeLimit: "",
+    questionCount: 10,
+    file: null,
+    questions: [],
+    step: "info",
+    error: null,
+  });
+
+  const update = (patch: Partial<WizardState>) => setState((s) => ({ ...s, ...patch }));
+
+  // Dosya seç
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0] || null;
+    if (f && !f.name.endsWith(".docx")) {
+      update({ error: "Lütfen .docx formatında bir Word dosyası seçin" });
+      return;
+    }
+    update({ file: f, error: null });
+  };
+
+  // AI ile önizle
+  const handlePreview = async () => {
+    if (!state.file) { update({ error: "Lütfen bir Word dosyası seçin" }); return; }
+    update({ step: "processing", error: null });
+
+    try {
+      const fd = new FormData();
+      fd.append("file", state.file);
+      fd.append("questionCount", String(state.questionCount));
+
+      const res = await fetch("/api/teacher/quizzes/import/preview", {
+        method: "POST",
+        credentials: "include",
+        body: fd,
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Hata");
+      if (!data.questions?.length) throw new Error("AI soru üretemedi, dosyayı kontrol edin");
+
+      update({ questions: data.questions, step: "preview" });
+    } catch (err: any) {
+      update({ step: "upload", error: err.message });
+    }
+  };
+
+  // Soruyu sil
+  const removeQuestion = (i: number) => {
+    update({ questions: state.questions.filter((_, idx) => idx !== i) });
+  };
+
+  // Doğru cevabı değiştir
+  const setCorrectAnswer = (qi: number, answer: string) => {
+    const qs = [...state.questions];
+    qs[qi] = { ...qs[qi], correctAnswer: answer };
+    update({ questions: qs });
+  };
+
+  // Kaydet
+  const handleSave = async () => {
+    if (!state.title.trim()) { update({ error: "Quiz başlığı zorunludur" }); return; }
+    if (state.questions.length === 0) { update({ error: "En az 1 soru olmalı" }); return; }
+
+    update({ step: "processing", error: null });
+    try {
+      const fd = new FormData();
+      fd.append("file", state.file!);
+      fd.append("title", state.title);
+      fd.append("level", state.level);
+      fd.append("passingScore", String(state.passingScore));
+      if (state.timeLimit) fd.append("timeLimit", state.timeLimit);
+      fd.append("questionCount", String(state.questions.length));
+
+      // Soruları backend'e gönder (import endpoint'ini kullan ama preview sonuçlarını override et)
+      // Soruları direkt kaydetmek için teacher/quizzes endpoint'ini kullan
+      const createRes = await fetch("/api/teacher/quizzes", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: state.title,
+          level: state.level || null,
+          passingScore: state.passingScore,
+          timeLimit: state.timeLimit ? parseInt(state.timeLimit) : null,
+          questions: state.questions.map((q, i) => ({
+            type: "multiple_choice",
+            question: q.question,
+            options: q.options,
+            correctAnswer: q.correctAnswer,
+            points: q.points || 10,
+            order: i,
+          })),
+        }),
+      });
+      const created = await createRes.json();
+      if (!createRes.ok) throw new Error(created.error || "Kayıt başarısız");
+
+      toast({ title: `"${state.title}" quizi oluşturuldu!`, description: `${state.questions.length} soru eklendi.` });
+      onSuccess();
+    } catch (err: any) {
+      update({ step: "preview", error: err.message });
+    }
+  };
+
+  const stepLabel = { info: "1/3 Bilgiler", upload: "2/3 Dosya", processing: "İşleniyor...", preview: "3/3 Önizleme" };
+
+  return (
+    <div className="space-y-4">
+      {/* Step indicator */}
+      <div className="flex items-center gap-2 mb-2">
+        {(["info", "upload", "preview"] as const).map((s, i) => (
+          <div key={s} className="flex items-center gap-2">
+            <div className={`h-7 w-7 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${
+              state.step === s || (state.step === "processing" && i === 1)
+                ? "bg-primary text-primary-foreground"
+                : state.step === "preview" && i <= 1 || state.step === "upload" && i === 0
+                  ? "bg-primary/20 text-primary"
+                  : "bg-muted text-muted-foreground"
+            }`}>{i + 1}</div>
+            {i < 2 && <div className={`flex-1 h-0.5 w-8 rounded ${state.step === "preview" && i === 0 ? "bg-primary/40" : "bg-muted"}`} />}
+          </div>
+        ))}
+        <span className="text-xs text-muted-foreground ml-auto font-medium">{stepLabel[state.step]}</span>
+      </div>
+
+      {state.error && (
+        <div className="flex items-start gap-2 text-destructive bg-destructive/10 rounded-lg px-3 py-2.5 text-sm">
+          <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+          <span>{state.error}</span>
+        </div>
+      )}
+
+      <AnimatePresence mode="wait">
+        {/* ── Adım 1: Bilgiler ── */}
+        {state.step === "info" && (
+          <motion.div key="info" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">
+            <div>
+              <Label>Quiz Başlığı <span className="text-destructive">*</span></Label>
+              <Input value={state.title} onChange={(e) => update({ title: e.target.value })} placeholder="Örn: Unit 5 Grammar Quiz" />
+            </div>
+            <div>
+              <Label>Seviye</Label>
+              <div className="flex gap-2 flex-wrap mt-1">
+                <button type="button" onClick={() => update({ level: "" })}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium border-2 transition-colors ${!state.level ? "border-primary bg-primary/10 text-primary" : "border-border hover:border-primary/40"}`}>
+                  Seviyesiz
+                </button>
+                {LEVELS.map((l) => (
+                  <button key={l} type="button" onClick={() => update({ level: l })}
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium border-2 transition-colors ${state.level === l ? "border-primary bg-primary/10 text-primary" : "border-border hover:border-primary/40"}`}>
+                    {l}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Geçme Puanı (%)</Label>
+                <Input type="number" min="0" max="100" value={state.passingScore}
+                  onChange={(e) => update({ passingScore: parseInt(e.target.value) || 70 })} />
+              </div>
+              <div>
+                <Label>Süre Limiti (dk)</Label>
+                <Input type="number" min="1" value={state.timeLimit}
+                  onChange={(e) => update({ timeLimit: e.target.value })} placeholder="Limitsiz" />
+              </div>
+            </div>
+            <div>
+              <Label>Oluşturulacak Soru Sayısı</Label>
+              <div className="flex gap-2 flex-wrap mt-1">
+                {[5, 10, 15, 20].map((n) => (
+                  <button key={n} type="button" onClick={() => update({ questionCount: n })}
+                    className={`px-4 py-1.5 rounded-lg text-sm font-medium border-2 transition-colors ${state.questionCount === n ? "border-primary bg-primary/10 text-primary" : "border-border hover:border-primary/40"}`}>
+                    {n} soru
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="flex gap-3 pt-2">
+              <Button type="button" variant="outline" className="flex-1" onClick={onClose}>İptal</Button>
+              <Button type="button" className="flex-1" onClick={() => {
+                if (!state.title.trim()) { update({ error: "Quiz başlığı zorunludur" }); return; }
+                update({ step: "upload", error: null });
+              }}>
+                İleri <ChevronRight className="h-4 w-4 ml-1" />
+              </Button>
+            </div>
+          </motion.div>
+        )}
+
+        {/* ── Adım 2: Dosya Yükleme ── */}
+        {state.step === "upload" && (
+          <motion.div key="upload" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">
+            <div>
+              <p className="text-sm text-muted-foreground mb-3">
+                Ders içeriğinizin bulunduğu <strong>.docx</strong> Word dosyasını yükleyin. 
+                Yapay zeka dosyayı okuyarak <strong>{state.questionCount} adet</strong> çoktan seçmeli soru otomatik oluşturacak.
+              </p>
+              <input type="file" accept=".docx" ref={fileRef} onChange={handleFileChange} className="hidden" />
+              <button
+                type="button"
+                onClick={() => fileRef.current?.click()}
+                className={`w-full border-2 border-dashed rounded-xl p-8 text-center transition-colors ${
+                  state.file ? "border-primary bg-primary/5" : "border-border hover:border-primary/40 hover:bg-primary/5"
+                }`}>
+                {state.file ? (
+                  <div className="flex flex-col items-center gap-2">
+                    <FileText className="h-10 w-10 text-primary" />
+                    <p className="font-semibold text-sm">{state.file.name}</p>
+                    <p className="text-xs text-muted-foreground">{(state.file.size / 1024).toFixed(0)} KB — değiştirmek için tıklayın</p>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                    <Upload className="h-10 w-10" />
+                    <p className="font-medium text-sm">Word dosyası seçin</p>
+                    <p className="text-xs">Sadece .docx desteklenir (maks. 10 MB)</p>
+                  </div>
+                )}
+              </button>
+            </div>
+            <div className="flex gap-3 pt-2">
+              <Button type="button" variant="outline" className="flex-1" onClick={() => update({ step: "info", error: null })}>
+                <ChevronLeft className="h-4 w-4 mr-1" /> Geri
+              </Button>
+              <Button type="button" className="flex-1" disabled={!state.file} onClick={handlePreview}>
+                <Wand2 className="h-4 w-4 mr-1" /> Soruları Oluştur
+              </Button>
+            </div>
+          </motion.div>
+        )}
+
+        {/* ── İşleniyor ── */}
+        {state.step === "processing" && (
+          <motion.div key="processing" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="py-12 flex flex-col items-center gap-4">
+            <div className="relative">
+              <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
+                <Wand2 className="h-7 w-7 text-primary" />
+              </div>
+              <Loader2 className="h-16 w-16 absolute inset-0 text-primary animate-spin opacity-30" />
+            </div>
+            <div className="text-center">
+              <p className="font-semibold">Yapay Zeka Çalışıyor</p>
+              <p className="text-sm text-muted-foreground mt-1">Dosyanız okunuyor ve sorular oluşturuluyor...</p>
+            </div>
+          </motion.div>
+        )}
+
+        {/* ── Adım 3: Önizleme ── */}
+        {state.step === "preview" && (
+          <motion.div key="preview" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-semibold">{state.questions.length} soru oluşturuldu</p>
+                <p className="text-xs text-muted-foreground">Beğenmediğiniz soruları silebilir veya doğru cevabı değiştirebilirsiniz.</p>
+              </div>
+              <Badge variant="secondary" className="text-xs">{state.title}</Badge>
+            </div>
+
+            <div className="max-h-[45vh] overflow-y-auto space-y-3 pr-1">
+              {state.questions.map((q, qi) => (
+                <motion.div
+                  key={qi}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: qi * 0.04 }}
+                  className="border-2 border-border rounded-xl p-4 space-y-2 bg-card">
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="text-sm font-medium flex-1 leading-snug">
+                      <span className="text-muted-foreground mr-1.5">{qi + 1}.</span>
+                      {q.question}
+                    </p>
+                    <button type="button" onClick={() => removeQuestion(qi)}
+                      className="shrink-0 p-1 rounded-lg hover:bg-destructive/10 text-destructive transition-colors" title="Soruyu sil">
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-1 gap-1.5">
+                    {q.options.map((opt, oi) => (
+                      <button
+                        key={oi}
+                        type="button"
+                        onClick={() => setCorrectAnswer(qi, opt)}
+                        className={`text-left px-3 py-1.5 rounded-lg text-sm border-2 transition-colors flex items-center gap-2 ${
+                          q.correctAnswer === opt
+                            ? "border-green-500 bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400"
+                            : "border-border hover:border-primary/40"
+                        }`}>
+                        {q.correctAnswer === opt
+                          ? <Check className="h-3.5 w-3.5 text-green-600 shrink-0" />
+                          : <div className="h-3.5 w-3.5 shrink-0 rounded-full border-2 border-muted-foreground/40" />
+                        }
+                        {opt}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-xs text-muted-foreground">Doğru cevabı değiştirmek için seçeneğe tıklayın</p>
+                </motion.div>
+              ))}
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <Button type="button" variant="outline" className="flex-1" onClick={() => update({ step: "upload", error: null })}>
+                <ChevronLeft className="h-4 w-4 mr-1" /> Tekrar Yükle
+              </Button>
+              <Button type="button" className="flex-1" disabled={state.questions.length === 0} onClick={handleSave}>
+                <CheckCircle2 className="h-4 w-4 mr-1" /> Quizi Kaydet
+              </Button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+// ── Ana Sayfa ────────────────────────────────────────────────────────────────
 export default function TeacherQuizzes() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isWizardOpen, setIsWizardOpen] = useState(false);
   const [attemptsQuiz, setAttemptsQuiz] = useState<Quiz | null>(null);
   const [assignQuiz, setAssignQuiz] = useState<Quiz | null>(null);
   const [assignmentsQuiz, setAssignmentsQuiz] = useState<Quiz | null>(null);
@@ -246,9 +595,14 @@ export default function TeacherQuizzes() {
           <h2 className="text-2xl font-bold font-display">Quiz Yönetimi</h2>
           <p className="text-muted-foreground text-sm mt-1">{quizzes.length} quiz oluşturuldu</p>
         </div>
-        <Button onClick={() => setIsCreateOpen(true)} className="flex items-center gap-2">
-          <Plus className="h-4 w-4" /> Yeni Quiz
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => setIsWizardOpen(true)} className="flex items-center gap-2 border-primary/40 text-primary hover:bg-primary/5">
+            <Wand2 className="h-4 w-4" /> Sihirbaz
+          </Button>
+          <Button onClick={() => setIsCreateOpen(true)} className="flex items-center gap-2">
+            <Plus className="h-4 w-4" /> Yeni Quiz
+          </Button>
+        </div>
       </div>
 
       {isLoading ? (
@@ -259,7 +613,15 @@ export default function TeacherQuizzes() {
         <Card className="p-12 text-center">
           <FileQuestion className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
           <p className="text-muted-foreground font-medium">Henüz quiz oluşturmadınız</p>
-          <p className="text-sm text-muted-foreground mt-1">İlk quizi oluşturmak için "Yeni Quiz" butonuna tıklayın.</p>
+          <p className="text-sm text-muted-foreground mt-1 mb-6">Word dosyanızdan otomatik oluşturmak veya manuel eklemek için aşağıdaki seçenekleri kullanın.</p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Button variant="outline" onClick={() => setIsWizardOpen(true)} className="flex items-center gap-2 border-primary/40 text-primary">
+              <Wand2 className="h-4 w-4" /> Word'den Otomatik Oluştur
+            </Button>
+            <Button onClick={() => setIsCreateOpen(true)} className="flex items-center gap-2">
+              <Plus className="h-4 w-4" /> Manuel Oluştur
+            </Button>
+          </div>
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -317,7 +679,18 @@ export default function TeacherQuizzes() {
         </div>
       )}
 
-      {/* Quiz Oluşturma Modal */}
+      {/* Quiz Sihirbazı Modal */}
+      <Modal isOpen={isWizardOpen} onClose={() => setIsWizardOpen(false)} title="Quiz Sihirbazı — Word'den Oluştur">
+        <QuizWizard
+          onClose={() => setIsWizardOpen(false)}
+          onSuccess={() => {
+            setIsWizardOpen(false);
+            queryClient.invalidateQueries({ queryKey: ["/api/teacher/quizzes"] });
+          }}
+        />
+      </Modal>
+
+      {/* Manuel Quiz Oluşturma Modal */}
       <Modal isOpen={isCreateOpen} onClose={() => { setIsCreateOpen(false); reset(); }} title="Yeni Quiz Oluştur">
         <form onSubmit={handleSubmit((d) => createMutation.mutateAsync(d))} className="space-y-4">
           <div className="max-h-[60vh] overflow-y-auto pr-1 space-y-4">
