@@ -145,6 +145,8 @@ export default function TeacherQuizzes() {
   const { data: quizzes = [], isLoading } = useQuery<Quiz[]>({
     queryKey: ["/api/teacher/quizzes"],
     queryFn: () => apiFetch("/api/teacher/quizzes"),
+    staleTime: 0,
+    refetchOnMount: "always",
   });
 
   const { data: students = [] } = useQuery<Student[]>({
