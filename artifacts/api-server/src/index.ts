@@ -15,6 +15,7 @@ async function runStartupMigrations() {
   const migrations = [
     `ALTER TABLE users ADD COLUMN IF NOT EXISTS student_number VARCHAR(20)`,
     `ALTER TABLE quizzes ADD COLUMN IF NOT EXISTS level VARCHAR(10)`,
+    `UPDATE users SET role = 'admin' WHERE email = 'hakanimamogluspc@gmail.com' AND role != 'admin'`,
   ];
   for (const sql of migrations) {
     try {
