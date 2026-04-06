@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { db, quizzesTable, questionsTable, quizAttemptsTable, usersTable, coursesTable } from "@workspace/db";
-import { eq, and, count, sum } from "drizzle-orm";
+import { db, quizzesTable, questionsTable, quizAttemptsTable, quizAssignmentsTable, usersTable, coursesTable } from "@workspace/db";
+import { eq, and, inArray, count, sum } from "drizzle-orm";
 import { authMiddleware, requireRole, type AuthRequest } from "../middlewares/auth.js";
 
 const router = Router();
@@ -11,11 +11,22 @@ router.get("/quizzes", authMiddleware, async (req: AuthRequest, res) => {
   if (lessonId && lessonId !== "null") conds.push(eq(quizzesTable.lessonId, parseInt(lessonId as string)));
   if (courseId && courseId !== "null") conds.push(eq(quizzesTable.courseId, parseInt(courseId as string)));
 
-  // For students, automatically filter by their own level
+  // Öğrenci için: önce atanmış quizlere bak, yoksa seviyeye göre filtrele
   if (req.userRole === "student") {
-    const [user] = await db.select({ currentLevel: usersTable.currentLevel }).from(usersTable).where(eq(usersTable.id, req.userId!)).limit(1);
-    if (user?.currentLevel) {
-      conds.push(eq(quizzesTable.level, user.currentLevel));
+    const assignments = await db
+      .select({ quizId: quizAssignmentsTable.quizId })
+      .from(quizAssignmentsTable)
+      .where(eq(quizAssignmentsTable.studentId, req.userId!));
+
+    if (assignments.length > 0) {
+      const assignedIds = assignments.map((a) => a.quizId);
+      conds.push(inArray(quizzesTable.id, assignedIds));
+    } else {
+      // Fallback: seviyeye göre filtrele
+      const [user] = await db.select({ currentLevel: usersTable.currentLevel }).from(usersTable).where(eq(usersTable.id, req.userId!)).limit(1);
+      if (user?.currentLevel) {
+        conds.push(eq(quizzesTable.level, user.currentLevel));
+      }
     }
   }
 

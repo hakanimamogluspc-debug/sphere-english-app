@@ -40,6 +40,15 @@ export const quizAttemptsTable = pgTable("quiz_attempts", {
   submittedAt: timestamp("submitted_at").notNull().defaultNow(),
 });
 
+export const quizAssignmentsTable = pgTable("quiz_assignments", {
+  id: serial("id").primaryKey(),
+  quizId: integer("quiz_id").notNull().references(() => quizzesTable.id, { onDelete: "cascade" }),
+  studentId: integer("student_id").notNull().references(() => usersTable.id, { onDelete: "cascade" }),
+  teacherId: integer("teacher_id").references(() => usersTable.id, { onDelete: "set null" }),
+  dueDate: timestamp("due_date"),
+  assignedAt: timestamp("assigned_at").notNull().defaultNow(),
+});
+
 export const insertQuizSchema = createInsertSchema(quizzesTable).omit({ id: true, createdAt: true });
 export const insertQuestionSchema = createInsertSchema(questionsTable).omit({ id: true });
 export const insertQuizAttemptSchema = createInsertSchema(quizAttemptsTable).omit({ id: true, submittedAt: true });

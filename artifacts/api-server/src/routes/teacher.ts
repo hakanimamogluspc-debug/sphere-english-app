@@ -2,6 +2,7 @@ import { Router } from "express";
 import {
   db, usersTable, groupsTable, groupMembersTable,
   quizzesTable, questionsTable, quizAttemptsTable,
+  quizAssignmentsTable,
   speakingClubsTable, speakingClubParticipantsTable,
   messagesTable, companiesTable,
   liveClassesTable, liveClassAttendanceTable,
@@ -599,6 +600,99 @@ router.post("/teacher/messages/:studentId", authMiddleware, requireRole("teacher
 
   const [msg] = await db.insert(messagesTable).values({ senderId: teacherId, receiverId: studentId, content: content.trim() }).returning();
   res.status(201).json({ ...msg, sentAt: msg.sentAt.toISOString() });
+});
+
+// ─── Quiz Atama (Assignment) ─────────────────────────────────────────────────
+
+// GET /teacher/quiz-assignments — öğretmenin tüm quiz atamaları
+router.get("/teacher/quiz-assignments", authMiddleware, requireRole("teacher", "admin"), async (req: AuthRequest, res) => {
+  const teacherId = req.userId!;
+  const rows = await db
+    .select({
+      id: quizAssignmentsTable.id,
+      quizId: quizAssignmentsTable.quizId,
+      quizTitle: quizzesTable.title,
+      studentId: quizAssignmentsTable.studentId,
+      studentFirstName: usersTable.firstName,
+      studentLastName: usersTable.lastName,
+      studentEmail: usersTable.email,
+      dueDate: quizAssignmentsTable.dueDate,
+      assignedAt: quizAssignmentsTable.assignedAt,
+    })
+    .from(quizAssignmentsTable)
+    .innerJoin(quizzesTable, eq(quizzesTable.id, quizAssignmentsTable.quizId))
+    .innerJoin(usersTable, eq(usersTable.id, quizAssignmentsTable.studentId))
+    .where(eq(quizAssignmentsTable.teacherId, teacherId));
+  res.json(rows);
+});
+
+// GET /teacher/quizzes/:quizId/assignments — belirli quiz'e ait atamalar
+router.get("/teacher/quizzes/:quizId/assignments", authMiddleware, requireRole("teacher", "admin"), async (req: AuthRequest, res) => {
+  const teacherId = req.userId!;
+  const quizId = parseInt(req.params.quizId);
+  const rows = await db
+    .select({
+      id: quizAssignmentsTable.id,
+      studentId: quizAssignmentsTable.studentId,
+      studentFirstName: usersTable.firstName,
+      studentLastName: usersTable.lastName,
+      studentEmail: usersTable.email,
+      dueDate: quizAssignmentsTable.dueDate,
+      assignedAt: quizAssignmentsTable.assignedAt,
+    })
+    .from(quizAssignmentsTable)
+    .innerJoin(usersTable, eq(usersTable.id, quizAssignmentsTable.studentId))
+    .where(and(eq(quizAssignmentsTable.quizId, quizId), eq(quizAssignmentsTable.teacherId, teacherId)));
+  res.json(rows);
+});
+
+// POST /teacher/quiz-assignments — quiz ata
+router.post("/teacher/quiz-assignments", authMiddleware, requireRole("teacher", "admin"), async (req: AuthRequest, res) => {
+  const teacherId = req.userId!;
+  const { quizId, studentId, dueDate } = req.body;
+  if (!quizId || !studentId) {
+    res.status(400).json({ error: "quizId ve studentId zorunludur" });
+    return;
+  }
+
+  // Zaten atanmış mı?
+  const [existing] = await db
+    .select({ id: quizAssignmentsTable.id })
+    .from(quizAssignmentsTable)
+    .where(and(eq(quizAssignmentsTable.quizId, quizId), eq(quizAssignmentsTable.studentId, studentId)))
+    .limit(1);
+
+  if (existing) {
+    res.status(400).json({ error: "Bu quiz zaten bu öğrenciye atanmış" });
+    return;
+  }
+
+  const [assignment] = await db.insert(quizAssignmentsTable).values({
+    quizId,
+    studentId,
+    teacherId,
+    dueDate: dueDate ? new Date(dueDate) : null,
+  }).returning();
+
+  res.status(201).json(assignment);
+});
+
+// DELETE /teacher/quiz-assignments/:id — atamayı kaldır
+router.delete("/teacher/quiz-assignments/:id", authMiddleware, requireRole("teacher", "admin"), async (req: AuthRequest, res) => {
+  const teacherId = req.userId!;
+  const id = parseInt(req.params.id);
+
+  const [assignment] = await db.select().from(quizAssignmentsTable).where(
+    and(eq(quizAssignmentsTable.id, id), eq(quizAssignmentsTable.teacherId, teacherId))
+  ).limit(1);
+
+  if (!assignment) {
+    res.status(404).json({ error: "Atama bulunamadı" });
+    return;
+  }
+
+  await db.delete(quizAssignmentsTable).where(eq(quizAssignmentsTable.id, id));
+  res.json({ success: true });
 });
 
 export default router;

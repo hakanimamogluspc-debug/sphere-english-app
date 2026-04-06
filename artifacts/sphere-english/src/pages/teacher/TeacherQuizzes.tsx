@@ -2,7 +2,9 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, Button, Input, Label, Badge, Modal } from "@/components/ui/core";
 import { useToast } from "@/hooks/use-toast";
-import { FileQuestion, Plus, Edit2, Trash2, Eye, CheckCircle2, XCircle, ChevronDown, ChevronRight } from "lucide-react";
+import {
+  FileQuestion, Plus, Trash2, Eye, CheckCircle2, XCircle, UserPlus, X,
+} from "lucide-react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -28,6 +30,7 @@ type QuizForm = z.infer<typeof quizSchema>;
 interface Quiz {
   id: number;
   title: string;
+  level?: string | null;
   timeLimit: number | null;
   passingScore: number;
   questionsCount: number;
@@ -46,6 +49,25 @@ interface Attempt {
   submittedAt: string;
 }
 
+interface Student {
+  id: number;
+  firstName: string | null;
+  lastName: string | null;
+  email: string;
+  currentLevel?: string | null;
+  studentNumber?: string | null;
+}
+
+interface Assignment {
+  id: number;
+  studentId: number;
+  studentFirstName: string | null;
+  studentLastName: string | null;
+  studentEmail: string;
+  dueDate: string | null;
+  assignedAt: string;
+}
+
 const QUESTION_TYPES = [
   { value: "multiple_choice", label: "Çoktan Seçmeli" },
   { value: "true_false", label: "Doğru / Yanlış" },
@@ -53,7 +75,7 @@ const QUESTION_TYPES = [
 ];
 
 async function apiFetch(url: string, opts?: RequestInit) {
-  const res = await fetch(url, opts);
+  const res = await fetch(url, { credentials: "include", ...opts });
   if (!res.ok) { const e = await res.json().catch(() => ({ error: "Hata" })); throw new Error(e.error || "Hata"); }
   return res.json();
 }
@@ -114,16 +136,32 @@ export default function TeacherQuizzes() {
   const { toast } = useToast();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [attemptsQuiz, setAttemptsQuiz] = useState<Quiz | null>(null);
+  const [assignQuiz, setAssignQuiz] = useState<Quiz | null>(null);
+  const [assignmentsQuiz, setAssignmentsQuiz] = useState<Quiz | null>(null);
+  const [selectedStudentId, setSelectedStudentId] = useState<number | null>(null);
+  const [dueDate, setDueDate] = useState("");
 
   const { data: quizzes = [], isLoading } = useQuery<Quiz[]>({
     queryKey: ["/api/teacher/quizzes"],
     queryFn: () => apiFetch("/api/teacher/quizzes"),
   });
 
+  const { data: students = [] } = useQuery<Student[]>({
+    queryKey: ["/api/teacher/students"],
+    queryFn: () => apiFetch("/api/teacher/students"),
+    enabled: !!assignQuiz,
+  });
+
   const { data: attempts = [], isLoading: loadingAttempts } = useQuery<Attempt[]>({
     queryKey: ["/api/teacher/quizzes", attemptsQuiz?.id, "attempts"],
     queryFn: () => apiFetch(`/api/teacher/quizzes/${attemptsQuiz!.id}/attempts`),
     enabled: !!attemptsQuiz,
+  });
+
+  const { data: assignments = [], isLoading: loadingAssignments } = useQuery<Assignment[]>({
+    queryKey: ["/api/teacher/quizzes", assignmentsQuiz?.id, "assignments"],
+    queryFn: () => apiFetch(`/api/teacher/quizzes/${assignmentsQuiz!.id}/assignments`),
+    enabled: !!assignmentsQuiz,
   });
 
   const createMutation = useMutation({
@@ -161,6 +199,31 @@ export default function TeacherQuizzes() {
     onError: (e: Error) => toast({ title: "Hata", description: e.message, variant: "destructive" }),
   });
 
+  const assignMutation = useMutation({
+    mutationFn: ({ quizId, studentId, dueDate }: { quizId: number; studentId: number; dueDate?: string }) =>
+      apiFetch("/api/teacher/quiz-assignments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ quizId, studentId, dueDate: dueDate || null }),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/teacher/quizzes", assignQuiz?.id, "assignments"] });
+      toast({ title: "Quiz atandı!", description: "Öğrenci artık bu quizi görecek." });
+      setSelectedStudentId(null);
+      setDueDate("");
+    },
+    onError: (e: Error) => toast({ title: "Hata", description: e.message, variant: "destructive" }),
+  });
+
+  const removeAssignmentMutation = useMutation({
+    mutationFn: (id: number) => apiFetch(`/api/teacher/quiz-assignments/${id}`, { method: "DELETE" }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/teacher/quizzes", assignmentsQuiz?.id, "assignments"] });
+      toast({ title: "Atama kaldırıldı" });
+    },
+    onError: (e: Error) => toast({ title: "Hata", description: e.message, variant: "destructive" }),
+  });
+
   const { register, handleSubmit, reset, control, watch, formState: { errors } } = useForm<QuizForm>({
     resolver: zodResolver(quizSchema),
     defaultValues: { passingScore: 70, questions: [{ type: "multiple_choice", question: "", correctAnswer: "", points: 10 }] },
@@ -168,9 +231,9 @@ export default function TeacherQuizzes() {
 
   const { fields, append, remove } = useFieldArray({ control, name: "questions" });
 
-  const passRate = (quiz: Quiz) => {
-    if (quiz.attemptsCount === 0) return null;
-    return null;
+  const handleAssign = () => {
+    if (!assignQuiz || !selectedStudentId) return;
+    assignMutation.mutate({ quizId: assignQuiz.id, studentId: selectedStudentId, dueDate });
   };
 
   return (
@@ -211,11 +274,22 @@ export default function TeacherQuizzes() {
                     </div>
                   </div>
                   <div className="flex gap-1">
-                    <button onClick={() => setAttemptsQuiz(quiz)} className="p-2 rounded-lg hover:bg-secondary transition-colors" title="Denemeleri gör">
+                    <button
+                      onClick={() => setAssignQuiz(quiz)}
+                      className="p-2 rounded-lg hover:bg-primary/10 transition-colors"
+                      title="Öğrenciye ata">
+                      <UserPlus className="h-4 w-4 text-primary" />
+                    </button>
+                    <button
+                      onClick={() => { setAssignmentsQuiz(quiz); }}
+                      className="p-2 rounded-lg hover:bg-secondary transition-colors"
+                      title="Atamaları gör">
                       <Eye className="h-4 w-4 text-muted-foreground" />
                     </button>
-                    <button onClick={() => { if (confirm("Bu quizi silmek istediğinize emin misiniz?")) deleteMutation.mutate(quiz.id); }}
-                      className="p-2 rounded-lg hover:bg-destructive/10 transition-colors" title="Sil">
+                    <button
+                      onClick={() => { if (confirm("Bu quizi silmek istediğinize emin misiniz?")) deleteMutation.mutate(quiz.id); }}
+                      className="p-2 rounded-lg hover:bg-destructive/10 transition-colors"
+                      title="Sil">
                       <Trash2 className="h-4 w-4 text-destructive" />
                     </button>
                   </div>
@@ -225,7 +299,13 @@ export default function TeacherQuizzes() {
                   <Badge variant="outline">{quiz.attemptsCount} deneme</Badge>
                   <Badge variant="outline">Geçme: {quiz.passingScore}%</Badge>
                   {quiz.timeLimit && <Badge variant="outline">{quiz.timeLimit} dk</Badge>}
+                  {quiz.level && <Badge variant="secondary">{quiz.level}</Badge>}
                 </div>
+                <button
+                  onClick={() => setAssignQuiz(quiz)}
+                  className="mt-3 w-full text-sm font-medium text-primary border-2 border-primary/20 hover:border-primary/60 hover:bg-primary/5 rounded-lg py-1.5 transition-colors flex items-center justify-center gap-2">
+                  <UserPlus className="h-3.5 w-3.5" /> Öğrenciye Ata
+                </button>
               </Card>
             </motion.div>
           ))}
@@ -251,7 +331,6 @@ export default function TeacherQuizzes() {
                 <Input type="number" min="0" max="100" {...register("passingScore")} />
               </div>
             </div>
-
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <p className="font-semibold text-sm">Sorular ({fields.length})</p>
@@ -277,29 +356,112 @@ export default function TeacherQuizzes() {
         </form>
       </Modal>
 
-      {/* Denemeler Modal */}
-      <Modal isOpen={!!attemptsQuiz} onClose={() => setAttemptsQuiz(null)} title={`Denemeler: ${attemptsQuiz?.title}`}>
-        {loadingAttempts ? (
+      {/* Quiz Atama Modal */}
+      <Modal
+        isOpen={!!assignQuiz}
+        onClose={() => { setAssignQuiz(null); setSelectedStudentId(null); setDueDate(""); }}
+        title={`Quiz Ata: ${assignQuiz?.title}`}>
+        <div className="space-y-4">
+          <p className="text-sm text-muted-foreground">Bu quizi bir öğrenciye atayın. Öğrenci sınav sayfasında bu quizi görecek.</p>
+
+          <div>
+            <Label>Öğrenci Seç</Label>
+            {students.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-4 text-center">Grubunuzda henüz öğrenci yok.</p>
+            ) : (
+              <div className="max-h-52 overflow-y-auto space-y-2 mt-2 pr-1">
+                {students.map((s) => (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => setSelectedStudentId(s.id)}
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border-2 text-left transition-colors ${
+                      selectedStudentId === s.id
+                        ? "border-primary bg-primary/5"
+                        : "border-border hover:border-primary/40"
+                    }`}>
+                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary shrink-0">
+                      {(s.firstName?.[0] ?? "?").toUpperCase()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{abbrevName(s.firstName, s.lastName)}</p>
+                      <p className="text-xs text-muted-foreground truncate">{s.email}</p>
+                    </div>
+                    {s.currentLevel && <Badge variant="outline" className="text-xs shrink-0">{s.currentLevel}</Badge>}
+                    {selectedStudentId === s.id && <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div>
+            <Label>Son Tarih (İsteğe bağlı)</Label>
+            <Input
+              type="date"
+              value={dueDate}
+              onChange={(e) => setDueDate(e.target.value)}
+              min={new Date().toISOString().split("T")[0]}
+            />
+          </div>
+
+          <div className="flex gap-3 pt-2">
+            <Button
+              type="button"
+              variant="outline"
+              className="flex-1"
+              onClick={() => { setAssignQuiz(null); setSelectedStudentId(null); setDueDate(""); }}>
+              İptal
+            </Button>
+            <Button
+              type="button"
+              className="flex-1"
+              disabled={!selectedStudentId}
+              isLoading={assignMutation.isPending}
+              onClick={handleAssign}>
+              Ata
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Atamalar Modal */}
+      <Modal
+        isOpen={!!assignmentsQuiz}
+        onClose={() => setAssignmentsQuiz(null)}
+        title={`Atamalar: ${assignmentsQuiz?.title}`}>
+        {loadingAssignments ? (
           <div className="flex items-center justify-center h-24">
             <div className="animate-spin h-6 w-6 border-4 border-primary border-t-transparent rounded-full" />
           </div>
-        ) : attempts.length === 0 ? (
-          <p className="text-muted-foreground text-center py-8">Henüz kimse bu quizi denemedi.</p>
+        ) : assignments.length === 0 ? (
+          <div className="text-center py-8">
+            <p className="text-muted-foreground">Bu quiz henüz kimseye atanmamış.</p>
+            <button
+              onClick={() => { setAssignmentsQuiz(null); setAssignQuiz(assignmentsQuiz); }}
+              className="mt-3 text-sm text-primary hover:underline flex items-center gap-1 mx-auto">
+              <UserPlus className="h-3.5 w-3.5" /> Şimdi Ata
+            </button>
+          </div>
         ) : (
           <div className="space-y-2 max-h-80 overflow-y-auto">
-            {attempts.map((a) => (
-              <div key={a.id} className="flex items-center justify-between py-2 px-3 rounded-lg bg-secondary/40">
-                <div className="flex items-center gap-2">
-                  {a.passed ? <CheckCircle2 className="h-4 w-4 text-green-500" /> : <XCircle className="h-4 w-4 text-red-400" />}
-                  <div>
-                    <p className="text-sm font-medium">{abbrevName(a.firstName, a.lastName)}</p>
-                    <p className="text-xs text-muted-foreground">{a.email}</p>
-                  </div>
+            {assignments.map((a) => (
+              <div key={a.id} className="flex items-center justify-between py-2 px-3 rounded-xl bg-secondary/40">
+                <div>
+                  <p className="text-sm font-medium">{abbrevName(a.studentFirstName, a.studentLastName)}</p>
+                  <p className="text-xs text-muted-foreground">{a.studentEmail}</p>
+                  {a.dueDate && (
+                    <p className="text-xs text-amber-600 mt-0.5">
+                      Son: {new Date(a.dueDate).toLocaleDateString("tr-TR")}
+                    </p>
+                  )}
                 </div>
-                <div className="text-right">
-                  <span className={`text-sm font-semibold ${a.passed ? "text-green-600" : "text-red-500"}`}>{Math.round(a.percentage)}%</span>
-                  <p className="text-xs text-muted-foreground">{new Date(a.submittedAt).toLocaleDateString("tr-TR")}</p>
-                </div>
+                <button
+                  onClick={() => { if (confirm("Atamayı kaldırmak istediğinize emin misiniz?")) removeAssignmentMutation.mutate(a.id); }}
+                  className="p-1.5 rounded-lg hover:bg-destructive/10 text-destructive transition-colors"
+                  title="Atamayı kaldır">
+                  <X className="h-4 w-4" />
+                </button>
               </div>
             ))}
           </div>

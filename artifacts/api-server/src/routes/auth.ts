@@ -34,6 +34,13 @@ router.post("/auth/login", async (req, res) => {
     if (company) companyInfo = { id: company.id, name: company.name, code: company.code };
   }
 
+  res.cookie("sphere_token", token, {
+    httpOnly: true,
+    sameSite: "lax",
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+    secure: process.env.NODE_ENV === "production",
+  });
+
   res.json({ user: { ...userWithoutPassword, company: companyInfo }, token });
 });
 
@@ -118,6 +125,14 @@ router.post("/auth/register", async (req, res) => {
   const token = generateToken(updatedUser.id, updatedUser.role);
   const { password: _, ...userWithoutPassword } = updatedUser;
   const companyInfo = { id: company.id, name: company.name, code: company.code };
+
+  res.cookie("sphere_token", token, {
+    httpOnly: true,
+    sameSite: "lax",
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+    secure: process.env.NODE_ENV === "production",
+  });
+
   res.status(201).json({ user: { ...userWithoutPassword, company: companyInfo }, token });
 });
 
@@ -139,6 +154,7 @@ router.get("/auth/me", authMiddleware, async (req: AuthRequest, res) => {
 });
 
 router.post("/auth/logout", (_req, res) => {
+  res.clearCookie("sphere_token", { httpOnly: true, sameSite: "lax" });
   res.json({ success: true, message: "Logged out successfully" });
 });
 

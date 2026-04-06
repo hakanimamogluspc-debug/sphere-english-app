@@ -9,13 +9,20 @@ export interface AuthRequest extends Request {
 }
 
 export function authMiddleware(req: AuthRequest, res: Response, next: NextFunction) {
+  let token: string | undefined;
+
   const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+  if (authHeader && authHeader.startsWith("Bearer ")) {
+    token = authHeader.split(" ")[1];
+  } else if ((req as any).cookies?.sphere_token) {
+    token = (req as any).cookies.sphere_token;
+  }
+
+  if (!token) {
     res.status(401).json({ error: "Unauthorized" });
     return;
   }
 
-  const token = authHeader.split(" ")[1];
   try {
     const payload = jwt.verify(token, JWT_SECRET) as { userId: number; role: string };
     req.userId = payload.userId;
@@ -24,6 +31,28 @@ export function authMiddleware(req: AuthRequest, res: Response, next: NextFuncti
   } catch {
     res.status(401).json({ error: "Invalid or expired token" });
   }
+}
+
+export function optionalAuthMiddleware(req: AuthRequest, _res: Response, next: NextFunction) {
+  let token: string | undefined;
+
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith("Bearer ")) {
+    token = authHeader.split(" ")[1];
+  } else if ((req as any).cookies?.sphere_token) {
+    token = (req as any).cookies.sphere_token;
+  }
+
+  if (token) {
+    try {
+      const payload = jwt.verify(token, JWT_SECRET) as { userId: number; role: string };
+      req.userId = payload.userId;
+      req.userRole = payload.role;
+    } catch {
+      /* ignore invalid token — proceed unauthenticated */
+    }
+  }
+  next();
 }
 
 export function requireRole(...roles: string[]) {
