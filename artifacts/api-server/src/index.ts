@@ -49,6 +49,8 @@ async function runStartupMigrations() {
       ('teacher-speaking-club',       'Speaking Club',          true, ARRAY['teacher','admin']::TEXT[],     'teacher'),
       ('student-vocab-game',           'Kelime Oyunu',           true, ARRAY['student']::TEXT[],             'student')
     ON CONFLICT (key) DO NOTHING`,
+    // Ensure vocab-game and forum are always enabled (fix for production deployments)
+    `UPDATE feature_settings SET is_enabled = true, visible_to = ARRAY['student']::TEXT[] WHERE key IN ('student-vocab-game', 'student-forum')`,
     `CREATE TABLE IF NOT EXISTS vocab_words (
       id SERIAL PRIMARY KEY,
       word TEXT NOT NULL,

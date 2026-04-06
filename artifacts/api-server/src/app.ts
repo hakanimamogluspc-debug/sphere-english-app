@@ -170,6 +170,13 @@ const uploadsDir = path.join(process.cwd(), "uploads");
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 app.use("/uploads", express.static(uploadsDir));
 
+// Serve vocab game static HTML (works in both dev and production)
+const vocabGameDir = path.join(process.cwd(), "artifacts/api-server/public/vocab-game");
+if (fs.existsSync(vocabGameDir)) {
+  app.use("/vocab-game", express.static(vocabGameDir));
+  logger.info({ vocabGameDir }, "Serving vocab game static files");
+}
+
 app.use("/api", router);
 
 // Serve built frontend static files in production
