@@ -91,23 +91,18 @@ export default function TeacherLiveClasses() {
   const { register, handleSubmit, reset } = useForm();
 
   const load = useCallback(() => {
-    setLoading(true);
-    fetch(`${API}/live-classes?teacherId=me`, { headers: authOnly() })
+    fetch(`${API}/teacher/live-classes/mine`, { headers: authOnly() })
       .then(r => r.json())
       .then(d => setClasses(Array.isArray(d) ? d : []))
-      .catch(() => setClasses([]))
-      .finally(() => setLoading(false));
+      .catch(() => {});
   }, []);
 
-  // Load teacher's own classes (filter by their id)
+  // Load teacher's own classes — backend JWT'den kimliği alıp filtreler
   useEffect(() => {
     setLoading(true);
-    fetch(`${API}/live-classes`, { headers: authOnly() })
+    fetch(`${API}/teacher/live-classes/mine`, { headers: authOnly() })
       .then(r => r.json())
-      .then((d: any[]) => {
-        const myId = JSON.parse(atob((localStorage.getItem("sphere_token") || "").split(".")[1] || "e30="))?.id;
-        setClasses(Array.isArray(d) ? d.filter(c => c.teacherId === myId) : []);
-      })
+      .then((d: any[]) => setClasses(Array.isArray(d) ? d : []))
       .catch(() => setClasses([]))
       .finally(() => setLoading(false));
   }, []);
@@ -133,12 +128,9 @@ export default function TeacherLiveClasses() {
       setSelectedStudentIds([]);
       setStudentSearch("");
       // Reload classes to update enrolled count
-      fetch(`${API}/live-classes`, { headers: authOnly() })
+      fetch(`${API}/teacher/live-classes/mine`, { headers: authOnly() })
         .then(r => r.json())
-        .then((d: any[]) => {
-          const myId = JSON.parse(atob((localStorage.getItem("sphere_token") || "").split(".")[1] || "e30="))?.id;
-          setClasses(Array.isArray(d) ? d.filter(c => c.teacherId === myId) : []);
-        });
+        .then((d: any[]) => setClasses(Array.isArray(d) ? d : []));
     },
     onError: (e: any) => toast({ title: "Hata", description: e.message, variant: "destructive" }),
   });

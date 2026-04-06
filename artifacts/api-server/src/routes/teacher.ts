@@ -529,6 +529,27 @@ router.post("/teacher/messages/bulk", authMiddleware, requireRole("teacher", "ad
 
 // ─── Öğretmen Canlı Ders Öğrenci Yönetimi ────────────────────────────────────
 
+// GET /teacher/live-classes/mine — JWT'den teacherId alarak öğretmenin kendi derslerini döndürür
+router.get("/teacher/live-classes/mine", authMiddleware, requireRole("teacher", "admin"), async (req: AuthRequest, res) => {
+  const teacherId = req.userId!;
+  const classes = await db.select().from(liveClassesTable)
+    .where(eq(liveClassesTable.teacherId, teacherId))
+    .orderBy(liveClassesTable.startTime);
+
+  const enriched = await Promise.all(classes.map(async (lc) => {
+    const [{ ec }] = await db.select({ ec: count() }).from(liveClassAttendanceTable)
+      .where(eq(liveClassAttendanceTable.liveClassId, lc.id));
+    return {
+      ...lc,
+      startTime: lc.startTime.toISOString(),
+      createdAt: lc.createdAt.toISOString(),
+      enrolledCount: Number(ec),
+    };
+  }));
+
+  res.json(enriched);
+});
+
 // GET /teacher/live-classes/:id/my-students — bu derse eklenebilecek öğretmenin öğrencileri
 router.get("/teacher/live-classes/:id/my-students", authMiddleware, requireRole("teacher", "admin"), async (req: AuthRequest, res) => {
   const teacherId = req.userId!;
