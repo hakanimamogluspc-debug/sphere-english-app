@@ -47,6 +47,16 @@ export default defineConfig({
         target: "http://localhost:8080",
         changeOrigin: true,
       },
+      "/vocab-api": {
+        target: "http://localhost:8000/api",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/vocab-api/, ""),
+      },
+      "/vocab-game": {
+        target: "http://localhost:8000",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/vocab-game/, "") || "/",
+      },
     },
     fs: {
       strict: true,

@@ -1037,7 +1037,16 @@ function pause(ms) { return new Promise(r => setTimeout(r, ms)); }
 /* ═══════════════════════════════════
    API FETCH
 ════════════════════════════════════ */
+/* Detect API base: when embedded via proxy use /vocab-api, else use /api */
+const API_BASE = (function () {
+  try {
+    if (window.location.pathname.startsWith('/vocab-game')) return '/vocab-api';
+  } catch (e) {}
+  return '/api';
+})();
+
 async function apiFetch(url, method = 'GET', body = null, noBody = false) {
+  const fullUrl = url.startsWith('/api') ? API_BASE + url.slice(4) : url;
   try {
     const opts = {
       method,
@@ -1046,7 +1055,7 @@ async function apiFetch(url, method = 'GET', body = null, noBody = false) {
     if (body && !noBody) opts.body = JSON.stringify(body);
     if (noBody && method === 'POST') opts.body = undefined;
 
-    const resp = await fetch(url, opts);
+    const resp = await fetch(fullUrl, opts);
     if (!resp.ok) {
       const err = await resp.json().catch(() => ({ detail: 'Sunucu hatası' }));
       toast(err.detail || 'Bir hata oluştu', 'error');
