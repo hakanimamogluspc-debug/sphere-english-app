@@ -33,9 +33,39 @@ router.get("/teacher/groups", authMiddleware, requireRole("teacher", "admin"), a
   res.json(result);
 });
 
-// GET /teacher/students — kendi gruplarındaki öğrenciler (level + company dahil)
+// GET /teacher/students — kendi gruplarındaki öğrenciler; admin ise tüm öğrenciler
 router.get("/teacher/students", authMiddleware, requireRole("teacher", "admin"), async (req: AuthRequest, res) => {
   const teacherId = req.userId!;
+
+  // Admin → tüm öğrencileri getir
+  if (req.userRole === "admin") {
+    const students = await db.select({
+      id: usersTable.id,
+      firstName: usersTable.firstName,
+      lastName: usersTable.lastName,
+      email: usersTable.email,
+      currentLevel: usersTable.currentLevel,
+      totalPoints: usersTable.totalPoints,
+      streak: usersTable.streak,
+      companyId: usersTable.companyId,
+      avatar: usersTable.avatar,
+      studentNumber: usersTable.studentNumber,
+    }).from(usersTable).where(eq(usersTable.role, "student"));
+
+    const companyIds = [...new Set(students.map(s => s.companyId).filter(Boolean))] as number[];
+    const companies = companyIds.length > 0
+      ? await db.select({ id: companiesTable.id, name: companiesTable.name })
+          .from(companiesTable).where(inArray(companiesTable.id, companyIds))
+      : [];
+
+    res.json(students.map(s => ({
+      ...s,
+      company: companies.find(c => c.id === s.companyId) ?? null,
+      groups: [],
+    })));
+    return;
+  }
+
   const groupIds = await teacherGroupIds(teacherId);
   if (groupIds.length === 0) { res.json([]); return; }
 
