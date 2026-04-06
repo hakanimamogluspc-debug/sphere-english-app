@@ -26,6 +26,7 @@ import writingRouter from "./writing";
 import marketingRouter from "./marketing";
 import activityRouter from "./activity";
 import featureSettingsRouter from "./feature-settings";
+import vocabGameRouter from "./vocab-game";
 
 const router: IRouter = Router();
 
@@ -56,5 +57,6 @@ router.use(writingRouter);
 router.use(marketingRouter);
 router.use(activityRouter);
 router.use(featureSettingsRouter);
+router.use(vocabGameRouter);
 
 export default router;

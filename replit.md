@@ -2,7 +2,7 @@
 
 ## Overview
 
-Full-stack English Learning Management System (LMS) built as a pnpm monorepo. Features role-based dashboards for admin/teacher/student, course management with A1-C2 levels, live class scheduling, quizzes, progress tracking with gamification (points, streaks, badges), certificates with QR verification, messaging, and leaderboards.
+Full-stack English Learning Management System (LMS) built as a pnpm monorepo. Features role-based dashboards for admin/teacher/student, course management with A1-C2 levels, live class scheduling, quizzes, progress tracking with gamification (points, streaks, badges), certificates with QR verification, messaging, leaderboards, and a vocab game (Kelime Oyunu) with 407 words and AI-powered Turkish hints.
 
 ## Stack
 

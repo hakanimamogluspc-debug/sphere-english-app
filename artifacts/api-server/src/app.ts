@@ -40,6 +40,7 @@ app.use(
         defaultSrc: ["'self'"],
         scriptSrc: [
           "'self'",
+          "'unsafe-inline'",
           "https://www.googletagmanager.com",
           "https://www.google-analytics.com",
         ],
