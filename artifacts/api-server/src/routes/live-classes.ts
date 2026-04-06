@@ -157,6 +157,11 @@ router.post("/live-classes/:id/join", authMiddleware, async (req: AuthRequest, r
   if (!existing) {
     await db.insert(liveClassAttendanceTable).values({ liveClassId, studentId, joinedAt: now });
     await applyActivityStreak(studentId, 15);
+  } else {
+    // Öğrenci gerçekten tıkladığında joinedAt'i güncelle — süre doğru hesaplansın
+    await db.update(liveClassAttendanceTable)
+      .set({ joinedAt: now, leftAt: null, durationMinutes: null })
+      .where(eq(liveClassAttendanceTable.id, existing.id));
   }
 
   res.json({ success: true, meetingLink: lc.meetingLink });

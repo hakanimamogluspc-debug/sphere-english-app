@@ -1,6 +1,6 @@
 import { Router } from "express";
 import {
-  db, usersTable, groupsTable, groupMembersTable,
+  db, usersTable,
   liveClassesTable, liveClassAttendanceTable,
   coursesTable, modulesTable, lessonsTable, enrollmentsTable,
 } from "@workspace/db";
@@ -10,52 +10,49 @@ import { authMiddleware, requireRole, type AuthRequest } from "../middlewares/au
 const router = Router();
 
 // ─── Kendi ders takvimi ───────────────────────────────────────────────────────
-// GET /student/live-classes — öğrencinin kayıtlı kurslarına + kendi grubunun öğretmenine ait dersler
+// GET /student/live-classes — öğrencinin özellikle eklendiği dersler + kayıtlı kurs dersleri
 router.get("/student/live-classes", authMiddleware, requireRole("student"), async (req: AuthRequest, res) => {
   const studentId = req.userId!;
 
-  // Kayıtlı kurs id'leri
+  // 1. Öğrencinin attendance kaydı olan dersler (öğretmen tarafından eklenmiş)
+  const attRecords = await db.select().from(liveClassAttendanceTable)
+    .where(eq(liveClassAttendanceTable.studentId, studentId));
+  const enrolledClassIds = attRecords.map(a => a.liveClassId);
+
+  // 2. Kayıtlı olduğu kurslara bağlı dersler
   const enrollments = await db.select({ courseId: enrollmentsTable.courseId })
     .from(enrollmentsTable).where(eq(enrollmentsTable.studentId, studentId));
   const courseIds = enrollments.map(e => e.courseId);
 
-  // Öğrencinin gruplarındaki öğretmen id'leri
-  const memberships = await db.select({ groupId: groupMembersTable.groupId })
-    .from(groupMembersTable).where(eq(groupMembersTable.studentId, studentId));
-  const groupIds = memberships.map(m => m.groupId);
-
-  let teacherIds: number[] = [];
-  if (groupIds.length > 0) {
-    const groups = await db.select({ teacherId: groupsTable.teacherId })
-      .from(groupsTable).where(inArray(groupsTable.id, groupIds));
-    teacherIds = groups.map(g => g.teacherId).filter(Boolean) as number[];
-  }
-
-  // Dersler: kayıtlı kurs OR öğretmen
+  // Sadece bu iki kaynaktan gelen dersler gösterilir
   let classes: any[] = [];
-  if (courseIds.length > 0 || teacherIds.length > 0) {
-    const conditions = [];
-    if (courseIds.length > 0) conditions.push(inArray(liveClassesTable.courseId, courseIds));
-    if (teacherIds.length > 0) conditions.push(inArray(liveClassesTable.teacherId, teacherIds));
+  const conditions = [];
+  if (enrolledClassIds.length > 0) conditions.push(inArray(liveClassesTable.id, enrolledClassIds));
+  if (courseIds.length > 0) conditions.push(inArray(liveClassesTable.courseId, courseIds));
 
+  if (conditions.length > 0) {
     classes = await db.select().from(liveClassesTable)
       .where(conditions.length === 1 ? conditions[0] : or(...conditions))
       .orderBy(liveClassesTable.startTime);
   }
 
-  // Öğretmen adını ekle
+  // Öğretmen adı + attendance kaydını ekle
   const enriched = await Promise.all(classes.map(async (cls) => {
     const [teacher] = await db.select({ firstName: usersTable.firstName, lastName: usersTable.lastName })
       .from(usersTable).where(eq(usersTable.id, cls.teacherId)).limit(1);
-    // Bu öğrenci bu derse katıldı mı?
-    const [attendance] = await db.select().from(liveClassAttendanceTable)
-      .where(and(eq(liveClassAttendanceTable.liveClassId, cls.id), eq(liveClassAttendanceTable.studentId, studentId))).limit(1);
+    const att = attRecords.find(a => a.liveClassId === cls.id) || null;
     return {
       ...cls,
       startTime: cls.startTime.toISOString(),
       createdAt: cls.createdAt.toISOString(),
       teacherName: teacher ? `${teacher.firstName} ${teacher.lastName}` : null,
-      isAttending: !!attendance,
+      isAttending: !!att,
+      // attendanceRecord: frontend'in durationMinutes ve joinedAt için beklediği alan
+      attendanceRecord: att ? {
+        joinedAt: att.joinedAt?.toISOString() || null,
+        leftAt: att.leftAt?.toISOString() || null,
+        durationMinutes: att.durationMinutes || null,
+      } : null,
     };
   }));
 
