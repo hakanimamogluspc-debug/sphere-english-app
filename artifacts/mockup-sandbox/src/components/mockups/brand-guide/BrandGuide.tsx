@@ -86,15 +86,28 @@ export function BrandGuide() {
             overflow: hidden !important;
             box-sizing: border-box !important;
             position: relative !important;
-            display: block !important;
           }
 
-          /* Scale inner content to fit one landscape page */
-          .section-inner {
+          /* Regular content sections — scale from top-left */
+          .brand-section:not(.cover-section) .section-inner {
             transform: scale(0.62) !important;
             transform-origin: top left !important;
-            width: 161% !important;   /* 100 / 0.62 — corrects layout width after scale */
+            width: 161% !important;
             padding: 36px 72px !important;
+          }
+
+          /* Cover / closing — keep flex centering, scale from center */
+          .cover-section {
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
+            justify-content: center !important;
+          }
+          .cover-section .section-inner {
+            transform: scale(0.85) !important;
+            transform-origin: center center !important;
+            width: 100% !important;
+            position: relative !important;
           }
         }
 
@@ -137,7 +150,7 @@ export function BrandGuide() {
 
       {/* ─── 1. KAPAK ──────────────────────────────────────────── */}
       <section
-        className="brand-section relative flex flex-col items-center justify-center overflow-hidden"
+        className="brand-section cover-section relative flex flex-col items-center justify-center overflow-hidden"
         style={{ background: `linear-gradient(135deg, ${NAVY_DARK} 0%, ${NAVY} 50%, ${NAVY_LIGHT} 100%)` }}
       >
         <div className="section-inner w-full flex flex-col items-center justify-center py-20">
@@ -882,7 +895,7 @@ export function BrandGuide() {
       </Section>
 
       {/* ─── 9. KAPANIŞ ────────────────────────────────────────── */}
-      <section className="brand-section relative flex flex-col items-center justify-center overflow-hidden"
+      <section className="brand-section cover-section relative flex flex-col items-center justify-center overflow-hidden"
         style={{ background: `linear-gradient(135deg, ${NAVY_DARK} 0%, ${NAVY} 60%, ${NAVY_LIGHT} 100%)` }}>
         <div className="section-inner w-full flex flex-col items-center justify-center py-24">
           <div className="absolute inset-0 opacity-5 pointer-events-none" style={{
