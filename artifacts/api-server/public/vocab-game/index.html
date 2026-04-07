@@ -1000,16 +1000,18 @@ async function loadLeaderboard() {
   document.getElementById('leaderboardList').innerHTML =
     '<div style="text-align:center; color:var(--text-muted); padding:32px;">Yükleniyor...</div>';
 
-  const data = await apiFetch(`/api/scores/leaderboard?level=${state.lbLevel}&limit=15`);
-  const stats = await apiFetch('/api/scores/stats');
+  const [data, stats] = await Promise.all([
+    apiFetch(`/api/scores/leaderboard?level=${state.lbLevel}&limit=15`),
+    apiFetch('/api/scores/stats'),
+  ]);
 
   if (stats) {
     document.getElementById('statWords').textContent = stats.total_words;
     document.getElementById('statGames').textContent = stats.total_games;
-    document.getElementById('statHighScore').textContent = stats.high_score;
+    document.getElementById('statHighScore').textContent = stats.highest_score || '—';
   }
 
-  if (!data || data.leaderboard.length === 0) {
+  if (!data || !Array.isArray(data) || data.length === 0) {
     document.getElementById('leaderboardList').innerHTML =
       '<div style="text-align:center; color:var(--text-muted); padding:32px;">Henüz kayıt yok. İlk sıraya sen gir! 🚀</div>';
     return;
@@ -1018,14 +1020,14 @@ async function loadLeaderboard() {
   const rankClass = (r) => r === 1 ? 'lb-rank-1' : r === 2 ? 'lb-rank-2' : r === 3 ? 'lb-rank-3' : 'lb-rank-n';
   const rankLabel = (r) => r === 1 ? '🥇' : r === 2 ? '🥈' : r === 3 ? '🥉' : r;
 
-  document.getElementById('leaderboardList').innerHTML = data.leaderboard.map(e => `
+  document.getElementById('leaderboardList').innerHTML = data.map(e => `
     <div class="lb-row">
       <div class="lb-rank ${rankClass(e.rank)}">${rankLabel(e.rank)}</div>
       <div>
         <div class="lb-name">${e.username}</div>
         <div class="lb-meta">
           <span class="level-badge level-${e.level}">${e.level}</span>
-          ${e.words_correct}/${e.total_words} doğru
+          ${e.words_correct}/${e.words_seen} doğru
         </div>
       </div>
       <div class="lb-score">${e.score}</div>
