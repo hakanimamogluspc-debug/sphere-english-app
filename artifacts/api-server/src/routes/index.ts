@@ -27,6 +27,7 @@ import marketingRouter from "./marketing";
 import activityRouter from "./activity";
 import featureSettingsRouter from "./feature-settings";
 import vocabGameRouter from "./vocab-game";
+import grammarCoachRouter from "./grammar-coach";
 
 const router: IRouter = Router();
 
@@ -58,5 +59,6 @@ router.use(marketingRouter);
 router.use(activityRouter);
 router.use(featureSettingsRouter);
 router.use(vocabGameRouter);
+router.use(grammarCoachRouter);
 
 export default router;

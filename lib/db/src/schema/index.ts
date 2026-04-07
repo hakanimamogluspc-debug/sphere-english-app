@@ -13,3 +13,4 @@ export * from "./marketing";
 export * from "./activity-logs";
 export * from "./feature-settings";
 export * from "./vocab-game";
+export * from "./grammar-coach";

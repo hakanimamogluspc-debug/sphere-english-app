@@ -50,6 +50,7 @@ import Forum from "./pages/student/Forum";
 import PronunciationCoach from "./pages/student/PronunciationCoach";
 import WritingCoach from "./pages/student/WritingCoach";
 import VocabGame from "./pages/student/VocabGame";
+import GrammarCoach from "./pages/student/GrammarCoach";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -122,6 +123,7 @@ function Router() {
       <Route path="/student/pronunciation-coach"><LayoutWrapper component={PronunciationCoach} allowedRoles={['student', 'admin']} /></Route>
       <Route path="/student/writing-coach"><LayoutWrapper component={WritingCoach} allowedRoles={['student', 'admin']} /></Route>
       <Route path="/student/vocab-game"><LayoutWrapper component={VocabGame} allowedRoles={['student', 'admin']} /></Route>
+      <Route path="/student/grammar-coach"><LayoutWrapper component={GrammarCoach} allowedRoles={['student', 'admin']} /></Route>
       <Route path="/forum"><LayoutWrapper component={Forum} /></Route>
 
       {/* Teacher Routes */}
