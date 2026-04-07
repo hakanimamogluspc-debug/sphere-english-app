@@ -148,10 +148,13 @@ router.post("/vocab-game/game/guess", async (req, res) => {
     return res.json({
       correct,
       word: gameOverWord || correct ? word.word : null,
+      turkish: gameOverWord || correct ? word.turkish : null,
+      correct_word: word.word,
       score_gained: scoreGained,
       current_score: updatedSession.score,
       attempts: newAttempts,
       game_over_word: gameOverWord,
+      added_to_retry: gameOverWord,
     });
   } catch (e) {
     console.error("vocab guess error:", e);
