@@ -8,12 +8,11 @@ export default function VocabGame() {
   const src = `/vocab-game/${displayName ? `?username=${encodeURIComponent(displayName)}` : ""}`;
 
   return (
-    <div className="flex flex-col h-[calc(100vh-8rem)]">
+    <div className="-mx-4 sm:-mx-6 lg:-mx-8 -mt-8 -mb-8" style={{ height: "calc(100vh - 4rem)" }}>
       <iframe
         src={src}
         title="Kelime Oyunu"
-        className="w-full flex-1 rounded-2xl border border-border shadow-lg bg-white"
-        style={{ minHeight: "600px" }}
+        className="w-full h-full border-0 bg-white"
         allow="autoplay"
       />
     </div>
