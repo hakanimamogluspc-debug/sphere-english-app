@@ -107,6 +107,11 @@ export function BrandGuide() {
           #page-7 .section-inner { zoom: 0.50; }   /* UI Bileşenler — dense */
           #page-8 .section-inner { zoom: 0.58; }   /* Görsel Dil — icons grid */
 
+          /* Vertically center pages whose content doesn't fill the full page */
+          #page-2, #page-3, #page-6, #page-7, #page-8 {
+            justify-content: center !important;
+          }
+
           /* Cover / closing — vertically centered, slightly larger */
           .cover-section {
             justify-content: center !important;
