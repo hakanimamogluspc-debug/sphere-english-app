@@ -173,3 +173,9 @@ id = "bOndxUx8en_qZad5DEN03"
 uri = "file://attached_assets/blog_c2.png"
 type = "image"
 title = "C2 — Global Liderlik"
+
+[[outputs]]
+id = "Dbtpm55vcKsOf8B3neApu"
+uri = "file://sphere-english-brand-guide.pptx"
+type = "slides"
+title = "Sphere English — Kurumsal Kimlik Kılavuzu (PPTX)"
