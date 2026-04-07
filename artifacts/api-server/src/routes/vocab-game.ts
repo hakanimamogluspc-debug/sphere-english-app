@@ -87,12 +87,29 @@ router.get("/vocab-game/game/word", async (req, res) => {
     const wordsSeen = sessionWords.filter(sw => sw.isCorrect !== null || sw.isSkipped).length;
     const totalWords = session.totalWords;
 
-    const wrongWords = await db
+    let wrongWords = await db
       .select({ word: vocabWordsTable.word })
       .from(vocabWordsTable)
-      .where(ne(vocabWordsTable.id, word.id))
+      .where(and(
+        ne(vocabWordsTable.id, word.id),
+        sql`length(word) = ${word.word.length}`
+      ))
       .orderBy(sql`RANDOM()`)
       .limit(4);
+
+    if (wrongWords.length < 4) {
+      const existing = wrongWords.map((w) => w.word);
+      const extras = await db
+        .select({ word: vocabWordsTable.word })
+        .from(vocabWordsTable)
+        .where(and(
+          ne(vocabWordsTable.id, word.id),
+          notInArray(vocabWordsTable.word, [word.word, ...existing])
+        ))
+        .orderBy(sql`RANDOM()`)
+        .limit(4 - wrongWords.length);
+      wrongWords = [...wrongWords, ...extras];
+    }
 
     const options = [word.word, ...wrongWords.map((w) => w.word)]
       .sort(() => Math.random() - 0.5);
