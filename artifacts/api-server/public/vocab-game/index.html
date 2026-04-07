@@ -240,6 +240,51 @@
       font-weight: 600;
     }
 
+    /* ── Word Placeholder ── */
+    .word-placeholder {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px 14px;
+      justify-content: center;
+      align-items: flex-end;
+      margin-top: 18px;
+      min-height: 44px;
+    }
+    .word-group {
+      display: flex;
+      gap: 7px;
+      align-items: flex-end;
+    }
+    .letter-box {
+      width: 28px;
+      height: 38px;
+      border-bottom: 2.5px solid rgba(30,58,110,0.35);
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 700;
+      font-size: 1.05rem;
+      color: var(--primary);
+      padding-bottom: 3px;
+      transition: border-color 0.2s;
+    }
+    .letter-box.filled {
+      border-color: var(--success);
+      color: var(--success);
+      animation: letterPop 0.3s cubic-bezier(.34,1.56,.64,1) both;
+    }
+    .letter-box.wrong-fill {
+      border-color: var(--error);
+      color: var(--error);
+      animation: letterPop 0.3s cubic-bezier(.34,1.56,.64,1) both;
+    }
+    @keyframes letterPop {
+      0%   { transform: scale(0.5) translateY(6px); opacity: 0; }
+      70%  { transform: scale(1.15) translateY(-2px); opacity: 1; }
+      100% { transform: scale(1)   translateY(0);    opacity: 1; }
+    }
+
     /* ── Hint Box ── */
     .hint-box {
       background: linear-gradient(135deg, rgba(19,169,224,0.08), rgba(19,169,224,0.04));
@@ -539,6 +584,7 @@
         <span class="prompt-icon" id="promptIcon">🖼️</span>
         <div class="prompt-text" id="promptText">Yükleniyor...</div>
         <div class="prompt-category" id="promptCategory"></div>
+        <div class="word-placeholder" id="wordPlaceholder"></div>
       </div>
 
       <!-- Attempts Dots -->
@@ -790,6 +836,7 @@ async function loadNextWord() {
   document.getElementById('promptIcon').textContent = icon;
   document.getElementById('promptText').textContent = data.image_prompt;
   document.getElementById('promptCategory').textContent = `Kategori: ${data.category}`;
+  renderPlaceholder(data.word_structure);
 
   const levelBadge = `<span class="level-badge level-${data.level}">${data.level}</span>`;
   document.getElementById('levelBadgeContainer').innerHTML = levelBadge;
@@ -838,6 +885,7 @@ async function submitGuess() {
     toast('Doğru! +' + data.score_gained + ' puan 🎉', 'success');
     document.getElementById('currentScore').textContent =
       parseInt(document.getElementById('currentScore').textContent) + data.score_gained;
+    fillPlaceholder(data.word, 'correct');
     disableInput();
     await pause(1800);
     await loadNextWord();
@@ -845,6 +893,7 @@ async function submitGuess() {
     document.getElementById('guessInput').classList.add('error');
     fb.className = 'feedback skipped';
     fb.innerHTML = `<span>⚠️</span> <span>3 hak bitti! Doğru kelime: <strong>${data.correct_word}</strong> (${data.turkish}) — Tekrar listesine eklendi.</span>`;
+    fillPlaceholder(data.correct_word, 'wrong');
     disableInput();
     await pause(2200);
     await loadNextWord();
@@ -1001,6 +1050,49 @@ function resetGameUI() {
   document.getElementById('levelBadgeContainer').innerHTML = '';
 }
 
+/* ═══════════════════════════════════
+   WORD PLACEHOLDER
+════════════════════════════════════ */
+function renderPlaceholder(wordStructure) {
+  const container = document.getElementById('wordPlaceholder');
+  container.innerHTML = '';
+  if (!wordStructure || !wordStructure.length) return;
+  wordStructure.forEach((len, groupIdx) => {
+    if (groupIdx > 0) {
+      const spacer = document.createElement('div');
+      spacer.style.cssText = 'width:18px;';
+      container.appendChild(spacer);
+    }
+    const group = document.createElement('div');
+    group.className = 'word-group';
+    for (let i = 0; i < len; i++) {
+      const box = document.createElement('div');
+      box.className = 'letter-box';
+      box.id = `lb-${groupIdx}-${i}`;
+      group.appendChild(box);
+    }
+    container.appendChild(group);
+  });
+}
+
+function fillPlaceholder(word, mode) {
+  if (!word) return;
+  const cls = mode === 'wrong' ? 'wrong-fill' : 'filled';
+  let groupIdx = 0;
+  let charIdx = 0;
+  let delay = 0;
+  for (let i = 0; i < word.length; i++) {
+    if (word[i] === ' ') { groupIdx++; charIdx = 0; continue; }
+    const box = document.getElementById(`lb-${groupIdx}-${charIdx}`);
+    if (box) {
+      const b = box, letter = word[i].toUpperCase(), c = cls;
+      setTimeout(() => { b.textContent = letter; b.classList.add(c); }, delay);
+      delay += 75;
+    }
+    charIdx++;
+  }
+}
+
 function resetWordUI() {
   document.getElementById('guessInput').value = '';
   document.getElementById('guessInput').className = 'input';
@@ -1013,6 +1105,7 @@ function resetWordUI() {
   document.getElementById('dot1').className = 'attempt-dot';
   document.getElementById('dot2').className = 'attempt-dot';
   document.getElementById('dot3').className = 'attempt-dot';
+  document.getElementById('wordPlaceholder').innerHTML = '';
   state.attempts = 0;
   state.hintUsed = false;
 }

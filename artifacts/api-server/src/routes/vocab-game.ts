@@ -97,6 +97,7 @@ router.get("/vocab-game/game/word", async (req, res) => {
       words_seen: wordsSeen,
       total_words: totalWords,
       current_score: session.score || 0,
+      word_structure: word.word.split(' ').map((w: string) => w.length),
     });
   } catch (e) {
     console.error("vocab word error:", e);
