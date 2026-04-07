@@ -53,6 +53,51 @@ export function BrandGuide() {
   return (
     <div className="w-full" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
 
+      {/* Print styles */}
+      <style>{`
+        @media print {
+          .no-print { display: none !important; }
+          * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+          body { margin: 0; }
+          section { page-break-inside: avoid; }
+        }
+        @media screen {
+          .print-btn {
+            position: fixed;
+            bottom: 32px;
+            right: 32px;
+            z-index: 9999;
+            background: #13a9e0;
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 12px;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-weight: 700;
+            font-size: 15px;
+            cursor: pointer;
+            box-shadow: 0 8px 24px rgba(19,169,224,0.4);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: transform 0.15s, box-shadow 0.15s;
+          }
+          .print-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 32px rgba(19,169,224,0.5);
+          }
+        }
+      `}</style>
+
+      {/* Floating print button */}
+      <button className="print-btn no-print" onClick={() => window.print()}>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+          <rect x="6" y="14" width="12" height="8"/>
+        </svg>
+        PDF olarak indir
+      </button>
+
       {/* ─── 1. KAPAK ──────────────────────────────────────────── */}
       <section
         className="relative flex flex-col items-center justify-center overflow-hidden"
