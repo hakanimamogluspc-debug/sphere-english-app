@@ -374,46 +374,94 @@ export function BrandGuide() {
           Logo, marka kimliğinin en kritik unsurudur. Tutarlı kullanım güvenilirliği artırır.
         </p>
 
-        {/* Logo variations */}
-        <div className="grid grid-cols-3 gap-6 mb-12">
-          {/* Tam logo - koyu */}
+        {/* Logo variations — 4 official variants */}
+        <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-5">Resmi Logo Varyasyonları</p>
+        <div className="grid grid-cols-2 gap-6 mb-6">
+          {/* V1: Yatay tam logo — koyu zemin */}
           <div>
-            <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">Birincil · Koyu Zemin</p>
-            <div className="rounded-2xl flex flex-col items-center justify-center h-44 gap-3" style={{ background: NAVY }}>
-              <div className="flex items-center gap-3">
-                <SphereLogo size={40} />
-                <span className="text-white font-bold text-xl" style={{ fontFamily: "'Outfit', sans-serif" }}>Sphere English</span>
-              </div>
-              <div className="h-0.5 w-32 rounded-full opacity-30" style={{ background: TURQUOISE }} />
-              <span className="text-white opacity-50 text-xs tracking-widest uppercase">Learning Management System</span>
+            <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">
+              V1 · Yatay Tam Logo — Koyu Zemin
+            </p>
+            <div className="rounded-2xl flex items-center justify-center h-44 p-8" style={{ background: NAVY }}>
+              <img src="/__mockup/images/sphere-logo-horizontal.png" alt="Sphere English Yatay Logo" className="max-h-full max-w-full object-contain" style={{ filter: "brightness(0) invert(1)" }} />
             </div>
-            <p className="text-xs text-gray-400 mt-2">Birincil kullanım</p>
+            <p className="text-xs text-gray-400 mt-2">Birincil kullanım · Header, sunum, broşür</p>
           </div>
 
-          {/* Tam logo - açık */}
+          {/* V2: Yatay tam logo — açık zemin */}
           <div>
-            <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">İkincil · Açık Zemin</p>
-            <div className="rounded-2xl flex flex-col items-center justify-center h-44 gap-3 border-2 border-gray-100">
-              <div className="flex items-center gap-3">
-                <SphereLogo size={40} />
-                <span className="font-bold text-xl" style={{ fontFamily: "'Outfit', sans-serif", color: NAVY }}>Sphere English</span>
-              </div>
-              <div className="h-0.5 w-32 rounded-full opacity-30" style={{ background: NAVY }} />
-              <span className="opacity-50 text-xs tracking-widest uppercase" style={{ color: NAVY }}>Learning Management System</span>
+            <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">
+              V2 · Yatay Tam Logo — Açık Zemin
+            </p>
+            <div className="rounded-2xl flex items-center justify-center h-44 p-8 border-2 border-gray-100 bg-white">
+              <img src="/__mockup/images/sphere-logo-horizontal.png" alt="Sphere English Yatay Logo Açık" className="max-h-full max-w-full object-contain" />
             </div>
-            <p className="text-xs text-gray-400 mt-2">Web ve dokümanlarda</p>
+            <p className="text-xs text-gray-400 mt-2">Web sitesi, e-posta imzası, doküman başlığı</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-3 gap-6 mb-6">
+          {/* V3: Metin logosu — koyu zemin */}
+          <div>
+            <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">
+              V3 · Metin Logo — Koyu Zemin
+            </p>
+            <div className="rounded-2xl flex items-center justify-center h-44 p-8" style={{ background: NAVY }}>
+              <img src="/__mockup/images/sphere-logo-text.png" alt="Sphere English Metin Logo" className="max-h-full max-w-full object-contain" style={{ filter: "brightness(0) invert(1)" }} />
+            </div>
+            <p className="text-xs text-gray-400 mt-2">Yedek kullanım · İkon kullanılamadığında</p>
           </div>
 
-          {/* Simge logo */}
+          {/* V4: Metin logosu — açık zemin */}
           <div>
-            <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">Monogram · Ikon</p>
+            <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">
+              V4 · Metin Logo — Açık Zemin
+            </p>
+            <div className="rounded-2xl flex items-center justify-center h-44 p-8 border-2 border-gray-100 bg-white">
+              <img src="/__mockup/images/sphere-logo-text.png" alt="Sphere English Metin Logo Açık" className="max-h-full max-w-full object-contain" />
+            </div>
+            <p className="text-xs text-gray-400 mt-2">Belgeler, sertifikalar, slayt footer</p>
+          </div>
+
+          {/* V5: S Monogram */}
+          <div>
+            <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">
+              V5 · S Monogram — İkon
+            </p>
             <div className="rounded-2xl flex flex-col items-center justify-center h-44 gap-4 bg-gray-50">
-              <div className="w-24 h-24 rounded-2xl flex items-center justify-center shadow-lg overflow-hidden bg-white p-2">
-                <SphereLogo size={72} />
+              <div className="w-24 h-24 rounded-2xl flex items-center justify-center shadow-md overflow-hidden bg-white">
+                <img src="/__mockup/images/sphere-logo-white-bg.png" alt="Sphere English S Monogram" className="w-full h-full object-contain" />
               </div>
-              <p className="text-xs text-gray-500">Favicon, uygulama ikonu</p>
+              <p className="text-xs text-gray-500 text-center px-2">Favicon, uygulama ikonu, sosyal medya</p>
             </div>
-            <p className="text-xs text-gray-400 mt-2">Küçük boyutlarda</p>
+            <p className="text-xs text-gray-400 mt-2">32px ve üzeri · Kare format</p>
+          </div>
+        </div>
+
+        {/* Zemin karşılaştırma */}
+        <div className="rounded-2xl p-6 mb-10 border border-gray-100 bg-gray-50">
+          <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-5">Zemin Uyumu Özeti</p>
+          <div className="grid grid-cols-3 gap-4">
+            {[
+              { bg: NAVY, label: "Lacivert Zemin", imgs: ["V1", "V3", "V5 (beyaz S)"], ok: true },
+              { bg: "#ffffff", label: "Beyaz / Açık Zemin", imgs: ["V2", "V4", "V5"], ok: true, border: true },
+              { bg: TURQUOISE, label: "Turkuaz Zemin", imgs: ["Yalnızca beyaz/ters logo"], ok: false },
+            ].map(({ bg, label, imgs, ok, border }) => (
+              <div key={label} className="rounded-xl overflow-hidden shadow-sm">
+                <div className="h-16 flex items-center justify-center text-sm font-bold"
+                  style={{ background: bg, color: bg === "#ffffff" ? NAVY : "white", border: border ? "2px solid #e5e7eb" : undefined }}>
+                  {label}
+                </div>
+                <div className="bg-white p-3">
+                  {imgs.map(img => (
+                    <div key={img} className="flex items-center gap-2 py-0.5">
+                      {ok ? <CheckCircle size={12} className="text-green-500 shrink-0" /> : <XCircle size={12} className="text-amber-500 shrink-0" />}
+                      <span className="text-xs text-gray-600">{img}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 
