@@ -90,7 +90,17 @@ async function transcribeVerbose(
     console.info(`Whisper transcription: "${text}" (${words.length} words, ${finalBuffer.length} bytes)`);
     return { text, words };
   } catch (e: any) {
-    console.error("Whisper transcription failed:", e?.status, e?.message || e);
+    const status = e?.status ?? e?.code ?? "unknown";
+    const msg = e?.message || String(e);
+    console.error(`Whisper transcription failed [${status}]:`, msg);
+    // Surface specific error type for better diagnostics
+    if (status === 401 || msg.includes("Incorrect API key") || msg.includes("invalid_api_key")) {
+      console.error("OPENAI_API_KEY geçersiz veya eksik — üretim ortamında env var ayarlanmış mı?");
+    } else if (status === 429) {
+      console.error("OpenAI rate limit aşıldı — kota veya dakika limiti.");
+    } else if (status === 503 || msg.includes("overloaded") || msg.includes("unavailable")) {
+      console.error("OpenAI servisi geçici olarak kullanılamıyor.");
+    }
     return { text: "", words: [], apiError: true };
   }
 }
