@@ -240,6 +240,31 @@
       font-weight: 600;
     }
 
+    /* ── Word Options Badges ── */
+    .word-options {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      margin-top: 16px;
+    }
+    .word-option-btn {
+      font-family: 'Outfit', sans-serif;
+      font-weight: 600;
+      font-size: 0.88rem;
+      padding: 7px 16px;
+      border-radius: 999px;
+      border: 1.5px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      cursor: default;
+      opacity: 0.82;
+      user-select: none;
+      transition: none;
+      letter-spacing: 0.01em;
+      box-shadow: var(--shadow-sm);
+    }
+
     /* ── Word Placeholder ── */
     .word-placeholder {
       display: flex;
@@ -584,6 +609,7 @@
         <span class="prompt-icon" id="promptIcon">🖼️</span>
         <div class="prompt-text" id="promptText">Yükleniyor...</div>
         <div class="prompt-category" id="promptCategory"></div>
+        <div class="word-options" id="wordOptions"></div>
         <div class="word-placeholder" id="wordPlaceholder"></div>
       </div>
 
@@ -836,6 +862,7 @@ async function loadNextWord() {
   document.getElementById('promptIcon').textContent = icon;
   document.getElementById('promptText').textContent = data.image_prompt;
   document.getElementById('promptCategory').textContent = `Kategori: ${data.category}`;
+  renderOptions(data.word_options);
   renderPlaceholder(data.word_structure);
 
   const levelBadge = `<span class="level-badge level-${data.level}">${data.level}</span>`;
@@ -1053,6 +1080,23 @@ function resetGameUI() {
 }
 
 /* ═══════════════════════════════════
+   WORD OPTIONS
+════════════════════════════════════ */
+function renderOptions(options) {
+  const container = document.getElementById('wordOptions');
+  container.innerHTML = '';
+  if (!options || !options.length) return;
+  options.forEach(word => {
+    const btn = document.createElement('button');
+    btn.className = 'word-option-btn';
+    btn.textContent = word;
+    btn.disabled = true;
+    btn.type = 'button';
+    container.appendChild(btn);
+  });
+}
+
+/* ═══════════════════════════════════
    WORD PLACEHOLDER
 ════════════════════════════════════ */
 function renderPlaceholder(wordStructure) {
@@ -1107,6 +1151,7 @@ function resetWordUI() {
   document.getElementById('dot1').className = 'attempt-dot';
   document.getElementById('dot2').className = 'attempt-dot';
   document.getElementById('dot3').className = 'attempt-dot';
+  document.getElementById('wordOptions').innerHTML = '';
   document.getElementById('wordPlaceholder').innerHTML = '';
   state.attempts = 0;
   state.hintUsed = false;

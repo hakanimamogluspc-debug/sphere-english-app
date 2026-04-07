@@ -87,6 +87,16 @@ router.get("/vocab-game/game/word", async (req, res) => {
     const wordsSeen = sessionWords.filter(sw => sw.isCorrect !== null || sw.isSkipped).length;
     const totalWords = session.totalWords;
 
+    const wrongWords = await db
+      .select({ word: vocabWordsTable.word })
+      .from(vocabWordsTable)
+      .where(ne(vocabWordsTable.id, word.id))
+      .orderBy(sql`RANDOM()`)
+      .limit(4);
+
+    const options = [word.word, ...wrongWords.map((w) => w.word)]
+      .sort(() => Math.random() - 0.5);
+
     return res.json({
       word_id: word.id,
       word_index: next.wordIndex + 1,
@@ -98,6 +108,7 @@ router.get("/vocab-game/game/word", async (req, res) => {
       total_words: totalWords,
       current_score: session.score || 0,
       word_structure: word.word.split(' ').map((w: string) => w.length),
+      word_options: options,
     });
   } catch (e) {
     console.error("vocab word error:", e);
