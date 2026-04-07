@@ -1053,11 +1053,11 @@ async function loadLeaderboard() {
       <div>
         <div class="lb-name">${e.username}</div>
         <div class="lb-meta">
-          <span class="level-badge level-${e.level}">${e.level}</span>
-          ${e.words_correct}/${e.words_seen} doğru
+          <span class="level-badge level-${e.best_level}">${e.best_level}</span>
+          <span style="font-size:0.75rem; color:var(--text-muted);">${e.games_played} oyun</span>
         </div>
       </div>
-      <div class="lb-score">${e.score}</div>
+      <div class="lb-score">${e.total_score}</div>
     </div>
   `).join('');
 }

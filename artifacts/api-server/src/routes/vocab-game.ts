@@ -258,28 +258,53 @@ router.post("/vocab-game/game/finish", async (req, res) => {
 router.get("/vocab-game/scores/leaderboard", async (req, res) => {
   try {
     const { level = "all", limit = "20" } = req.query as { level?: string; limit?: string };
+    const lim = Math.min(Number(limit) || 20, 100);
 
-    let query = db.select().from(vocabGameSessionsTable)
-      .where(eq(vocabGameSessionsTable.isFinished, true))
-      .orderBy(desc(vocabGameSessionsTable.score))
-      .limit(Number(limit));
+    let rows: Array<{ username: string; total_score: number; best_level: string; games_played: number }>;
 
-    const sessions = level === "all"
-      ? await query
-      : await db.select().from(vocabGameSessionsTable)
-          .where(and(eq(vocabGameSessionsTable.isFinished, true), eq(vocabGameSessionsTable.level, level)))
-          .orderBy(desc(vocabGameSessionsTable.score))
-          .limit(Number(limit));
+    if (level === "all") {
+      const result = await db.execute(sql`
+        SELECT
+          username,
+          SUM(score)::int           AS total_score,
+          COUNT(*)::int             AS games_played,
+          (
+            SELECT level
+            FROM vocab_game_sessions sub
+            WHERE sub.username = vgs.username AND sub.is_finished = true
+            GROUP BY level
+            ORDER BY SUM(sub.score) DESC
+            LIMIT 1
+          ) AS best_level
+        FROM vocab_game_sessions vgs
+        WHERE is_finished = true
+        GROUP BY username
+        ORDER BY total_score DESC
+        LIMIT ${lim}
+      `);
+      rows = result.rows as any;
+    } else {
+      const result = await db.execute(sql`
+        SELECT
+          username,
+          SUM(score)::int  AS total_score,
+          COUNT(*)::int    AS games_played,
+          level            AS best_level
+        FROM vocab_game_sessions
+        WHERE is_finished = true AND level = ${level}
+        GROUP BY username, level
+        ORDER BY total_score DESC
+        LIMIT ${lim}
+      `);
+      rows = result.rows as any;
+    }
 
-    return res.json(sessions.map((s, i) => ({
+    return res.json(rows.map((r, i) => ({
       rank: i + 1,
-      username: s.username,
-      score: s.score,
-      level: s.level,
-      words_correct: s.wordsCorrect,
-      words_seen: s.wordsSeen,
-      hints_used: s.hintsUsed,
-      played_at: s.createdAt,
+      username: r.username,
+      total_score: Number(r.total_score) || 0,
+      best_level: r.best_level || "—",
+      games_played: Number(r.games_played) || 0,
     })));
   } catch (e) {
     console.error("vocab leaderboard error:", e);
