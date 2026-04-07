@@ -22,9 +22,9 @@ const NAVY_DARK = "#152c55";
 const TURQ_LIGHT = "#4dc3ec";
 const TURQ_DARK = "#0d7bab";
 
-function Section({ children, bg = "white", className = "" }: { children: React.ReactNode; bg?: string; className?: string }) {
+function Section({ children, bg = "white", className = "", id = "" }: { children: React.ReactNode; bg?: string; className?: string; id?: string }) {
   return (
-    <section style={{ background: bg }} className={`brand-section ${className}`}>
+    <section id={id || undefined} style={{ background: bg }} className={`brand-section ${className}`}>
       <div className="section-inner px-20 py-16">
         {children}
       </div>
@@ -91,13 +91,21 @@ export function BrandGuide() {
             justify-content: flex-start !important;
           }
 
-          /* Content sections — zoom scales layout + content, stays centered */
+          /* Base style for all content section-inner elements */
           .brand-section:not(.cover-section) .section-inner {
-            zoom: 0.64;
             width: 1440px;
             flex-shrink: 0;
             padding: 40px 80px !important;
           }
+
+          /* Per-page zoom — tuned to content density */
+          #page-2 .section-inner { zoom: 0.62; }   /* Marka Kimliği — moderate */
+          #page-3 .section-inner { zoom: 0.55; }   /* Renk Paleti — dense grid */
+          #page-4 .section-inner { zoom: 0.54; }   /* Tipografi — many samples */
+          #page-5 .section-inner { zoom: 0.48; }   /* Logo — 6 variants + rules */
+          #page-6 .section-inner { zoom: 0.60; }   /* Ses & Ton — text cards */
+          #page-7 .section-inner { zoom: 0.50; }   /* UI Bileşenler — dense */
+          #page-8 .section-inner { zoom: 0.58; }   /* Görsel Dil — icons grid */
 
           /* Cover / closing — vertically centered, slightly larger */
           .cover-section {
@@ -154,6 +162,7 @@ export function BrandGuide() {
 
       {/* ─── 1. KAPAK ──────────────────────────────────────────── */}
       <section
+        id="page-1"
         className="brand-section cover-section relative flex flex-col items-center justify-center overflow-hidden"
         style={{ background: `linear-gradient(135deg, ${NAVY_DARK} 0%, ${NAVY} 50%, ${NAVY_LIGHT} 100%)` }}
       >
@@ -207,7 +216,7 @@ export function BrandGuide() {
       </section>
 
       {/* ─── 2. MARKA KİMLİĞİ ─────────────────────────────────── */}
-      <Section bg="#f8fafd">
+      <Section id="page-2" bg="#f8fafd">
         <SectionLabel text="Marka Kimliği" />
         <SectionTitle text="Kim Olduğumuz" />
         <p className="text-lg text-gray-500 mb-12 max-w-2xl" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
@@ -250,7 +259,7 @@ export function BrandGuide() {
       </Section>
 
       {/* ─── 3. RENK PALETİ ───────────────────────────────────── */}
-      <Section bg="white">
+      <Section id="page-3" bg="white">
         <SectionLabel text="Renk Sistemi" />
         <SectionTitle text="Renk Paleti" />
         <p className="text-lg text-gray-500 mb-12 max-w-2xl">
@@ -367,7 +376,7 @@ export function BrandGuide() {
       </Section>
 
       {/* ─── 4. TİPOGRAFİ ─────────────────────────────────────── */}
-      <Section bg="#f8fafd">
+      <Section id="page-4" bg="#f8fafd">
         <SectionLabel text="Tipografi" />
         <SectionTitle text="Yazı Tipi Sistemi" />
         <p className="text-lg text-gray-500 mb-12 max-w-2xl">
@@ -468,7 +477,7 @@ export function BrandGuide() {
       </Section>
 
       {/* ─── 5. LOGO KULLANIMI ─────────────────────────────────── */}
-      <Section bg="white">
+      <Section id="page-5" bg="white">
         <SectionLabel text="Logo Sistemi" />
         <SectionTitle text="Logo ve Kullanım Kuralları" />
         <p className="text-lg text-gray-500 mb-12 max-w-2xl">
@@ -632,7 +641,7 @@ export function BrandGuide() {
       </Section>
 
       {/* ─── 6. SES & TON ──────────────────────────────────────── */}
-      <Section bg="#f8fafd">
+      <Section id="page-6" bg="#f8fafd">
         <SectionLabel text="Marka Sesi" />
         <SectionTitle text="Ses & Ton" />
         <p className="text-lg text-gray-500 mb-12 max-w-2xl">
@@ -685,7 +694,7 @@ export function BrandGuide() {
       </Section>
 
       {/* ─── 7. DİJİTAL UI DİLİ ───────────────────────────────── */}
-      <Section bg="white">
+      <Section id="page-7" bg="white">
         <SectionLabel text="Dijital UI" />
         <SectionTitle text="UI Bileşen Dili" />
         <p className="text-lg text-gray-500 mb-12 max-w-2xl">
@@ -846,7 +855,7 @@ export function BrandGuide() {
       </Section>
 
       {/* ─── 8. GÖRSEL DIL ─────────────────────────────────────── */}
-      <Section bg="#f8fafd">
+      <Section id="page-8" bg="#f8fafd">
         <SectionLabel text="Görsel Dil" />
         <SectionTitle text="Fotoğraf & İkonografi" />
         <p className="text-lg text-gray-500 mb-12 max-w-2xl">
@@ -899,7 +908,7 @@ export function BrandGuide() {
       </Section>
 
       {/* ─── 9. KAPANIŞ ────────────────────────────────────────── */}
-      <section className="brand-section cover-section relative flex flex-col items-center justify-center overflow-hidden"
+      <section id="page-9" className="brand-section cover-section relative flex flex-col items-center justify-center overflow-hidden"
         style={{ background: `linear-gradient(135deg, ${NAVY_DARK} 0%, ${NAVY} 60%, ${NAVY_LIGHT} 100%)` }}>
         <div className="section-inner w-full flex flex-col items-center justify-center py-24">
           <div className="absolute inset-0 opacity-5 pointer-events-none" style={{
