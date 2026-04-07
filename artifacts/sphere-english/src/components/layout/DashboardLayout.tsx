@@ -4,7 +4,8 @@ import { Link, useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   BookOpen, LayoutDashboard, Video, FileQuestion, LineChart, 
-  Award, MessageSquare, Users, Megaphone, LogOut, Menu, Building2, BarChart3, GraduationCap, Mic, MessageCircle, FolderOpen, PenLine, TrendingUp, Settings2, Gamepad2
+  Award, MessageSquare, Users, Megaphone, LogOut, Menu, Building2, BarChart3, GraduationCap, Mic, MessageCircle, FolderOpen, PenLine, TrendingUp, Settings2, Gamepad2,
+  Sparkles, ChevronDown
 } from "lucide-react";
 import { Avatar } from "../ui/core";
 
@@ -17,6 +18,7 @@ type NavItem = {
   href: string;
   icon: React.ElementType;
   moduleKey?: string;
+  group?: 'ai-studio';
 };
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -24,6 +26,18 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [featureSettings, setFeatureSettings] = useState<FeatureSetting[]>([]);
+
+  const AI_STUDIO_HREFS = [
+    '/student/pronunciation-coach',
+    '/student/writing-coach',
+    '/student/vocab-game',
+  ];
+  const isAiStudioPage = AI_STUDIO_HREFS.some(h => location === h || location.startsWith(h));
+  const [isAiStudioOpen, setIsAiStudioOpen] = useState(isAiStudioPage);
+
+  useEffect(() => {
+    if (isAiStudioPage) setIsAiStudioOpen(true);
+  }, [location]);
 
   useEffect(() => {
     const token = localStorage.getItem("sphere_token");
@@ -44,9 +58,9 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       { name: 'Ders Takvimim',       href: '/live-classes',                   icon: Video,         moduleKey: 'student-live-classes' },
       { name: 'Alıştırmalar',        href: '/quizzes',                        icon: FileQuestion,  moduleKey: 'student-quizzes' },
       { name: 'Speaking Club',       href: '/student/speaking-club',          icon: Mic,           moduleKey: 'student-speaking-club' },
-      { name: 'Telaffuz Koçu 🤖',    href: '/student/pronunciation-coach',    icon: Mic,           moduleKey: 'student-pronunciation-coach' },
-      { name: 'Yazma Koçu 🤖',       href: '/student/writing-coach',          icon: PenLine,       moduleKey: 'student-writing-coach' },
-      { name: 'Kelime Oyunu 🎮',     href: '/student/vocab-game',             icon: Gamepad2,      moduleKey: 'student-vocab-game' },
+      { name: 'Telaffuz Koçu',       href: '/student/pronunciation-coach',    icon: Mic,           moduleKey: 'student-pronunciation-coach', group: 'ai-studio' },
+      { name: 'Yazma Koçu',          href: '/student/writing-coach',          icon: PenLine,       moduleKey: 'student-writing-coach',        group: 'ai-studio' },
+      { name: 'Kelime Oyunu',        href: '/student/vocab-game',             icon: Gamepad2,      moduleKey: 'student-vocab-game',           group: 'ai-studio' },
       { name: 'Forum',               href: '/forum',                          icon: MessageCircle, moduleKey: 'student-forum' },
       { name: 'İlerleme Durumum',    href: '/progress',                       icon: LineChart,     moduleKey: 'student-progress' },
       { name: 'Sertifikalar',        href: '/certificates',                   icon: Award,         moduleKey: 'student-certificates' },
@@ -100,15 +114,13 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   function isVisible(item: NavItem): boolean {
     if (!item.moduleKey) return true;
     const setting = featureSettings.find(f => f.key === item.moduleKey);
-    if (!setting) return true; // Ayar henüz yüklenmediyse göster
+    if (!setting) return true;
     if (!setting.isEnabled) return false;
     const role = user?.role ?? "student";
     const accountType = (user as any)?.accountType as string | undefined;
 
     if (role === "student") {
-      // "student" = tüm öğrenciler
       if (setting.visibleTo.includes("student")) return true;
-      // Spesifik tip kontrolü
       if (accountType === "bireysel" && setting.visibleTo.includes("bireysel_ogrenci")) return true;
       if (accountType === "kurumsal" && setting.visibleTo.includes("kurumsal_ogrenci")) return true;
       return false;
@@ -118,6 +130,31 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
   const rawNav = user ? navigation[user.role as keyof typeof navigation] || navigation.student : [];
   const currentNav = rawNav.filter(isVisible);
+
+  const firstAiIdx = currentNav.findIndex(i => i.group === 'ai-studio');
+  const aiStudioItems = currentNav.filter(i => i.group === 'ai-studio');
+  const lastAiIdx = firstAiIdx === -1 ? -1 : firstAiIdx + aiStudioItems.length - 1;
+  const preGroupItems  = firstAiIdx === -1 ? currentNav : currentNav.slice(0, firstAiIdx);
+  const postGroupItems = firstAiIdx === -1 ? [] : currentNav.slice(lastAiIdx + 1);
+
+  const NavLink = ({ item }: { item: NavItem }) => {
+    const isActive = location === item.href || (location.startsWith(item.href) && item.href !== '/dashboard' && item.href !== '/corporate/dashboard');
+    return (
+      <Link
+        key={item.name}
+        href={item.href}
+        className={`group flex items-center rounded-xl px-3 py-3 text-sm font-medium transition-all ${
+          isActive
+            ? 'bg-sidebar-accent text-white shadow-inner'
+            : 'text-sidebar-foreground/80 hover:bg-sidebar-accent/50 hover:text-white'
+        }`}
+        onClick={() => setIsMobileOpen(false)}
+      >
+        <item.icon className={`mr-3 h-5 w-5 flex-shrink-0 transition-colors ${isActive ? 'text-accent' : 'text-sidebar-foreground/50 group-hover:text-sidebar-foreground/80'}`} />
+        {item.name}
+      </Link>
+    );
+  };
 
   const SidebarContent = () => (
     <>
@@ -143,26 +180,50 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
       <div className="flex flex-1 flex-col overflow-y-auto px-4 py-4">
         <nav className="flex-1 space-y-1.5">
-          {currentNav.map((item) => {
-            const isActive = location === item.href || (location.startsWith(item.href) && item.href !== '/dashboard' && item.href !== '/corporate/dashboard');
-            return (
-              <Link 
-                key={item.name} 
-                href={item.href}
-                className={`group flex items-center rounded-xl px-3 py-3 text-sm font-medium transition-all ${
-                  isActive 
-                    ? 'bg-sidebar-accent text-white shadow-inner' 
+          {preGroupItems.map(item => <NavLink key={item.href} item={item} />)}
+
+          {aiStudioItems.length > 0 && (
+            <div>
+              <button
+                onClick={() => setIsAiStudioOpen(o => !o)}
+                className={`w-full group flex items-center rounded-xl px-3 py-3 text-sm font-medium transition-all ${
+                  isAiStudioPage && !isAiStudioOpen
+                    ? 'bg-sidebar-accent text-white shadow-inner'
                     : 'text-sidebar-foreground/80 hover:bg-sidebar-accent/50 hover:text-white'
                 }`}
-                onClick={() => setIsMobileOpen(false)}
               >
-                <item.icon className={`mr-3 h-5 w-5 flex-shrink-0 transition-colors ${isActive ? 'text-accent' : 'text-sidebar-foreground/50 group-hover:text-sidebar-foreground/80'}`} />
-                {item.name}
-              </Link>
-            );
-          })}
+                <Sparkles className={`mr-3 h-5 w-5 flex-shrink-0 transition-colors ${isAiStudioPage ? 'text-accent' : 'text-sidebar-foreground/50 group-hover:text-sidebar-foreground/80'}`} />
+                <span className="flex-1 text-left">Sphere AI Studio</span>
+                <motion.div
+                  animate={{ rotate: isAiStudioOpen ? 180 : 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <ChevronDown className="h-4 w-4 opacity-60" />
+                </motion.div>
+              </button>
+
+              <AnimatePresence initial={false}>
+                {isAiStudioOpen && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.22, ease: 'easeInOut' }}
+                    className="overflow-hidden"
+                  >
+                    <div className="mt-1 ml-3 pl-3 border-l border-sidebar-border/50 space-y-1">
+                      {aiStudioItems.map(item => <NavLink key={item.href} item={item} />)}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          )}
+
+          {postGroupItems.map(item => <NavLink key={item.href} item={item} />)}
         </nav>
       </div>
+
       <div className="flex shrink-0 border-t border-sidebar-border p-4">
         <div className="group block w-full shrink-0">
           <div className="flex items-center">
@@ -204,7 +265,9 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           </button>
           <div className="flex flex-1 gap-x-4 self-stretch lg:gap-x-6 items-center justify-between">
             <h1 className="text-xl font-bold font-display text-foreground hidden sm:block">
-              {currentNav.find(n => n.href === location || location.startsWith(n.href))?.name || 'Kontrol Paneli'}
+              {isAiStudioPage
+                ? 'Sphere AI Studio'
+                : currentNav.find(n => n.href === location || location.startsWith(n.href))?.name || 'Kontrol Paneli'}
             </h1>
             <div className="flex items-center gap-x-4 lg:gap-x-6 ml-auto">
               {user?.role !== 'corporate' && (
