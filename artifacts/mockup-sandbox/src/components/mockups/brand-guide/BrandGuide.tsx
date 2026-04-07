@@ -75,39 +75,43 @@ export function BrandGuide() {
             padding: 0 !important;
           }
 
-          /* Every <section> becomes exactly one landscape A4 page */
+          /* Each section = one landscape page, horizontally centered */
           section {
             page-break-after: always !important;
-            page-break-inside: avoid !important;
             break-after: page !important;
+            page-break-inside: avoid !important;
             break-inside: avoid !important;
             height: 100vh !important;
             width: 100vw !important;
             overflow: hidden !important;
             box-sizing: border-box !important;
-            position: relative !important;
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
+            justify-content: flex-start !important;
           }
 
-          /* Regular content sections — scale from top-left */
+          /* Content sections — zoom scales layout + content, stays centered */
           .brand-section:not(.cover-section) .section-inner {
-            transform: scale(0.62) !important;
-            transform-origin: top left !important;
-            width: 161% !important;
-            padding: 36px 72px !important;
+            zoom: 0.64;
+            width: 1440px;
+            flex-shrink: 0;
+            padding: 40px 80px !important;
           }
 
-          /* Cover / closing — keep flex centering, scale from center */
+          /* Cover / closing — vertically centered, slightly larger */
           .cover-section {
+            justify-content: center !important;
+          }
+          .cover-section .section-inner {
+            zoom: 0.88;
+            width: 100%;
             display: flex !important;
             flex-direction: column !important;
             align-items: center !important;
             justify-content: center !important;
-          }
-          .cover-section .section-inner {
-            transform: scale(0.85) !important;
-            transform-origin: center center !important;
-            width: 100% !important;
-            position: relative !important;
+            flex-shrink: 0;
+            padding: 0 !important;
           }
         }
 
