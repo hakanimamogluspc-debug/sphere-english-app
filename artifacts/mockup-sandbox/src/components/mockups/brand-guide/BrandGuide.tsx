@@ -438,6 +438,28 @@ export function BrandGuide() {
           </div>
         </div>
 
+        {/* V6: Yatay Tek Satır Metin Logo */}
+        <div className="grid grid-cols-2 gap-6 mb-6">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">
+              V6 · Yatay Metin Logo — Koyu Zemin
+            </p>
+            <div className="rounded-2xl flex items-center justify-center h-32 px-10" style={{ background: NAVY }}>
+              <img src="/__mockup/images/sphere-logo-inline-text.png" alt="Sphere English Yatay Metin Koyu" className="max-h-full max-w-full object-contain" style={{ filter: "brightness(0) invert(1)" }} />
+            </div>
+            <p className="text-xs text-gray-400 mt-2">Reklam banner, sosyal medya başlığı, tek satır alan</p>
+          </div>
+          <div>
+            <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">
+              V6 · Yatay Metin Logo — Açık Zemin
+            </p>
+            <div className="rounded-2xl flex items-center justify-center h-32 px-10 border-2 border-gray-100 bg-white">
+              <img src="/__mockup/images/sphere-logo-inline-text.png" alt="Sphere English Yatay Metin Açık" className="max-h-full max-w-full object-contain" />
+            </div>
+            <p className="text-xs text-gray-400 mt-2">E-posta başlığı, fatura, dar yatay alanlar</p>
+          </div>
+        </div>
+
         {/* Zemin karşılaştırma */}
         <div className="rounded-2xl p-6 mb-10 border border-gray-100 bg-gray-50">
           <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-5">Zemin Uyumu Özeti</p>
