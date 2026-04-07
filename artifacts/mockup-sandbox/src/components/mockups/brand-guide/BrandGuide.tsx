@@ -24,8 +24,10 @@ const TURQ_DARK = "#0d7bab";
 
 function Section({ children, bg = "white", className = "" }: { children: React.ReactNode; bg?: string; className?: string }) {
   return (
-    <section style={{ background: bg }} className={`px-20 py-16 ${className}`}>
-      {children}
+    <section style={{ background: bg }} className={`brand-section ${className}`}>
+      <div className="section-inner px-20 py-16">
+        {children}
+      </div>
     </section>
   );
 }
@@ -56,11 +58,46 @@ export function BrandGuide() {
       {/* Print styles */}
       <style>{`
         @media print {
+          @page {
+            size: A4 landscape;
+            margin: 0;
+          }
+
           .no-print { display: none !important; }
-          * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-          body { margin: 0; }
-          section { page-break-inside: avoid; }
+
+          * {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+
+          body, html {
+            margin: 0 !important;
+            padding: 0 !important;
+          }
+
+          /* Every <section> becomes exactly one landscape A4 page */
+          section {
+            page-break-after: always !important;
+            page-break-inside: avoid !important;
+            break-after: page !important;
+            break-inside: avoid !important;
+            height: 100vh !important;
+            width: 100vw !important;
+            overflow: hidden !important;
+            box-sizing: border-box !important;
+            position: relative !important;
+            display: block !important;
+          }
+
+          /* Scale inner content to fit one landscape page */
+          .section-inner {
+            transform: scale(0.62) !important;
+            transform-origin: top left !important;
+            width: 161% !important;   /* 100 / 0.62 — corrects layout width after scale */
+            padding: 36px 72px !important;
+          }
         }
+
         @media screen {
           .print-btn {
             position: fixed;
@@ -100,53 +137,55 @@ export function BrandGuide() {
 
       {/* ─── 1. KAPAK ──────────────────────────────────────────── */}
       <section
-        className="relative flex flex-col items-center justify-center overflow-hidden"
-        style={{ background: `linear-gradient(135deg, ${NAVY_DARK} 0%, ${NAVY} 50%, ${NAVY_LIGHT} 100%)`, minHeight: "100vh" }}
+        className="brand-section relative flex flex-col items-center justify-center overflow-hidden"
+        style={{ background: `linear-gradient(135deg, ${NAVY_DARK} 0%, ${NAVY} 50%, ${NAVY_LIGHT} 100%)` }}
       >
-        {/* Background grid */}
-        <div className="absolute inset-0 opacity-5" style={{
-          backgroundImage: "linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)",
-          backgroundSize: "60px 60px"
-        }} />
+        <div className="section-inner w-full flex flex-col items-center justify-center py-20">
+          {/* Background grid */}
+          <div className="absolute inset-0 opacity-5 pointer-events-none" style={{
+            backgroundImage: "linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)",
+            backgroundSize: "60px 60px"
+          }} />
 
-        {/* Glowing orb */}
-        <div className="absolute right-32 top-32 rounded-full opacity-20" style={{
-          width: 400, height: 400,
-          background: `radial-gradient(circle, ${TURQUOISE}, transparent 70%)`
-        }} />
-        <div className="absolute left-20 bottom-32 rounded-full opacity-10" style={{
-          width: 250, height: 250,
-          background: `radial-gradient(circle, ${TURQUOISE}, transparent 70%)`
-        }} />
+          {/* Glowing orbs */}
+          <div className="absolute right-32 top-32 rounded-full opacity-20 pointer-events-none" style={{
+            width: 400, height: 400,
+            background: `radial-gradient(circle, ${TURQUOISE}, transparent 70%)`
+          }} />
+          <div className="absolute left-20 bottom-32 rounded-full opacity-10 pointer-events-none" style={{
+            width: 250, height: 250,
+            background: `radial-gradient(circle, ${TURQUOISE}, transparent 70%)`
+          }} />
 
-        <div className="relative z-10 text-center px-12">
-          {/* Logo mark */}
-          <div className="mx-auto mb-10 flex items-center justify-center">
-            <div className="relative">
-              <div className="rounded-full flex items-center justify-center shadow-2xl overflow-hidden bg-white"
-                style={{ width: 110, height: 110 }}>
-                <SphereLogo size={86} />
+          <div className="relative z-10 text-center px-12">
+            {/* Logo mark */}
+            <div className="mx-auto mb-10 flex items-center justify-center">
+              <div className="relative">
+                <div className="rounded-full flex items-center justify-center shadow-2xl overflow-hidden bg-white"
+                  style={{ width: 110, height: 110 }}>
+                  <SphereLogo size={86} />
+                </div>
+                <div className="absolute -inset-3 rounded-full opacity-30 border-2" style={{ borderColor: TURQUOISE }} />
+                <div className="absolute -inset-6 rounded-full opacity-15 border" style={{ borderColor: TURQUOISE }} />
               </div>
-              <div className="absolute -inset-3 rounded-full opacity-30 border-2" style={{ borderColor: TURQUOISE }} />
-              <div className="absolute -inset-6 rounded-full opacity-15 border" style={{ borderColor: TURQUOISE }} />
             </div>
+
+            <h1 className="text-8xl font-black tracking-tight text-white mb-4" style={{ fontFamily: "'Outfit', sans-serif", letterSpacing: "-0.02em" }}>
+              Sphere English
+            </h1>
+            <div className="h-1 w-48 mx-auto mb-6 rounded-full" style={{ background: `linear-gradient(90deg, ${TURQUOISE}, ${TURQ_LIGHT})` }} />
+            <p className="text-2xl font-light text-white opacity-80 mb-2" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+              Kurumsal Kimlik Kılavuzu
+            </p>
+            <p className="text-base text-white opacity-40 tracking-widest uppercase" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+              Brand Identity Guide · 2025
+            </p>
           </div>
 
-          <h1 className="text-8xl font-black tracking-tight text-white mb-4" style={{ fontFamily: "'Outfit', sans-serif", letterSpacing: "-0.02em" }}>
-            Sphere English
-          </h1>
-          <div className="h-1 w-48 mx-auto mb-6 rounded-full" style={{ background: `linear-gradient(90deg, ${TURQUOISE}, ${TURQ_LIGHT})` }} />
-          <p className="text-2xl font-light text-white opacity-80 mb-2" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-            Kurumsal Kimlik Kılavuzu
-          </p>
-          <p className="text-base text-white opacity-40 tracking-widest uppercase" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-            Brand Identity Guide · 2025
-          </p>
-        </div>
-
-        {/* Bottom tagline */}
-        <div className="absolute bottom-10 left-0 right-0 text-center">
-          <p className="text-white opacity-30 text-sm tracking-widest uppercase">İngilizce öğreniminde yeni nesil deneyim</p>
+          {/* Bottom tagline */}
+          <div className="absolute bottom-10 left-0 right-0 text-center">
+            <p className="text-white opacity-30 text-sm tracking-widest uppercase">İngilizce öğreniminde yeni nesil deneyim</p>
+          </div>
         </div>
       </section>
 
@@ -843,24 +882,26 @@ export function BrandGuide() {
       </Section>
 
       {/* ─── 9. KAPANIŞ ────────────────────────────────────────── */}
-      <section className="relative flex flex-col items-center justify-center py-24 overflow-hidden"
+      <section className="brand-section relative flex flex-col items-center justify-center overflow-hidden"
         style={{ background: `linear-gradient(135deg, ${NAVY_DARK} 0%, ${NAVY} 60%, ${NAVY_LIGHT} 100%)` }}>
-        <div className="absolute inset-0 opacity-5" style={{
-          backgroundImage: "linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)",
-          backgroundSize: "60px 60px"
-        }} />
-        <div className="relative z-10 text-center px-12">
-          <div className="w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-xl overflow-hidden bg-white p-1">
-            <SphereLogo size={68} />
+        <div className="section-inner w-full flex flex-col items-center justify-center py-24">
+          <div className="absolute inset-0 opacity-5 pointer-events-none" style={{
+            backgroundImage: "linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)",
+            backgroundSize: "60px 60px"
+          }} />
+          <div className="relative z-10 text-center px-12">
+            <div className="w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-xl overflow-hidden bg-white p-1">
+              <SphereLogo size={68} />
+            </div>
+            <h2 className="text-5xl font-black text-white mb-4" style={{ fontFamily: "'Outfit', sans-serif" }}>
+              Sphere English
+            </h2>
+            <div className="h-1 w-32 mx-auto mb-6 rounded-full" style={{ background: `linear-gradient(90deg, ${TURQUOISE}, ${TURQ_LIGHT})` }} />
+            <p className="text-xl text-white opacity-60 mb-2" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+              Kurumsal Kimlik Kılavuzu · 2025
+            </p>
+            <p className="text-sm text-white opacity-30 tracking-widest uppercase">app.sphereenglish.com</p>
           </div>
-          <h2 className="text-5xl font-black text-white mb-4" style={{ fontFamily: "'Outfit', sans-serif" }}>
-            Sphere English
-          </h2>
-          <div className="h-1 w-32 mx-auto mb-6 rounded-full" style={{ background: `linear-gradient(90deg, ${TURQUOISE}, ${TURQ_LIGHT})` }} />
-          <p className="text-xl text-white opacity-60 mb-2" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-            Kurumsal Kimlik Kılavuzu · 2025
-          </p>
-          <p className="text-sm text-white opacity-30 tracking-widest uppercase">app.sphereenglish.com</p>
         </div>
       </section>
 
