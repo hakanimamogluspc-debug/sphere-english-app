@@ -55,7 +55,7 @@ app.use(
           "https://region1.google-analytics.com",
         ],
         mediaSrc: ["'self'", "blob:"],
-        frameSrc: ["'none'"],
+        frameSrc: ["'self'"],
         objectSrc: ["'none'"],
         baseUri: ["'self'"],
         formAction: ["'self'"],
