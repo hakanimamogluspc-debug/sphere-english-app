@@ -99,13 +99,13 @@ export function BrandGuide() {
           }
 
           /* Per-page zoom — tuned to content density */
-          #page-2 .section-inner { zoom: 0.62; }   /* Marka Kimliği — moderate */
-          #page-3 .section-inner { zoom: 0.55; }   /* Renk Paleti — dense grid */
-          #page-4 .section-inner { zoom: 0.54; }   /* Tipografi — many samples */
-          #page-5 .section-inner { zoom: 0.48; }   /* Logo — 6 variants + rules */
-          #page-6 .section-inner { zoom: 0.60; }   /* Ses & Ton — text cards */
-          #page-7 .section-inner { zoom: 0.50; }   /* UI Bileşenler — dense */
-          #page-8 .section-inner { zoom: 0.58; }   /* Görsel Dil — icons grid */
+          #page-2 .section-inner { zoom: 0.70; }   /* Marka Kimliği */
+          #page-3 .section-inner { zoom: 0.63; }   /* Renk Paleti */
+          #page-4 .section-inner { zoom: 0.54; }   /* Tipografi */
+          #page-5 .section-inner { zoom: 0.48; }   /* Logo */
+          #page-6 .section-inner { zoom: 0.68; }   /* Ses & Ton */
+          #page-7 .section-inner { zoom: 0.58; }   /* UI Bileşenler */
+          #page-8 .section-inner { zoom: 0.66; }   /* Görsel Dil */
 
           /* Vertically center pages whose content doesn't fill the full page */
           #page-2, #page-3, #page-6, #page-7, #page-8 {
