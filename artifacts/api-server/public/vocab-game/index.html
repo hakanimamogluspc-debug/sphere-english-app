@@ -1174,9 +1174,20 @@ function toast(msg, type = 'info') {
    SELECTED STATE STYLING
 ════════════════════════════════════ */
 document.addEventListener('DOMContentLoaded', () => {
-  // Pre-select A1 level card
   const cards = document.querySelectorAll('.level-card');
   cards.forEach(c => { if (c.dataset.level === 'A1') c.classList.add('selected'); });
+
+  const params = new URLSearchParams(window.location.search);
+  const username = params.get('username');
+  if (username) {
+    const input = document.getElementById('usernameInput');
+    input.value = username;
+    input.readOnly = true;
+    input.style.background = 'var(--accent-light)';
+    input.style.color = 'var(--primary)';
+    input.style.fontWeight = '600';
+    input.style.cursor = 'default';
+  }
 });
 
 // Style selected word count buttons
