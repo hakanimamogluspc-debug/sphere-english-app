@@ -583,7 +583,151 @@ export function BrandGuide() {
         </div>
       </Section>
 
-      {/* ─── 7. DİJİTAL UI DİLİ ───────────────────────────────── */}
+      {/* ─── 7. SLOGAN & TAGLINE ───────────────────────────────── */}
+      <Section bg="white">
+        <SectionLabel text="Slogan & Tagline" />
+        <SectionTitle text="Marka Sloganları" />
+        <p className="text-lg text-gray-500 mb-12 max-w-2xl">
+          Her platformda ve bağlamda tutarlı bir ses bırakmak için seçilmiş sloganlar ve kullanım yönergeleri.
+        </p>
+
+        {/* Ana Slogan */}
+        <div className="rounded-3xl p-10 mb-8 relative overflow-hidden" style={{ background: `linear-gradient(135deg, ${NAVY_DARK}, ${NAVY_LIGHT})` }}>
+          <div className="absolute right-0 top-0 w-72 h-72 rounded-full opacity-10"
+            style={{ background: `radial-gradient(circle, ${TURQUOISE}, transparent)`, transform: "translate(30%, -30%)" }} />
+          <p className="text-xs font-bold uppercase tracking-widest mb-4" style={{ color: TURQUOISE }}>
+            Ana Slogan · Primary Tagline
+          </p>
+          <h3 className="text-6xl font-black text-white mb-3 relative z-10" style={{ fontFamily: "'Outfit', sans-serif", letterSpacing: "-0.02em" }}>
+            Speak the World.
+          </h3>
+          <p className="text-2xl text-white opacity-60 mb-6" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+            Dünyayı Konuş.
+          </p>
+          <div className="h-0.5 w-24 rounded-full mb-6" style={{ background: TURQUOISE }} />
+          <p className="text-white opacity-50 max-w-xl leading-relaxed" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+            Kısa, evrensel ve güçlü. İngilizceyi öğrenmenin ötesinde — dünyanın bir parçası olmanın davetini taşır. 
+            Tüm platformlarda ana slogan olarak kullanılır.
+          </p>
+        </div>
+
+        {/* Destekleyici Sloganlar */}
+        <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-5">Destekleyici Sloganlar</p>
+        <div className="grid grid-cols-2 gap-5 mb-10">
+          {[
+            {
+              tr: "Her kelime, yeni bir kapı.",
+              en: "Every word, a new door.",
+              context: "Onboarding, kurs tanıtım ekranları",
+              mood: "İlham Verici",
+              moodColor: TURQUOISE,
+            },
+            {
+              tr: "İngilizceniz, sınırsız olasılıklarınız.",
+              en: "Your English, your limitless future.",
+              context: "Hero banner, tanıtım sayfaları",
+              mood: "Motivasyonel",
+              moodColor: "#7c3aed",
+            },
+            {
+              tr: "Öğren. Konuş. Yüksel.",
+              en: "Learn. Speak. Rise.",
+              context: "Sosyal medya, kısa format reklamlar",
+              mood: "Dinamik",
+              moodColor: "#059669",
+            },
+            {
+              tr: "Sesini dünyaya taşı.",
+              en: "Carry your voice to the world.",
+              context: "Telaffuz koçu sayfası, speaking club",
+              mood: "Özgüvenli",
+              moodColor: "#d97706",
+            },
+            {
+              tr: "Dil engeli değil, dünya kapısı.",
+              en: "Not a barrier — a gateway.",
+              context: "Farkındalık kampanyaları, blog",
+              mood: "Dönüştürücü",
+              moodColor: "#dc2626",
+            },
+            {
+              tr: "Küresel kariyerin İngilizce başlar.",
+              en: "Your global career starts in English.",
+              context: "Kurumsal paket sayfaları, B2B",
+              mood: "Kariyer Odaklı",
+              moodColor: NAVY,
+            },
+          ].map(({ tr, en, context, mood, moodColor }) => (
+            <div key={tr} className="bg-gray-50 rounded-2xl p-6 border border-gray-100">
+              <div className="flex items-start justify-between mb-3">
+                <span className="text-xs font-bold px-3 py-1 rounded-full" style={{ background: `${moodColor}15`, color: moodColor }}>
+                  {mood}
+                </span>
+              </div>
+              <p className="text-xl font-bold mb-1" style={{ fontFamily: "'Outfit', sans-serif", color: NAVY }}>
+                {tr}
+              </p>
+              <p className="text-sm italic text-gray-400 mb-4" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+                "{en}"
+              </p>
+              <div className="flex items-center gap-2">
+                <div className="w-1.5 h-1.5 rounded-full" style={{ background: moodColor }} />
+                <p className="text-xs text-gray-500">{context}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Kampanya Sloganları */}
+        <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-5">Kampanya & Özellik Sloganları</p>
+        <div className="grid grid-cols-3 gap-4 mb-10">
+          {[
+            { text: "30 günde fark et.", sub: "Deneme paketi kampanyaları" },
+            { text: "AI koçun her an yanında.", sub: "Telaffuz koçu özellik tanıtımı" },
+            { text: "Kelime hazinen, silahın.", sub: "Kelime oyunu & vocab modülü" },
+            { text: "Gramer artık kolay.", sub: "Gramer koçu sayfası" },
+            { text: "Başarı bir alışkanlık meselesi.", sub: "Günlük ders hatırlatıcıları" },
+            { text: "Liderlik tablosunda zirvey hedefle.", sub: "Gamification & liderlik tablosu" },
+          ].map(({ text, sub }) => (
+            <div key={text} className="rounded-2xl p-5 border-2 flex flex-col gap-2" style={{ borderColor: `${TURQUOISE}30`, background: `${TURQUOISE}06` }}>
+              <p className="font-bold text-base leading-snug" style={{ fontFamily: "'Outfit', sans-serif", color: NAVY }}>{text}</p>
+              <p className="text-xs text-gray-500">{sub}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Dil politikası */}
+        <div className="bg-gray-50 rounded-3xl p-8 border border-gray-100">
+          <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-6">Slogan Kullanım İlkeleri</p>
+          <div className="grid grid-cols-3 gap-6">
+            {[
+              {
+                icon: "🌐",
+                title: "Dil Seçimi",
+                desc: "Türk kullanıcılar için Türkçe slogan önceliklidir. Uluslararası içeriklerde İngilizce kullanılır. İkisi birlikte kullanılacaksa Türkçe üstte yer alır.",
+              },
+              {
+                icon: "✍️",
+                title: "Yazım Kuralları",
+                desc: "Ana slogan her zaman büyük harfle başlar, noktalama işareti ile biter. Tüm büyük harf (ALL CAPS) yalnızca banner tasarımlarında kabul edilir.",
+              },
+              {
+                icon: "🎯",
+                title: "Bağlam Eşleşmesi",
+                desc: "Her sloganın belirlenen kullanım bağlamı dışına çıkmaktan kaçınılır. Yanlış bağlamda doğru slogan bile marka tutarsızlığı yaratır.",
+              },
+            ].map(({ icon, title, desc }) => (
+              <div key={title}>
+                <div className="text-3xl mb-3">{icon}</div>
+                <h4 className="font-bold mb-2" style={{ fontFamily: "'Outfit', sans-serif", color: NAVY }}>{title}</h4>
+                <p className="text-sm text-gray-600 leading-relaxed">{desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </Section>
+
+      {/* ─── 8. DİJİTAL UI DİLİ ───────────────────────────────── */}
       <Section bg="white">
         <SectionLabel text="Dijital UI" />
         <SectionTitle text="UI Bileşen Dili" />
