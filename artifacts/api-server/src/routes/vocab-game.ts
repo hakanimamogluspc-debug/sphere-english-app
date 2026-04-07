@@ -55,7 +55,7 @@ router.post("/vocab-game/game/start", async (req, res) => {
       }))
     );
 
-    return res.json({ session_id: session.id, message: "Oyun başladı!" });
+    return res.json({ session_id: session.id, total_words: sessionLength, message: "Oyun başladı!" });
   } catch (e) {
     console.error("vocab start error:", e);
     return res.status(500).json({ detail: "Sunucu hatası" });
@@ -70,7 +70,7 @@ router.get("/vocab-game/game/word", async (req, res) => {
 
     const [session] = await db.select().from(vocabGameSessionsTable).where(eq(vocabGameSessionsTable.id, session_id));
     if (!session) return res.status(404).json({ detail: "Oturum bulunamadı" });
-    if (session.isFinished) return res.json({ finished: true });
+    if (session.isFinished) return res.json({ done: true });
 
     const sessionWords = await db.select().from(vocabSessionWordsTable)
       .where(eq(vocabSessionWordsTable.sessionId, session_id))
@@ -79,10 +79,13 @@ router.get("/vocab-game/game/word", async (req, res) => {
     const next = sessionWords.find(sw => sw.isCorrect === null && !sw.isSkipped);
     if (!next) {
       await db.update(vocabGameSessionsTable).set({ isFinished: true }).where(eq(vocabGameSessionsTable.id, session_id));
-      return res.json({ finished: true });
+      return res.json({ done: true });
     }
 
     const [word] = await db.select().from(vocabWordsTable).where(eq(vocabWordsTable.id, next.wordId));
+
+    const wordsSeen = sessionWords.filter(sw => sw.isCorrect !== null || sw.isSkipped).length;
+    const totalWords = session.totalWords;
 
     return res.json({
       word_id: word.id,
@@ -91,6 +94,9 @@ router.get("/vocab-game/game/word", async (req, res) => {
       level: word.level,
       category: word.category,
       remaining: sessionWords.filter(sw => sw.isCorrect === null && !sw.isSkipped).length,
+      words_seen: wordsSeen,
+      total_words: totalWords,
+      current_score: session.score || 0,
     });
   } catch (e) {
     console.error("vocab word error:", e);
