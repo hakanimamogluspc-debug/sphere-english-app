@@ -22,7 +22,7 @@ export function createEmailTransporter() {
     secure,
     requireTLS: !secure,
     auth: { user, pass },
-    tls: { rejectUnauthorized: false, ciphers: "SSLv3" },
+    tls: { rejectUnauthorized: true },
     connectionTimeout: 20000,
     greetingTimeout: 15000,
     socketTimeout: 20000,

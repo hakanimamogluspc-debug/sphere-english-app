@@ -311,8 +311,21 @@ async def get_retry_list(session_id: str):
     }
 
 
+ALLOWED_LEVELS = {"all", "A1", "A2", "B1", "B2", "C1", "C2"}
+ALLOWED_CATEGORIES = {
+    "all", "animals", "food", "travel", "business", "technology",
+    "health", "education", "nature", "sports", "arts", "science",
+    "daily", "emotions", "academic", "phrasal_verbs", "idioms"
+}
+
 @router.get("/game/words")
 async def get_word_list(level: str = "all", category: str = "all", limit: int = 20, offset: int = 0):
+    if level not in ALLOWED_LEVELS:
+        level = "all"
+    if category not in ALLOWED_CATEGORIES:
+        category = "all"
+    limit = max(1, min(int(limit), 100))
+    offset = max(0, int(offset))
     async with get_db() as db:
         conditions = []
         params = []
@@ -322,13 +335,13 @@ async def get_word_list(level: str = "all", category: str = "all", limit: int = 
         if category != "all":
             conditions.append("category = ?")
             params.append(category)
-        where = ("WHERE " + " AND ".join(conditions)) if conditions else ""
+        where_clause = ("WHERE " + " AND ".join(conditions)) if conditions else ""
         async with db.execute(
-            f"SELECT id, word, turkish, level, category FROM words {where} ORDER BY frequency_rank LIMIT ? OFFSET ?",
+            f"SELECT id, word, turkish, level, category FROM words {where_clause} ORDER BY frequency_rank LIMIT ? OFFSET ?",
             params + [limit, offset]
         ) as cur:
             rows = await cur.fetchall()
-        async with db.execute(f"SELECT COUNT(*) FROM words {where}", params) as cur:
+        async with db.execute(f"SELECT COUNT(*) FROM words {where_clause}", params) as cur:
             total = (await cur.fetchone())[0]
 
     return {

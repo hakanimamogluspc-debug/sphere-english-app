@@ -523,9 +523,11 @@ router.get(
       const id = Number(req.params.id);
       const [tpl] = await db.select().from(emailTemplatesTable).where(eq(emailTemplatesTable.id, id));
       if (!tpl?.filePath) return res.status(404).json({ error: "Şablon bulunamadı." });
-      const fp = path.join(TEMPLATES_DIR, tpl.filePath);
+      const fp = path.resolve(TEMPLATES_DIR, path.basename(tpl.filePath));
+      if (!fp.startsWith(path.resolve(TEMPLATES_DIR))) return res.status(400).json({ error: "Geçersiz dosya yolu." });
       if (!fs.existsSync(fp)) return res.status(404).json({ error: "Dosya bulunamadı." });
-      res.setHeader("Content-Disposition", `inline; filename="${tpl.fileName}"`);
+      const safeFileName = path.basename(tpl.fileName || "template").replace(/[^\w.\-]/g, "_");
+      res.setHeader("Content-Disposition", `inline; filename="${safeFileName}"`);
       res.setHeader("Content-Type", tpl.fileType === "pdf" ? "application/pdf" : "text/html");
       return res.send(fs.readFileSync(fp));
     } catch {
@@ -534,8 +536,17 @@ router.get(
   }
 );
 
+function escHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 function buildEmailHtml(subject: string, body: string, recipientName: string): string {
-  const bodyHtml = body.replace(/\n/g, "<br>");
+  const bodyHtml = escHtml(body).replace(/\n/g, "<br>");
   return `
 <!DOCTYPE html>
 <html>
@@ -553,7 +564,7 @@ function buildEmailHtml(subject: string, body: string, recipientName: string): s
       <span style="color:white;font-size:22px;font-weight:bold;">Sphere English</span>
     </div>
     <div class="content">
-      <p>Merhaba ${recipientName},</p>
+      <p>Merhaba ${escHtml(recipientName)},</p>
       <p>${bodyHtml}</p>
     </div>
     <div class="footer">

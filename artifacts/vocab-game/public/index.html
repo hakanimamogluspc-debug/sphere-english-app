@@ -689,6 +689,19 @@
 
 <script>
 /* ═══════════════════════════════════
+   SECURITY HELPERS
+════════════════════════════════════ */
+function esc(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+/* ═══════════════════════════════════
    STATE
 ════════════════════════════════════ */
 const state = {
@@ -834,7 +847,7 @@ async function submitGuess() {
   if (data.correct) {
     document.getElementById('guessInput').classList.add('success');
     fb.className = 'feedback correct';
-    fb.innerHTML = `<span>✅</span> <span>Harika! <strong>${data.score_gained}</strong> puan kazandın! Türkçesi: <strong>${data.turkish}</strong></span>`;
+    fb.innerHTML = `<span>✅</span> <span>Harika! <strong>${data.score_gained}</strong> puan kazandın! Türkçesi: <strong>${esc(data.turkish)}</strong></span>`;
     toast('Doğru! +' + data.score_gained + ' puan 🎉', 'success');
     document.getElementById('currentScore').textContent =
       parseInt(document.getElementById('currentScore').textContent) + data.score_gained;
@@ -844,7 +857,7 @@ async function submitGuess() {
   } else if (data.added_to_retry) {
     document.getElementById('guessInput').classList.add('error');
     fb.className = 'feedback skipped';
-    fb.innerHTML = `<span>⚠️</span> <span>3 hak bitti! Doğru kelime: <strong>${data.correct_word}</strong> (${data.turkish}) — Tekrar listesine eklendi.</span>`;
+    fb.innerHTML = `<span>⚠️</span> <span>3 hak bitti! Doğru kelime: <strong>${esc(data.correct_word)}</strong> (${esc(data.turkish)}) — Tekrar listesine eklendi.</span>`;
     disableInput();
     await pause(2200);
     await loadNextWord();
@@ -922,9 +935,9 @@ async function finishGame() {
     const rl = document.getElementById('retryList');
     rl.innerHTML = data.retry_list.map(w => `
       <div class="retry-word">
-        <div class="retry-word-en">🔁 ${w.word}</div>
-        <div class="retry-word-tr">${w.turkish}</div>
-        <div style="font-size:0.75rem; color:var(--text-muted); margin-top:4px; font-style:italic;">${w.image_prompt.slice(0, 80)}…</div>
+        <div class="retry-word-en">🔁 ${esc(w.word)}</div>
+        <div class="retry-word-tr">${esc(w.turkish)}</div>
+        <div style="font-size:0.75rem; color:var(--text-muted); margin-top:4px; font-style:italic;">${esc((w.image_prompt || '').slice(0, 80))}…</div>
       </div>
     `).join('');
   } else {
@@ -973,10 +986,10 @@ async function loadLeaderboard() {
     <div class="lb-row">
       <div class="lb-rank ${rankClass(e.rank)}">${rankLabel(e.rank)}</div>
       <div>
-        <div class="lb-name">${e.username}</div>
+        <div class="lb-name">${esc(e.username)}</div>
         <div class="lb-meta">
-          <span class="level-badge level-${e.level}">${e.level}</span>
-          ${e.words_correct}/${e.total_words} doğru
+          <span class="level-badge level-${esc(e.level)}">${esc(e.level)}</span>
+          ${Number(e.words_correct)}/${Number(e.total_words)} doğru
         </div>
       </div>
       <div class="lb-score">${e.score}</div>
