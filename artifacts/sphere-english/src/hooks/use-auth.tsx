@@ -30,23 +30,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setTokenState(t);
   };
 
-  const { data: user, isLoading: isUserLoading, isError: isAuthError } = useGetCurrentUser({
+  const { data: user, isLoading: isUserLoading, error: authError } = useGetCurrentUser({
     query: {
       enabled: !!token,
-      retry: false,
+      // Only retry on non-auth errors — network hiccups should not cause logout
+      retry: (failureCount, error: any) => {
+        const status = error?.status ?? error?.response?.status;
+        if (status === 401 || status === 403) return false; // Never retry auth failures
+        return failureCount < 2; // Retry up to 2x for other errors (network, 5xx)
+      },
+      retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 8000),
       refetchOnWindowFocus: false,
-      staleTime: 5 * 60 * 1000,
+      staleTime: 10 * 60 * 1000, // 10 minutes — reduce unnecessary re-fetches
+      gcTime: 15 * 60 * 1000,
     }
   });
 
-  const loginMutation = useLogin();
-  const registerMutation = useRegister();
-
   useEffect(() => {
-    if (isAuthError && token) {
+    if (!authError || !token) return;
+    // Only force logout on genuine auth errors (HTTP 401/403)
+    // Do NOT logout on network errors, timeouts, or server errors (5xx)
+    const status = (authError as any)?.status ?? (authError as any)?.response?.status;
+    if (status === 401 || status === 403) {
       handleLogout();
     }
-  }, [isAuthError, token]);
+    // For other errors (network, 500, etc.) — stay logged in, user can retry
+  }, [authError, token]);
 
   const handleLogin = async (data: LoginRequest) => {
     const response = await loginMutation.mutateAsync({ data });
@@ -71,6 +80,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     queryClient.clear();
     setLocation("/login");
   };
+
+  const loginMutation = useLogin();
+  const registerMutation = useRegister();
 
   return (
     <AuthContext.Provider
