@@ -1,5 +1,20 @@
 import { CheckCircle, XCircle, Globe, BookOpen, Mic, Users, Award, TrendingUp, ChevronRight, Zap } from "lucide-react";
 
+const LOGO_SRC = "/__mockup/images/sphere-logo.png";
+
+function SphereLogo({ size = 52, className = "" }: { size?: number; className?: string }) {
+  return (
+    <img
+      src={LOGO_SRC}
+      alt="Sphere English Logo"
+      width={size}
+      height={size}
+      className={className}
+      style={{ objectFit: "contain" }}
+    />
+  );
+}
+
 const NAVY = "#1e3a6e";
 const TURQUOISE = "#13a9e0";
 const NAVY_LIGHT = "#2a4e8a";
@@ -63,9 +78,9 @@ export function BrandGuide() {
           {/* Logo mark */}
           <div className="mx-auto mb-10 flex items-center justify-center">
             <div className="relative">
-              <div className="rounded-full flex items-center justify-center shadow-2xl"
-                style={{ width: 100, height: 100, background: `linear-gradient(135deg, ${TURQUOISE}, ${TURQ_DARK})` }}>
-                <Globe className="text-white" size={52} strokeWidth={1.5} />
+              <div className="rounded-full flex items-center justify-center shadow-2xl overflow-hidden bg-white"
+                style={{ width: 110, height: 110 }}>
+                <SphereLogo size={86} />
               </div>
               <div className="absolute -inset-3 rounded-full opacity-30 border-2" style={{ borderColor: TURQUOISE }} />
               <div className="absolute -inset-6 rounded-full opacity-15 border" style={{ borderColor: TURQUOISE }} />
@@ -107,8 +122,8 @@ export function BrandGuide() {
             "İngilizceyi sadece bir beceri olarak değil, <span style={{ color: TURQUOISE }} className="font-semibold">dünyaya açılan bir kapı</span> olarak görüyoruz. Her öğrenciye kişiselleştirilmiş, etkili ve ilham verici bir öğrenme deneyimi sunmak için buradayız."
           </p>
           <div className="mt-6 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: TURQUOISE }}>
-              <Globe size={20} className="text-white" />
+            <div className="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden bg-white">
+              <SphereLogo size={32} />
             </div>
             <span className="text-white opacity-60 text-sm" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Sphere English · Marka Manifestosu</span>
           </div>
@@ -366,9 +381,7 @@ export function BrandGuide() {
             <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">Birincil · Koyu Zemin</p>
             <div className="rounded-2xl flex flex-col items-center justify-center h-44 gap-3" style={{ background: NAVY }}>
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: TURQUOISE }}>
-                  <Globe size={22} className="text-white" strokeWidth={1.5} />
-                </div>
+                <SphereLogo size={40} />
                 <span className="text-white font-bold text-xl" style={{ fontFamily: "'Outfit', sans-serif" }}>Sphere English</span>
               </div>
               <div className="h-0.5 w-32 rounded-full opacity-30" style={{ background: TURQUOISE }} />
@@ -382,9 +395,7 @@ export function BrandGuide() {
             <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">İkincil · Açık Zemin</p>
             <div className="rounded-2xl flex flex-col items-center justify-center h-44 gap-3 border-2 border-gray-100">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: `linear-gradient(135deg, ${TURQUOISE}, ${TURQ_DARK})` }}>
-                  <Globe size={22} className="text-white" strokeWidth={1.5} />
-                </div>
+                <SphereLogo size={40} />
                 <span className="font-bold text-xl" style={{ fontFamily: "'Outfit', sans-serif", color: NAVY }}>Sphere English</span>
               </div>
               <div className="h-0.5 w-32 rounded-full opacity-30" style={{ background: NAVY }} />
@@ -397,8 +408,8 @@ export function BrandGuide() {
           <div>
             <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">Monogram · Ikon</p>
             <div className="rounded-2xl flex flex-col items-center justify-center h-44 gap-4 bg-gray-50">
-              <div className="w-20 h-20 rounded-2xl flex items-center justify-center shadow-lg" style={{ background: `linear-gradient(135deg, ${NAVY}, ${NAVY_LIGHT})` }}>
-                <Globe size={40} className="text-white" strokeWidth={1.5} />
+              <div className="w-24 h-24 rounded-2xl flex items-center justify-center shadow-lg overflow-hidden bg-white p-2">
+                <SphereLogo size={72} />
               </div>
               <p className="text-xs text-gray-500">Favicon, uygulama ikonu</p>
             </div>
@@ -724,9 +735,8 @@ export function BrandGuide() {
           backgroundSize: "60px 60px"
         }} />
         <div className="relative z-10 text-center px-12">
-          <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-xl"
-            style={{ background: `linear-gradient(135deg, ${TURQUOISE}, ${TURQ_DARK})` }}>
-            <Globe size={32} className="text-white" strokeWidth={1.5} />
+          <div className="w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-xl overflow-hidden bg-white p-1">
+            <SphereLogo size={68} />
           </div>
           <h2 className="text-5xl font-black text-white mb-4" style={{ fontFamily: "'Outfit', sans-serif" }}>
             Sphere English
