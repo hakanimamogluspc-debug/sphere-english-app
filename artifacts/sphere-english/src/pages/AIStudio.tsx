@@ -3,7 +3,7 @@ import { Link } from "wouter";
 import { useState } from "react";
 import {
   Mic, PenLine, Brain, Gamepad2, Sparkles, Star,
-  ChevronRight, Globe, BookOpen, MessageSquare, Trophy,
+  ChevronRight, BookOpen, MessageSquare, Trophy,
   Volume2, CheckCircle, Zap, Users, ChevronDown, Menu, X
 } from "lucide-react";
 
@@ -532,11 +532,6 @@ export default function AIStudio() {
                 style={{ background: `linear-gradient(135deg, ${TURQUOISE}, #0d7bab)`, boxShadow: `0 8px 32px ${TURQUOISE}44` }}>
                 <Sparkles size={18} />
                 Hemen Başla — Ücretsiz
-              </Link>
-              <Link href="/student/pronunciation-coach"
-                className="inline-flex items-center gap-2 rounded-2xl px-8 py-4 font-bold text-white/70 text-base border border-white/20 hover:border-white/40 transition-all hover:bg-white/10">
-                <Globe size={18} />
-                Koçları Keşfet
               </Link>
             </motion.div>
           </motion.div>
