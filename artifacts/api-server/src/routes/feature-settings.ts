@@ -5,9 +5,31 @@ import { authMiddleware, requireRole, type AuthRequest } from "../middlewares/au
 
 const router = Router();
 
+// ─── In-memory cache — feature_settings nadiren değişir, 60 sn TTL yeterli ──
+interface CacheEntry { data: unknown[]; expiresAt: number }
+let cache: CacheEntry | null = null;
+const CACHE_TTL_MS = 60_000; // 60 saniye
+
+function getCached(): unknown[] | null {
+  if (cache && Date.now() < cache.expiresAt) return cache.data;
+  return null;
+}
+function setCache(data: unknown[]) {
+  cache = { data, expiresAt: Date.now() + CACHE_TTL_MS };
+}
+function invalidateCache() {
+  cache = null;
+}
+
 // GET /feature-settings — tüm oturum açmış kullanıcılar okuyabilir (nav filtreleme için)
 router.get("/feature-settings", authMiddleware, async (_req, res) => {
+  const cached = getCached();
+  if (cached) {
+    res.json(cached);
+    return;
+  }
   const rows = await db.select().from(featureSettingsTable);
+  setCache(rows);
   res.json(rows);
 });
 
@@ -38,6 +60,8 @@ router.patch("/admin/feature-settings/:key", authMiddleware, requireRole("admin"
     res.status(404).json({ error: "Modül bulunamadı" });
     return;
   }
+
+  invalidateCache(); // güncelleme sonrası önbelleği temizle
   res.json(updated);
 });
 

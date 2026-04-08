@@ -1,3 +1,5 @@
+import cluster from "node:cluster";
+import os from "node:os";
 import app from "./app";
 import { logger } from "./lib/logger";
 import { seedDatabase } from "./seed.js";
@@ -87,6 +89,14 @@ async function runStartupMigrations() {
     `ALTER TABLE users ADD COLUMN IF NOT EXISTS placement_test_completed BOOLEAN NOT NULL DEFAULT false`,
     // Mevcut kullanıcılar için testi tamamlanmış say (sadece yeni kayıt olanlar zorunlu)
     `UPDATE users SET placement_test_completed = true WHERE placement_test_completed = false AND created_at < NOW() - INTERVAL '2 minutes'`,
+    // ─── Performans indexleri ─────────────────────────────────────────────────
+    `CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)`,
+    `CREATE INDEX IF NOT EXISTS idx_users_company_id ON users(company_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_users_role ON users(role)`,
+    `CREATE INDEX IF NOT EXISTS idx_users_placement ON users(placement_test_completed)`,
+    `CREATE INDEX IF NOT EXISTS idx_vocab_words_level ON vocab_words(level)`,
+    `CREATE INDEX IF NOT EXISTS idx_vocab_sessions_username ON vocab_game_sessions(username)`,
+    `CREATE INDEX IF NOT EXISTS idx_vocab_session_words_session ON vocab_session_words(session_id)`,
   ];
   for (const sql of migrations) {
     try {
@@ -124,16 +134,34 @@ async function seedVocabWords() {
   }
 }
 
-runStartupMigrations().then(() => {
+// ─── Cluster modu — tüm CPU çekirdeklerini kullan ────────────────────────────
+if (cluster.isPrimary) {
+  // Sadece primary süreç migration + seed çalıştırır
+  runStartupMigrations()
+    .then(() => seedDatabase())
+    .then(() => seedVocabWords())
+    .then(() => {
+      const numWorkers = Math.max(1, Math.min(os.cpus().length, 8));
+      logger.info({ workers: numWorkers, cpus: os.cpus().length }, "Cluster başlatılıyor");
+      for (let i = 0; i < numWorkers; i++) {
+        cluster.fork();
+      }
+      cluster.on("exit", (worker, code, signal) => {
+        logger.warn({ pid: worker.process.pid, code, signal }, "Worker düştü, yeniden başlatılıyor");
+        cluster.fork(); // Çöken worker'ı otomatik yeniden başlat
+      });
+    })
+    .catch((err) => {
+      logger.error({ err }, "Başlangıç hatası, sunucu kapatılıyor");
+      process.exit(1);
+    });
+} else {
+  // Worker süreçler sadece HTTP isteklerini dinler
   app.listen(port, "0.0.0.0", (err) => {
     if (err) {
-      logger.error({ err }, "Error listening on port");
+      logger.error({ err }, "Port dinleme hatası");
       process.exit(1);
     }
-
-    logger.info({ port }, "Server listening");
-
-    seedDatabase().catch((e) => logger.error({ err: e }, "Seed error"));
-    seedVocabWords().catch((e) => logger.error({ err: e }, "Vocab seed error"));
+    logger.info({ port, pid: process.pid, worker: cluster.worker?.id }, "Worker hazır");
   });
-});
+}

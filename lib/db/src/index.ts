@@ -14,6 +14,9 @@ if (!connectionString) {
 
 export const pool = new Pool({
   connectionString: connectionString ?? "postgresql://localhost/placeholder",
+  max: 50,                   // varsayılan 10 yerine 50 bağlantı — 10.000 eş zamanlı kullanıcı için
+  idleTimeoutMillis: 30_000, // 30sn boşta kalan bağlantıyı kapat
+  connectionTimeoutMillis: 5_000, // 5sn bağlantı kurulamazsa hata ver
 });
 
 export const db = drizzle(pool, { schema });

@@ -1,6 +1,7 @@
 import express, { type Express } from "express";
 import cors from "cors";
 import helmet from "helmet";
+import compression from "compression";
 import pinoHttp from "pino-http";
 import cookieParser from "cookie-parser";
 import path from "path";
@@ -10,6 +11,9 @@ import router from "./routes";
 import { logger } from "./lib/logger";
 
 const app: Express = express();
+
+// ─── gzip sıkıştırma — yanıt boyutunu %70-80 azaltır ─────────────────────────
+app.use(compression());
 
 app.use(
   pinoHttp({
