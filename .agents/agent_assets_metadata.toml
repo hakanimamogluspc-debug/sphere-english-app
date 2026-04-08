@@ -118,7 +118,7 @@ title = "james midwest manufacturing coach"
 id = "eFtgHUUEEwx_V9v7UH20h"
 uri = "file://artifacts/sphere-english/public/images/coach-claire-grammar.png"
 type = "image"
-title = "coach-claire-grammar"
+title = "coach-claire-realistic"
 
 [[outputs]]
 id = "FsU4PAkDB_a1cFXTkO03x"
@@ -190,58 +190,58 @@ title = "Dr. Claire — Gramer & İleri Telaffuz (YENİ)"
 id = "CqpgdTTsNg547lYjINhLH"
 uri = "file://coach-avatars-jpeg/coach-sterling.jpg"
 type = "image"
-title = "Mr. Sterling — CEO & Stratejik Yönetim"
+title = "Mr. Sterling"
 
 [[outputs]]
 id = "sIe1iMaLeqYnHwvTg74vk"
 uri = "file://coach-avatars-jpeg/coach-jake.jpg"
 type = "image"
-title = "Jake — Pazarlama & Dijital Medya"
+title = "Jake"
 
 [[outputs]]
 id = "tauKmFwCd3eTS1xuMseI3"
 uri = "file://coach-avatars-jpeg/coach-david.jpg"
 type = "image"
-title = "David — Finans & Yatırım"
+title = "David"
 
 [[outputs]]
 id = "AVAhgWKMzHZuQrWmH0D2t"
 uri = "file://coach-avatars-jpeg/coach-emma-hr.jpg"
 type = "image"
-title = "Emma — İnsan Kaynakları"
+title = "Emma"
 
 [[outputs]]
 id = "Bri4KGq1Vw2mEqzGFhOr2"
 uri = "file://coach-avatars-jpeg/coach-raj.jpg"
 type = "image"
-title = "Raj — BT & Yazılım"
+title = "Raj"
 
 [[outputs]]
 id = "LDSsK-UgdMN9IUu_7k8Ku"
 uri = "file://coach-avatars-jpeg/coach-hans.jpg"
 type = "image"
-title = "Hans — Lojistik & Operasyon"
+title = "Hans"
 
 [[outputs]]
 id = "emmeEZyusgLvTZJ0yZx9r"
 uri = "file://coach-avatars-jpeg/coach-elena.jpg"
 type = "image"
-title = "Elena — Uluslararası Hukuk"
+title = "Elena"
 
 [[outputs]]
 id = "GDZVp-VoObGfT5K0ckhcd"
 uri = "file://coach-avatars-jpeg/coach-alistair.jpg"
 type = "image"
-title = "Alistair — Satış & Müzakere"
+title = "Alistair"
 
 [[outputs]]
 id = "B-PmQI6HiVVK1Edeb6LGn"
 uri = "file://coach-avatars-jpeg/coach-chloe.jpg"
 type = "image"
-title = "Chloe — Müşteri İlişkileri"
+title = "Chloe"
 
 [[outputs]]
 id = "hjQjuTIwl4lzzVXhob45v"
 uri = "file://coach-avatars-jpeg/coach-james-mfg.jpg"
 type = "image"
-title = "James — Üretim & Fabrika Yönetimi"
+title = "James"
