@@ -114,6 +114,12 @@ uri = "file://artifacts/sphere-english/public/images/coach-james-mfg.png"
 type = "image"
 title = "james midwest manufacturing coach"
 
+[[generated]]
+id = "eFtgHUUEEwx_V9v7UH20h"
+uri = "file://artifacts/sphere-english/public/images/coach-claire-grammar.png"
+type = "image"
+title = "coach-claire-grammar"
+
 [[outputs]]
 id = "FsU4PAkDB_a1cFXTkO03x"
 uri = "file://artifacts/sphere-english/public/www-sitemap.xml"
@@ -173,3 +179,69 @@ id = "bOndxUx8en_qZad5DEN03"
 uri = "file://attached_assets/blog_c2.png"
 type = "image"
 title = "C2 — Global Liderlik"
+
+[[outputs]]
+id = "6LCpbVnimD5MVFtyxI_IF"
+uri = "file://coach-avatars-jpeg/coach-claire-grammar.jpg"
+type = "image"
+title = "Dr. Claire — Gramer & İleri Telaffuz (YENİ)"
+
+[[outputs]]
+id = "CqpgdTTsNg547lYjINhLH"
+uri = "file://coach-avatars-jpeg/coach-sterling.jpg"
+type = "image"
+title = "Mr. Sterling — CEO & Stratejik Yönetim"
+
+[[outputs]]
+id = "sIe1iMaLeqYnHwvTg74vk"
+uri = "file://coach-avatars-jpeg/coach-jake.jpg"
+type = "image"
+title = "Jake — Pazarlama & Dijital Medya"
+
+[[outputs]]
+id = "tauKmFwCd3eTS1xuMseI3"
+uri = "file://coach-avatars-jpeg/coach-david.jpg"
+type = "image"
+title = "David — Finans & Yatırım"
+
+[[outputs]]
+id = "AVAhgWKMzHZuQrWmH0D2t"
+uri = "file://coach-avatars-jpeg/coach-emma-hr.jpg"
+type = "image"
+title = "Emma — İnsan Kaynakları"
+
+[[outputs]]
+id = "Bri4KGq1Vw2mEqzGFhOr2"
+uri = "file://coach-avatars-jpeg/coach-raj.jpg"
+type = "image"
+title = "Raj — BT & Yazılım"
+
+[[outputs]]
+id = "LDSsK-UgdMN9IUu_7k8Ku"
+uri = "file://coach-avatars-jpeg/coach-hans.jpg"
+type = "image"
+title = "Hans — Lojistik & Operasyon"
+
+[[outputs]]
+id = "emmeEZyusgLvTZJ0yZx9r"
+uri = "file://coach-avatars-jpeg/coach-elena.jpg"
+type = "image"
+title = "Elena — Uluslararası Hukuk"
+
+[[outputs]]
+id = "GDZVp-VoObGfT5K0ckhcd"
+uri = "file://coach-avatars-jpeg/coach-alistair.jpg"
+type = "image"
+title = "Alistair — Satış & Müzakere"
+
+[[outputs]]
+id = "B-PmQI6HiVVK1Edeb6LGn"
+uri = "file://coach-avatars-jpeg/coach-chloe.jpg"
+type = "image"
+title = "Chloe — Müşteri İlişkileri"
+
+[[outputs]]
+id = "hjQjuTIwl4lzzVXhob45v"
+uri = "file://coach-avatars-jpeg/coach-james-mfg.jpg"
+type = "image"
+title = "James — Üretim & Fabrika Yönetimi"
