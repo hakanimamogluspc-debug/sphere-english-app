@@ -38,7 +38,7 @@ const AI_FEATURES = [
   },
   {
     icon: Brain,
-    title: "Gramer Koçu",
+    title: "Dilbilgisi Koçu",
     subtitle: "Grammar Coach",
     description:
       "A1'den C1'e yapılandırılmış öğrenme yolları. Yanlış cevap verdiğinizde yapay zeka devreye girerek hatanın tam nedenini açıklar — ezber değil, anlayarak öğrenin.",

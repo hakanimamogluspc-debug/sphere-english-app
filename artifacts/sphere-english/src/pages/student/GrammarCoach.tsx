@@ -200,7 +200,7 @@ export default function GrammarCoach() {
                 <Brain className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <h2 className="text-xl font-bold text-foreground font-display">AI Grammar Coach</h2>
+                <h2 className="text-xl font-bold text-foreground font-display">AI Dilbilgisi Koçu</h2>
                 <p className="text-sm text-muted-foreground">Seviyene göre dilbilgisi kurallarını öğren ve pratik yap</p>
               </div>
             </div>

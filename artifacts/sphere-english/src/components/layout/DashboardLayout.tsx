@@ -62,7 +62,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       { name: 'Telaffuz Koçu',       href: '/student/pronunciation-coach',    icon: Mic,           moduleKey: 'student-pronunciation-coach', group: 'ai-studio' },
       { name: 'Yazma Koçu',          href: '/student/writing-coach',          icon: PenLine,       moduleKey: 'student-writing-coach',        group: 'ai-studio' },
       { name: 'Kelime Oyunu',        href: '/student/vocab-game',             icon: Gamepad2,      moduleKey: 'student-vocab-game',           group: 'ai-studio' },
-      { name: 'Grammar Coach',      href: '/student/grammar-coach',          icon: Brain,         moduleKey: 'student-grammar-coach',        group: 'ai-studio' },
+      { name: 'Dilbilgisi Koçu',    href: '/student/grammar-coach',          icon: Brain,         moduleKey: 'student-grammar-coach',        group: 'ai-studio' },
       { name: 'Forum',               href: '/forum',                          icon: MessageCircle, moduleKey: 'student-forum' },
       { name: 'İlerleme Durumum',    href: '/progress',                       icon: LineChart,     moduleKey: 'student-progress' },
       { name: 'Sertifikalar',        href: '/certificates',                   icon: Award,         moduleKey: 'student-certificates' },
