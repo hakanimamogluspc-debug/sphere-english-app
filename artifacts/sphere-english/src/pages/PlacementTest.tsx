@@ -74,12 +74,133 @@ const QUESTIONS: Question[] = [
   { id: 60, text: 'It\'s difficult to ___ what the reaction might be to this proposal.', options: { A: 'weigh', B: 'gauge', C: 'measure' } },
 ];
 
-const LEVEL_LABELS: Record<string, { label: string; description: string; color: string }> = {
-  A1: { label: 'A1 – Başlangıç', description: 'Elementary seviyesindesiniz. Temel İngilizce yapıları üzerine çalışmaya başlayacaksınız.', color: 'bg-slate-100 text-slate-700 border-slate-300' },
-  A2: { label: 'A2 – Temel', description: 'Pre-intermediate seviyesindesiniz. Günlük iletişim becerilerinizi geliştireceksiniz.', color: 'bg-blue-50 text-blue-700 border-blue-300' },
-  B1: { label: 'B1 – Orta', description: 'Intermediate seviyesindesiniz. Daha karmaşık konuları keşfedeceksiniz.', color: 'bg-green-50 text-green-700 border-green-300' },
-  B2: { label: 'B2 – Orta Üstü', description: 'Upper-intermediate seviyesindesiniz. İş İngilizcesine hakim olacaksınız.', color: 'bg-amber-50 text-amber-700 border-amber-300' },
-  C1: { label: 'C1 – İleri', description: 'Advanced seviyesindesiniz. Akademik ve profesyonel İngilizce becerilerinizi mükemmelleştireceksiniz.', color: 'bg-purple-50 text-purple-700 border-purple-300' },
+const LEVEL_DETAILS: Record<string, {
+  label: string;
+  sublabel: string;
+  color: string;
+  bgGradient: string;
+  badgeColor: string;
+  icon: string;
+  summary: string;
+  canDo: string[];
+  willLearn: string[];
+  topics: string[];
+}> = {
+  A1: {
+    label: 'A1',
+    sublabel: 'Başlangıç Seviyesi',
+    color: 'text-slate-700',
+    bgGradient: 'from-slate-50 to-slate-100',
+    badgeColor: 'bg-slate-600',
+    icon: '🌱',
+    summary: 'İngilizce yolculuğunuzun başındaki bu seviyede, sıfırdan sağlam bir temel inşa edeceksiniz. Anadil konuşanlarının bile takdir ettiği net bir başlangıç noktanız var.',
+    canDo: [
+      'Kendinizi ve başkalarını tanıtabilirsiniz',
+      'Günlük sorulara basit cevaplar verebilirsiniz',
+      'Temel sayıları, tarihleri ve günlük ifadeleri kullanabilirsiniz',
+      'Çok yavaş konuşulduğunda anlaşılır kelimeler ayırt edebilirsiniz',
+    ],
+    willLearn: [
+      'To be, have got ve temel fiil yapıları',
+      'Alfabe, selamlaşma ve kendini tanıtma',
+      'Sayılar, renkler, günler ve aylar',
+      'Günlük rutin ve iş yeri kelimesi',
+      'Basit soru cümleleri ve olumlu/olumsuz yapılar',
+    ],
+    topics: ['Tanışma & Selamlama', 'Şirket ve Ülkeler', 'Günlük Rutin', 'Sayılar & Tarihler', 'Temel Kelime Hazinesi'],
+  },
+  A2: {
+    label: 'A2',
+    sublabel: 'Temel Seviye',
+    color: 'text-blue-700',
+    bgGradient: 'from-blue-50 to-blue-100',
+    badgeColor: 'bg-blue-600',
+    icon: '📘',
+    summary: 'Temelleri kavramış durumdaki bu seviyede artık basit iş ve günlük konuşmalarda kendinizi ifade edebilirsiniz. Biraz pratikle çok hızlı ilerleme kaydedeceksiniz.',
+    canDo: [
+      'Alışveriş, yol tarifi gibi günlük görevleri yerine getirebilirsiniz',
+      'Kendinizden ve çevrenizden kısaca bahsedebilirsiniz',
+      'Sık kullanılan kalıpları ve ifadeleri anlayabilirsiniz',
+      'Basit iş e-postaları ve mesajlar yazabilirsiniz',
+    ],
+    willLearn: [
+      'Geçmiş zaman (Simple Past) yapısı',
+      'Karşılaştırma sıfatları ve zarfları',
+      'Telefon konuşmaları ve e-posta yazımı',
+      'Seyahat ve iş seyahati dili',
+      'Ürün ve hizmet tanımlamaları',
+    ],
+    topics: ['İş E-postaları', 'Seyahat & Rezervasyon', 'Ürün Tanıtımı', 'Toplantı Dili', 'Geçmiş Zaman'],
+  },
+  B1: {
+    label: 'B1',
+    sublabel: 'Orta Seviye',
+    color: 'text-green-700',
+    bgGradient: 'from-green-50 to-green-100',
+    badgeColor: 'bg-green-600',
+    icon: '💼',
+    summary: 'Uluslararası dil çerçevesinin tam ortasındaki B1, iş dünyasında en çok aranan seviyelerden biridir. Bildiğiniz konularda akıcı biçimde konuşabilir ve yazabilirsiniz.',
+    canDo: [
+      'İş toplantılarında ve sunumlarda aktif rol alabilirsiniz',
+      'Karmaşık olmayan metinlerin ana fikrini anlayabilirsiniz',
+      'Deneyim ve planlarınız hakkında açıklama yapabilirsiniz',
+      'Profesyonel raporlar ve yazışmalar üretebilirsiniz',
+    ],
+    willLearn: [
+      'Present Perfect ve geçmiş zaman kullanımı karşılaştırması',
+      'Modal yapılar (should, must, have to)',
+      'Sunum ve konuşma teknikleri',
+      'Müzakere ve ikna dili',
+      'İş raporları ve teklifler',
+    ],
+    topics: ['Sunum & Brifing', 'Müzakere', 'Problem Çözme', 'Şirket Kültürü', 'Raporlama'],
+  },
+  B2: {
+    label: 'B2',
+    sublabel: 'Orta Üstü Seviye',
+    color: 'text-amber-700',
+    bgGradient: 'from-amber-50 to-amber-100',
+    badgeColor: 'bg-amber-600',
+    icon: '🚀',
+    summary: 'Bu seviye, profesyonel hayatta uluslararası ortamlarda rahatlıkla iletişim kurabildiğinizi gösterir. Karmaşık konuları anlıyor ve çeşitli bakış açılarını tartışabiliyorsunuz.',
+    canDo: [
+      'Teknik ve iş konularındaki uzun metinleri anlayabilirsiniz',
+      'Üst düzey toplantılar ve müzakerelere katılabilirsiniz',
+      'Dezavantajlar/avantajlar sunup karşı argümanlara yanıt verebilirsiniz',
+      'Anadil konuşanlarıyla akıcı biçimde iletişim kurabilirsiniz',
+    ],
+    willLearn: [
+      'İleri düzey koşul cümleleri (If I had... / Unless...)',
+      'Pasif yapılar ve dolaylı anlatım',
+      'Kurumsal strateji ve finans dili',
+      'Çapraz kültür iletişimi',
+      'Liderlik ve yönetim dili',
+    ],
+    topics: ['Strateji & Finans', 'Liderlik Dili', 'Uluslararası Pazarlama', 'Kriz Yönetimi', 'İleri Yazışma'],
+  },
+  C1: {
+    label: 'C1',
+    sublabel: 'İleri Seviye',
+    color: 'text-purple-700',
+    bgGradient: 'from-purple-50 to-purple-100',
+    badgeColor: 'bg-purple-600',
+    icon: '🏆',
+    summary: 'Tebrikler! İngilizce yetkinliğiniz üst düzeyde. Dili esnek ve etkili biçimde kullanabiliyor, nüanslı ifadeler içeren metinleri anlıyor ve karmaşık konularda akıcı konuşabiliyorsunuz.',
+    canDo: [
+      'Uzun ve karmaşık metinleri kolaylıkla anlayabilirsiniz',
+      'Hazırlıksız, spontane konuşmalar yapabilirsiniz',
+      'Sosyal, akademik ve profesyonel ortamlarda etkili İngilizce kullanabilirsiniz',
+      'İnce anlam farklarını yakalayabilir ve doğal deyimler kullanabilirsiniz',
+    ],
+    willLearn: [
+      'İleri düzey iş yazısı ve akademik İngilizce',
+      'Müzakere ve etkileme stratejileri',
+      'Konuşma akıcılığı ve doğallığı geliştirme',
+      'Medya ve sunum becerileri',
+      'Kültürel zeka ve uluslararası iletişim',
+    ],
+    topics: ['Akademik Yazı', 'Etkileme Stratejileri', 'Medya & PR', 'Üst Düzey Sunum', 'Uluslararası Diplomasi'],
+  },
 };
 
 const QUESTIONS_PER_PAGE = 10;
@@ -139,7 +260,6 @@ export default function PlacementTest() {
       }
       const data = await res.json();
       setResult({ score: data.score, level: data.level });
-      queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
     } catch (e: any) {
       setError(e.message);
     } finally {
@@ -148,35 +268,114 @@ export default function PlacementTest() {
   };
 
   if (result) {
-    const levelInfo = LEVEL_LABELS[result.level] ?? LEVEL_LABELS.B1;
+    const info = LEVEL_DETAILS[result.level] ?? LEVEL_DETAILS.B1;
+    const percentage = Math.round((result.score / 60) * 100);
+
+    const handleGoToApp = async () => {
+      await queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+      setLocation("/dashboard");
+    };
+
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#0f2248] via-[#1e3a6e] to-[#0ea5e9]/20 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-8 text-center">
-          <div className="w-20 h-20 rounded-full bg-[#0ea5e9]/10 flex items-center justify-center mx-auto mb-6">
-            <svg className="w-10 h-10 text-[#0ea5e9]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
-          <h1 className="text-2xl font-bold text-[#1e3a6e] mb-2">Test Tamamlandı!</h1>
-          <p className="text-slate-500 mb-6">Oxford Business Result Seviye Testi sonucunuz:</p>
+      <div className="min-h-screen bg-gradient-to-br from-[#0f2248] via-[#1e3a6e] to-[#0ea5e9]/20 py-10 px-4">
+        <div className="max-w-2xl mx-auto space-y-5">
 
-          <div className={cn("border-2 rounded-xl p-6 mb-6", levelInfo.color)}>
-            <div className="text-4xl font-extrabold mb-1">{result.level}</div>
-            <div className="text-xl font-semibold mb-2">{levelInfo.label}</div>
-            <div className="text-sm opacity-80">{levelInfo.description}</div>
+          {/* Congrats banner */}
+          <div className="bg-white rounded-2xl shadow-xl p-8 text-center">
+            <div className="text-5xl mb-3">{info.icon}</div>
+            <h1 className="text-3xl font-extrabold text-[#1e3a6e] mb-1">Tebrikler!</h1>
+            <p className="text-slate-500 text-base">Oxford Business Result Seviye Belirleme Testi tamamlandı.</p>
           </div>
 
-          <div className="flex items-center justify-center gap-2 text-slate-500 text-sm mb-8">
-            <span>Doğru cevap sayısı:</span>
-            <span className="font-bold text-[#1e3a6e] text-lg">{result.score} / 60</span>
+          {/* Level card */}
+          <div className={cn("rounded-2xl shadow-xl p-8 bg-gradient-to-br", info.bgGradient)}>
+            <div className="flex items-center gap-5 mb-5">
+              <div className={cn("w-20 h-20 rounded-2xl flex items-center justify-center text-white font-black text-3xl shadow-md flex-shrink-0", info.badgeColor)}>
+                {info.label}
+              </div>
+              <div>
+                <div className={cn("text-2xl font-bold", info.color)}>{info.sublabel}</div>
+                <div className="text-slate-500 text-sm mt-0.5">Belirlenen seviyeniz</div>
+              </div>
+            </div>
+            <p className={cn("text-sm leading-relaxed", info.color)}>{info.summary}</p>
           </div>
 
-          <Button
-            onClick={() => setLocation("/dashboard")}
-            className="w-full bg-[#1e3a6e] hover:bg-[#0ea5e9] text-white font-semibold py-3 rounded-xl text-base transition-colors"
-          >
-            Sisteme Giriş Yap →
-          </Button>
+          {/* Score */}
+          <div className="bg-white rounded-2xl shadow-xl p-6">
+            <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">Test Puanınız</h2>
+            <div className="flex items-end gap-3 mb-3">
+              <span className="text-5xl font-extrabold text-[#1e3a6e]">{result.score}</span>
+              <span className="text-slate-400 text-lg mb-1">/ 60 doğru · %{percentage}</span>
+            </div>
+            <div className="w-full bg-slate-100 rounded-full h-3">
+              <div
+                className="h-3 rounded-full bg-gradient-to-r from-[#1e3a6e] to-[#0ea5e9] transition-all"
+                style={{ width: `${percentage}%` }}
+              />
+            </div>
+            <div className="flex justify-between text-xs text-slate-400 mt-1">
+              <span>0</span>
+              <span>12 (A1)</span>
+              <span>26 (A2)</span>
+              <span>40 (B1)</span>
+              <span>54 (B2)</span>
+              <span>60 (C1)</span>
+            </div>
+          </div>
+
+          {/* Can do */}
+          <div className="bg-white rounded-2xl shadow-xl p-6">
+            <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">Bu Seviyede Neler Yapabilirsiniz?</h2>
+            <ul className="space-y-2">
+              {info.canDo.map((item, i) => (
+                <li key={i} className="flex items-start gap-3 text-sm text-slate-700">
+                  <span className="text-[#0ea5e9] font-bold text-base leading-5 flex-shrink-0">✓</span>
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Will learn */}
+          <div className="bg-white rounded-2xl shadow-xl p-6">
+            <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">Sphere English'te Neler Öğreneceksiniz?</h2>
+            <ul className="space-y-2">
+              {info.willLearn.map((item, i) => (
+                <li key={i} className="flex items-start gap-3 text-sm text-slate-700">
+                  <span className="text-[#1e3a6e] font-bold flex-shrink-0">→</span>
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Topics */}
+          <div className="bg-white rounded-2xl shadow-xl p-6">
+            <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">Konu Başlıkları</h2>
+            <div className="flex flex-wrap gap-2">
+              {info.topics.map((topic, i) => (
+                <span key={i} className="bg-[#1e3a6e]/8 text-[#1e3a6e] text-xs font-medium px-3 py-1.5 rounded-full border border-[#1e3a6e]/15">
+                  {topic}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          {/* CTA */}
+          <div className="bg-white rounded-2xl shadow-xl p-6 text-center">
+            <p className="text-slate-500 text-sm mb-5">
+              Seviyeniz kayıt altına alındı. Artık Sphere English platformuna giriş yaparak öğrenmeye başlayabilirsiniz.
+            </p>
+            <Button
+              onClick={handleGoToApp}
+              className="w-full bg-[#1e3a6e] hover:bg-[#0ea5e9] text-white font-bold py-4 rounded-xl text-base transition-colors shadow-lg"
+            >
+              Uygulamaya Geç →
+            </Button>
+            <p className="text-xs text-slate-400 mt-3">Seviyeniz: <strong>{info.label} – {info.sublabel}</strong></p>
+          </div>
+
         </div>
       </div>
     );

@@ -108,7 +108,6 @@ function PlacementTestRoute() {
     </div>
   );
   if (!isAuthenticated) return <Redirect to="/login" />;
-  if (user?.placementTestCompleted) return <Redirect to="/dashboard" />;
   return <PlacementTest />;
 }
 
