@@ -157,11 +157,31 @@ if (cluster.isPrimary) {
     });
 } else {
   // Worker süreçler sadece HTTP isteklerini dinler
-  app.listen(port, "0.0.0.0", (err) => {
+  const server = app.listen(port, "0.0.0.0", (err) => {
     if (err) {
       logger.error({ err }, "Port dinleme hatası");
       process.exit(1);
     }
     logger.info({ port, pid: process.pid, worker: cluster.worker?.id }, "Worker hazır");
   });
+
+  // ─── Graceful shutdown — deploy sırasında aktif istekleri kesmeden kapat ───
+  const shutdown = (signal: string) => {
+    logger.info({ signal, pid: process.pid }, "Kapatma sinyali alındı, yeni bağlantılar durduruldu");
+    server.close(() => {
+      logger.info({ pid: process.pid }, "HTTP server kapandı, DB pool temizleniyor");
+      pool.end().then(() => {
+        logger.info({ pid: process.pid }, "Temiz kapatma tamamlandı");
+        process.exit(0);
+      }).catch(() => process.exit(0));
+    });
+    // 15 saniyede kapanmazsa zorla kapat (takılı kalmayı önler)
+    setTimeout(() => {
+      logger.warn({ pid: process.pid }, "Graceful shutdown zaman aşımı, zorla kapatılıyor");
+      process.exit(1);
+    }, 15_000).unref();
+  };
+
+  process.on("SIGTERM", () => shutdown("SIGTERM"));
+  process.on("SIGINT",  () => shutdown("SIGINT"));
 }

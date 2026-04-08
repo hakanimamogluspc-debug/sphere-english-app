@@ -12,9 +12,12 @@ if (!connectionString) {
   );
 }
 
+// CPX22 = 3 worker × 25 = 75 bağlantı → PostgreSQL varsayılan limiti (100) altında güvenli
+// CPX32 = 4 worker × 25 = 100 — sınırda ama kabul edilebilir
+// Sunucu yükseltildiğinde bu değer de artırılabilir
 export const pool = new Pool({
   connectionString: connectionString ?? "postgresql://localhost/placeholder",
-  max: 50,                   // varsayılan 10 yerine 50 bağlantı — 10.000 eş zamanlı kullanıcı için
+  max: 25,
   idleTimeoutMillis: 30_000, // 30sn boşta kalan bağlantıyı kapat
   connectionTimeoutMillis: 5_000, // 5sn bağlantı kurulamazsa hata ver
 });

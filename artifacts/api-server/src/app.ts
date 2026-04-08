@@ -186,8 +186,21 @@ app.use("/api", router);
 // Serve built frontend static files in production
 const staticDir = process.env["STATIC_DIR"] ?? path.join(process.cwd(), "public");
 if (fs.existsSync(staticDir)) {
-  app.use(express.static(staticDir));
+  // Hashed bundle dosyaları (main.abc123.js) → 1 yıl cache
+  // index.html → cache yok (her deploy'da güncel sürüm alınsın)
+  app.use(express.static(staticDir, {
+    etag: true,
+    lastModified: true,
+    setHeaders(res, filePath) {
+      if (filePath.endsWith("index.html")) {
+        res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+      } else {
+        res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+      }
+    },
+  }));
   app.get("/{*splat}", (_req, res) => {
+    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
     res.sendFile(path.join(staticDir, "index.html"));
   });
   logger.info({ staticDir }, "Serving static frontend files");
