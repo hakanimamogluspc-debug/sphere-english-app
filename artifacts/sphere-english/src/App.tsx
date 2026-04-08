@@ -51,6 +51,7 @@ import PronunciationCoach from "./pages/student/PronunciationCoach";
 import WritingCoach from "./pages/student/WritingCoach";
 import VocabGame from "./pages/student/VocabGame";
 import GrammarCoach from "./pages/student/GrammarCoach";
+import AIStudio from "./pages/AIStudio";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -103,6 +104,7 @@ function Router() {
       <Route path="/"><Redirect to="/login" /></Route>
       <Route path="/login" component={Login} />
       <Route path="/register" component={Register} />
+      <Route path="/ai-studio" component={AIStudio} />
 
       {/* Common Protected */}
       <Route path="/dashboard"><LayoutWrapper component={Dashboard} /></Route>
