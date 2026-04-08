@@ -245,3 +245,9 @@ id = "hjQjuTIwl4lzzVXhob45v"
 uri = "file://coach-avatars-jpeg/coach-james-mfg.jpg"
 type = "image"
 title = "James"
+
+[[outputs]]
+id = "_wh0W2Mf9O5hZeTY9V4_t"
+uri = "file://coach-avatars.zip"
+type = "unspecified"
+title = "Tüm Telaffuz Koçu Avatarları (11 JPEG, 2.3 MB)"
