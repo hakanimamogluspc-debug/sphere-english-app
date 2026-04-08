@@ -55,7 +55,7 @@ const AI_FEATURES = [
     subtitle: "Vocab Game",
     description:
       "Oyunlaştırılmış kelime öğrenme deneyimi. Liderlik tablosu, puan sistemi ve adaptif zorluk seviyeleriyle kelime haznenizi genişletirken eğlenin.",
-    highlights: ["Adaptif zorluk sistemi", "Liderlik tablosu & sıralama", "Streak & rozet sistemi", "400+ iş İngilizcesi kelimesi"],
+    highlights: ["Adaptif zorluk sistemi", "Liderlik tablosu & sıralama", "Streak & rozet sistemi", "4000+ iş İngilizcesi kelimesi"],
     color: "#d97706",
     gradient: "from-amber-500 to-orange-500",
     bg: "from-amber-50 to-orange-50",
@@ -136,7 +136,7 @@ const COACHES = [
 const STATS = [
   { value: "11", label: "Yapay Zeka Koçu", icon: Users },
   { value: "4", label: "AI Özelliği", icon: Sparkles },
-  { value: "400+", label: "Kelime & Kural", icon: BookOpen },
+  { value: "4000+", label: "Kelime & Kural", icon: BookOpen },
   { value: "A1–C2", label: "CEFR Seviyeleri", icon: Trophy },
 ];
 
