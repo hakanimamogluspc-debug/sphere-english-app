@@ -206,6 +206,12 @@ export default function PlacementTest() {
 
       {/* Content */}
       <div className="max-w-3xl mx-auto px-4 py-8">
+        {/* Info box — top */}
+        <div className="mb-6 bg-white/5 border border-white/10 rounded-xl p-5 text-white/60 text-xs leading-relaxed">
+          <p className="font-semibold text-white/80 mb-1">ℹ️ Bu test hakkında</p>
+          <p>Bu test, Oxford University Press tarafından hazırlanmış Oxford Business Result Seviye Belirleme Testidir. 60 çoktan seçmeli sorudan oluşmaktadır. Sonuçlarınıza göre A1, A2, B1, B2 veya C1 seviyesine atanacaksınız. Test tamamlandıktan sonra seviyeniz değiştirilemez.</p>
+        </div>
+
         {/* Page indicator */}
         <div className="flex items-center justify-between mb-6">
           <span className="text-white/70 text-sm">Bölüm {currentPage + 1} / {totalPages}</span>
