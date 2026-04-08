@@ -1,4 +1,4 @@
-import { pgTable, serial, text, timestamp, integer, varchar } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, timestamp, integer, varchar, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -18,6 +18,7 @@ export const usersTable = pgTable("users", {
   streak: integer("streak").notNull().default(0),
   lastActiveDate: text("last_active_date"),
   badges: text("badges").array().notNull().default([]),
+  placementTestCompleted: boolean("placement_test_completed").notNull().default(false),
   studentNumber: varchar("student_number", { length: 20 }),
   accountType: varchar("account_type", { length: 20 }),
   createdAt: timestamp("created_at").notNull().defaultNow(),

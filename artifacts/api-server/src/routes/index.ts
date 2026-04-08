@@ -28,6 +28,7 @@ import activityRouter from "./activity";
 import featureSettingsRouter from "./feature-settings";
 import vocabGameRouter from "./vocab-game";
 import grammarCoachRouter from "./grammar-coach";
+import placementTestRouter from "./placement-test";
 
 const router: IRouter = Router();
 
@@ -60,5 +61,6 @@ router.use(activityRouter);
 router.use(featureSettingsRouter);
 router.use(vocabGameRouter);
 router.use(grammarCoachRouter);
+router.use(placementTestRouter);
 
 export default router;

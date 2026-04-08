@@ -52,6 +52,7 @@ import WritingCoach from "./pages/student/WritingCoach";
 import VocabGame from "./pages/student/VocabGame";
 import GrammarCoach from "./pages/student/GrammarCoach";
 import AIStudio from "./pages/AIStudio";
+import PlacementTest from "./pages/PlacementTest";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -59,8 +60,9 @@ const queryClient = new QueryClient({
   }
 });
 
-function ProtectedRoute({ component: Component, allowedRoles }: { component: any, allowedRoles?: string[] }) {
+function ProtectedRoute({ component: Component, allowedRoles, skipPlacementCheck }: { component: any, allowedRoles?: string[], skipPlacementCheck?: boolean }) {
   const { user, isLoading, isAuthenticated } = useAuth();
+  const [location] = useLocation();
   
   if (isLoading) return (
     <div className="h-screen w-full flex items-center justify-center">
@@ -72,6 +74,15 @@ function ProtectedRoute({ component: Component, allowedRoles }: { component: any
   );
   if (!isAuthenticated) return <Redirect to="/login" />;
   if (allowedRoles && user && !allowedRoles.includes(user.role)) return <Redirect to="/dashboard" />;
+
+  if (
+    !skipPlacementCheck &&
+    user?.role === "student" &&
+    user?.placementTestCompleted === false &&
+    location !== "/placement-test"
+  ) {
+    return <Redirect to="/placement-test" />;
+  }
   
   return <Component />;
 }
@@ -89,12 +100,25 @@ function LayoutWrapper({ component: Component, allowedRoles }: { component: any,
   );
 }
 
+function PlacementTestRoute() {
+  const { user, isLoading, isAuthenticated } = useAuth();
+  if (isLoading) return (
+    <div className="h-screen w-full flex items-center justify-center">
+      <div className="animate-spin h-10 w-10 border-4 border-primary border-t-transparent rounded-full" />
+    </div>
+  );
+  if (!isAuthenticated) return <Redirect to="/login" />;
+  if (user?.placementTestCompleted) return <Redirect to="/dashboard" />;
+  return <PlacementTest />;
+}
+
 function Router() {
   const { isAuthenticated, user } = useAuth();
   const [location] = useLocation();
 
   if (isAuthenticated && location === "/") {
     if (user?.role === "corporate") return <Redirect to="/corporate/dashboard" />;
+    if (user?.role === "student" && user?.placementTestCompleted === false) return <Redirect to="/placement-test" />;
     return <Redirect to="/dashboard" />;
   }
 
@@ -105,6 +129,7 @@ function Router() {
       <Route path="/login" component={Login} />
       <Route path="/register" component={Register} />
       <Route path="/ai-studio" component={AIStudio} />
+      <Route path="/placement-test" component={PlacementTestRoute} />
 
       {/* Common Protected */}
       <Route path="/dashboard"><LayoutWrapper component={Dashboard} /></Route>

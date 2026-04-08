@@ -86,6 +86,7 @@ export interface UserProfile {
   streak?: number | null;
   /** @nullable */
   badges?: string[] | null;
+  placementTestCompleted?: boolean;
 }
 
 export interface AuthResponse {

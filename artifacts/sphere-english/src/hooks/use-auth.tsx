@@ -71,8 +71,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setToken(response.token);
     queryClient.setQueryData(["/api/auth/me"], response.user);
     queryClient.invalidateQueries();
-    const dest = response.user?.role === "corporate" ? "/corporate/dashboard" : "/dashboard";
-    setLocation(dest);
+    const isCorporate = response.user?.role === "corporate";
+    const isStudent = response.user?.role === "student";
+    if (isCorporate) {
+      setLocation("/corporate/dashboard");
+    } else if (isStudent && !response.user?.placementTestCompleted) {
+      setLocation("/placement-test");
+    } else {
+      setLocation("/dashboard");
+    }
   };
 
   const handleLogout = () => {

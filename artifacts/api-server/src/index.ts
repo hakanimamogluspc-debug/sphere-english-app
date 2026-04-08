@@ -83,6 +83,10 @@ async function runStartupMigrations() {
       is_skipped BOOLEAN NOT NULL DEFAULT false,
       created_at TIMESTAMP NOT NULL DEFAULT NOW()
     )`,
+    // Seviye testi tamamlandı mı? Yeni öğrenciler sisteme girmeden önce bu testi yapmalı.
+    `ALTER TABLE users ADD COLUMN IF NOT EXISTS placement_test_completed BOOLEAN NOT NULL DEFAULT false`,
+    // Mevcut kullanıcılar için testi tamamlanmış say (sadece yeni kayıt olanlar zorunlu)
+    `UPDATE users SET placement_test_completed = true WHERE placement_test_completed = false AND created_at < NOW() - INTERVAL '2 minutes'`,
   ];
   for (const sql of migrations) {
     try {
