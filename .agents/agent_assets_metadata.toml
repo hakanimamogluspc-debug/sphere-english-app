@@ -251,3 +251,9 @@ id = "_wh0W2Mf9O5hZeTY9V4_t"
 uri = "file://coach-avatars.zip"
 type = "unspecified"
 title = "Tüm Telaffuz Koçu Avatarları (11 JPEG, 2.3 MB)"
+
+[[outputs]]
+id = "9Siokxj4anRBab49p-K0r"
+uri = "file://sphere-english-koclar.txt"
+type = "text"
+title = "Sphere English — 11 Telaffuz Koçu Tanıtım Notları"
