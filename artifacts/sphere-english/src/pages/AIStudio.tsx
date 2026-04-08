@@ -65,17 +65,72 @@ const AI_FEATURES = [
 ];
 
 const COACHES = [
-  { id: "sterling", name: "Mr. Sterling", flag: "🇬🇧", specialty: "CEO & Stratejik Yönetim", accent: "Üst Segment İngiliz (RP)", color: "#1E3A5F", image: "coach-sterling.png" },
-  { id: "jake", name: "Jake", flag: "🇺🇸", specialty: "Pazarlama & Dijital Medya", accent: "West Coast Amerikan", color: "#EA580C", image: "coach-jake.png" },
-  { id: "david", name: "David", flag: "🇺🇸", specialty: "Finans & Yatırım", accent: "New York (Wall Street)", color: "#0369A1", image: "coach-david.png" },
-  { id: "emma", name: "Emma", flag: "🇬🇧", specialty: "İnsan Kaynakları", accent: "Standart İngiliz (London)", color: "#BE185D", image: "coach-emma-hr.png" },
-  { id: "raj", name: "Raj", flag: "🇮🇳", specialty: "BT & Yazılım Geliştirme", accent: "Hint-İngiliz (Global Tech)", color: "#7C3AED", image: "coach-raj.png" },
-  { id: "hans", name: "Hans", flag: "🇩🇪", specialty: "Lojistik & Operasyon", accent: "Alman-İngiliz (Euro-English)", color: "#374151", image: "coach-hans.png" },
-  { id: "elena", name: "Elena", flag: "🇪🇺", specialty: "Uluslararası Hukuk", accent: "Diplomatik (Doğu Avrupa)", color: "#065F46", image: "coach-elena.png" },
-  { id: "alistair", name: "Alistair", flag: "🏴󠁧󠁢󠁳󠁣󠁴󠁿", specialty: "Satış & Müzakere", accent: "İskoç (Edinburg)", color: "#B91C1C", image: "coach-alistair.png" },
-  { id: "chloe", name: "Chloe", flag: "🇦🇺", specialty: "Müşteri İlişkileri", accent: "Avusturalyalı (Friendly)", color: "#D97706", image: "coach-chloe.png" },
-  { id: "james", name: "James", flag: "🇺🇸", specialty: "Üretim & Fabrika Yönetimi", accent: "Amerikan (Midwest)", color: "#78350F", image: "coach-james-mfg.png" },
-  { id: "claire", name: "Dr. Claire", flag: "🇬🇧", specialty: "Gramer & İleri Telaffuz", accent: "Akademik İngiliz (Oxford)", color: "#0F766E", image: "coach-claire-grammar.png" },
+  {
+    id: "sterling", name: "Mr. Sterling", flag: "🇬🇧", specialty: "CEO & Stratejik Yönetim",
+    accent: "Üst Segment İngiliz (RP)", color: "#1E3A5F", image: "coach-sterling.png",
+    bio: "30 yılı küresel şirketlerin yönetim kurullarında geçirmiş emektar bir yönetici. Az ve öz konuşur; liderlik dili, stratejik sunum ve C-suite toplantı jargonu onun uzmanlık bölgesi.",
+    idealFor: "Yönetici adayları · Yabancı yatırımcı görüşmeleri · Kurumsal sunum",
+  },
+  {
+    id: "jake", name: "Jake", flag: "🇺🇸", specialty: "Pazarlama & Dijital Medya",
+    accent: "West Coast Amerikan", color: "#EA580C", image: "coach-jake.png",
+    bio: "San Francisco enerjisiyle dijital çağın konuşma dilini öğretiyor. Güncel jargon, kısa ve etkili pitch yapısı, sosyal medya ve startup toplantı İngilizcesi onun alanı.",
+    idealFor: "Dijital pazarlama · Girişimciler · Akıcı Amerikan İngilizcesi",
+  },
+  {
+    id: "david", name: "David", flag: "🇺🇸", specialty: "Finans & Yatırım",
+    accent: "New York (Wall Street)", color: "#0369A1", image: "coach-david.png",
+    bio: "Wall Street'te yetişmiş, rakamlara hâkim ve zamanın kıymetini bilen biri. Yatırım sunumları, finansal raporlama dili ve CFO toplantıları onun uzmanlığı.",
+    idealFor: "Finans & bankacılık · Yabancı müşteri görüşmeleri · Analitik sunum",
+  },
+  {
+    id: "emma", name: "Emma", flag: "🇬🇧", specialty: "İnsan Kaynakları",
+    accent: "Standart İngiliz (London)", color: "#BE185D", image: "coach-emma-hr.png",
+    bio: "Empatik ve insan odaklı. Mülakat İngilizcesi, cover letter dili, performans görüşmeleri ve ekip içi iletişim konusunda standart ama sıcak bir İngiliz aksanıyla rehberlik eder.",
+    idealFor: "İş başvurusu · İK profesyonelleri · Mülakat hazırlığı",
+  },
+  {
+    id: "raj", name: "Raj", flag: "🇮🇳", specialty: "BT & Yazılım Geliştirme",
+    accent: "Hint-İngiliz (Global Tech)", color: "#7C3AED", image: "coach-raj.png",
+    bio: "Hindistan'dan Silicon Valley'e uzanan kariyeriyle global teknoloji şirketlerinin dil kodunu çok iyi biliyor. Teknik sunum, proje yönetimi ve scrum toplantıları onun uzmanlığı.",
+    idealFor: "Yazılımcılar · IT yöneticileri · Teknik sunum dili",
+  },
+  {
+    id: "hans", name: "Hans", flag: "🇩🇪", specialty: "Lojistik & Operasyon",
+    accent: "Alman-İngiliz (Euro-English)", color: "#374151", image: "coach-hans.png",
+    bio: "Düzenli, sistematik ve son derece pratik. Tedarik zinciri jargonu, lojistik koordinasyon dili ve Avrupa iş ortaklarıyla iletişim konusunda gerçekçi alıştırmalar sunar.",
+    idealFor: "Lojistik & tedarik zinciri · Avrupa iş iletişimi · Operasyon yöneticileri",
+  },
+  {
+    id: "elena", name: "Elena", flag: "🇪🇺", specialty: "Uluslararası Hukuk",
+    accent: "Diplomatik (Doğu Avrupa)", color: "#065F46", image: "coach-elena.png",
+    bio: "Uluslararası tahkim, sözleşme müzakeresi ve Avrupa kurumlarında deneyimli. Hukuki metinleri anlık çözümleyen ve kesin bir diplomatik dil kullanan mükemmeliyetçi bir koç.",
+    idealFor: "Hukuk profesyonelleri · Uluslararası sözleşmeler · Diplomatik İngilizce",
+  },
+  {
+    id: "alistair", name: "Alistair", flag: "🏴󠁧󠁢󠁳󠁣󠁴󠁿", specialty: "Satış & Müzakere",
+    accent: "İskoç (Edinburg)", color: "#B91C1C", image: "coach-alistair.png",
+    bio: "Edinburg doğumlu, sahadan yetişmiş bir satış efsanesi. Müzakere teknikleri, ikna dili, itiraz yönetimi ve kapanış cümleleri konusunda rakipsiz bir pratikçi.",
+    idealFor: "Satış uzmanları · Müzakere becerileri · Kurumsal fiyatlama görüşmeleri",
+  },
+  {
+    id: "chloe", name: "Chloe", flag: "🇦🇺", specialty: "Müşteri İlişkileri",
+    accent: "Avusturalyalı (Friendly)", color: "#D97706", image: "coach-chloe.png",
+    bio: "Melbourne'dan dünyaya; sıcak, samimi ve rahatlatıcı. Müşteri destek İngilizcesi, şikâyet yönetimi, e-ticaret iletişimi ve günlük konuşma pratiği onun güçlü yanları.",
+    idealFor: "Müşteri hizmetleri · Çağrı merkezi · Samimi Avustralya İngilizcesi",
+  },
+  {
+    id: "james", name: "James", flag: "🇺🇸", specialty: "Üretim & Fabrika Yönetimi",
+    accent: "Amerikan (Midwest)", color: "#78350F", image: "coach-james-mfg.png",
+    bio: "Ohio'da yetişmiş, fabrika sahasından yönetim masasına çıkmış biri. Üretim süreçleri jargonu, iş güvenliği talimatları ve tedarikçi görüşmeleri konusunda direkt ve güvenilir.",
+    idealFor: "Üretim & imalat yöneticileri · Endüstriyel sektör · Teknik Amerikan İngilizcesi",
+  },
+  {
+    id: "claire", name: "Dr. Claire", flag: "🇬🇧", specialty: "Gramer & İleri Telaffuz",
+    accent: "Akademik İngiliz (Oxford)", color: "#0F766E", image: "coach-claire-grammar.png",
+    bio: "Oxford'da yetişmiş dil bilimci. Makale kullanımı, sesli harf seslenimleri, cümle vurgusu gibi Türk öğrencilerin zorlandığı noktalara odaklanır — sabırlı, titiz ve sistematik.",
+    idealFor: "IELTS · TOEFL · Akademik sunum · C1/C2 hedefleyenler",
+  },
 ];
 
 const STATS = [
@@ -242,57 +297,67 @@ export default function AIStudio() {
               </p>
             </motion.div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
               {COACHES.map((coach, i) => (
                 <motion.div key={coach.id} variants={fadeUp}
                   custom={i}
-                  whileHover={{ y: -6, scale: 1.02 }}
-                  transition={{ type: "spring", stiffness: 300 }}
-                  className="bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-xl border border-gray-100 transition-all duration-300">
-                  {/* Avatar */}
-                  <div className="relative h-44 flex items-center justify-center overflow-hidden"
-                    style={{ background: `linear-gradient(145deg, ${coach.color}15, ${coach.color}30)` }}>
-                    <img
-                      src={`/images/${coach.image}`}
-                      alt={coach.name}
-                      className="w-36 h-36 rounded-2xl object-cover shadow-lg"
-                      onError={(e) => {
-                        const t = e.currentTarget;
-                        t.style.display = "none";
-                        const parent = t.parentElement!;
-                        const fallback = document.createElement("div");
-                        fallback.style.cssText = `width:80px;height:80px;border-radius:50%;background:${coach.color};display:flex;align-items:center;justify-content:center;font-size:2rem`;
-                        fallback.textContent = coach.name[0];
-                        parent.appendChild(fallback);
-                      }}
-                    />
-                    {/* Flag badge */}
-                    <div className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white shadow-md flex items-center justify-center text-base">
-                      {coach.flag}
+                  whileHover={{ y: -5, scale: 1.01 }}
+                  transition={{ type: "spring", stiffness: 280 }}
+                  className="bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-xl border border-gray-100 transition-all duration-300 flex flex-col">
+                  {/* Avatar + header */}
+                  <div className="relative flex items-center gap-4 p-5 pb-4"
+                    style={{ background: `linear-gradient(135deg, ${coach.color}10, ${coach.color}1a)` }}>
+                    <div className="relative flex-shrink-0">
+                      <img
+                        src={`/images/${coach.image}`}
+                        alt={coach.name}
+                        className="w-20 h-20 rounded-2xl object-cover shadow-md"
+                        onError={(e) => {
+                          const t = e.currentTarget;
+                          t.style.display = "none";
+                          const parent = t.parentElement!;
+                          const fallback = document.createElement("div");
+                          fallback.style.cssText = `width:80px;height:80px;border-radius:16px;background:${coach.color};display:flex;align-items:center;justify-content:center;font-size:2rem;color:white;font-weight:700`;
+                          fallback.textContent = coach.name[0];
+                          parent.appendChild(fallback);
+                        }}
+                      />
+                      <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-white shadow-sm flex items-center justify-center text-sm leading-none">
+                        {coach.flag}
+                      </div>
+                    </div>
+                    <div className="min-w-0">
+                      <h4 className="font-black text-lg leading-tight mb-0.5 truncate"
+                        style={{ fontFamily: "'Outfit', sans-serif", color: NAVY }}>
+                        {coach.name}
+                      </h4>
+                      <p className="text-xs font-bold mb-1 truncate" style={{ color: coach.color }}>
+                        {coach.specialty}
+                      </p>
+                      <p className="text-xs text-gray-400 flex items-center gap-1">
+                        <Volume2 size={10} className="flex-shrink-0" />
+                        <span className="truncate">{coach.accent}</span>
+                      </p>
                     </div>
                   </div>
 
-                  {/* Info */}
-                  <div className="p-4">
-                    <h4 className="font-bold text-base mb-0.5" style={{ fontFamily: "'Outfit', sans-serif", color: NAVY }}>
-                      {coach.name}
-                    </h4>
-                    <p className="text-xs font-semibold mb-1" style={{ color: coach.color }}>
-                      {coach.specialty}
-                    </p>
-                    <p className="text-xs text-gray-400 flex items-center gap-1">
-                      <Volume2 size={10} />
-                      {coach.accent}
+                  {/* Bio */}
+                  <div className="px-5 pt-3 pb-3 flex-1">
+                    <p className="text-sm text-gray-600 leading-relaxed">
+                      {coach.bio}
                     </p>
                   </div>
 
-                  {/* Try button */}
-                  <Link href="/student/pronunciation-coach"
-                    className="mx-4 mb-4 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold text-white transition-all hover:opacity-90"
-                    style={{ background: `linear-gradient(135deg, ${coach.color}, ${coach.color}cc)` }}>
-                    <Mic size={12} />
-                    Koçla Konuş
-                  </Link>
+                  {/* Ideal For */}
+                  <div className="px-5 pb-5">
+                    <div className="rounded-xl px-3 py-2.5"
+                      style={{ background: `${coach.color}0d`, borderLeft: `3px solid ${coach.color}` }}>
+                      <p className="text-xs font-bold mb-0.5 uppercase tracking-wide" style={{ color: coach.color }}>
+                        Kimler için ideal?
+                      </p>
+                      <p className="text-xs text-gray-500 leading-relaxed">{coach.idealFor}</p>
+                    </div>
+                  </div>
                 </motion.div>
               ))}
             </div>
