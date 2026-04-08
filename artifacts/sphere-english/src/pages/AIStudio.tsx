@@ -1,9 +1,10 @@
 import { motion } from "framer-motion";
 import { Link } from "wouter";
+import { useState } from "react";
 import {
   Mic, PenLine, Brain, Gamepad2, Sparkles, Star,
   ChevronRight, Globe, BookOpen, MessageSquare, Trophy,
-  Volume2, CheckCircle, Zap, Users
+  Volume2, CheckCircle, Zap, Users, ChevronDown, Menu, X
 } from "lucide-react";
 
 const NAVY = "#1e3a6e";
@@ -146,13 +147,116 @@ const fadeUp = {
 };
 const stagger = { show: { transition: { staggerChildren: 0.1 } } };
 
+const NAV_ITEMS = [
+  { label: "Anasayfa", href: "https://www.sphereenglish.com" },
+  { label: "Hakkımızda", href: "https://www.sphereenglish.com/hakkimizda" },
+  { label: "AI Studio", href: "/ai-studio", active: true },
+  { label: "Çözümler", href: "https://www.sphereenglish.com/cozumler", dropdown: true },
+  { label: "Blog", href: "https://www.sphereenglish.com/blog" },
+  { label: "İletişim", href: "https://www.sphereenglish.com/iletisim" },
+];
+
+function MarketingHeader() {
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  return (
+    <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-100"
+      style={{ boxShadow: "0 1px 12px rgba(30,58,110,0.07)" }}>
+      <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+        {/* Logo */}
+        <a href="https://www.sphereenglish.com"
+          className="flex items-center gap-0 text-xl font-black tracking-tight select-none"
+          style={{ fontFamily: "'Outfit', sans-serif" }}>
+          <span style={{ color: NAVY }}>SPHERE&nbsp;</span>
+          <span className="font-normal" style={{ color: NAVY }}>ENGLISH</span>
+        </a>
+
+        {/* Desktop nav */}
+        <nav className="hidden md:flex items-center gap-1">
+          {NAV_ITEMS.map((item) => (
+            <div key={item.label} className="relative">
+              {item.active ? (
+                <a href={item.href}
+                  className="flex items-center gap-1 px-4 py-2 rounded-full text-sm font-bold transition-all"
+                  style={{ color: TURQUOISE, background: `${TURQUOISE}12` }}>
+                  {item.label}
+                </a>
+              ) : item.dropdown ? (
+                <a href={item.href}
+                  className="flex items-center gap-0.5 px-4 py-2 rounded-full text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-all">
+                  {item.label}
+                  <ChevronDown size={13} className="opacity-60" />
+                </a>
+              ) : (
+                <a href={item.href}
+                  className="flex items-center px-4 py-2 rounded-full text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-all">
+                  {item.label}
+                </a>
+              )}
+            </div>
+          ))}
+        </nav>
+
+        {/* CTA buttons */}
+        <div className="hidden md:flex items-center gap-2">
+          <Link href="/login"
+            className="px-5 py-2 rounded-full text-sm font-bold border-2 transition-all hover:bg-gray-50"
+            style={{ borderColor: NAVY, color: NAVY }}>
+            Giriş Yap
+          </Link>
+          <Link href="/register"
+            className="px-5 py-2 rounded-full text-sm font-bold text-white transition-all hover:opacity-90"
+            style={{ background: TURQUOISE }}>
+            Teklif Al
+          </Link>
+        </div>
+
+        {/* Mobile menu toggle */}
+        <button className="md:hidden p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"
+          onClick={() => setMobileOpen(o => !o)}>
+          {mobileOpen ? <X size={22} /> : <Menu size={22} />}
+        </button>
+      </div>
+
+      {/* Mobile menu */}
+      {mobileOpen && (
+        <div className="md:hidden bg-white border-t border-gray-100 px-6 py-4 space-y-1">
+          {NAV_ITEMS.map((item) => (
+            <a key={item.label} href={item.href}
+              className="flex items-center px-4 py-3 rounded-xl text-sm font-medium transition-all"
+              style={item.active
+                ? { color: TURQUOISE, background: `${TURQUOISE}12`, fontWeight: 700 }
+                : { color: "#374151" }}>
+              {item.label}
+              {item.dropdown && <ChevronDown size={13} className="ml-1 opacity-60" />}
+            </a>
+          ))}
+          <div className="flex gap-2 pt-3">
+            <Link href="/login"
+              className="flex-1 text-center px-4 py-2.5 rounded-full text-sm font-bold border-2 transition-all"
+              style={{ borderColor: NAVY, color: NAVY }}>
+              Giriş Yap
+            </Link>
+            <Link href="/register"
+              className="flex-1 text-center px-4 py-2.5 rounded-full text-sm font-bold text-white transition-all"
+              style={{ background: TURQUOISE }}>
+              Teklif Al
+            </Link>
+          </div>
+        </div>
+      )}
+    </header>
+  );
+}
+
 export default function AIStudio() {
   return (
     <div className="min-h-screen bg-white" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+      <MarketingHeader />
 
       {/* ── HERO ─────────────────────────────────────────────────── */}
       <section
-        className="relative overflow-hidden flex flex-col items-center justify-center text-center px-6 py-28"
+        className="relative overflow-hidden flex flex-col items-center justify-center text-center px-6 pt-44 pb-28"
         style={{ background: `linear-gradient(135deg, #0f1f3d 0%, ${NAVY} 50%, #1a4a8a 100%)` }}
       >
         {/* Grid bg */}
