@@ -114,13 +114,14 @@ router.post(
   upload.single("audio"),
   async (req: Request, res: Response) => {
     try {
-      const voice = req.body.voice as Voice;
+      const body = (req.body as Record<string, string>) || {};
+      const voice = body.voice as Voice;
       const safeVoice: Voice = ALLOWED_VOICES.includes(voice) ? voice : "nova";
-      const systemPrompt: string = req.body.systemPrompt || "You are a professional business person.";
-      const sector: string = req.body.sector || "general";
+      const systemPrompt: string = body.systemPrompt || "You are a professional business person.";
+      const sector: string = body.sector || "general";
 
       let history: HistoryMessage[] = [];
-      try { history = JSON.parse(req.body.history || "[]"); } catch {}
+      try { history = JSON.parse(body.history || "[]"); } catch {}
 
       if (!req.file || req.file.buffer.length < 3000) {
         return res.status(400).json({ error: "Ses kaydı çok kısa. En az 2 saniye konuşun." });

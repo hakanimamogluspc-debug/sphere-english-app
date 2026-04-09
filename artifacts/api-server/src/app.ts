@@ -182,6 +182,7 @@ if (fs.existsSync(vocabGameDir)) {
 }
 
 app.use("/api", router);
+app.use("/api-server/api", router);
 
 // Serve built frontend static files in production
 const staticDir = process.env["STATIC_DIR"] ?? path.join(process.cwd(), "public");
