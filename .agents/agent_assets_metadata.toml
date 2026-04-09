@@ -275,3 +275,9 @@ id = "zmGG1vslA0KWKRqC6X-EN"
 uri = "file://assets/instagram/sphere-ai-studio-post-1.png"
 type = "image"
 title = "Sphere English AI Studio — Instagram Görseli"
+
+[[outputs]]
+id = "VJG7i6SpCt1fHjJZSoppp"
+uri = "file://assets/instagram/sphere-ai-studio-post-2.jpg"
+type = "image"
+title = "Sphere English — AI Studio Instagram Görseli (Uygulama Tasarımı)"
