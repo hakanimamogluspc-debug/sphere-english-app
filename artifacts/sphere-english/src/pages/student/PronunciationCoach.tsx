@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Mic, MicOff, Volume2, ChevronLeft, ChevronDown, ChevronUp, AlertCircle, BookOpen, Mic2, RotateCcw, Languages } from "lucide-react";
-import { motion, AnimatePresence, useAnimation } from "framer-motion";
+import { Mic, MicOff, Volume2, ChevronLeft, ChevronDown, ChevronUp, AlertCircle, BookOpen, Mic2, RotateCcw, Languages, PhoneOff, Award, Clock, MessageSquare, TrendingUp, CheckCircle2 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 const TOKEN_KEY = "sphere_token";
 
@@ -104,149 +104,18 @@ interface Message {
   id: string; role: "user" | "teacher"; text: string;
   wordScores?: WordScore[]; audioBase64?: string; speechAnalysis?: SpeechAnalysis;
 }
+interface SessionReport {
+  duration: number;
+  messageCount: number;
+  avgScore: number;
+  grammarErrors: GrammarError[];
+  vocabSuggestions: VocabSuggestion[];
+  pronunciationTips: string[];
+}
 type Phase = "idle" | "recording" | "processing" | "speaking";
+type Screen = "select" | "intro" | "chat" | "report";
 
 const MIN_RECORD_MS = 2000;
-
-// ─── Animated Coach Avatar ────────────────────────────────────────────────────
-function CoachAvatar({
-  teacher, phase,
-}: { teacher: Teacher; phase: Phase }) {
-  const isListening = phase === "recording";
-  const isSpeaking = phase === "speaking";
-  const isProcessing = phase === "processing";
-
-  return (
-    <div className="flex flex-col items-center gap-3 select-none">
-      {/* Avatar ring stack */}
-      <div className="relative flex items-center justify-center">
-        {/* Outer pulse ring — speaking */}
-        <AnimatePresence>
-          {isSpeaking && (
-            <motion.div
-              key="speak-ring"
-              className="absolute rounded-full"
-              style={{ width: 130, height: 130, border: `3px solid ${teacher.color}` }}
-              initial={{ opacity: 0.8, scale: 1 }}
-              animate={{ opacity: 0, scale: 1.4 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 1.1, repeat: Infinity, ease: "easeOut" }}
-            />
-          )}
-          {isSpeaking && (
-            <motion.div
-              key="speak-ring2"
-              className="absolute rounded-full"
-              style={{ width: 130, height: 130, border: `2px solid ${teacher.color}` }}
-              initial={{ opacity: 0.6, scale: 1 }}
-              animate={{ opacity: 0, scale: 1.25 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 1.1, repeat: Infinity, ease: "easeOut", delay: 0.4 }}
-            />
-          )}
-        </AnimatePresence>
-
-        {/* Listening wave rings */}
-        <AnimatePresence>
-          {isListening && [0, 1, 2].map(i => (
-            <motion.div
-              key={`listen-${i}`}
-              className="absolute rounded-full"
-              style={{ width: 120, height: 120, border: "2px solid #EF4444" }}
-              initial={{ opacity: 0.7, scale: 1 }}
-              animate={{ opacity: 0, scale: 1.3 + i * 0.15 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 1.4, repeat: Infinity, ease: "easeOut", delay: i * 0.35 }}
-            />
-          ))}
-        </AnimatePresence>
-
-        {/* Processing spinner ring */}
-        {isProcessing && (
-          <motion.div
-            className="absolute rounded-full"
-            style={{
-              width: 125, height: 125,
-              border: `3px solid transparent`,
-              borderTopColor: teacher.color,
-              borderRightColor: teacher.color,
-            }}
-            animate={{ rotate: 360 }}
-            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-          />
-        )}
-
-        {/* Avatar image */}
-        <motion.div
-          className="relative rounded-full overflow-hidden shadow-2xl"
-          style={{ width: 100, height: 100 }}
-          animate={isSpeaking
-            ? { scale: [1, 1.015, 1, 1.01, 1] }
-            : isListening
-            ? { scale: [1, 1.025, 1] }
-            : { scale: 1 }
-          }
-          transition={isSpeaking || isListening
-            ? { duration: 0.8, repeat: Infinity, ease: "easeInOut" }
-            : {}}
-        >
-          <img
-            src={`/images/${teacher.image}`}
-            alt={teacher.name}
-            className="w-full h-full object-cover"
-          />
-
-          {/* Gradient overlay at bottom */}
-          <div
-            className="absolute bottom-0 left-0 right-0 h-1/3"
-            style={{ background: `linear-gradient(to top, ${teacher.color}44, transparent)` }}
-          />
-        </motion.div>
-
-        {/* Status badge */}
-        <div className="absolute -bottom-1 left-1/2 -translate-x-1/2">
-          <AnimatePresence mode="wait">
-            {isListening && (
-              <motion.div key="listening" initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 4 }}
-                className="flex items-center gap-1.5 bg-red-500 text-white text-[11px] font-semibold px-3 py-1 rounded-full shadow-lg">
-                <span className="w-1.5 h-1.5 bg-white rounded-full animate-ping" />
-                Dinliyorum
-              </motion.div>
-            )}
-            {isSpeaking && (
-              <motion.div key="speaking" initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 4 }}
-                className="flex items-center gap-1.5 text-white text-[11px] font-semibold px-3 py-1 rounded-full shadow-lg"
-                style={{ backgroundColor: teacher.color }}>
-                <SoundWave color="white" />
-                Konuşuyor
-              </motion.div>
-            )}
-            {isProcessing && (
-              <motion.div key="processing" initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 4 }}
-                className="flex items-center gap-1.5 bg-gray-700 text-white text-[11px] font-semibold px-3 py-1 rounded-full shadow-lg">
-                <ThinkingDots />
-                Düşünüyor
-              </motion.div>
-            )}
-            {phase === "idle" && (
-              <motion.div key="idle" initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 4 }}
-                className="flex items-center gap-1.5 bg-green-500 text-white text-[11px] font-semibold px-3 py-1 rounded-full shadow-lg">
-                <span className="w-1.5 h-1.5 bg-white rounded-full" />
-                Hazır
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-      </div>
-
-      {/* Coach info */}
-      <div className="text-center">
-        <p className="font-bold text-gray-900 text-lg">{teacher.flag} {teacher.name}</p>
-        <p className="text-xs text-gray-400">{teacher.accentLabel} · {teacher.description}</p>
-      </div>
-    </div>
-  );
-}
 
 // ─── Mini helpers ─────────────────────────────────────────────────────────────
 function SoundWave({ color = "#3B82F6" }: { color?: string }) {
@@ -272,6 +141,281 @@ function ThinkingDots() {
           transition={{ duration: 0.8, repeat: Infinity, delay: d }} />
       ))}
     </span>
+  );
+}
+
+function formatDuration(secs: number) {
+  const m = Math.floor(secs / 60);
+  const s = secs % 60;
+  return m > 0 ? `${m}dk ${s}sn` : `${s}sn`;
+}
+
+// ─── Coach Intro Screen ────────────────────────────────────────────────────────
+function CoachIntroScreen({ teacher, onStart, onBack }: { teacher: Teacher; onStart: () => void; onBack: () => void }) {
+  const highlights = [
+    { label: "Uzmanlık", value: teacher.specialty },
+    { label: "Aksan", value: teacher.accentLabel },
+    { label: "Yaş Aralığı", value: teacher.ageRange },
+    { label: "Stil", value: teacher.description },
+  ];
+
+  return (
+    <div className="min-h-full bg-gradient-to-b from-gray-50 to-white flex flex-col">
+      <div className="max-w-lg mx-auto w-full px-4 py-8 flex flex-col gap-6">
+        {/* Back */}
+        <button onClick={onBack} className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-600 transition w-fit">
+          <ChevronLeft size={16} /> Geri
+        </button>
+
+        {/* Coach Card */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="rounded-3xl overflow-hidden shadow-xl border border-gray-100"
+        >
+          {/* Header gradient */}
+          <div className="relative h-32 flex items-end justify-center pb-0" style={{ background: `linear-gradient(135deg, ${teacher.color}dd, ${teacher.color}88)` }}>
+            <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 30% 50%, white 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
+            <div className="relative z-10 -mb-10">
+              <div className="w-20 h-20 rounded-full overflow-hidden shadow-2xl border-4 border-white">
+                <img src={`/images/${teacher.image}`} alt={teacher.name} className="w-full h-full object-cover" />
+              </div>
+            </div>
+          </div>
+
+          {/* Info */}
+          <div className="bg-white pt-12 pb-6 px-6 text-center">
+            <h2 className="text-2xl font-bold text-gray-900">{teacher.flag} {teacher.name}</h2>
+            <span className="inline-block mt-1 text-xs font-semibold px-3 py-1 rounded-full" style={{ background: `${teacher.color}18`, color: teacher.color }}>
+              {teacher.specialty}
+            </span>
+
+            <p className="mt-4 text-sm text-gray-500 leading-relaxed text-left">
+              {teacher.systemPrompt.split('.')[0] + '.' + (teacher.systemPrompt.split('.')[1] || '')}
+            </p>
+
+            {/* Highlights grid */}
+            <div className="grid grid-cols-2 gap-2 mt-5">
+              {highlights.map(h => (
+                <div key={h.label} className="rounded-xl p-3 text-left" style={{ background: `${teacher.color}0d` }}>
+                  <p className="text-[10px] font-bold uppercase tracking-wide mb-0.5" style={{ color: teacher.color }}>{h.label}</p>
+                  <p className="text-xs text-gray-700 font-medium leading-tight">{h.value}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* What to expect */}
+            <div className="mt-4 rounded-xl border border-dashed p-4 text-left" style={{ borderColor: `${teacher.color}44` }}>
+              <p className="text-xs font-bold uppercase tracking-wide mb-2" style={{ color: teacher.color }}>Bu görüşmede</p>
+              <ul className="space-y-1.5">
+                {[
+                  "Gerçek zamanlı telaffuz analizi",
+                  "Gramer ve kelime geri bildirimi",
+                  "Oturum sonu gelişim raporu",
+                ].map((item, i) => (
+                  <li key={i} className="flex items-center gap-2 text-xs text-gray-600">
+                    <CheckCircle2 size={12} style={{ color: teacher.color, flexShrink: 0 }} />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Start Button */}
+        <motion.button
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          onClick={onStart}
+          whileTap={{ scale: 0.97 }}
+          className="w-full py-4 rounded-2xl text-white font-bold text-base shadow-lg flex items-center justify-center gap-2 transition-opacity hover:opacity-90"
+          style={{ background: `linear-gradient(135deg, ${teacher.color}, ${teacher.color}cc)` }}
+        >
+          <Mic size={18} />
+          Görüşmeye Başla
+        </motion.button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Session Report Screen ─────────────────────────────────────────────────────
+function SessionReportScreen({ report, teacher, onNewSession, onChangeCoach }: {
+  report: SessionReport; teacher: Teacher; onNewSession: () => void; onChangeCoach: () => void;
+}) {
+  const scoreColor = report.avgScore >= 80 ? "#16a34a" : report.avgScore >= 60 ? "#d97706" : "#dc2626";
+  const scoreBg = report.avgScore >= 80 ? "#f0fdf4" : report.avgScore >= 60 ? "#fffbeb" : "#fef2f2";
+  const scoreBorder = report.avgScore >= 80 ? "#bbf7d0" : report.avgScore >= 60 ? "#fde68a" : "#fecaca";
+  const badge = report.avgScore >= 80 ? "Mükemmel" : report.avgScore >= 60 ? "İyi" : "Gelişiyor";
+  const badgeIcon = report.avgScore >= 80 ? "🏆" : report.avgScore >= 60 ? "⭐" : "📈";
+
+  const totalIssues = report.grammarErrors.length + report.vocabSuggestions.length;
+
+  return (
+    <div className="min-h-full bg-gradient-to-b from-gray-50 to-white">
+      <div className="max-w-lg mx-auto px-4 py-6 flex flex-col gap-4">
+
+        {/* Header */}
+        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="text-center">
+          <div className="flex items-center justify-center mb-3">
+            <div className="w-14 h-14 rounded-full overflow-hidden border-3 border-white shadow-lg mr-3">
+              <img src={`/images/${teacher.image}`} alt={teacher.name} className="w-full h-full object-cover" />
+            </div>
+            <div className="text-left">
+              <p className="text-xs text-gray-400 uppercase tracking-wide font-semibold">Görüşme Raporu</p>
+              <p className="font-bold text-gray-900">{teacher.flag} {teacher.name}</p>
+            </div>
+          </div>
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-bold" style={{ background: scoreBg, color: scoreColor, border: `1px solid ${scoreBorder}` }}>
+            {badgeIcon} {badge} Performans
+          </div>
+        </motion.div>
+
+        {/* Stats Row */}
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
+          className="grid grid-cols-3 gap-3">
+          {[
+            { icon: <Clock size={16} />, label: "Süre", value: formatDuration(report.duration) },
+            { icon: <MessageSquare size={16} />, label: "Konuşma", value: `${report.messageCount} tur` },
+            { icon: <TrendingUp size={16} />, label: "Ort. Skor", value: report.messageCount > 0 ? `${report.avgScore}/100` : "—" },
+          ].map((stat, i) => (
+            <div key={i} className="bg-white rounded-2xl p-3 text-center shadow-sm border border-gray-100">
+              <div className="flex justify-center mb-1" style={{ color: teacher.color }}>{stat.icon}</div>
+              <p className="text-lg font-bold text-gray-900">{stat.value}</p>
+              <p className="text-[10px] text-gray-400 uppercase tracking-wide">{stat.label}</p>
+            </div>
+          ))}
+        </motion.div>
+
+        {/* Score Bar */}
+        {report.messageCount > 0 && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15 }}
+            className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-sm font-semibold text-gray-700 flex items-center gap-1.5"><Award size={14} style={{ color: teacher.color }} />Genel Telaffuz Skoru</p>
+              <span className="text-lg font-bold" style={{ color: scoreColor }}>{report.avgScore}/100</span>
+            </div>
+            <div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden">
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${report.avgScore}%` }}
+                transition={{ duration: 0.8, ease: "easeOut", delay: 0.3 }}
+                className="h-full rounded-full"
+                style={{ background: `linear-gradient(90deg, ${teacher.color}, ${scoreColor})` }}
+              />
+            </div>
+            <div className="flex justify-between text-[10px] text-gray-400 mt-1">
+              <span>0</span><span>50</span><span>100</span>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Grammar Errors */}
+        {report.grammarErrors.length > 0 && (
+          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+            className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-50">
+              <AlertCircle size={14} className="text-orange-500" />
+              <p className="text-sm font-semibold text-gray-700">Gramer Hataları</p>
+              <span className="ml-auto bg-orange-100 text-orange-600 text-[10px] font-bold px-2 py-0.5 rounded-full">{report.grammarErrors.length}</span>
+            </div>
+            <div className="p-3 space-y-2">
+              {report.grammarErrors.slice(0, 8).map((e, i) => (
+                <div key={i} className="bg-orange-50 rounded-xl px-3 py-2">
+                  <div className="flex items-center gap-2 flex-wrap text-sm">
+                    <span className="line-through text-red-500 font-medium">{e.original}</span>
+                    <span className="text-gray-400">→</span>
+                    <span className="text-green-600 font-semibold">{e.corrected}</span>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-0.5">{e.explanation}</p>
+                </div>
+              ))}
+              {report.grammarErrors.length > 8 && (
+                <p className="text-xs text-center text-gray-400 py-1">+{report.grammarErrors.length - 8} hata daha</p>
+              )}
+            </div>
+          </motion.div>
+        )}
+
+        {/* Vocab Suggestions */}
+        {report.vocabSuggestions.length > 0 && (
+          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
+            className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-50">
+              <BookOpen size={14} className="text-blue-500" />
+              <p className="text-sm font-semibold text-gray-700">Kelime Önerileri</p>
+              <span className="ml-auto bg-blue-100 text-blue-600 text-[10px] font-bold px-2 py-0.5 rounded-full">{report.vocabSuggestions.length}</span>
+            </div>
+            <div className="p-3 space-y-2">
+              {report.vocabSuggestions.slice(0, 6).map((s, i) => (
+                <div key={i} className="bg-blue-50 rounded-xl px-3 py-2">
+                  <div className="flex items-center gap-2 flex-wrap text-sm">
+                    <span className="text-gray-500">"{s.original}"</span>
+                    <span className="text-gray-400">→</span>
+                    <span className="text-blue-600 font-semibold">"{s.better}"</span>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-0.5">{s.explanation}</p>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+
+        {/* Pronunciation Tips */}
+        {report.pronunciationTips.length > 0 && (
+          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
+            className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-50">
+              <Mic2 size={14} className="text-purple-500" />
+              <p className="text-sm font-semibold text-gray-700">Telaffuz İpuçları</p>
+              <span className="ml-auto bg-purple-100 text-purple-600 text-[10px] font-bold px-2 py-0.5 rounded-full">{report.pronunciationTips.length}</span>
+            </div>
+            <div className="p-3 space-y-2">
+              {report.pronunciationTips.map((tip, i) => (
+                <div key={i} className="bg-purple-50 rounded-xl px-3 py-2 text-sm text-gray-600">{tip}</div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+
+        {/* Empty state */}
+        {totalIssues === 0 && report.messageCount > 0 && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}
+            className="bg-green-50 border border-green-200 rounded-2xl p-6 text-center">
+            <p className="text-3xl mb-2">🎉</p>
+            <p className="font-bold text-green-700">Muhteşem performans!</p>
+            <p className="text-sm text-green-600 mt-1">Bu görüşmede hiç gramer veya kelime hatası tespit edilmedi.</p>
+          </motion.div>
+        )}
+
+        {report.messageCount === 0 && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+            className="bg-gray-50 border border-gray-200 rounded-2xl p-6 text-center">
+            <p className="text-gray-500 text-sm">Bu görüşmede konuşma kaydedilmedi.</p>
+          </motion.div>
+        )}
+
+        {/* Action Buttons */}
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.35 }}
+          className="flex flex-col gap-2 pb-4">
+          <button
+            onClick={onNewSession}
+            className="w-full py-3.5 rounded-2xl text-white font-bold shadow-lg flex items-center justify-center gap-2 hover:opacity-90 transition-opacity"
+            style={{ background: `linear-gradient(135deg, ${teacher.color}, ${teacher.color}cc)` }}
+          >
+            <Mic size={16} /> Aynı Koçla Yeni Görüşme
+          </button>
+          <button
+            onClick={onChangeCoach}
+            className="w-full py-3.5 rounded-2xl bg-white border-2 border-gray-200 text-gray-700 font-bold flex items-center justify-center gap-2 hover:border-gray-300 transition-colors"
+          >
+            <ChevronLeft size={16} /> Farklı Koç Seç
+          </button>
+        </motion.div>
+      </div>
+    </div>
   );
 }
 
@@ -303,15 +447,12 @@ function TeacherSelectScreen({ onSelect }: { onSelect: (t: Teacher) => void }) {
               className="relative flex flex-col items-center gap-2.5 p-4 rounded-2xl bg-white shadow-sm border-2 border-gray-100 hover:shadow-xl transition-all overflow-hidden text-center"
               style={{ borderColor: hovered === t.id ? t.color : undefined }}
             >
-              {/* Gradient bg on hover */}
               <motion.div
                 className="absolute inset-0 opacity-0"
                 style={{ background: `linear-gradient(135deg, ${t.color}18, ${t.color}08)` }}
                 animate={{ opacity: hovered === t.id ? 1 : 0 }}
                 transition={{ duration: 0.3 }}
               />
-
-              {/* Avatar with animated ring */}
               <div className="relative z-10">
                 <motion.div
                   className="relative rounded-full overflow-hidden shadow-lg"
@@ -336,26 +477,20 @@ function TeacherSelectScreen({ onSelect }: { onSelect: (t: Teacher) => void }) {
                   )}
                 </AnimatePresence>
               </div>
-
-              {/* Info */}
               <div className="relative z-10 w-full">
                 <p className="font-bold text-gray-900 text-sm">{t.flag} {t.name}</p>
                 <p className="text-[10px] font-semibold mt-0.5 px-2 py-0.5 rounded-full inline-block" style={{ background: `${t.color}18`, color: t.color }}>{t.specialty}</p>
                 <p className="text-[10px] text-gray-400 mt-1">{t.accentLabel}</p>
                 <p className="text-[10px] mt-1 italic" style={{ color: t.color }}>{t.description}</p>
               </div>
-
-              {/* Hover CTA */}
               <AnimatePresence>
                 {hovered === t.id && (
                   <motion.div
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 6 }}
+                    initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 6 }}
                     className="relative z-10 text-xs font-semibold px-4 py-1.5 rounded-full text-white shadow"
                     style={{ backgroundColor: t.color }}
                   >
-                    Seç & Başla
+                    Koçu Tanı & Başla
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -544,13 +679,59 @@ function TeacherBubble({ message, teacher, onPlay, getApiBase }: { message: Mess
   );
 }
 
+// ─── End Session Confirm Dialog ───────────────────────────────────────────────
+function EndSessionDialog({ teacher, onConfirm, onCancel }: { teacher: Teacher; onConfirm: () => void; onCancel: () => void }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-sm"
+      onClick={onCancel}
+    >
+      <motion.div
+        initial={{ y: 60, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        exit={{ y: 60, opacity: 0 }}
+        transition={{ type: "spring", damping: 25 }}
+        className="w-full max-w-md bg-white rounded-t-3xl p-6 pb-8"
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-5" />
+        <div className="text-center mb-5">
+          <div className="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-3">
+            <PhoneOff size={20} className="text-red-500" />
+          </div>
+          <h3 className="text-lg font-bold text-gray-900">Görüşmeyi Sonlandır</h3>
+          <p className="text-sm text-gray-500 mt-1">
+            Görüşmeyi bitirip gelişim raporunu görmek ister misiniz?
+          </p>
+        </div>
+        <div className="flex flex-col gap-2">
+          <button onClick={onConfirm}
+            className="w-full py-3.5 rounded-2xl bg-red-500 text-white font-bold flex items-center justify-center gap-2 hover:bg-red-600 transition-colors">
+            <PhoneOff size={16} /> Evet, Bitir & Raporu Gör
+          </button>
+          <button onClick={onCancel}
+            className="w-full py-3.5 rounded-2xl bg-gray-100 text-gray-700 font-semibold hover:bg-gray-200 transition-colors">
+            Devam Et
+          </button>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function PronunciationCoach() {
-  const [screen, setScreen] = useState<"select" | "chat">("select");
+  const [screen, setScreen] = useState<Screen>("select");
   const [teacher, setTeacher] = useState<Teacher>(TEACHERS[0]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [phase, setPhase] = useState<Phase>("idle");
   const [error, setError] = useState("");
+  const [showEndDialog, setShowEndDialog] = useState(false);
+  const [sessionReport, setSessionReport] = useState<SessionReport | null>(null);
+
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
@@ -600,20 +781,14 @@ export default function PronunciationCoach() {
 
   const playAudio = useCallback((base64: string) => {
     if (audioRef.current) { audioRef.current.pause(); audioRef.current.src = ""; }
-
     const bytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
     const blob = new Blob([bytes], { type: "audio/mpeg" });
     const url = URL.createObjectURL(blob);
     const audio = new Audio(url);
     audioRef.current = audio;
-
     setPhase("speaking");
-
     audio.play().catch(() => {});
-    audio.onended = () => {
-      URL.revokeObjectURL(url);
-      setPhase("idle");
-    };
+    audio.onended = () => { URL.revokeObjectURL(url); setPhase("idle"); };
   }, []);
 
   const scrollToBottom = () => {
@@ -641,12 +816,7 @@ export default function PronunciationCoach() {
   const sendAudio = useCallback(async (blob: Blob) => {
     setPhase("processing");
     setError("");
-
-    const history = messages.map(m => ({
-      role: m.role === "user" ? "user" : "assistant",
-      content: m.text,
-    }));
-
+    const history = messages.map(m => ({ role: m.role === "user" ? "user" : "assistant", content: m.text }));
     try {
       const token = localStorage.getItem(TOKEN_KEY);
       const formData = new FormData();
@@ -687,11 +857,7 @@ export default function PronunciationCoach() {
   }, [messages, teacher, playAudio]);
 
   const handleMicPress = async () => {
-    if (phase === "speaking") {
-      audioRef.current?.pause();
-      setPhase("idle");
-      return;
-    }
+    if (phase === "speaking") { audioRef.current?.pause(); setPhase("idle"); return; }
     if (phase === "recording") {
       if ((Date.now() - recordStartRef.current) < MIN_RECORD_MS) return;
       const mr = mediaRecorderRef.current;
@@ -708,12 +874,9 @@ export default function PronunciationCoach() {
       mediaRecorderRef.current = null;
       return;
     }
-
     if (phase !== "idle") return;
-
     setError("");
     audioChunksRef.current = [];
-
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
       streamRef.current = stream;
@@ -730,8 +893,59 @@ export default function PronunciationCoach() {
     }
   };
 
+  const computeReport = (msgs: Message[]): SessionReport => {
+    const duration = Math.floor((Date.now() - chatStartTimeRef.current) / 1000);
+    const userMessages = msgs.filter(m => m.role === "user" && m.speechAnalysis);
+    const messageCount = userMessages.length;
+
+    const allScores = userMessages.map(m => m.speechAnalysis!.overallScore);
+    const avgScore = allScores.length > 0 ? Math.round(allScores.reduce((a, b) => a + b, 0) / allScores.length) : 0;
+
+    const grammarErrors: GrammarError[] = [];
+    const vocabSuggestions: VocabSuggestion[] = [];
+    const tipSet = new Set<string>();
+    const pronunciationTips: string[] = [];
+
+    for (const m of userMessages) {
+      const sa = m.speechAnalysis!;
+      grammarErrors.push(...sa.grammarErrors);
+      vocabSuggestions.push(...sa.vocabularySuggestions);
+      for (const tip of sa.pronunciationTips) {
+        if (!tipSet.has(tip)) { tipSet.add(tip); pronunciationTips.push(tip); }
+      }
+    }
+
+    return { duration, messageCount, avgScore, grammarErrors, vocabSuggestions, pronunciationTips };
+  };
+
+  const handleEndSession = () => {
+    stopStream(); stopTimer();
+    if (audioRef.current) { audioRef.current.pause(); }
+    setPhase("idle");
+    const report = computeReport(messages);
+    setSessionReport(report);
+    setShowEndDialog(false);
+    setScreen("report");
+  };
+
   const handleSelectTeacher = (t: Teacher) => {
-    setTeacher(t); setMessages([]); setScreen("chat");
+    setTeacher(t);
+    setMessages([]);
+    setSessionReport(null);
+    setScreen("intro");
+  };
+
+  const handleStartSession = () => {
+    setMessages([]);
+    chatStartTimeRef.current = Date.now();
+    setScreen("chat");
+  };
+
+  const handleNewSession = () => {
+    setMessages([]);
+    setSessionReport(null);
+    chatStartTimeRef.current = Date.now();
+    setScreen("chat");
   };
 
   const handleBack = () => {
@@ -748,16 +962,34 @@ export default function PronunciationCoach() {
   }, []);
 
   if (screen === "select") return <TeacherSelectScreen onSelect={handleSelectTeacher} />;
+  if (screen === "intro") return <CoachIntroScreen teacher={teacher} onStart={handleStartSession} onBack={handleBack} />;
+  if (screen === "report" && sessionReport) return (
+    <SessionReportScreen
+      report={sessionReport}
+      teacher={teacher}
+      onNewSession={handleNewSession}
+      onChangeCoach={handleBack}
+    />
+  );
 
   const isRecording = phase === "recording";
   const isSpeaking = phase === "speaking";
   const isProcessing = phase === "processing";
-  const canTap = phase === "idle" || (isRecording && (Date.now() - recordStartRef.current) >= MIN_RECORD_MS) || isSpeaking;
-
   const micColor = isRecording ? "#EF4444" : isSpeaking ? "#6B7280" : teacher.color;
 
   return (
     <div className="flex flex-col h-[calc(100vh-64px)] bg-gray-50">
+      {/* ── End Session Dialog ── */}
+      <AnimatePresence>
+        {showEndDialog && (
+          <EndSessionDialog
+            teacher={teacher}
+            onConfirm={handleEndSession}
+            onCancel={() => setShowEndDialog(false)}
+          />
+        )}
+      </AnimatePresence>
+
       {/* ── Practice streak toast ── */}
       <AnimatePresence>
         {practiceToast && (
@@ -768,13 +1000,12 @@ export default function PronunciationCoach() {
         )}
       </AnimatePresence>
 
-      {/* ── Header (avatar + status entegre) ── */}
+      {/* ── Header ── */}
       <div className="flex items-center gap-3 px-4 py-2 bg-white border-b border-gray-100 flex-shrink-0">
         <button onClick={handleBack} className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition">
           <ChevronLeft size={20} />
         </button>
 
-        {/* Avatar with phase ring */}
         <div className="relative flex-shrink-0">
           <AnimatePresence>
             {isSpeaking && (
@@ -790,7 +1021,6 @@ export default function PronunciationCoach() {
           </AnimatePresence>
           <img src={`/images/${teacher.image}`} alt={teacher.name}
             className="w-10 h-10 rounded-full object-cover shadow relative z-10" />
-          {/* Status dot */}
           <span className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white z-20 ${
             isRecording ? "bg-red-500" : isSpeaking ? "bg-green-400" : isProcessing ? "bg-yellow-400" : "bg-gray-300"
           }`} />
@@ -803,9 +1033,19 @@ export default function PronunciationCoach() {
           </p>
         </div>
 
-        <button onClick={() => { setMessages([]); }} className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition" title="Sohbeti sıfırla">
-          <RotateCcw size={15} />
-        </button>
+        <div className="flex items-center gap-1">
+          <button onClick={() => setMessages([])} className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition" title="Sohbeti sıfırla">
+            <RotateCcw size={15} />
+          </button>
+          <button
+            onClick={() => setShowEndDialog(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 transition-colors"
+            title="Görüşmeyi sonlandır"
+          >
+            <PhoneOff size={13} />
+            <span className="hidden sm:inline">Bitir</span>
+          </button>
+        </div>
       </div>
 
       {/* ── Chat Messages ── */}
@@ -829,7 +1069,6 @@ export default function PronunciationCoach() {
           ))}
         </AnimatePresence>
 
-        {/* Processing typing indicator */}
         {isProcessing && (
           <div className="flex items-end gap-2 mb-3">
             <img src={`/images/${teacher.image}`} alt={teacher.name} className="w-7 h-7 rounded-full object-cover shadow ring-2 ring-white" />
@@ -841,7 +1080,6 @@ export default function PronunciationCoach() {
             </div>
           </div>
         )}
-
         <div ref={bottomRef} />
       </div>
 
@@ -857,7 +1095,6 @@ export default function PronunciationCoach() {
 
       {/* ── Mic Controls ── */}
       <div className="flex-shrink-0 pb-5 pt-2 flex flex-col items-center gap-2 bg-white border-t border-gray-100">
-        {/* Recording timer */}
         <AnimatePresence>
           {isRecording && (
             <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
@@ -874,7 +1111,6 @@ export default function PronunciationCoach() {
           )}
         </AnimatePresence>
 
-        {/* Mic button */}
         <motion.button
           whileTap={{ scale: 0.92 }}
           onClick={handleMicPress}
@@ -882,7 +1118,6 @@ export default function PronunciationCoach() {
           className="relative w-16 h-16 rounded-full flex items-center justify-center shadow-xl transition-colors disabled:opacity-40"
           style={{ backgroundColor: micColor }}
         >
-          {/* Recording pulse ring */}
           {isRecording && (
             <motion.div className="absolute inset-0 rounded-full"
               animate={{ scale: [1, 1.4, 1], opacity: [0.6, 0, 0.6] }}
