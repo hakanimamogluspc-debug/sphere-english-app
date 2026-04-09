@@ -134,7 +134,12 @@ router.post(
         return res.status(400).json({ error: "Ses kaydı çok kısa. En az 2 saniye konuşun." });
       }
 
+      console.info(`[SIM] audio received: ${req.file.buffer.length} bytes, voice: ${safeVoice}, sector: ${sector}`);
+
+      const t0 = Date.now();
       const userText = await transcribe(req.file.buffer);
+      console.info(`[SIM] transcribe done: "${userText.slice(0, 60)}" (${Date.now() - t0}ms)`);
+
       if (!userText) {
         return res.status(400).json({ error: "Ses anlaşılamadı. Daha yüksek ve net konuşmayı deneyin." });
       }
@@ -158,6 +163,7 @@ SIMULATION RULES:
       ];
 
       // ── Fire GPT and Analysis in parallel immediately ──
+      const t1 = Date.now();
       const gptPromise = getOpenAI().chat.completions.create({
         model: "gpt-4o-mini",
         messages: gptMessages,
@@ -169,8 +175,10 @@ SIMULATION RULES:
       // ── Wait for GPT reply first, then immediately fire TTS ──
       const completion = await gptPromise;
       const reply = completion.choices[0].message.content?.trim() || "I see. Please continue.";
+      console.info(`[SIM] GPT done: "${reply.slice(0, 60)}" (${Date.now() - t1}ms)`);
 
       // ── TTS and analysis run in parallel — no more waiting! ──
+      const t2 = Date.now();
       const [ttsResponse, turnAnalysis] = await Promise.all([
         getOpenAI().audio.speech.create({
           model: "tts-1",
@@ -180,12 +188,13 @@ SIMULATION RULES:
         }),
         analysisPromise,
       ]);
+      console.info(`[SIM] TTS+analysis done (${Date.now() - t2}ms), total: ${Date.now() - t0}ms`);
 
       const audioBase64 = Buffer.from(await ttsResponse.arrayBuffer()).toString("base64");
 
       return res.json({ userText, reply, audioBase64, turnAnalysis });
     } catch (err: any) {
-      console.error("Simulation chat error:", err?.message || err);
+      console.error("[SIM] HATA:", err?.message || err, err?.status, err?.code);
       return res.status(500).json({ error: "Bir hata oluştu. Lütfen tekrar deneyin." });
     }
   }
