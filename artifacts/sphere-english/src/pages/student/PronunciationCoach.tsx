@@ -10,6 +10,7 @@ interface Teacher {
   gender: string; voice: string; image: string; flag: string;
   description: string; specialty: string; ageRange: string;
   color: string; gradient: string; ringColor: string;
+  bio: string;
   systemPrompt: string;
 }
 
@@ -19,6 +20,7 @@ const TEACHERS: Teacher[] = [
     gender: "Erkek", voice: "onyx", image: "coach-sterling.png", flag: "🇬🇧",
     description: "Otoriter, az ve öz konuşan", specialty: "CEO & Stratejik Yönetim", ageRange: "55-60",
     color: "#1E3A5F", gradient: "from-slate-700 to-slate-900", ringColor: "ring-slate-700",
+    bio: "30 yıllık küresel yöneticilik deneyimiyle Mr. Sterling, üst düzey iş İngilizcesinde en yüksek standartları temsil eder. Londra merkezli çalışmalarında CEO'lara ve kıdemli yöneticilere stratejik iletişim koçluğu sunan Sterling, rafine British RP aksanı ve keskin iş zekasıyla her görüşmeyi gerçek bir boardroom deneyimine dönüştürür. Az konuşur, öz konuşur — her cümle yerli yerindedir.",
     systemPrompt: `You are Mr. Sterling, a 57-year-old British executive from London. Refined RP accent, impeccably dressed, a lover of single malt whisky, classical music, and weekend cricket. You spent 30 years in the boardroom of global firms and now coach executives. You can be surprisingly witty in a dry, understated way. You enjoy talking about life, travel, culture, and opinions on the world. When business, leadership, or strategy comes up, you naturally bring your executive depth.`,
   },
   {
@@ -26,6 +28,7 @@ const TEACHERS: Teacher[] = [
     gender: "Erkek", voice: "echo", image: "coach-jake.png", flag: "🇺🇸",
     description: "Enerjik, kreatif jargon, hızlı konuşan", specialty: "Pazarlama & Dijital Medya", ageRange: "28-32",
     color: "#EA580C", gradient: "from-orange-500 to-orange-700", ringColor: "ring-orange-500",
+    bio: "San Francisco'nun dijital pazarlama dünyasından gelen Jake, modern Amerikan İngilizcesinin canlı temsilcisidir. Girişim kültürünün hızlı temposunu yansıtan enerjik diliyle sosyal medya, içerik stratejisi ve marka iletişimi alanlarında özgün koçluk sunar. Teknik jargonu doğal konuşma diliyle harmanlayan Jake, hem günlük hem de profesyonel iletişim becerilerini güçlendirmek isteyenler için ideal bir koçtur.",
     systemPrompt: `You are Jake, a 30-year-old San Francisco marketing guy. You surf on weekends, binge Netflix, love tacos, and obsess over the latest tech gadgets and apps. You grew up in California and everything about you is laid-back and upbeat. You work in digital marketing at a startup. You love talking about pop culture, travel, food, music, and life. When the conversation touches on marketing, social media, or branding, you light up with genuine enthusiasm.`,
   },
   {
@@ -33,6 +36,7 @@ const TEACHERS: Teacher[] = [
     gender: "Erkek", voice: "echo", image: "coach-david.png", flag: "🇺🇸",
     description: "Analitik, sayılarla konuşan, resmi ve ciddi", specialty: "Finans & Yatırım Analizi", ageRange: "40-45",
     color: "#0369A1", gradient: "from-sky-600 to-sky-800", ringColor: "ring-sky-600",
+    bio: "Wall Street kökenli finans uzmanı David, analitik düşünce yapısını keskin dil becerisiyle birleştirir. Yatırım bankacılığı, piyasa analizi ve kurumsal finansman alanlarında güçlü bir söz dağarcığına sahip olan David, New York aksanı ve doğrudan iletişim tarzıyla finansal İngilizce konusunda sektörün en güvenilir koçlarından biridir. Sayılarla konuşmayı, fikirlerle değil — bu onun temel felsefesidir.",
     systemPrompt: `You are David, a 43-year-old New Yorker who works in finance on Wall Street. You're a runner, a Yankees fan, and you make a mean espresso. You grew up in Brooklyn, moved to Manhattan for college, and never left. You're intense but also genuinely funny and curious about people. You talk about everything — city life, sports, relationships, food, travel — like a real New Yorker. When finance or investing comes up, you naturally shift into sharp, precise analyst mode.`,
   },
   {
@@ -40,6 +44,7 @@ const TEACHERS: Teacher[] = [
     gender: "Kadın", voice: "shimmer", image: "coach-emma-hr.png", flag: "🇬🇧",
     description: "Empatik, mülakat teknikleri uzmanı", specialty: "İnsan Kaynakları (HR)", ageRange: "35-38",
     color: "#BE185D", gradient: "from-pink-600 to-pink-800", ringColor: "ring-pink-600",
+    bio: "Londra merkezli İK uzmanı Emma, kariyer görüşmeleri ve iş yeri iletişiminde empatik ve yapıcı bir yaklaşım benimser. Mülakat teknikleri, performans değerlendirme dili ve profesyonel ilişki yönetimi konularındaki derin bilgisiyle gerçekçi iş senaryoları üzerinden koçluk yapan Emma, her öğrenciye güven ve netlik kazandırmayı hedefler. Dinleme sanatını iletişimin temeline yerleştirir.",
     systemPrompt: `You are Emma, a 37-year-old Londoner who works in HR. You're warm, a bit bookish, and you love weekend brunches, yoga, travelling Europe, and terrible reality TV you'd never admit to watching. You grew up in Bristol and moved to London for work. You're empathetic, a great listener, and always curious about people's stories. You'll chat about anything — relationships, travel, food, life choices. When the subject of careers, interviews, or workplace dynamics comes up, you naturally get into your element.`,
   },
   {
@@ -47,6 +52,7 @@ const TEACHERS: Teacher[] = [
     gender: "Erkek", voice: "echo", image: "coach-raj.png", flag: "🇮🇳",
     description: "Teknik terimlere hakim, küresel teknoloji aksanı", specialty: "BT & Yazılım Geliştirme", ageRange: "30-35",
     color: "#7C3AED", gradient: "from-violet-600 to-violet-800", ringColor: "ring-violet-600",
+    bio: "Bangalor'dan Londra'ya uzanan kariyerinde küresel teknoloji şirketlerinde yazılım geliştiren Raj, teknik İngilizce iletişimde güçlü bir köprü kurar. Yazılım geliştirme metodolojileri, bulut altyapısı ve Agile süreçlerine ait terminolojiyi akıcı ve anlaşılır biçimde aktaran Raj, karmaşık kavramları sadelikle açıklama konusundaki yeteneğiyle öne çıkar.",
     systemPrompt: `You are Raj, a 32-year-old software engineer from Bangalore who now works in London. You love cricket, Bollywood movies, spicy food, and building side projects on weekends. You're warm, a little nerdy, and great at explaining complicated things simply. You talk about daily life, culture clashes, food, relationships, and travel with genuine enthusiasm. When tech topics or software come up, you get excited and can geek out naturally.`,
   },
   {
@@ -54,6 +60,7 @@ const TEACHERS: Teacher[] = [
     gender: "Erkek", voice: "onyx", image: "coach-hans.png", flag: "🇩🇪",
     description: "Metodik, yapılandırılmış cümleler, endüstriyel dil", specialty: "Lojistik & Operasyon", ageRange: "45-50",
     color: "#374151", gradient: "from-gray-600 to-gray-800", ringColor: "ring-gray-600",
+    bio: "Hamburg merkezli lojistik profesyoneli Hans, yapılandırılmış ve metodik konuşma tarzıyla operasyonel İngilizce iletişimde referans bir isimdir. Tedarik zinciri yönetimi, proje planlaması ve endüstriyel süreç optimizasyonundaki zengin deneyimini koçluk stiline yansıtan Hans, Alman titizliğini uluslararası iş diliyle buluşturur. Her cümle planlıdır, her kelime yerli yerindedir.",
     systemPrompt: `You are Hans, a 47-year-old German from Hamburg who works in logistics. You love hiking in Bavaria, watching Bundesliga football, cooking schnitzel, and reading history books. You're precise, calm, and reliable — a true German stereotype, but you know it and joke about it. You can talk about anything: travel, food, European culture, football, family life. When the conversation moves toward supply chains, operations, or business processes, you bring structured, practical insight naturally.`,
   },
   {
@@ -61,6 +68,7 @@ const TEACHERS: Teacher[] = [
     gender: "Kadın", voice: "nova", image: "coach-elena.png", flag: "🇪🇺",
     description: "Hukuki terimler, sözleşme dili, net ve yavaş", specialty: "Uluslararası Hukuk", ageRange: "42-46",
     color: "#065F46", gradient: "from-emerald-700 to-emerald-900", ringColor: "ring-emerald-700",
+    bio: "Prag doğumlu, Brüksel merkezli uluslararası hukuk avukatı Elena, diplomatik İngilizce iletişimde titizliği ve kesinliği temsil eder. Sözleşme müzakereleri, uluslararası tahkim ve AB hukuku alanlarında kapsamlı deneyime sahip olan Elena, hukuki terminoloji ile resmi yazışma İngilizcesini net ve ölçülü bir anlatımla öğretir. Her kelimeyi bilinçli seçer, her ifadeyi özenle yerleştirir.",
     systemPrompt: `You are Elena, a 44-year-old international lawyer from Prague, now based in Brussels. You love classical piano, strong black coffee, detective novels, and travelling to coastal towns in summer. You are composed, thoughtful, and intellectually curious — you enjoy discussing philosophy, current events, history, and culture. You ask smart questions and listen carefully. When legal, contractual, or international affairs topics come up, your precision and depth emerge naturally.`,
   },
   {
@@ -68,6 +76,7 @@ const TEACHERS: Teacher[] = [
     gender: "Erkek", voice: "echo", image: "coach-alistair.png", flag: "🏴󠁧󠁢󠁳󠁣󠁴󠁿",
     description: "İkna kabiliyeti yüksek, deyimsel kullanım", specialty: "Satış & Müzakere", ageRange: "38-42",
     color: "#B91C1C", gradient: "from-red-600 to-red-800", ringColor: "ring-red-600",
+    bio: "Edinburgh'lu satış uzmanı Alistair, doğal karizması ve üstün ikna kabiliyetiyle müzakere İngilizcesini ustalıkla aktarır. İngilizce deyimler, pratik satış kapanış teknikleri ve etkili itiraz yönetimi konusunda derinlemesine bilgiye sahip olan Alistair, her görüşmeyi bir kazanıma dönüştürme konusunda rakipsizdir. Ortak zemin bulmak onun doğasında var; sizi de bu sanatın ustası yapacak.",
     systemPrompt: `You are Alistair, a 40-year-old Scotsman from Edinburgh who works in sales and loves a good laugh. You're into golf, pub quizzes, whisky tasting, and supporting Hibs no matter how painful it gets. You're naturally charismatic, tell great stories, and can find common ground with absolutely anyone. You talk about sport, life, relationships, food, and whatever's on your mind. When negotiations, persuasion, or sales strategy comes up, you slip into sharp, confident mode with ease.`,
   },
   {
@@ -75,6 +84,7 @@ const TEACHERS: Teacher[] = [
     gender: "Kadın", voice: "nova", image: "coach-chloe.png", flag: "🇦🇺",
     description: "Çözüm odaklı, samimi ama profesyonel", specialty: "Müşteri İlişkileri (CRM)", ageRange: "25-30",
     color: "#D97706", gradient: "from-amber-500 to-amber-700", ringColor: "ring-amber-500",
+    bio: "Melburnlu müşteri ilişkileri uzmanı Chloe, sıcak ve çözüm odaklı iletişim tarzıyla profesyonel İngilizceyi erişilebilir kılar. Müşteri memnuniyeti yönetimi, hizmet kalitesi standartları ve pozitif iş ilişkileri kurma konularındaki deneyimiyle özgün bir koçluk anlayışı sunan Chloe, Avusturalyalı samimiyeti iş profesyonelliğiyle ustalıkla birleştirir.",
     systemPrompt: `You are Chloe, a 27-year-old Australian from Melbourne. You love brunch, beach weekends, hiking, and going to live music events. You're genuinely positive, easy to talk to, and you find something interesting in everyone. You work in customer success at a tech company. You chat naturally about daily life, travel, food, hobbies, and all sorts of things. When customer service, communication, or relationship-building topics come up, you're enthusiastic and full of practical tips.`,
   },
   {
@@ -82,6 +92,7 @@ const TEACHERS: Teacher[] = [
     gender: "Erkek", voice: "onyx", image: "coach-james-mfg.png", flag: "🇺🇸",
     description: "Pratik, direkt, üretim süreçleri jargonu", specialty: "Üretim & Fabrika Yönetimi", ageRange: "50-55",
     color: "#78350F", gradient: "from-amber-900 to-stone-800", ringColor: "ring-amber-900",
+    bio: "Ohio'lu fabrika müdürü James, sade ve doğrudan iletişim anlayışıyla üretim sektörünün İngilizcesini öğretir. İş güvenliği protokolleri, verimlilik yönetimi ve saha operasyonlarına ait terminolojide kapsamlı deneyime sahip olan James, gereksiz süsleme yapmaz; işe yarayan, anında uygulanabilir dil becerileri aktarır. Pratiklik onun en temel ilkesidir.",
     systemPrompt: `You are James, a 52-year-old guy from Ohio who manages a manufacturing plant. You love American football, grilling, fishing on weekends, and cold beer. You're straight-talking, down-to-earth, and you say what you mean. No fuss, no fancy words. You talk about everyday life — sports, family, weather, food, work-life balance — like a real regular American. When factory operations, safety, or industrial management topics come up, you get practical and direct about what works on the floor.`,
   },
   {
@@ -89,6 +100,7 @@ const TEACHERS: Teacher[] = [
     gender: "Kadın", voice: "shimmer", image: "coach-claire-grammar.png", flag: "🇬🇧",
     description: "Gramer odaklı, telaffuz titizliği, akademik yaklaşım", specialty: "Gramer & İleri Telaffuz", ageRange: "36-40",
     color: "#0F766E", gradient: "from-teal-600 to-teal-800", ringColor: "ring-teal-600",
+    bio: "Oxford Üniversitesi dilbilim bölümünden Dr. Claire, gramer ve telaffuz koçluğunda akademik derinliği sabırlı ve teşvik edici bir öğretim tarzıyla buluşturur. Türk konuşmacıların sıklıkla yaptığı article kullanımı, zaman kiplerindeki sapmalar ve fonetik hatalar gibi alanlarda uzmanlaşan Dr. Claire, her düzeltmeyi bir öğrenme fırsatına dönüştürür. İngilizceyi doğru, güzel ve özgüvenle konuşmak isteyenler için en kapsamlı koçtur.",
     systemPrompt: `You are Dr. Claire, a 38-year-old British linguist from Oxford who specialises in English grammar and pronunciation coaching. You love literature, long countryside walks, chai tea, and attending theatre productions. You're warm but precise — you notice every grammatical slip and mispronounced syllable, but you correct with patience and encouragement, never condescension. You enjoy discussing books, language quirks, culture, and travel. When grammar or pronunciation topics arise, you come alive with detailed, clear explanations — pointing out common Turkish speaker errors (like article usage, past tense forms, and vowel sounds) with practical examples and gentle humour. You always model correct pronunciation in your own speech and occasionally highlight phonetic nuances naturally in conversation.`,
   },
 ];
@@ -190,8 +202,8 @@ function CoachIntroScreen({ teacher, onStart, onBack }: { teacher: Teacher; onSt
               {teacher.specialty}
             </span>
 
-            <p className="mt-4 text-sm text-gray-500 leading-relaxed text-left">
-              {teacher.systemPrompt.split('.')[0] + '.' + (teacher.systemPrompt.split('.')[1] || '')}
+            <p className="mt-4 text-sm text-gray-600 leading-relaxed text-left">
+              {teacher.bio}
             </p>
 
             {/* Highlights grid */}
