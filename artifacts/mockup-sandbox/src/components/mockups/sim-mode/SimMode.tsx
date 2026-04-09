@@ -98,18 +98,18 @@ const SECTORS = [
 ];
 
 const COACHES = [
-  { id: 'sterling', name: 'Mr. Sterling', flag: '🇬🇧', specialty: 'CEO & Stratejik Yönetim', accent: 'Üst Segment İngiliz (RP)', color: '#1E3A5F', style: 'Otoriter, lakonik, vizyon odaklı', image: '/images/coach-sterling.png', initials: 'MS' },
-  { id: 'jake', name: 'Jake', flag: '🇺🇸', specialty: 'Pazarlama & Dijital Medya', accent: 'West Coast Amerikan', color: '#EA580C', style: 'Enerjik, yaratıcı, trendy', image: '/images/coach-jake.png', initials: 'J' },
-  { id: 'david', name: 'David', flag: '🇺🇸', specialty: 'Finans & Yatırım', accent: 'New York (Wall Street)', color: '#0369A1', style: 'Analitik, direkt, rakam odaklı', image: '/images/coach-david.png', initials: 'D' },
-  { id: 'emma', name: 'Emma', flag: '🇬🇧', specialty: 'İnsan Kaynakları', accent: 'Standart İngiliz (London)', color: '#BE185D', style: 'Empatik, yapılandırılmış, destekleyici', image: '/images/coach-emma-hr.png', initials: 'E' },
-  { id: 'raj', name: 'Raj', flag: '🇮🇳', specialty: 'BT & Yazılım Geliştirme', accent: 'Hint-İngiliz (Global Tech)', color: '#7C3AED', style: 'Sistematik, teknik, iş birlikçi', image: '/images/coach-raj.png', initials: 'R' },
-  { id: 'hans', name: 'Hans', flag: '🇩🇪', specialty: 'Lojistik & Operasyon', accent: 'Alman-İngiliz (Euro-English)', color: '#374151', style: 'Metodolojik, hassas, süreç odaklı', image: '/images/coach-hans.png', initials: 'H' },
-  { id: 'elena', name: 'Elena', flag: '🇪🇺', specialty: 'Uluslararası Hukuk', accent: 'Diplomatik (Doğu Avrupa)', color: '#065F46', style: 'Kesin, diplomatik, mükemmeliyetçi', image: '/images/coach-elena.png', initials: 'EL' },
-  { id: 'alistair', name: 'Alistair', flag: '🏴󠁧󠁢󠁳󠁣󠁴󠁿', specialty: 'Satış & Müzakere', accent: 'İskoç (Edinburg)', color: '#B91C1C', style: 'İkna edici, stratejik, ısrarcı', image: '/images/coach-alistair.png', initials: 'A' },
-  { id: 'chloe', name: 'Chloe', flag: '🇦🇺', specialty: 'Müşteri İlişkileri', accent: 'Avusturalyalı (Friendly)', color: '#D97706', style: 'Sıcak, samimi, çözüm odaklı', image: '/images/coach-chloe.png', initials: 'C' },
-  { id: 'james', name: 'James', flag: '🇺🇸', specialty: 'Üretim & Fabrika Yönetimi', accent: 'Amerikan (Midwest)', color: '#78350F', style: 'Pratik, güvenilir, direkt', image: '/images/coach-james-mfg.png', initials: 'JA' },
-  { id: 'claire', name: 'Dr. Claire', flag: '🇬🇧', specialty: 'Gramer & İleri Telaffuz', accent: 'Akademik İngiliz (Oxford)', color: '#0F766E', style: 'Titiz, sabırlı, akademik', image: '/images/coach-claire-grammar.png', initials: 'DC' },
-  { id: 'olivia', name: 'Dr. Olivia', flag: '🇺🇸', specialty: 'Sağlık Turizmi İngilizcesi', accent: 'Amerikan (Miami / Sağlık Turizmi)', color: '#0891b2', style: 'Profesyonel, kültürel farkındalıklı, sıcak', image: '/images/coach-olivia-health.png', initials: 'DO' },
+  { id: 'sterling', name: 'Mr. Sterling', flag: '🇬🇧', specialty: 'CEO & Stratejik Yönetim', accent: 'Üst Segment İngiliz (RP)', color: '#1E3A5F', style: 'Otoriter, lakonik, vizyon odaklı', image: '/images/coach-sterling.png', initials: 'MS', voice: 'onyx', systemPrompt: `You are Mr. Sterling, a 57-year-old British executive from London. Refined RP accent, impeccably dressed. 30 years in boardrooms of global firms. Authoritative, precise, dry wit. You speak very concisely — every word counts.` },
+  { id: 'jake', name: 'Jake', flag: '🇺🇸', specialty: 'Pazarlama & Dijital Medya', accent: 'West Coast Amerikan', color: '#EA580C', style: 'Enerjik, yaratıcı, trendy', image: '/images/coach-jake.png', initials: 'J', voice: 'echo', systemPrompt: `You are Jake, a 30-year-old San Francisco marketing guy. Laid-back, upbeat, West Coast accent. You work in digital marketing at a startup. Energetic, casual, always pitching ideas.` },
+  { id: 'david', name: 'David', flag: '🇺🇸', specialty: 'Finans & Yatırım', accent: 'New York (Wall Street)', color: '#0369A1', style: 'Analitik, direkt, rakam odaklı', image: '/images/coach-david.png', initials: 'D', voice: 'echo', systemPrompt: `You are David, a 43-year-old New Yorker from Wall Street. Intense, sharp, data-driven. You think in numbers and risk. Direct, no-nonsense New York style.` },
+  { id: 'emma', name: 'Emma', flag: '🇬🇧', specialty: 'İnsan Kaynakları', accent: 'Standart İngiliz (London)', color: '#BE185D', style: 'Empatik, yapılandırılmış, destekleyici', image: '/images/coach-emma-hr.png', initials: 'E', voice: 'shimmer', systemPrompt: `You are Emma, a 37-year-old London HR professional. Warm, empathetic, structured. You believe in clear communication and constructive feedback. Standard British accent.` },
+  { id: 'raj', name: 'Raj', flag: '🇮🇳', specialty: 'BT & Yazılım Geliştirme', accent: 'Hint-İngiliz (Global Tech)', color: '#7C3AED', style: 'Sistematik, teknik, iş birlikçi', image: '/images/coach-raj.png', initials: 'R', voice: 'echo', systemPrompt: `You are Raj, a 32-year-old software engineer from Bangalore, now working in London. Warm, slightly nerdy, collaborative. Indian-English accent. You love explaining technical things clearly.` },
+  { id: 'hans', name: 'Hans', flag: '🇩🇪', specialty: 'Lojistik & Operasyon', accent: 'Alman-İngiliz (Euro-English)', color: '#374151', style: 'Metodolojik, hassas, süreç odaklı', image: '/images/coach-hans.png', initials: 'H', voice: 'onyx', systemPrompt: `You are Hans, a 47-year-old German from Hamburg in logistics. Precise, methodical, reliable. German-English accent. You think in processes and timelines. Very structured.` },
+  { id: 'elena', name: 'Elena', flag: '🇪🇺', specialty: 'Uluslararası Hukuk', accent: 'Diplomatik (Doğu Avrupa)', color: '#065F46', style: 'Kesin, diplomatik, mükemmeliyetçi', image: '/images/coach-elena.png', initials: 'EL', voice: 'nova', systemPrompt: `You are Elena, a 44-year-old international lawyer from Prague, based in Brussels. Composed, precise, diplomatically careful. Eastern European-English accent. Every word is deliberate.` },
+  { id: 'alistair', name: 'Alistair', flag: '🏴󠁧󠁢󠁳󠁣󠁴󠁿', specialty: 'Satış & Müzakere', accent: 'İskoç (Edinburg)', color: '#B91C1C', style: 'İkna edici, stratejik, ısrarcı', image: '/images/coach-alistair.png', initials: 'A', voice: 'echo', systemPrompt: `You are Alistair, a 40-year-old Scotsman from Edinburgh in sales. Charismatic, persuasive, strategic. Scottish accent. You can find common ground with anyone and close any deal.` },
+  { id: 'chloe', name: 'Chloe', flag: '🇦🇺', specialty: 'Müşteri İlişkileri', accent: 'Avusturalyalı (Friendly)', color: '#D97706', style: 'Sıcak, samimi, çözüm odaklı', image: '/images/coach-chloe.png', initials: 'C', voice: 'shimmer', systemPrompt: `You are Chloe, a 28-year-old Australian customer success manager. Warm, friendly, solution-focused. Australian accent. You genuinely care about making people happy.` },
+  { id: 'james', name: 'James', flag: '🇺🇸', specialty: 'Üretim & Fabrika Yönetimi', accent: 'Amerikan (Midwest)', color: '#78350F', style: 'Pratik, güvenilir, direkt', image: '/images/coach-james-mfg.png', initials: 'JA', voice: 'onyx', systemPrompt: `You are James, a 45-year-old factory operations manager from Ohio. Practical, direct, no-frills. Midwest American accent. You value efficiency and clear, actionable communication.` },
+  { id: 'claire', name: 'Dr. Claire', flag: '🇬🇧', specialty: 'Gramer & İleri Telaffuz', accent: 'Akademik İngiliz (Oxford)', color: '#0F766E', style: 'Titiz, sabırlı, akademik', image: '/images/coach-claire-grammar.png', initials: 'DC', voice: 'nova', systemPrompt: `You are Dr. Claire, a 50-year-old Oxford linguistics professor. Precise, patient, academic. You notice language nuances others miss and communicate with elegant clarity.` },
+  { id: 'olivia', name: 'Dr. Olivia', flag: '🇺🇸', specialty: 'Sağlık Turizmi İngilizcesi', accent: 'Amerikan (Miami / Sağlık Turizmi)', color: '#0891b2', style: 'Profesyonel, kültürel farkındalıklı, sıcak', image: '/images/coach-olivia-health.png', initials: 'DO', voice: 'nova', systemPrompt: `You are Dr. Olivia, a 38-year-old health tourism coordinator based in Miami. Professional, culturally aware, warm. You bridge medical and hospitality worlds for international patients.` },
 ];
 
 const SECTOR_COACHES: Record<string, string[]> = {
@@ -508,122 +508,199 @@ function getScenarios(sectorId: string, coachId: string): string[] {
   return sectorMap[coachId] || sectorMap.default || SCENARIO_MAP.default.default;
 }
 
-interface Message { role: 'user' | 'coach'; text: string; feedback?: string; ts: string }
+interface TurnAnalysis {
+  grammarErrors: { original: string; corrected: string; explanation: string }[];
+  vocabSuggestions: { original: string; better: string; explanation: string }[];
+  score: number;
+  correctedText: string;
+}
+interface Message { role: 'user' | 'coach'; text: string; ts: string; turnAnalysis?: TurnAnalysis }
 
-const DEMO_RESPONSES: Record<string, string[]> = {
-  sterling: [
-    "Good. Let's be direct — what's your value proposition in three sentences?",
-    "In boardrooms, precision is currency. Your phrasing was adequate, but 'adequate' loses deals. Try again with conviction.",
-    "That's the shape of an answer. Now give me the substance. Numbers, timelines, accountability.",
-  ],
-  jake: [
-    "Okay okay okay, love the energy! But here's the thing — your hook needs to land in under five seconds. Let's workshop that opener.",
-    "So in digital, we'd say your message is like... mid. Not bad, not great. What's the ONE thing you want them to remember?",
-    "Dude, that's actually solid! Let's push it further. What if we made it even more shareable?",
-  ],
-  david: [
-    "Walk me through the assumptions behind that number. Because right now, it doesn't hold up to scrutiny.",
-    "On Wall Street, uncertainty is priced in — but not communicated the way you just did. Be specific about the risk factors.",
-    "Good start. Now tell me the downside scenario. Investors always ask about the floor, not just the ceiling.",
-  ],
-  emma: [
-    "I appreciate that you raised this. Let's unpack it together — what outcome are you hoping for from this conversation?",
-    "Your tone was professional, and that matters. One small suggestion: replace 'I think' with 'Based on...' — it carries more authority.",
-    "That's a really constructive framing. I'd add that active listening signals — nodding, paraphrasing — go a long way in HR conversations.",
-  ],
-  raj: [
-    "Technically sound, but let's optimize the communication layer. In stand-ups, we lead with blockers, then progress, then plan.",
-    "Good. Now scale that explanation for a non-technical stakeholder. Remove the acronyms and anchor it to business impact.",
-    "That's the right architecture for the conversation. Let me push back on one assumption though — what's your fallback?",
-  ],
-  hans: [
-    "Precise. However, you missed the SLA clause timeline. In logistics, one missed deadline cascades. Let us revisit the sequence.",
-    "The process description was correct. Add the compliance reference number next time — auditors require it.",
-    "Gut. Now, what is your contingency plan if the shipment is delayed at customs?",
-  ],
-  elena: [
-    "The argument is structured, but legally insufficient. You need to cite the applicable article. Ambiguity is leverage for the opposing party.",
-    "That phrasing is diplomatically acceptable. However, in formal proceedings, 'we acknowledge' implies concession. Choose your words with care.",
-    "Precisely stated. Now anticipate the counterargument — in international law, preparation is everything.",
-  ],
-  alistair: [
-    "Not bad — but you left money on the table. You conceded too early. Always let them speak first.",
-    "Right, so here's what I'd do: anchor high, then let them negotiate you down to where you wanted to be all along. Try it.",
-    "That close was tentative. In sales, hesitation is contagious. Give me that last line again — this time like you mean it.",
-  ],
-  chloe: [
-    "That was really lovely! The empathy came through clearly. Just one thing — acknowledge the feeling first, then move to solutions.",
-    "Love it! Now let's make it even warmer. Customers remember how you made them feel, not what you said.",
-    "You handled that really well. If this were a real call, that customer would've gone from frustrated to loyal. Brilliant!",
-  ],
-  james: [
-    "Clear enough. On the floor, you've got maybe thirty seconds. Cut it to the essentials — what, when, who.",
-    "That works for the office. Now say the same thing to a line worker who's been on shift since 6am. Plain language, no jargon.",
-    "Solid. Just remember: in manufacturing, if it ain't written down, it didn't happen. Make sure your communication is documented.",
-  ],
-  claire: [
-    "The grammar was correct, but note: you used 'which' where 'that' is required — this is a restrictive clause. Let's review the rule.",
-    "Your pronunciation of 'particularly' dropped the third syllable. Repeat after me: par-TIC-u-lar-ly. Stress the second syllable.",
-    "Excellent use of the subjunctive there. That's a C1-level construction. Now let's work on the rhythm of the sentence.",
-  ],
-  olivia: [
-    "That explanation was clear and compassionate — exactly what international patients need. One tip: always confirm understanding by asking them to repeat back the key steps.",
-    "Great start! In health tourism, cultural sensitivity is as important as medical accuracy. Your tone was warm, which builds trust.",
-    "Perfect phrasing for a pre-procedure briefing. Remember: patients are often anxious, so pace your delivery and pause for questions.",
-  ],
-};
+interface SimReport {
+  duration: number;
+  turnCount: number;
+  avgScore: number;
+  grammarErrors: TurnAnalysis['grammarErrors'];
+  vocabSuggestions: TurnAnalysis['vocabSuggestions'];
+}
 
-function getCoachResponse(coachId: string, index: number): { text: string; feedback: string } {
-  const responses = DEMO_RESPONSES[coachId] || DEMO_RESPONSES.sterling;
-  const text = responses[index % responses.length];
-  const feedbacks = [
-    'Gelişim notu: Cümle yapınız doğru, ancak akıcılık için daha kısa cümleler deneyin.',
-    'Gelişim notu: Telaffuzunuz anlaşılır; "th" sesine dikkat edin.',
-    'Gelişim notu: Kelime seçiminiz sektöre uygun; modal fiil kullanımınızı güçlendirin.',
-    'Gelişim notu: Yanıt süreniz iyi; bir sonraki adımda bağlaç kullanımını artırın.',
-  ];
-  return { text, feedback: feedbacks[index % feedbacks.length] };
+const MIN_RECORD_MS = 2000;
+
+function getSimApiBase(): string {
+  const base = (import.meta.env.BASE_URL as string).replace(/\/$/, '');
+  return base.replace(/\/[^/]+$/, '') + '/api-server';
+}
+
+function formatDuration(secs: number): string {
+  const m = Math.floor(secs / 60);
+  const s = secs % 60;
+  return m > 0 ? `${m}dk ${s}sn` : `${s}sn`;
 }
 
 export function SimMode() {
-  const [step, setStep] = useState<'sector' | 'coach' | 'mode' | 'scenario-pick' | 'chat'>('sector');
+  const [step, setStep] = useState<'sector' | 'coach' | 'mode' | 'scenario-pick' | 'chat' | 'report'>('sector');
   const [sector, setSector] = useState<typeof SECTORS[0] | null>(null);
   const [coach, setCoach] = useState<typeof COACHES[0] | null>(null);
   const [mode, setMode] = useState<'free' | 'scenario' | null>(null);
   const [scenario, setScenario] = useState<string | null>(null);
   const [customScenario, setCustomScenario] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState('');
-  const [msgCount, setMsgCount] = useState(0);
-  const chatRef = useRef<HTMLDivElement>(null);
+  const [sessionStarted, setSessionStarted] = useState(false);
+  const [phase, setPhase] = useState<'idle' | 'recording' | 'processing' | 'speaking'>('idle');
+  const [recordSecs, setRecordSecs] = useState(0);
+  const [error, setError] = useState('');
+  const [sessionReport, setSessionReport] = useState<SimReport | null>(null);
+
+  const bottomRef = useRef<HTMLDivElement | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const streamRef = useRef<MediaStream | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const recordStartRef = useRef<number>(0);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const chatStartTimeRef = useRef<number>(0);
 
   useEffect(() => {
-    if (chatRef.current) chatRef.current.scrollTop = chatRef.current.scrollHeight;
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  const playAudio = (base64: string) => {
+    if (audioRef.current) { audioRef.current.pause(); audioRef.current.src = ''; }
+    const bytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+    const blob = new Blob([bytes], { type: 'audio/mpeg' });
+    const url = URL.createObjectURL(blob);
+    const audio = new Audio(url);
+    audioRef.current = audio;
+    setPhase('speaking');
+    audio.play().catch(() => {});
+    audio.onended = () => { URL.revokeObjectURL(url); setPhase('idle'); };
+  };
+
+  const stopStream = () => {
+    streamRef.current?.getTracks().forEach(t => t.stop());
+    streamRef.current = null;
+  };
+
+  const startTimer = () => {
+    recordStartRef.current = Date.now();
+    setRecordSecs(0);
+    timerRef.current = setInterval(() => {
+      setRecordSecs(Math.floor((Date.now() - recordStartRef.current) / 1000));
+    }, 200);
+  };
+
+  const stopTimer = () => {
+    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
+    setRecordSecs(0);
+  };
+
+  const sendAudio = async (blob: Blob) => {
+    if (!coach || !sector) return;
+    setPhase('processing');
+    setError('');
+    const history = messages.map(m => ({ role: m.role === 'user' ? 'user' : 'assistant' as const, content: m.text }));
+    try {
+      const formData = new FormData();
+      formData.append('audio', blob, 'audio.webm');
+      formData.append('voice', coach.voice);
+      formData.append('systemPrompt', coach.systemPrompt);
+      formData.append('sector', sector.id);
+      formData.append('history', JSON.stringify(history));
+      const res = await fetch(`${getSimApiBase()}/api/simulation/chat`, { method: 'POST', body: formData });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error((err as any).error || 'Bir hata oluştu.');
+      }
+      const data = await res.json() as { userText: string; reply: string; audioBase64: string; turnAnalysis?: TurnAnalysis };
+      const userMsg: Message = { role: 'user', text: data.userText, ts: now(), turnAnalysis: data.turnAnalysis };
+      const coachMsg: Message = { role: 'coach', text: data.reply, ts: now() };
+      setMessages(prev => [...prev, userMsg, coachMsg]);
+      if (data.audioBase64) playAudio(data.audioBase64);
+      else setPhase('idle');
+    } catch (e: any) {
+      setError(e?.message || 'Bir hata oluştu.');
+      setPhase('idle');
+    }
+  };
+
+  const handleMicPress = async () => {
+    if (phase === 'speaking') { audioRef.current?.pause(); setPhase('idle'); return; }
+    if (phase === 'recording') {
+      if ((Date.now() - recordStartRef.current) < MIN_RECORD_MS) return;
+      const mr = mediaRecorderRef.current;
+      if (mr?.state === 'recording') {
+        mr.onstop = () => {
+          const blob = new Blob(audioChunksRef.current, { type: mr.mimeType || 'audio/webm' });
+          stopStream(); stopTimer();
+          sendAudio(blob);
+        };
+        mr.stop();
+      } else { stopStream(); stopTimer(); setPhase('idle'); }
+      mediaRecorderRef.current = null;
+      return;
+    }
+    if (phase !== 'idle') return;
+    setError('');
+    audioChunksRef.current = [];
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
+      streamRef.current = stream;
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus'
+        : MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : '';
+      const recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+      recorder.ondataavailable = e => { if (e.data.size > 0) audioChunksRef.current.push(e.data); };
+      recorder.start(100);
+      mediaRecorderRef.current = recorder;
+      startTimer();
+      setPhase('recording');
+    } catch {
+      setError('Mikrofon erişimi reddedildi. Tarayıcı ayarlarından izin verin.');
+    }
+  };
+
+  const computeReport = (msgs: Message[]): SimReport => {
+    const duration = Math.floor((Date.now() - chatStartTimeRef.current) / 1000);
+    const userMsgs = msgs.filter(m => m.role === 'user' && m.turnAnalysis);
+    const scores = userMsgs.map(m => m.turnAnalysis!.score);
+    const avgScore = scores.length > 0 ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0;
+    const grammarErrors = userMsgs.flatMap(m => m.turnAnalysis!.grammarErrors);
+    const vocabSuggestions = userMsgs.flatMap(m => m.turnAnalysis!.vocabSuggestions);
+    return { duration, turnCount: userMsgs.length, avgScore, grammarErrors, vocabSuggestions };
+  };
+
+  const startSession = () => {
+    chatStartTimeRef.current = Date.now();
+    setSessionStarted(true);
+  };
+
+  const handleEndSession = () => {
+    stopStream(); stopTimer();
+    if (audioRef.current) { audioRef.current.pause(); }
+    setPhase('idle');
+    const report = computeReport(messages);
+    setSessionReport(report);
+    setStep('report');
+  };
 
   const startChat = (sc: string | null) => {
     const sc2 = sc || customScenario.trim() || 'Serbest konuşma pratiği';
     setScenario(sc2);
     const greeting = mode === 'scenario'
-      ? `Good. Today we're focusing on: "${sc2}". I'll play the role of your professional counterpart. You may begin whenever you're ready.`
-      : `Welcome. I'm ${coach?.name}. I'm here for a free conversation session with you. Feel free to start wherever you like — a topic, a question, or simply introduce yourself.`;
+      ? `Good. Today we're working on: "${sc2}". I'll be your professional counterpart in this scenario. Press the mic button when you're ready to begin.`
+      : `Hello! I'm ${coach?.name}. I'm here for a free English conversation session with you. Press the mic button whenever you're ready to start.`;
     setMessages([{ role: 'coach', text: greeting, ts: now() }]);
+    setSessionStarted(false);
+    setPhase('idle');
+    setError('');
     setStep('chat');
   };
 
-  const sendMessage = () => {
-    if (!input.trim()) return;
-    const userMsg: Message = { role: 'user', text: input, ts: now() };
-    const resp = getCoachResponse(coach?.id || 'sterling', msgCount);
-    const coachMsg: Message = { role: 'coach', text: resp.text, feedback: resp.feedback, ts: now() };
-    setMessages(m => [...m, userMsg, coachMsg]);
-    setMsgCount(c => c + 1);
-    setInput('');
-  };
-
   const reset = () => {
+    stopStream(); stopTimer();
+    if (audioRef.current) { audioRef.current.pause(); }
     setStep('sector'); setSector(null); setCoach(null); setMode(null);
-    setScenario(null); setCustomScenario(''); setMessages([]); setMsgCount(0);
+    setScenario(null); setCustomScenario(''); setMessages([]);
+    setSessionStarted(false); setPhase('idle'); setError(''); setSessionReport(null);
   };
 
   return (
@@ -655,8 +732,26 @@ export function SimMode() {
         )}
         {step === 'chat' && coach && (
           <ChatScreen
-            coach={coach} scenario={scenario || ''} messages={messages} input={input}
-            onInput={setInput} onSend={sendMessage} onEnd={reset} chatRef={chatRef}
+            coach={coach}
+            scenario={scenario || ''}
+            messages={messages}
+            phase={phase}
+            recordSecs={recordSecs}
+            sessionStarted={sessionStarted}
+            error={error}
+            onMicPress={handleMicPress}
+            onStartSession={startSession}
+            onEnd={handleEndSession}
+            bottomRef={bottomRef}
+          />
+        )}
+        {step === 'report' && coach && sessionReport && (
+          <SimReportScreen
+            coach={coach}
+            scenario={scenario || ''}
+            report={sessionReport}
+            onRestart={() => { startChat(scenario); }}
+            onHome={reset}
           />
         )}
       </main>
@@ -909,39 +1004,105 @@ function ScenarioScreen({ coach, sector, scenarios, custom, onCustomChange, onSe
   );
 }
 
-function ChatScreen({ coach, scenario, messages, input, onInput, onSend, onEnd, chatRef }: any) {
+function MicButton({ phase, recordSecs, disabled }: { phase: string; recordSecs: number; disabled: boolean }) {
+  const isRecording = phase === 'recording';
+  const isSpeaking = phase === 'speaking';
+  const isProcessing = phase === 'processing';
+  const ringColor = isRecording ? '#ef4444' : isSpeaking ? '#0ea5e9' : NAVY;
+  const label = isRecording
+    ? `${recordSecs}sn — Durdurmak için tıkla`
+    : isSpeaking ? 'Koç konuşuyor — Durdurmak için tıkla'
+    : isProcessing ? 'İşleniyor...'
+    : 'Konuşmak için tıkla';
+  return (
+    <div className="flex flex-col items-center gap-3">
+      <div className="relative">
+        {isRecording && (
+          <span className="absolute inset-0 rounded-full animate-ping opacity-40" style={{ background: '#ef4444', animationDuration: '1s' }} />
+        )}
+        {isSpeaking && (
+          <span className="absolute inset-0 rounded-full animate-ping opacity-30" style={{ background: '#0ea5e9', animationDuration: '1.4s' }} />
+        )}
+        <button
+          disabled={disabled || isProcessing}
+          type="button"
+          className="relative w-20 h-20 rounded-full flex items-center justify-center shadow-xl transition-all active:scale-95 disabled:opacity-50"
+          style={{
+            background: isRecording ? '#ef4444' : isSpeaking ? '#0ea5e9' : NAVY,
+            border: `3px solid ${ringColor}`,
+            boxShadow: `0 0 0 6px ${ringColor}22`,
+          }}
+        >
+          {isProcessing ? (
+            <svg className="w-8 h-8 text-white animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+            </svg>
+          ) : isSpeaking ? (
+            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <rect x="6" y="4" width="4" height="16" rx="1" fill="currentColor" stroke="none" />
+              <rect x="14" y="4" width="4" height="16" rx="1" fill="currentColor" stroke="none" />
+            </svg>
+          ) : (
+            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 2a4 4 0 014 4v6a4 4 0 01-8 0V6a4 4 0 014-4z" fill="currentColor" stroke="none" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8 12a4 4 0 008 0M12 18v4M8 22h8" />
+            </svg>
+          )}
+        </button>
+      </div>
+      <span className="text-xs text-slate-500 font-medium text-center">{label}</span>
+    </div>
+  );
+}
+
+function ChatScreen({ coach, scenario, messages, phase, recordSecs, sessionStarted, error, onMicPress, onStartSession, onEnd, bottomRef }: any) {
   return (
     <div className="flex flex-col h-[calc(100vh-64px)]">
       {/* Chat Header */}
-      <div className="px-6 py-3 border-b flex items-center gap-3 shadow-sm" style={{ background: '#fff', borderColor: SILVER_MID }}>
+      <div className="px-5 py-3 border-b flex items-center gap-3 shadow-sm" style={{ background: '#fff', borderColor: SILVER_MID }}>
         <CoachAvatar coach={coach} size={36} />
         <div className="flex-1 min-w-0">
           <div className="font-bold text-sm truncate" style={{ color: NAVY }}>{coach.name}</div>
-          <div className="text-xs text-slate-400 truncate">{scenario}</div>
+          <div className="text-xs text-slate-400 truncate max-w-xs">{scenario}</div>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-          <span className="text-xs text-slate-400">Aktif Oturum</span>
-          <button onClick={onEnd} className="ml-3 px-3 py-1.5 rounded-lg text-xs font-bold text-white transition-opacity hover:opacity-80"
-            style={{ background: '#dc2626' }}>Oturumu Bitir</button>
-        </div>
+        {sessionStarted ? (
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1.5">
+              <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+              <span className="text-xs text-slate-400">Oturum aktif</span>
+            </div>
+            <button onClick={onEnd} className="px-3 py-1.5 rounded-lg text-xs font-bold text-white transition-opacity hover:opacity-80 flex-shrink-0"
+              style={{ background: '#dc2626' }}>Oturumu Bitir</button>
+          </div>
+        ) : (
+          <span className="text-xs text-slate-400">Başlamak için hazır</span>
+        )}
       </div>
 
       {/* Messages */}
-      <div ref={chatRef} className="flex-1 overflow-y-auto px-6 py-6 space-y-4" style={{ background: SILVER_LIGHT }}>
+      <div className="flex-1 overflow-y-auto px-5 py-5 space-y-4" style={{ background: SILVER_LIGHT }}>
         {messages.map((m: Message, i: number) => (
-          <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'} gap-3`}>
-            {m.role === 'coach' && (
-              <CoachAvatar coach={coach} size={32} className="mt-1" />
-            )}
-            <div className={`max-w-lg ${m.role === 'user' ? 'items-end' : 'items-start'} flex flex-col gap-1`}>
-              <div className={`px-4 py-3 rounded-2xl text-sm leading-relaxed shadow-sm ${m.role === 'user' ? 'text-white rounded-tr-sm' : 'text-slate-800 rounded-tl-sm'}`}
+          <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'} gap-2.5`}>
+            {m.role === 'coach' && <CoachAvatar coach={coach} size={30} className="mt-1 flex-shrink-0" />}
+            <div className={`max-w-sm flex flex-col gap-1 ${m.role === 'user' ? 'items-end' : 'items-start'}`}>
+              <div className={`px-4 py-2.5 rounded-2xl text-sm leading-relaxed shadow-sm ${m.role === 'user' ? 'text-white rounded-tr-sm' : 'text-slate-800 rounded-tl-sm'}`}
                 style={{ background: m.role === 'user' ? NAVY : '#fff', border: m.role === 'coach' ? `1px solid ${SILVER_MID}` : 'none' }}>
                 {m.text}
               </div>
-              {m.feedback && (
-                <div className="text-xs px-3 py-1.5 rounded-lg italic leading-relaxed" style={{ background: '#fef3c7', color: '#92400e', border: '1px solid #fde68a' }}>
-                  💡 {m.feedback}
+              {m.turnAnalysis && m.turnAnalysis.grammarErrors.length > 0 && (
+                <div className="w-full text-xs px-3 py-2 rounded-xl space-y-1" style={{ background: '#fef9c3', border: '1px solid #fde68a' }}>
+                  {m.turnAnalysis.grammarErrors.slice(0, 2).map((e: any, gi: number) => (
+                    <div key={gi} className="leading-snug" style={{ color: '#78350f' }}>
+                      <span className="line-through opacity-60">{e.original}</span> → <span className="font-semibold">{e.corrected}</span>
+                      <span className="opacity-70 ml-1">({e.explanation})</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {m.turnAnalysis && m.turnAnalysis.vocabSuggestions.length > 0 && m.turnAnalysis.grammarErrors.length === 0 && (
+                <div className="w-full text-xs px-3 py-2 rounded-xl" style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', color: '#166534' }}>
+                  💡 {m.turnAnalysis.vocabSuggestions[0].original} → <span className="font-semibold">{m.turnAnalysis.vocabSuggestions[0].better}</span>
                 </div>
               )}
               <span className="text-xs text-slate-400 px-1">{m.ts}</span>
@@ -951,27 +1112,128 @@ function ChatScreen({ coach, scenario, messages, input, onInput, onSend, onEnd, 
             )}
           </div>
         ))}
+        <div ref={bottomRef} />
       </div>
 
-      {/* Input */}
-      <div className="px-6 py-4 border-t" style={{ background: '#fff', borderColor: SILVER_MID }}>
-        <div className="flex gap-3 items-end">
-          <textarea
-            value={input}
-            onChange={e => onInput(e.target.value)}
-            onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); onSend(); } }}
-            placeholder="İngilizce yanıtınızı yazın... (Enter ile gönder)"
-            rows={2}
-            className="flex-1 text-sm border rounded-xl px-4 py-3 resize-none focus:outline-none focus:ring-2 focus:ring-offset-0"
-            style={{ borderColor: SILVER_MID, color: NAVY }}
-          />
-          <button onClick={onSend} disabled={!input.trim()}
-            className="px-5 py-3 rounded-xl font-bold text-white text-sm transition-all disabled:opacity-40 hover:opacity-90 flex-shrink-0"
-            style={{ background: NAVY }}>
-            Gönder
+      {/* Voice Controls */}
+      <div className="border-t" style={{ background: '#fff', borderColor: SILVER_MID }}>
+        {error && (
+          <div className="mx-5 mt-4 px-4 py-2.5 rounded-xl text-sm text-red-700 bg-red-50 border border-red-200">{error}</div>
+        )}
+        {!sessionStarted ? (
+          <div className="flex flex-col items-center justify-center py-6 gap-4">
+            <p className="text-sm text-slate-500 text-center max-w-xs">Koçunuz hazır. Görüşmeyi başlatmak için aşağıdaki butona basın.</p>
+            <button
+              onClick={onStartSession}
+              className="px-8 py-3 rounded-2xl font-bold text-white text-sm shadow-lg transition-all hover:opacity-90 active:scale-95"
+              style={{ background: '#16a34a' }}
+            >
+              🎙️ Görüşmeyi Başlat
+            </button>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-5 gap-2" onClick={onMicPress}>
+            <MicButton phase={phase} recordSecs={recordSecs} disabled={false} />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function SimReportScreen({ coach, scenario, report, onRestart, onHome }: { coach: any; scenario: string; report: SimReport; onRestart: () => void; onHome: () => void }) {
+  const scoreColor = report.avgScore >= 80 ? '#16a34a' : report.avgScore >= 65 ? '#d97706' : '#dc2626';
+  const scoreLabel = report.avgScore >= 80 ? 'Çok İyi' : report.avgScore >= 65 ? 'Geliştirilmeli' : 'Çok Pratik Gerekli';
+
+  return (
+    <div className="min-h-[calc(100vh-64px)] flex items-start justify-center py-10 px-4" style={{ background: SILVER_LIGHT }}>
+      <div className="w-full max-w-2xl space-y-6">
+        {/* Title */}
+        <div className="text-center space-y-1">
+          <h2 className="text-2xl font-black" style={{ color: NAVY }}>Oturum Raporu</h2>
+          <p className="text-slate-500 text-sm">{coach.name} ile "{scenario}"</p>
+        </div>
+
+        {/* Score + Stats */}
+        <div className="rounded-2xl p-6 shadow-sm" style={{ background: '#fff', border: `1px solid ${SILVER_MID}` }}>
+          <div className="flex items-center justify-between gap-6">
+            <div className="flex flex-col items-center gap-1">
+              <div className="text-5xl font-black" style={{ color: scoreColor }}>{report.avgScore || '—'}</div>
+              <div className="text-xs font-semibold" style={{ color: scoreColor }}>{report.avgScore ? scoreLabel : 'Puan yok'}</div>
+              <div className="text-xs text-slate-400">Genel Skor</div>
+            </div>
+            <div className="flex-1 grid grid-cols-2 gap-3">
+              {[
+                { label: 'Süre', value: formatDuration(report.duration) },
+                { label: 'Tur Sayısı', value: `${report.turnCount} tur` },
+                { label: 'Gramer Hatası', value: `${report.grammarErrors.length} adet` },
+                { label: 'Kelime Önerisi', value: `${report.vocabSuggestions.length} adet` },
+              ].map(({ label, value }) => (
+                <div key={label} className="rounded-xl p-3 text-center" style={{ background: SILVER_LIGHT }}>
+                  <div className="text-lg font-bold" style={{ color: NAVY }}>{value}</div>
+                  <div className="text-xs text-slate-400">{label}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Grammar Errors */}
+        {report.grammarErrors.length > 0 && (
+          <div className="rounded-2xl p-5 shadow-sm" style={{ background: '#fff', border: `1px solid ${SILVER_MID}` }}>
+            <h3 className="font-bold text-sm mb-3" style={{ color: NAVY }}>Gramer Hataları</h3>
+            <div className="space-y-2">
+              {report.grammarErrors.map((e, i) => (
+                <div key={i} className="flex items-start gap-3 text-sm px-3 py-2 rounded-xl" style={{ background: '#fef9c3', border: '1px solid #fde68a' }}>
+                  <span className="text-red-500 font-mono line-through whitespace-nowrap">{e.original}</span>
+                  <span className="text-slate-400">→</span>
+                  <span className="font-semibold text-green-700 whitespace-nowrap">{e.corrected}</span>
+                  <span className="text-xs text-slate-500 flex-1">({e.explanation})</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Vocab Suggestions */}
+        {report.vocabSuggestions.length > 0 && (
+          <div className="rounded-2xl p-5 shadow-sm" style={{ background: '#fff', border: `1px solid ${SILVER_MID}` }}>
+            <h3 className="font-bold text-sm mb-3" style={{ color: NAVY }}>Profesyonel Kelime Önerileri</h3>
+            <div className="space-y-2">
+              {report.vocabSuggestions.map((v, i) => (
+                <div key={i} className="flex items-start gap-3 text-sm px-3 py-2 rounded-xl" style={{ background: '#f0fdf4', border: '1px solid #bbf7d0' }}>
+                  <span className="text-slate-500 whitespace-nowrap">{v.original}</span>
+                  <span className="text-slate-400">→</span>
+                  <span className="font-semibold text-green-700 whitespace-nowrap">{v.better}</span>
+                  <span className="text-xs text-slate-500 flex-1">({v.explanation})</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Empty state */}
+        {report.grammarErrors.length === 0 && report.vocabSuggestions.length === 0 && report.turnCount === 0 && (
+          <div className="rounded-2xl p-5 text-center text-slate-400 text-sm" style={{ background: '#fff', border: `1px solid ${SILVER_MID}` }}>
+            Bu oturumda konuşma gerçekleşmedi.
+          </div>
+        )}
+        {report.grammarErrors.length === 0 && report.vocabSuggestions.length === 0 && report.turnCount > 0 && (
+          <div className="rounded-2xl p-5 text-center" style={{ background: '#f0fdf4', border: '1px solid #bbf7d0' }}>
+            <div className="text-2xl mb-1">🎉</div>
+            <div className="font-bold text-green-700 text-sm">Harika! Bu turda belirgin bir hata tespit edilmedi.</div>
+          </div>
+        )}
+
+        {/* Actions */}
+        <div className="flex gap-3">
+          <button onClick={onRestart} className="flex-1 py-3 rounded-2xl font-bold text-white text-sm transition-all hover:opacity-90 active:scale-95" style={{ background: NAVY }}>
+            Yeniden Dene
+          </button>
+          <button onClick={onHome} className="flex-1 py-3 rounded-2xl font-bold text-sm transition-all hover:opacity-90 active:scale-95" style={{ background: SILVER_MID, color: NAVY }}>
+            Ana Menü
           </button>
         </div>
-        <p className="text-xs text-slate-400 mt-2 text-center">Her yanıt sonrası koçunuzdan kısa bir gelişim geri bildirimi alacaksınız.</p>
       </div>
     </div>
   );
