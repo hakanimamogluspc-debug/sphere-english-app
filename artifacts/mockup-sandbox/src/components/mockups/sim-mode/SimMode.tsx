@@ -662,20 +662,18 @@ function CoachScreen({ coaches, sector, onSelect, onBack }: { coaches: typeof CO
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
         {coaches.map(c => (
           <button key={c.id} onClick={() => onSelect(c)}
-            className="group bg-white rounded-xl border p-0 text-left transition-all hover:shadow-lg hover:-translate-y-1 overflow-hidden"
+            className="group bg-white rounded-xl border p-4 text-left transition-all hover:shadow-lg hover:-translate-y-1"
             style={{ borderColor: SILVER_MID, borderTopColor: c.color, borderTopWidth: 3 }}>
-            <div className="relative w-full aspect-[4/3] overflow-hidden bg-slate-100">
-              <CoachAvatar coach={c} size={999} className="!w-full !h-full !rounded-none object-top" />
-              <div className="absolute bottom-0 left-0 right-0 h-12"
-                style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.35), transparent)' }} />
-              <span className="absolute bottom-2 left-3 text-white text-xs font-bold drop-shadow">{c.flag} {c.name}</span>
+            <div className="flex items-center gap-3 mb-3">
+              <CoachAvatar coach={c} size={40} />
+              <div>
+                <div className="font-bold text-sm" style={{ color: NAVY }}>{c.name}</div>
+                <div className="text-xs text-slate-400">{c.flag} {c.accent}</div>
+              </div>
             </div>
-            <div className="p-3">
-              <div className="text-xs font-bold mb-0.5" style={{ color: c.color }}>{c.specialty}</div>
-              <div className="text-xs text-slate-400 leading-tight">{c.accent}</div>
-              <div className="text-xs text-slate-400 italic leading-tight mt-1">{c.style}</div>
-              <div className="mt-2 text-xs font-semibold opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: c.color }}>Seç →</div>
-            </div>
+            <div className="text-xs font-semibold mb-1" style={{ color: c.color }}>{c.specialty}</div>
+            <div className="text-xs text-slate-400 italic leading-tight">{c.style}</div>
+            <div className="mt-3 text-xs font-semibold opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: c.color }}>Seç →</div>
           </button>
         ))}
       </div>
