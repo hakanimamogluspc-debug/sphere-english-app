@@ -70,7 +70,7 @@ const Panel = ({ coaches, msgIdx }: { coaches: Coach[]; msgIdx: number }) => {
         top: px(60), bottom: px(220),
         left: px(20), right: px(20),
         display: "flex",
-        alignItems: "stretch",
+        alignItems: "center",
         gap: px(16),
       }}>
         {coaches.map((c) => {
