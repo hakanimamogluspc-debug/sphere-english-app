@@ -69,16 +69,16 @@ const Panel = ({ coaches, msgIdx }: { coaches: Coach[]; msgIdx: number }) => {
       {isMiddle && (
         <div style={{
           position: "absolute",
-          top: px(80), left: px(24), right: px(24),
+          top: px(116), left: px(24), right: px(24),
           textAlign: "center",
           display: "flex", flexDirection: "column", gap: px(6),
         }}>
           <div style={{
-            fontSize: px(38), fontWeight: 800, color: PRIMARY,
+            fontSize: px(43), fontWeight: 800, color: PRIMARY,
             fontFamily: '"Outfit", sans-serif', lineHeight: 1.2,
           }}>İş İngilizcesinde Fark Yaratan 12 Uzman:</div>
           <div style={{
-            fontSize: px(32), fontWeight: 800, color: ACCENT,
+            fontSize: px(37), fontWeight: 800, color: ACCENT,
             fontFamily: '"Outfit", sans-serif', lineHeight: 1.2,
           }}>Sphere ile Küresel Özgüven</div>
         </div>
@@ -104,24 +104,16 @@ const Panel = ({ coaches, msgIdx }: { coaches: Coach[]; msgIdx: number }) => {
               alignItems: "center", justifyContent: "center",
               gap: px(18),
               padding: `${px(24)}px ${px(8)}px`,
-              background: isSterling
-                ? "linear-gradient(175deg,rgba(56,189,248,0.07) 0%,rgba(30,58,110,0.05) 100%)"
-                : "linear-gradient(175deg,rgba(255,255,255,0.72) 0%,rgba(230,240,252,0.55) 100%)",
+              background: "linear-gradient(175deg,rgba(255,255,255,0.72) 0%,rgba(230,240,252,0.55) 100%)",
               borderRadius: px(28),
-              boxShadow: isSterling
-                ? `0 ${px(8)}px ${px(44)}px rgba(30,58,110,0.13)`
-                : `0 ${px(4)}px ${px(24)}px rgba(30,58,110,0.07)`,
+              boxShadow: `0 ${px(4)}px ${px(24)}px rgba(30,58,110,0.07)`,
             }}>
               {/* Avatar */}
               <div style={{
                 width: avatarD, height: avatarD,
                 borderRadius: "50%", overflow: "hidden", flexShrink: 0,
-                border: isSterling
-                  ? `${px(3.5)}px solid ${GOLD}`
-                  : `${px(2)}px solid rgba(30,58,110,0.10)`,
-                boxShadow: isSterling
-                  ? `0 0 0 ${px(5)}px rgba(245,158,11,0.16), 0 ${px(12)}px ${px(40)}px rgba(30,58,110,0.20)`
-                  : `0 ${px(8)}px ${px(28)}px rgba(30,58,110,0.13)`,
+                border: `${px(2)}px solid rgba(30,58,110,0.10)`,
+                boxShadow: `0 ${px(8)}px ${px(28)}px rgba(30,58,110,0.13)`,
                 background: "#e8effa",
               }}>
                 <img
