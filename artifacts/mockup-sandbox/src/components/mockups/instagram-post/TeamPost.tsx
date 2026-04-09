@@ -46,12 +46,6 @@ const BOTTOM_MESSAGES = [
   { line1: "İş İngilizcesinde Gerçek Başarı", line2: "ve Küresel Özgüven"         },
 ];
 
-const Divider = () => (
-  <div style={{
-    width: px(1), flexShrink: 0, alignSelf: "center", height: px(300),
-    background: "linear-gradient(to bottom, transparent, rgba(30,58,110,0.10) 30%, rgba(30,58,110,0.10) 70%, transparent)",
-  }} />
-);
 
 const Panel = ({ coaches, msgIdx }: { coaches: Coach[]; msgIdx: number }) => {
   const msg = BOTTOM_MESSAGES[msgIdx];
@@ -74,67 +68,60 @@ const Panel = ({ coaches, msgIdx }: { coaches: Coach[]; msgIdx: number }) => {
       <div style={{
         position: "absolute",
         top: px(60), bottom: px(220),
-        left: px(12), right: px(12),
-        display: "flex", alignItems: "center",
+        left: px(20), right: px(20),
+        display: "flex",
+        alignItems: "stretch",
+        gap: px(16),
       }}>
-        {coaches.map((c, i) => {
+        {coaches.map((c) => {
           const isSterling = !!c.isSterling;
-          const avatarD = isSterling ? px(192) : px(172);
+          const avatarD = px(172);
 
           return (
-            <div key={c.name} style={{ display: "flex", alignItems: "stretch", flex: 1 }}>
-              {/* Koç kartı */}
+            <div key={c.name} style={{
+              flex: 1,
+              display: "flex", flexDirection: "column",
+              alignItems: "center", justifyContent: "center",
+              gap: px(18),
+              padding: `${px(24)}px ${px(8)}px`,
+              background: isSterling
+                ? "linear-gradient(175deg,rgba(56,189,248,0.07) 0%,rgba(30,58,110,0.05) 100%)"
+                : "linear-gradient(175deg,rgba(255,255,255,0.72) 0%,rgba(230,240,252,0.55) 100%)",
+              borderRadius: px(28),
+              boxShadow: isSterling
+                ? `0 ${px(8)}px ${px(44)}px rgba(30,58,110,0.13)`
+                : `0 ${px(4)}px ${px(24)}px rgba(30,58,110,0.07)`,
+            }}>
+              {/* Avatar */}
               <div style={{
-                flex: 1,
-                display: "flex", flexDirection: "column",
-                alignItems: "center", justifyContent: "center",
-                gap: px(18),
-                padding: `${px(24)}px ${px(6)}px`,
-                position: "relative",
-                background: isSterling
-                  ? "linear-gradient(175deg,rgba(56,189,248,0.07) 0%,rgba(30,58,110,0.05) 100%)"
-                  : "linear-gradient(175deg,rgba(255,255,255,0.72) 0%,rgba(230,240,252,0.55) 100%)",
-                borderRadius: px(28),
+                width: avatarD, height: avatarD,
+                borderRadius: "50%", overflow: "hidden", flexShrink: 0,
+                border: isSterling
+                  ? `${px(3.5)}px solid ${GOLD}`
+                  : `${px(2)}px solid rgba(30,58,110,0.10)`,
                 boxShadow: isSterling
-                  ? `0 ${px(8)}px ${px(44)}px rgba(30,58,110,0.13)`
-                  : `0 ${px(4)}px ${px(24)}px rgba(30,58,110,0.07)`,
-                zIndex: isSterling ? 2 : 1,
-                marginTop:    isSterling ? px(-20) : px(-8),
-                marginBottom: isSterling ? px(-20) : px(-8),
+                  ? `0 0 0 ${px(5)}px rgba(245,158,11,0.16), 0 ${px(12)}px ${px(40)}px rgba(30,58,110,0.20)`
+                  : `0 ${px(8)}px ${px(28)}px rgba(30,58,110,0.13)`,
+                background: "#e8effa",
               }}>
-                {/* Avatar */}
-                <div style={{
-                  width: avatarD, height: avatarD,
-                  borderRadius: "50%", overflow: "hidden", flexShrink: 0,
-                  border: isSterling
-                    ? `${px(3.5)}px solid ${GOLD}`
-                    : `${px(2)}px solid rgba(30,58,110,0.10)`,
-                  boxShadow: isSterling
-                    ? `0 0 0 ${px(5)}px rgba(245,158,11,0.16), 0 ${px(12)}px ${px(40)}px rgba(30,58,110,0.20)`
-                    : `0 ${px(8)}px ${px(28)}px rgba(30,58,110,0.13)`,
-                  background: "#e8effa",
-                }}>
-                  <img
-                    src={`/images/${c.image}`} alt={c.name}
-                    style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top center", display: "block" }}
-                  />
-                </div>
-
-                {/* İsim + uzmanlık */}
-                <div style={{ textAlign: "center", display: "flex", flexDirection: "column", gap: px(8) }}>
-                  <div style={{
-                    fontSize: px(isSterling ? 20 : 18), fontWeight: 800, color: PRIMARY,
-                    fontFamily: '"Outfit", sans-serif', lineHeight: 1.1,
-                  }}>{c.flag} {c.name}</div>
-                  <div style={{
-                    fontSize: px(isSterling ? 13 : 12), fontWeight: 500,
-                    color: isSterling ? "rgba(30,58,110,0.70)" : "rgba(30,58,110,0.52)",
-                    fontFamily: '"Plus Jakarta Sans", sans-serif', lineHeight: 1.3,
-                  }}>{c.specialty}</div>
-                </div>
+                <img
+                  src={`/images/${c.image}`} alt={c.name}
+                  style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top center", display: "block" }}
+                />
               </div>
 
-              {i < coaches.length - 1 && <Divider />}
+              {/* İsim + uzmanlık */}
+              <div style={{ textAlign: "center", display: "flex", flexDirection: "column", gap: px(8) }}>
+                <div style={{
+                  fontSize: px(18), fontWeight: 800, color: PRIMARY,
+                  fontFamily: '"Outfit", sans-serif', lineHeight: 1.1,
+                }}>{c.flag} {c.name}</div>
+                <div style={{
+                  fontSize: px(12), fontWeight: 500,
+                  color: "rgba(30,58,110,0.55)",
+                  fontFamily: '"Plus Jakarta Sans", sans-serif', lineHeight: 1.3,
+                }}>{c.specialty}</div>
+              </div>
             </div>
           );
         })}
