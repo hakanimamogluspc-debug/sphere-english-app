@@ -457,17 +457,19 @@ function AdminDashboard() {
         </Card>
       </div>
 
-      {/* Online kullanıcı listesi */}
-      {count > 0 && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Wifi size={16} className="text-green-500" />
-              Online Kullanıcılar
-              <Badge variant="secondary" className="ml-1 bg-green-100 text-green-700">{count}</Badge>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="pt-0">
+      {/* Online kullanıcı listesi — her zaman göster */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Wifi size={16} className={count > 0 ? "text-green-500" : "text-muted-foreground"} />
+            Online Kullanıcılar
+            {count > 0 && <Badge variant="secondary" className="ml-1 bg-green-100 text-green-700">{count}</Badge>}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="pt-0">
+          {count === 0 ? (
+            <p className="text-sm text-muted-foreground py-2">Şu an aktif kullanıcı yok.</p>
+          ) : (
             <div className="divide-y divide-border">
               {presence?.users.map(u => (
                 <div key={u.userId} className="flex items-center justify-between py-2.5 gap-3">
@@ -486,9 +488,9 @@ function AdminDashboard() {
                 </div>
               ))}
             </div>
-          </CardContent>
-        </Card>
-      )}
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
