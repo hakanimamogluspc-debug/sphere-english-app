@@ -47,37 +47,30 @@ const Avatar = ({ letter, color }: { letter: string; color: string }) => (
 
 /* ── Photo card panel (for Didem & Merve) ── */
 const PhotoPanel = ({ src, alt, dots }: { src: string; alt: string; dots: number }) => {
-  const PADX = px(72);
-  const PADY = px(60);
+  const PADX = px(56);
+  const PADY = px(52);
   return (
     <div style={{
       width:px(W), height:px(W), flexShrink:0,
       background: BG,
-      display:"flex", flexDirection:"column",
-      padding:`${PADY}px ${PADX}px`,
-      boxSizing:"border-box",
       position:"relative",
+      overflow:"hidden",
     }}>
       {/* Dekoratif orbs */}
-      <div style={{ position:"absolute", width:px(1200), height:px(1200), borderRadius:"50%", background:"radial-gradient(circle, rgba(14,165,233,0.13) 0%, transparent 58%)", left:px(-300), top:px(-300), pointerEvents:"none" }} />
-      <div style={{ position:"absolute", width:px(700), height:px(700), borderRadius:"50%", background:"radial-gradient(circle, rgba(56,189,248,0.10) 0%, transparent 60%)", right:px(-150), bottom:px(-150), pointerEvents:"none" }} />
+      <div style={{ position:"absolute", width:px(1400), height:px(1400), borderRadius:"50%", background:"radial-gradient(circle, rgba(14,165,233,0.11) 0%, transparent 55%)", left:px(-400), top:px(-500), pointerEvents:"none", zIndex:0 }} />
+      <div style={{ position:"absolute", width:px(800), height:px(800), borderRadius:"50%", background:"radial-gradient(circle, rgba(56,189,248,0.09) 0%, transparent 60%)", right:px(-200), bottom:px(-200), pointerEvents:"none", zIndex:0 }} />
 
-      {/* Logo + dots */}
-      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:px(36), flexShrink:0 }}>
-        <img src="/images/logo-full.png" alt="Sphere English"
-          style={{ height:px(120), width:"auto", filter:"brightness(0) invert(1)", objectFit:"contain", objectPosition:"left" }}
-        />
-        <PanelDots current={dots} />
-      </div>
-
-      {/* Fotoğraf çerçevesi */}
+      {/* Fotoğraf kartı — panel'i neredeyse tamamen dolduruyor */}
       <div style={{
-        flex: 1,
-        borderRadius: px(36),
+        position:"absolute",
+        top: px(180),
+        left: PADX,
+        right: PADX,
+        bottom: px(120),
+        borderRadius: px(40),
         overflow: "hidden",
-        boxShadow: "0 8px 60px rgba(0,0,0,0.45), 0 0 0 3px rgba(56,189,248,0.18)",
-        marginBottom: px(32),
-        background: "#dde6f0",
+        boxShadow: "0 12px 80px rgba(0,0,0,0.55), 0 0 0 px(3) rgba(56,189,248,0.22)",
+        zIndex: 1,
       }}>
         <img
           src={src}
@@ -85,15 +78,29 @@ const PhotoPanel = ({ src, alt, dots }: { src: string; alt: string; dots: number
           style={{
             width: "100%",
             height: "100%",
-            objectFit: "contain",
-            objectPosition: "center bottom",
+            objectFit: "cover",
+            objectPosition: "center 12%",
             display: "block",
           }}
         />
+        {/* Alt soft gradient fade */}
+        <div style={{ position:"absolute", bottom:0, left:0, right:0, height:px(120), background:"linear-gradient(to top, rgba(6,13,30,0.30) 0%, transparent 100%)", pointerEvents:"none" }} />
       </div>
 
-      {/* Alt gösterge */}
-      <div style={{ flexShrink:0 }}>
+      {/* Logo + dots — üst kısım üzerinde */}
+      <div style={{
+        position:"absolute", top:PADY, left:PADX, right:PADX,
+        display:"flex", justifyContent:"space-between", alignItems:"center",
+        zIndex: 2,
+      }}>
+        <img src="/images/logo-full.png" alt="Sphere English"
+          style={{ height:px(110), width:"auto", filter:"brightness(0) invert(1)", objectFit:"contain", objectPosition:"left" }}
+        />
+        <PanelDots current={dots} />
+      </div>
+
+      {/* Slide numarası — alt kısım */}
+      <div style={{ position:"absolute", bottom:px(38), left:PADX, zIndex:2 }}>
         <BottomLine n={dots} />
       </div>
     </div>
