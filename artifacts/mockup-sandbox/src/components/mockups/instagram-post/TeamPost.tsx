@@ -69,12 +69,12 @@ const Panel = ({ coaches, msgIdx }: { coaches: Coach[]; msgIdx: number }) => {
       {isMiddle && (
         <div style={{
           position: "absolute",
-          top: px(44), left: px(24), right: px(24),
+          top: px(80), left: px(24), right: px(24),
           textAlign: "center",
           display: "flex", flexDirection: "column", gap: px(6),
         }}>
           <div style={{
-            fontSize: px(32), fontWeight: 800, color: PRIMARY,
+            fontSize: px(38), fontWeight: 800, color: PRIMARY,
             fontFamily: '"Outfit", sans-serif', lineHeight: 1.2,
           }}>İş İngilizcesinde Fark Yaratan 12 Uzman:</div>
           <div style={{
