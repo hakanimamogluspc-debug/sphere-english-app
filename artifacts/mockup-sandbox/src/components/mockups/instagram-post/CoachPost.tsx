@@ -182,19 +182,19 @@ export default function CoachPost() {
       </div>
 
       {/* ── MAIN CONTENT ── */}
-      <div style={{ flex:1, display:"flex", alignItems:"center", padding:`0 ${px(60)}px ${px(8)}px`, gap:px(44) }}>
+      <div style={{ flex:1, display:"flex", alignItems:"stretch", padding:`${px(32)}px ${px(60)}px ${px(24)}px`, gap:px(52) }}>
 
-        {/* Coach photo */}
-        <div style={{ position:"relative", flexShrink:0 }}>
+        {/* Coach photo – fills full height of content area */}
+        <div style={{ position:"relative", flexShrink:0, width:px(340) }}>
           <div style={{
-            position:"absolute", inset:px(-12), borderRadius:"50%",
-            background:`radial-gradient(circle, ${coach.color}50 0%, transparent 70%)`,
-            filter:`blur(${px(16)}px)`,
+            position:"absolute", inset:px(-16), borderRadius:"50%",
+            background:`radial-gradient(circle, ${coach.color}55 0%, transparent 70%)`,
+            filter:`blur(${px(20)}px)`,
           }}/>
           <div style={{
-            width:px(300), height:px(300), borderRadius:px(32), overflow:"hidden",
+            width:"100%", height:"100%", borderRadius:px(36), overflow:"hidden",
             border:`${px(3)}px solid ${coach.color}80`,
-            boxShadow:`0 ${px(24)}px ${px(64)}px ${coach.color}40`,
+            boxShadow:`0 ${px(24)}px ${px(80)}px ${coach.color}45`,
             position:"relative",
           }}>
             <img src={`/images/${coach.image}`} alt={coach.name}
@@ -204,49 +204,52 @@ export default function CoachPost() {
         </div>
 
         {/* Info */}
-        <div style={{ flex:1, display:"flex", flexDirection:"column", gap:px(14), paddingBottom:px(4) }}>
+        <div style={{ flex:1, display:"flex", flexDirection:"column", justifyContent:"space-between" }}>
 
-          {/* Specialty tag */}
-          <div style={{
-            display:"inline-flex", alignItems:"center", alignSelf:"flex-start",
-            background:"rgba(255,255,255,0.12)", border:`${px(1)}px solid rgba(255,255,255,0.25)`,
-            borderRadius:px(100), padding:`${px(6)}px ${px(16)}px`,
-          }}>
-            <span style={{ fontFamily:"'Outfit',sans-serif", fontWeight:700, fontSize:px(11),
-              color:"rgba(255,255,255,0.90)", letterSpacing:"0.08em", textTransform:"uppercase" }}>
-              {coach.specialty}
-            </span>
-          </div>
+          {/* Top section */}
+          <div style={{ display:"flex", flexDirection:"column", gap:px(18) }}>
+            {/* Specialty tag */}
+            <div style={{
+              display:"inline-flex", alignItems:"center", alignSelf:"flex-start",
+              background:"rgba(255,255,255,0.12)", border:`${px(1)}px solid rgba(255,255,255,0.25)`,
+              borderRadius:px(100), padding:`${px(8)}px ${px(20)}px`,
+            }}>
+              <span style={{ fontFamily:"'Outfit',sans-serif", fontWeight:700, fontSize:px(13),
+                color:"rgba(255,255,255,0.90)", letterSpacing:"0.08em", textTransform:"uppercase" }}>
+                {coach.specialty}
+              </span>
+            </div>
 
-          {/* Name */}
-          <div>
-            <h2 style={{ fontFamily:"'Outfit',sans-serif", fontWeight:900, fontSize:px(58),
-              color:"#fff", margin:0, lineHeight:1.0, letterSpacing:"-0.02em" }}>
-              {coach.name}
-            </h2>
-            <p style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontWeight:600, fontSize:px(18),
-              color:"rgba(255,255,255,0.55)", margin:`${px(8)}px 0 0`, letterSpacing:"0.02em" }}>
-              🗣 {coach.accent}
-            </p>
+            {/* Name */}
+            <div>
+              <h2 style={{ fontFamily:"'Outfit',sans-serif", fontWeight:900, fontSize:px(72),
+                color:"#fff", margin:0, lineHeight:0.95, letterSpacing:"-0.02em" }}>
+                {coach.name}
+              </h2>
+              <p style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontWeight:600, fontSize:px(22),
+                color:"rgba(255,255,255,0.55)", margin:`${px(12)}px 0 0`, letterSpacing:"0.02em" }}>
+                🗣 {coach.accent}
+              </p>
+            </div>
           </div>
 
           {/* Story */}
           <p style={{
-            fontFamily:"'Plus Jakarta Sans',sans-serif", fontWeight:400, fontSize:px(17),
-            color:"rgba(255,255,255,0.82)", lineHeight:1.70, margin:0,
+            fontFamily:"'Plus Jakarta Sans',sans-serif", fontWeight:400, fontSize:px(22),
+            color:"rgba(255,255,255,0.85)", lineHeight:1.72, margin:0,
           }}>
             {coach.story}
           </p>
 
           {/* Trait chips */}
-          <div style={{ display:"flex", gap:px(10), flexWrap:"wrap" }}>
+          <div style={{ display:"flex", gap:px(12), flexWrap:"wrap" }}>
             {coach.traits.map(t => (
               <span key={t} style={{
-                fontFamily:"'Plus Jakarta Sans',sans-serif", fontWeight:600, fontSize:px(14),
-                color:"rgba(255,255,255,0.80)",
-                background:"rgba(255,255,255,0.08)",
-                border:`${px(1)}px solid rgba(255,255,255,0.15)`,
-                borderRadius:px(100), padding:`${px(8)}px ${px(18)}px`,
+                fontFamily:"'Plus Jakarta Sans',sans-serif", fontWeight:600, fontSize:px(17),
+                color:"rgba(255,255,255,0.82)",
+                background:"rgba(255,255,255,0.09)",
+                border:`${px(1)}px solid rgba(255,255,255,0.18)`,
+                borderRadius:px(100), padding:`${px(10)}px ${px(22)}px`,
               }}>
                 {t}
               </span>
