@@ -126,6 +126,12 @@ uri = "file://artifacts/sphere-english/public/images/coach-olivia-health.png"
 type = "image"
 title = "health coach olivia avatar"
 
+[[generated]]
+id = "yct2tz_kcbKjZR3Qa0WER"
+uri = "file://assets/instagram/sphere-ai-studio-post-1.png"
+type = "image"
+title = "sphere-english-ai-studio-instagram"
+
 [[outputs]]
 id = "FsU4PAkDB_a1cFXTkO03x"
 uri = "file://artifacts/sphere-english/public/www-sitemap.xml"
@@ -263,3 +269,9 @@ id = "9Siokxj4anRBab49p-K0r"
 uri = "file://sphere-english-koclar.txt"
 type = "text"
 title = "Sphere English — 11 Telaffuz Koçu Tanıtım Notları"
+
+[[outputs]]
+id = "zmGG1vslA0KWKRqC6X-EN"
+uri = "file://assets/instagram/sphere-ai-studio-post-1.png"
+type = "image"
+title = "Sphere English AI Studio — Instagram Görseli"
