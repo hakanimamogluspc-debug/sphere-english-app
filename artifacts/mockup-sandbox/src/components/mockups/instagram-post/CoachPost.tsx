@@ -166,7 +166,7 @@ export default function CoachPost() {
       {/* ── TOP BAR ── */}
       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:`${px(44)}px ${px(60)}px 0` }}>
         <img src="/images/logo-full.png" alt="Sphere English"
-          style={{ height:px(46), width:"auto", filter:"brightness(0) invert(1)", objectFit:"contain", opacity:0.95 }}
+          style={{ height:px(184), width:"auto", filter:"brightness(0) invert(1)", objectFit:"contain", opacity:0.95 }}
         />
         <div style={{
           display:"flex", alignItems:"center", gap:px(10),
