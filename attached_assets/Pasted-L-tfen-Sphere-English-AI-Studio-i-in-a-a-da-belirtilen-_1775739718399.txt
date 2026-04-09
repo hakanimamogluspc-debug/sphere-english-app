@@ -1,0 +1,43 @@
+Lütfen Sphere English AI Studio için aşağıda belirtilen mantıksal hiyerarşiye sahip, modern ve premium tasarımlı bir 'Sektörel Simülasyon Modu' geliştir.
+
+1. Veri Yapısı ve Entegrasyon
+Ekteki Ai Koçları.docx dosyasındaki 11 koçun tüm karakteristik özelliklerini (isim, uzmanlık, aksan, yaş, koçluk tarzı) bir coaches.json dosyasında sakla .
+
+Sektör Listesi: Finans, Teknoloji, Sağlık, Üretim, Perakende, Lojistik, İnşaat, Eğitim, Turizm, Danışmanlık, Hukuk, Medya, Enerji ve Diğer.
+
+2. Kullanıcı Akışı (UI/UX)
+Sektör Seçimi: Kullanıcı ilk ekranda şık kartlar veya bir dropdown menü ile sektörünü seçer.
+
+Koç Seçimi: Sektör seçildikten sonra 11 koçun listesi gelir.
+
+Mod Seçimi: Koç tıklandığında iki seçenek sun: 'Free Chat' ve 'Scenario Mode'.
+
+Senaryo Katmanı: 'Scenario Mode' seçilirse, kullanıcının seçtiği sektör ile koçun uzmanlığını birleştiren 10 adet hazır başlık listele ve en alta 'Kendi Senaryonu Belirle' metin giriş alanı ekle.
+
+3. Dinamik LLM (System Instruction) Mantığı
+API çağrısı yapılırken arka planda şu prompt yapısını kullan:
+
+'Sen Sphere English koçusun. Karakterin: {coach_name}, Uzmanlığın: {specialty}, Tarzın: {coaching_style} .'
+
+'Şu an {selected_sector} sektöründesin.'
+
+'Görevin: Kullanıcı tarafından seçilen "{user_scenario}" konusunu bu sektöre ve karakterine uygun şekilde simüle etmek.'
+
+'Kurallar: Karakterinden çıkma, kullanıcıyı profesyonel dille zorla, İngilizce konuş ama her mesaj sonuna kısa bir gelişim geri bildirimi ekle.'
+
+4. Tasarım Parametreleri
+Renk Paleti: Sapphire Navy (#082567), Beyaz ve Gümüş/Gri detaylar.
+
+Estetik: British Council tarzı, minimalist, premium ve kurumsal bir his.
+
+Teknoloji: Backend için Python/Flask veya FastAPI, frontend için temiz bir UI kullan."
+
+Neden Bu Prompt En Doğrusu?
+Hiyerarşiyi Netleştirir: Replit'e önce veriyi (koçlar), sonra akışı (sektör > koç) ve en son mantığı (AI promptu) veriyoruz.
+
+
+Karakter Derinliğini Korur: Koçların sadece isimlerini değil, Ai Koçları.docx içindeki o spesifik "koçluk tarzlarını" sisteme entegre etmesini sağlıyoruz .
+
+Sektörel Esneklik Sağlar: Sabit senaryolar yerine, seçilen sektör ve kullanıcı girişini koçun kimliğiyle harmanlayan "akıllı bir birleştirme" (merge) mantığı kuruyoruz.
+
+Ticari Hazırlık: Abonelik satabilmen için gereken "Özel Senaryo" ve "Derin Analiz" alanlarını kod yapısına dahil ediyor.
