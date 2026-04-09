@@ -87,7 +87,7 @@ const PhotoPanel = ({ src, alt, dots }: { src: string; alt: string; dots: number
         height: CARD_H,
         borderRadius: px(56),
         overflow: "hidden",
-        boxShadow: `0 ${px(20)}px ${px(80)}px rgba(0,0,0,0.50), 0 0 0 ${px(4)}px rgba(56,189,248,0.25)`,
+        boxShadow: `0 ${px(20)}px ${px(80)}px rgba(0,0,0,0.50), 0 0 0 ${px(4)}px rgba(255,255,255,0.70)`,
         flexShrink: 0,
         zIndex: 1,
       }}>
