@@ -120,6 +120,12 @@ uri = "file://artifacts/sphere-english/public/images/coach-claire-grammar.png"
 type = "image"
 title = "coach-claire-realistic"
 
+[[generated]]
+id = "8s7aL1K1oGtZYE5Ht1xFa"
+uri = "file://artifacts/sphere-english/public/images/coach-olivia-health.png"
+type = "image"
+title = "health coach olivia avatar"
+
 [[outputs]]
 id = "FsU4PAkDB_a1cFXTkO03x"
 uri = "file://artifacts/sphere-english/public/www-sitemap.xml"
