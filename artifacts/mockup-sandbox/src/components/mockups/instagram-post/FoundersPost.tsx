@@ -69,18 +69,6 @@ const PhotoPanel = ({ src, alt, dots }: { src: string; alt: string; dots: number
       <TopLine />
       <BotLine />
 
-      {/* Logo + dots — üstte */}
-      <div style={{
-        position:"absolute", top:PADY, left:PADX, right:PADX,
-        display:"flex", justifyContent:"space-between", alignItems:"center",
-        zIndex: 2,
-      }}>
-        <img src="/images/logo-full.png" alt="Sphere English"
-          style={{ height:px(110), width:"auto", filter:"brightness(0) invert(1)", objectFit:"contain", objectPosition:"left" }}
-        />
-        <PanelDots current={dots} />
-      </div>
-
       {/* Dikey portre çerçevesi — ortada */}
       <div style={{
         width: CARD_W,
@@ -136,7 +124,8 @@ export default function FoundersPost() {
         <div style={{
           width:px(W), height:px(W), flexShrink:0,
           display:"flex", flexDirection:"column",
-          justifyContent:"space-between",
+          justifyContent:"center",
+          gap: px(60),
           padding:`${PADY}px ${PADX}px`,
           boxSizing:"border-box",
           background: BG,
@@ -149,14 +138,6 @@ export default function FoundersPost() {
           {/* Aynı yatay çizgiler */}
           <TopLine />
           <BotLine />
-
-          {/* TOP: Logo + dots */}
-          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-            <img src="/images/logo-full.png" alt="Sphere English"
-              style={{ height:px(120), width:"auto", filter:"brightness(0) invert(1)", objectFit:"contain", objectPosition:"left" }}
-            />
-            <PanelDots current={2} />
-          </div>
 
           {/* MIDDLE: Mesaj — ortalı */}
           <div style={{ display:"flex", flexDirection:"column", alignItems:"center", textAlign:"center" }}>
