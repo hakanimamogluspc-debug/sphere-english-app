@@ -113,7 +113,7 @@ export default function TrilogyPost() {
             }}>
               <div style={{ width:px(10), height:px(10), borderRadius:"50%", background:ACCENT, boxShadow:`0 0 8px ${ACCENT}` }} />
               <span style={{ fontSize:px(17), fontWeight:700, letterSpacing:"0.18em", color:"#7dd3fc", textTransform:"uppercase", fontFamily:'"Plus Jakarta Sans", sans-serif' }}>
-                Türkiye'nin İlki
+                TÜRKİYE'NİN İLKİ
               </span>
             </div>
           </div>
