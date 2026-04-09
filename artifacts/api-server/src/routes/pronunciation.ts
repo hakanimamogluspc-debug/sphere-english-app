@@ -281,7 +281,6 @@ CONVERSATION STYLE:
           model: "tts-1",
           voice: safeVoice,
           input: reply,
-          response_format: "mp3",
           speed: 0.9,
         }),
         analysisPromise,
@@ -335,7 +334,6 @@ router.post(
         model: "tts-1",
         voice: safeVoice,
         input: primaryText,
-        response_format: "mp3",
         speed: 0.85,
       });
       const audioBase64 = Buffer.from(await ttsResponse.arrayBuffer()).toString("base64");

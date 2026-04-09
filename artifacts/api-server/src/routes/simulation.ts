@@ -176,7 +176,6 @@ SIMULATION RULES:
           model: "tts-1",
           voice: safeVoice,
           input: reply,
-          response_format: "mp3",
           speed: 0.95,
         }),
         analysisPromise,
