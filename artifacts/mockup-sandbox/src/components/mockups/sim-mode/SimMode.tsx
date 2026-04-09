@@ -7,21 +7,94 @@ const SILVER = '#94a3b8';
 const SILVER_LIGHT = '#f1f5f9';
 const SILVER_MID = '#e2e8f0';
 
+const SECTOR_ICONS: Record<string, React.ReactNode> = {
+  finans: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 3v18h18"/><path d="M7 16l4-4 4 4 4-6"/>
+    </svg>
+  ),
+  teknoloji: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/>
+    </svg>
+  ),
+  saglik: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2z"/><path d="M12 8v8M8 12h8"/>
+    </svg>
+  ),
+  uretim: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M2 20h20M4 20V10l4-4 4 4 4-4 4 4v10"/><path d="M9 20v-5h6v5"/>
+    </svg>
+  ),
+  perakende: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/>
+    </svg>
+  ),
+  lojistik: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M1 3h15v13H1zM16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>
+    </svg>
+  ),
+  insaat: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 21h18M5 21V7l7-4 7 4v14"/><path d="M9 21v-6h6v6"/>
+    </svg>
+  ),
+  egitim: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M22 10v6M2 10l10-5 10 5-10 5-10-5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/>
+    </svg>
+  ),
+  turizm: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M17.8 19.2 16 11l3.5-3.5C21 6 21 4 21 4s-2 0-3.5 1.5L14 9 5.8 7.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 3.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/>
+    </svg>
+  ),
+  danismanlik: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/><path d="M7 8h10M7 12h6"/>
+    </svg>
+  ),
+  hukuk: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 2v20M3 6l9-4 9 4M5 9l-2 7h4L5 9zM19 9l-2 7h4l-2-7z"/><path d="M3 22h18"/>
+    </svg>
+  ),
+  medya: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M23 7 16 12 23 17V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/>
+    </svg>
+  ),
+  enerji: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/>
+    </svg>
+  ),
+  diger: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+    </svg>
+  ),
+};
+
 const SECTORS = [
-  { id: 'finans', label: 'Finans', icon: '💹', desc: 'Bankacılık, yatırım, sigortacılık' },
-  { id: 'teknoloji', label: 'Teknoloji', icon: '💻', desc: 'Yazılım, AI, dijital ürünler' },
-  { id: 'saglik', label: 'Sağlık', icon: '🏥', desc: 'Sağlık hizmetleri, ilaç, medikal cihaz' },
-  { id: 'uretim', label: 'Üretim', icon: '🏭', desc: 'İmalat, fabrika, endüstri' },
-  { id: 'perakende', label: 'Perakende', icon: '🛍️', desc: 'E-ticaret, mağazacılık, satış' },
-  { id: 'lojistik', label: 'Lojistik', icon: '🚢', desc: 'Tedarik zinciri, kargo, depo' },
-  { id: 'insaat', label: 'İnşaat', icon: '🏗️', desc: 'Gayrimenkul, altyapı, mühendislik' },
-  { id: 'egitim', label: 'Eğitim', icon: '🎓', desc: 'Akademi, kurumsal eğitim, EdTech' },
-  { id: 'turizm', label: 'Turizm', icon: '✈️', desc: 'Otelcilik, seyahat, sağlık turizmi' },
-  { id: 'danismanlik', label: 'Danışmanlık', icon: '📊', desc: 'Strateji, yönetim, süreç iyileştirme' },
-  { id: 'hukuk', label: 'Hukuk', icon: '⚖️', desc: 'Hukuk büroları, uyum, sözleşme' },
-  { id: 'medya', label: 'Medya', icon: '📡', desc: 'Yayıncılık, reklam, içerik üretimi' },
-  { id: 'enerji', label: 'Enerji', icon: '⚡', desc: 'Yenilenebilir enerji, petrol & gaz' },
-  { id: 'diger', label: 'Diğer', icon: '🌐', desc: 'Diğer sektörler' },
+  { id: 'finans', label: 'Finans', desc: 'Bankacılık, yatırım, sigortacılık' },
+  { id: 'teknoloji', label: 'Teknoloji', desc: 'Yazılım, AI, dijital ürünler' },
+  { id: 'saglik', label: 'Sağlık', desc: 'Sağlık hizmetleri, ilaç, medikal cihaz' },
+  { id: 'uretim', label: 'Üretim', desc: 'İmalat, fabrika, endüstri' },
+  { id: 'perakende', label: 'Perakende', desc: 'E-ticaret, mağazacılık, satış' },
+  { id: 'lojistik', label: 'Lojistik', desc: 'Tedarik zinciri, kargo, depo' },
+  { id: 'insaat', label: 'İnşaat', desc: 'Gayrimenkul, altyapı, mühendislik' },
+  { id: 'egitim', label: 'Eğitim', desc: 'Akademi, kurumsal eğitim, EdTech' },
+  { id: 'turizm', label: 'Turizm', desc: 'Otelcilik, seyahat, sağlık turizmi' },
+  { id: 'danismanlik', label: 'Danışmanlık', desc: 'Strateji, yönetim, süreç iyileştirme' },
+  { id: 'hukuk', label: 'Hukuk', desc: 'Hukuk büroları, uyum, sözleşme' },
+  { id: 'medya', label: 'Medya', desc: 'Yayıncılık, reklam, içerik üretimi' },
+  { id: 'enerji', label: 'Enerji', desc: 'Yenilenebilir enerji, petrol & gaz' },
+  { id: 'diger', label: 'Diğer', desc: 'Diğer sektörler' },
 ];
 
 const COACHES = [
@@ -611,7 +684,10 @@ function SectorScreen({ sectors, onSelect }: { sectors: typeof SECTORS; onSelect
           <button key={s.id} onClick={() => onSelect(s)}
             className="group p-4 bg-white rounded-xl border text-left transition-all hover:shadow-md hover:-translate-y-0.5"
             style={{ borderColor: SILVER_MID }}>
-            <div className="text-2xl mb-2">{s.icon}</div>
+            <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-3 flex-shrink-0"
+              style={{ background: '#e8eef7', color: NAVY }}>
+              <div className="w-6 h-6">{SECTOR_ICONS[s.id]}</div>
+            </div>
             <div className="font-bold text-sm mb-0.5" style={{ color: NAVY }}>{s.label}</div>
             <div className="text-xs text-slate-400 leading-tight">{s.desc}</div>
             <div className="mt-3 text-xs font-semibold opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: '#0ea5e9' }}>Seç →</div>
@@ -655,7 +731,7 @@ function CoachScreen({ coaches, sector, onSelect, onBack }: { coaches: typeof CO
         <button onClick={onBack} className="text-xs text-slate-400 hover:text-slate-600 mb-4 flex items-center gap-1 transition-colors">
           ← Sektör Seçimine Dön
         </button>
-        <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: '#0ea5e9' }}>— Adım 2 / 3 · {sector.icon} {sector.label}</p>
+        <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: '#0ea5e9' }}>— Adım 2 / 3 · {sector.label}</p>
         <h1 className="text-3xl font-black mb-2" style={{ color: NAVY }}>Koçunuzu Seçin</h1>
         <p className="text-slate-500 text-sm">Her koç farklı bir uzmanlık ve koçluk tarzı sunar. Hedefinize en uygun olanı seçin.</p>
       </div>
@@ -701,7 +777,7 @@ function ModeScreen({ coach, sector, onSelect, onBack }: { coach: typeof COACHES
         </div>
         <div className="ml-auto text-right">
           <div className="text-xs text-slate-400">Sektör</div>
-          <div className="text-sm font-semibold" style={{ color: NAVY }}>{sector.icon} {sector.label}</div>
+          <div className="text-sm font-semibold" style={{ color: NAVY }}>{sector.label}</div>
         </div>
       </div>
 
@@ -738,7 +814,7 @@ function ScenarioScreen({ coach, sector, scenarios, custom, onCustomChange, onSe
     <div className="max-w-2xl mx-auto px-8 py-12">
       <div className="mb-8">
         <button onClick={onBack} className="text-xs text-slate-400 hover:text-slate-600 mb-4 flex items-center gap-1 transition-colors">← Mod Seçimine Dön</button>
-        <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: '#0ea5e9' }}>— Scenario Mode · {sector.icon} {sector.label} × {coach.flag} {coach.name}</p>
+        <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: '#0ea5e9' }}>— Scenario Mode · {sector.label} × {coach.flag} {coach.name}</p>
         <h1 className="text-3xl font-black mb-2" style={{ color: NAVY }}>Senaryo Seçin</h1>
         <p className="text-slate-500 text-sm">Sektörünüz ve koçunuzun uzmanlığı birleştirilerek hazırlandı. Bir senaryo seçin ya da kendiniz belirleyin.</p>
       </div>
