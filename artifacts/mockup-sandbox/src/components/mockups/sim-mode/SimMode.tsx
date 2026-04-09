@@ -25,18 +25,18 @@ const SECTORS = [
 ];
 
 const COACHES = [
-  { id: 'sterling', name: 'Mr. Sterling', flag: '🇬🇧', specialty: 'CEO & Stratejik Yönetim', accent: 'Üst Segment İngiliz (RP)', color: '#1E3A5F', style: 'Otoriter, lakonik, vizyon odaklı', image: null, initials: 'MS' },
-  { id: 'jake', name: 'Jake', flag: '🇺🇸', specialty: 'Pazarlama & Dijital Medya', accent: 'West Coast Amerikan', color: '#EA580C', style: 'Enerjik, yaratıcı, trendy', image: null, initials: 'J' },
-  { id: 'david', name: 'David', flag: '🇺🇸', specialty: 'Finans & Yatırım', accent: 'New York (Wall Street)', color: '#0369A1', style: 'Analitik, direkt, rakam odaklı', image: null, initials: 'D' },
-  { id: 'emma', name: 'Emma', flag: '🇬🇧', specialty: 'İnsan Kaynakları', accent: 'Standart İngiliz (London)', color: '#BE185D', style: 'Empatik, yapılandırılmış, destekleyici', image: null, initials: 'E' },
-  { id: 'raj', name: 'Raj', flag: '🇮🇳', specialty: 'BT & Yazılım Geliştirme', accent: 'Hint-İngiliz (Global Tech)', color: '#7C3AED', style: 'Sistematik, teknik, iş birlikçi', image: null, initials: 'R' },
-  { id: 'hans', name: 'Hans', flag: '🇩🇪', specialty: 'Lojistik & Operasyon', accent: 'Alman-İngiliz (Euro-English)', color: '#374151', style: 'Metodolojik, hassas, süreç odaklı', image: null, initials: 'H' },
-  { id: 'elena', name: 'Elena', flag: '🇪🇺', specialty: 'Uluslararası Hukuk', accent: 'Diplomatik (Doğu Avrupa)', color: '#065F46', style: 'Kesin, diplomatik, mükemmeliyetçi', image: null, initials: 'EL' },
-  { id: 'alistair', name: 'Alistair', flag: '🏴󠁧󠁢󠁳󠁣󠁴󠁿', specialty: 'Satış & Müzakere', accent: 'İskoç (Edinburg)', color: '#B91C1C', style: 'İkna edici, stratejik, ısrarcı', image: null, initials: 'A' },
-  { id: 'chloe', name: 'Chloe', flag: '🇦🇺', specialty: 'Müşteri İlişkileri', accent: 'Avusturalyalı (Friendly)', color: '#D97706', style: 'Sıcak, samimi, çözüm odaklı', image: null, initials: 'C' },
-  { id: 'james', name: 'James', flag: '🇺🇸', specialty: 'Üretim & Fabrika Yönetimi', accent: 'Amerikan (Midwest)', color: '#78350F', style: 'Pratik, güvenilir, direkt', image: null, initials: 'JA' },
-  { id: 'claire', name: 'Dr. Claire', flag: '🇬🇧', specialty: 'Gramer & İleri Telaffuz', accent: 'Akademik İngiliz (Oxford)', color: '#0F766E', style: 'Titiz, sabırlı, akademik', image: null, initials: 'DC' },
-  { id: 'olivia', name: 'Dr. Olivia', flag: '🇺🇸', specialty: 'Sağlık Turizmi İngilizcesi', accent: 'Amerikan (Miami / Sağlık Turizmi)', color: '#0891b2', style: 'Profesyonel, kültürel farkındalıklı, sıcak', image: null, initials: 'DO' },
+  { id: 'sterling', name: 'Mr. Sterling', flag: '🇬🇧', specialty: 'CEO & Stratejik Yönetim', accent: 'Üst Segment İngiliz (RP)', color: '#1E3A5F', style: 'Otoriter, lakonik, vizyon odaklı', image: '/images/coach-sterling.png', initials: 'MS' },
+  { id: 'jake', name: 'Jake', flag: '🇺🇸', specialty: 'Pazarlama & Dijital Medya', accent: 'West Coast Amerikan', color: '#EA580C', style: 'Enerjik, yaratıcı, trendy', image: '/images/coach-jake.png', initials: 'J' },
+  { id: 'david', name: 'David', flag: '🇺🇸', specialty: 'Finans & Yatırım', accent: 'New York (Wall Street)', color: '#0369A1', style: 'Analitik, direkt, rakam odaklı', image: '/images/coach-david.png', initials: 'D' },
+  { id: 'emma', name: 'Emma', flag: '🇬🇧', specialty: 'İnsan Kaynakları', accent: 'Standart İngiliz (London)', color: '#BE185D', style: 'Empatik, yapılandırılmış, destekleyici', image: '/images/coach-emma-hr.png', initials: 'E' },
+  { id: 'raj', name: 'Raj', flag: '🇮🇳', specialty: 'BT & Yazılım Geliştirme', accent: 'Hint-İngiliz (Global Tech)', color: '#7C3AED', style: 'Sistematik, teknik, iş birlikçi', image: '/images/coach-raj.png', initials: 'R' },
+  { id: 'hans', name: 'Hans', flag: '🇩🇪', specialty: 'Lojistik & Operasyon', accent: 'Alman-İngiliz (Euro-English)', color: '#374151', style: 'Metodolojik, hassas, süreç odaklı', image: '/images/coach-hans.png', initials: 'H' },
+  { id: 'elena', name: 'Elena', flag: '🇪🇺', specialty: 'Uluslararası Hukuk', accent: 'Diplomatik (Doğu Avrupa)', color: '#065F46', style: 'Kesin, diplomatik, mükemmeliyetçi', image: '/images/coach-elena.png', initials: 'EL' },
+  { id: 'alistair', name: 'Alistair', flag: '🏴󠁧󠁢󠁳󠁣󠁴󠁿', specialty: 'Satış & Müzakere', accent: 'İskoç (Edinburg)', color: '#B91C1C', style: 'İkna edici, stratejik, ısrarcı', image: '/images/coach-alistair.png', initials: 'A' },
+  { id: 'chloe', name: 'Chloe', flag: '🇦🇺', specialty: 'Müşteri İlişkileri', accent: 'Avusturalyalı (Friendly)', color: '#D97706', style: 'Sıcak, samimi, çözüm odaklı', image: '/images/coach-chloe.png', initials: 'C' },
+  { id: 'james', name: 'James', flag: '🇺🇸', specialty: 'Üretim & Fabrika Yönetimi', accent: 'Amerikan (Midwest)', color: '#78350F', style: 'Pratik, güvenilir, direkt', image: '/images/coach-james-mfg.png', initials: 'JA' },
+  { id: 'claire', name: 'Dr. Claire', flag: '🇬🇧', specialty: 'Gramer & İleri Telaffuz', accent: 'Akademik İngiliz (Oxford)', color: '#0F766E', style: 'Titiz, sabırlı, akademik', image: '/images/coach-claire-grammar.png', initials: 'DC' },
+  { id: 'olivia', name: 'Dr. Olivia', flag: '🇺🇸', specialty: 'Sağlık Turizmi İngilizcesi', accent: 'Amerikan (Miami / Sağlık Turizmi)', color: '#0891b2', style: 'Profesyonel, kültürel farkındalıklı, sıcak', image: '/images/coach-olivia-health.png', initials: 'DO' },
 ];
 
 const SCENARIO_MAP: Record<string, Record<string, string[]>> = {
@@ -622,6 +622,32 @@ function SectorScreen({ sectors, onSelect }: { sectors: typeof SECTORS; onSelect
   );
 }
 
+const BASE = import.meta.env.BASE_URL ?? '/';
+
+function CoachAvatar({ coach, size = 40, className = '' }: { coach: typeof COACHES[0]; size?: number; className?: string }) {
+  const [err, setErr] = useState(false);
+  const src = coach.image ? BASE.replace(/\/$/, '') + coach.image : null;
+  if (src && !err) {
+    return (
+      <img
+        src={src}
+        alt={coach.name}
+        onError={() => setErr(true)}
+        className={`object-cover rounded-full flex-shrink-0 ${className}`}
+        style={{ width: size, height: size }}
+      />
+    );
+  }
+  return (
+    <div
+      className={`rounded-full flex items-center justify-center text-white font-bold flex-shrink-0 ${className}`}
+      style={{ width: size, height: size, background: coach.color, fontSize: size * 0.3 }}
+    >
+      {coach.flag}
+    </div>
+  );
+}
+
 function CoachScreen({ coaches, sector, onSelect, onBack }: { coaches: typeof COACHES; sector: typeof SECTORS[0]; onSelect: (c: typeof COACHES[0]) => void; onBack: () => void }) {
   return (
     <div className="max-w-5xl mx-auto px-8 py-12">
@@ -636,21 +662,20 @@ function CoachScreen({ coaches, sector, onSelect, onBack }: { coaches: typeof CO
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
         {coaches.map(c => (
           <button key={c.id} onClick={() => onSelect(c)}
-            className="group bg-white rounded-xl border p-4 text-left transition-all hover:shadow-lg hover:-translate-y-1"
+            className="group bg-white rounded-xl border p-0 text-left transition-all hover:shadow-lg hover:-translate-y-1 overflow-hidden"
             style={{ borderColor: SILVER_MID, borderTopColor: c.color, borderTopWidth: 3 }}>
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0"
-                style={{ background: c.color }}>
-                {c.flag}
-              </div>
-              <div>
-                <div className="font-bold text-sm" style={{ color: NAVY }}>{c.name}</div>
-                <div className="text-xs text-slate-400">{c.accent}</div>
-              </div>
+            <div className="relative w-full aspect-[4/3] overflow-hidden bg-slate-100">
+              <CoachAvatar coach={c} size={999} className="!w-full !h-full !rounded-none object-top" />
+              <div className="absolute bottom-0 left-0 right-0 h-12"
+                style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.35), transparent)' }} />
+              <span className="absolute bottom-2 left-3 text-white text-xs font-bold drop-shadow">{c.flag} {c.name}</span>
             </div>
-            <div className="text-xs font-semibold mb-1" style={{ color: c.color }}>{c.specialty}</div>
-            <div className="text-xs text-slate-400 italic leading-tight">{c.style}</div>
-            <div className="mt-3 text-xs font-semibold opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: c.color }}>Seç →</div>
+            <div className="p-3">
+              <div className="text-xs font-bold mb-0.5" style={{ color: c.color }}>{c.specialty}</div>
+              <div className="text-xs text-slate-400 leading-tight">{c.accent}</div>
+              <div className="text-xs text-slate-400 italic leading-tight mt-1">{c.style}</div>
+              <div className="mt-2 text-xs font-semibold opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: c.color }}>Seç →</div>
+            </div>
           </button>
         ))}
       </div>
@@ -670,7 +695,7 @@ function ModeScreen({ coach, sector, onSelect, onBack }: { coach: typeof COACHES
 
       {/* Coach Summary Card */}
       <div className="p-5 rounded-xl border mb-8 flex items-center gap-4" style={{ borderColor: coach.color, background: '#fff' }}>
-        <div className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg flex-shrink-0" style={{ background: coach.color }}>{coach.flag}</div>
+        <CoachAvatar coach={coach} size={56} />
         <div>
           <div className="font-bold" style={{ color: NAVY }}>{coach.name}</div>
           <div className="text-sm text-slate-500">{coach.specialty} · {coach.accent}</div>
@@ -759,7 +784,7 @@ function ChatScreen({ coach, scenario, messages, input, onInput, onSend, onEnd, 
     <div className="flex flex-col h-[calc(100vh-64px)]">
       {/* Chat Header */}
       <div className="px-6 py-3 border-b flex items-center gap-3 shadow-sm" style={{ background: '#fff', borderColor: SILVER_MID }}>
-        <div className="w-9 h-9 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0 text-sm" style={{ background: coach.color }}>{coach.flag}</div>
+        <CoachAvatar coach={coach} size={36} />
         <div className="flex-1 min-w-0">
           <div className="font-bold text-sm truncate" style={{ color: NAVY }}>{coach.name}</div>
           <div className="text-xs text-slate-400 truncate">{scenario}</div>
@@ -777,7 +802,7 @@ function ChatScreen({ coach, scenario, messages, input, onInput, onSend, onEnd, 
         {messages.map((m: Message, i: number) => (
           <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'} gap-3`}>
             {m.role === 'coach' && (
-              <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs flex-shrink-0 mt-1" style={{ background: coach.color }}>{coach.flag}</div>
+              <CoachAvatar coach={coach} size={32} className="mt-1" />
             )}
             <div className={`max-w-lg ${m.role === 'user' ? 'items-end' : 'items-start'} flex flex-col gap-1`}>
               <div className={`px-4 py-3 rounded-2xl text-sm leading-relaxed shadow-sm ${m.role === 'user' ? 'text-white rounded-tr-sm' : 'text-slate-800 rounded-tl-sm'}`}
