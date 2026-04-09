@@ -69,18 +69,18 @@ const Panel = ({ coaches, msgIdx }: { coaches: Coach[]; msgIdx: number }) => {
       {isMiddle && (
         <div style={{
           position: "absolute",
-          top: px(52), left: px(24), right: px(24),
+          top: px(44), left: px(24), right: px(24),
           textAlign: "center",
-          lineHeight: 1.35,
+          display: "flex", flexDirection: "column", gap: px(6),
         }}>
-          <span style={{
-            fontSize: px(19), fontWeight: 700, color: PRIMARY,
-            fontFamily: '"Outfit", sans-serif',
-          }}>İş İngilizcesinde Fark Yaratan 12 Uzman: </span>
-          <span style={{
-            fontSize: px(19), fontWeight: 700, color: ACCENT,
-            fontFamily: '"Outfit", sans-serif',
-          }}>Sphere ile Küresel Özgüven</span>
+          <div style={{
+            fontSize: px(32), fontWeight: 800, color: PRIMARY,
+            fontFamily: '"Outfit", sans-serif', lineHeight: 1.2,
+          }}>İş İngilizcesinde Fark Yaratan 12 Uzman:</div>
+          <div style={{
+            fontSize: px(32), fontWeight: 800, color: ACCENT,
+            fontFamily: '"Outfit", sans-serif', lineHeight: 1.2,
+          }}>Sphere ile Küresel Özgüven</div>
         </div>
       )}
 
