@@ -145,8 +145,8 @@ export default function FoundersPost() {
             <PanelDots current={2} />
           </div>
 
-          {/* MIDDLE: Mesaj */}
-          <div>
+          {/* MIDDLE: Mesaj — ortalı */}
+          <div style={{ display:"flex", flexDirection:"column", alignItems:"center", textAlign:"center" }}>
             {/* Eyebrow */}
             <div style={{ fontSize:px(17), fontWeight:700, letterSpacing:"0.2em", color:ACCENT, textTransform:"uppercase", fontFamily:'"Plus Jakarta Sans", sans-serif', marginBottom:px(24) }}>
               BİZİ TANIYIN
@@ -164,7 +164,7 @@ export default function FoundersPost() {
             </div>
 
             {/* Divider */}
-            <div style={{ width:px(64), height:px(5), background:`linear-gradient(to right, ${ACCENT}, rgba(56,189,248,0.15))`, borderRadius:px(3), marginBottom:px(36) }} />
+            <div style={{ width:px(64), height:px(5), background:`linear-gradient(to right, rgba(56,189,248,0.15), ${ACCENT}, rgba(56,189,248,0.15))`, borderRadius:px(3), marginBottom:px(36) }} />
 
             {/* Hikaye metni */}
             <div style={{ fontSize:px(24), color:MUTED, lineHeight:1.78, fontFamily:'"Plus Jakarta Sans", sans-serif' }}>
@@ -175,16 +175,15 @@ export default function FoundersPost() {
             </div>
           </div>
 
-          {/* BOTTOM: Avatar çifti + isimler */}
-          <div>
+          {/* BOTTOM: Avatar çifti + isimler — ortalı */}
+          <div style={{ display:"flex", flexDirection:"column", alignItems:"center" }}>
             <div style={{ width:"100%", height:px(1), background:"rgba(255,255,255,0.08)", marginBottom:px(28) }} />
             <div style={{ display:"flex", alignItems:"center", gap:px(20), marginBottom:px(32) }}>
-              {/* Avatarlar üst üste */}
               <div style={{ display:"flex" }}>
                 <Avatar letter="D" color={ACCENT2} />
                 <Avatar letter="M" color={PRIMARY} />
               </div>
-              <div>
+              <div style={{ textAlign:"left" }}>
                 <div style={{ fontSize:px(22), fontWeight:700, color:WHITE, letterSpacing:"-0.01em" }}>
                   Didem İmamoğlu & Merve Eş
                 </div>
