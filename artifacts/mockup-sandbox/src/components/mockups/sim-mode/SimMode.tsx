@@ -112,6 +112,23 @@ const COACHES = [
   { id: 'olivia', name: 'Dr. Olivia', flag: '🇺🇸', specialty: 'Sağlık Turizmi İngilizcesi', accent: 'Amerikan (Miami / Sağlık Turizmi)', color: '#0891b2', style: 'Profesyonel, kültürel farkındalıklı, sıcak', image: '/images/coach-olivia-health.png', initials: 'DO' },
 ];
 
+const SECTOR_COACHES: Record<string, string[]> = {
+  enerji:      ['sterling', 'david', 'jake', 'james', 'elena'],
+  finans:      ['david', 'elena', 'sterling'],
+  teknoloji:   ['raj', 'jake', 'emma'],
+  saglik:      ['chloe', 'elena', 'olivia'],
+  uretim:      ['james', 'hans'],
+  perakende:   ['jake', 'emma', 'chloe'],
+  lojistik:    ['hans', 'james'],
+  insaat:      ['sterling', 'james', 'david'],
+  egitim:      ['claire', 'emma'],
+  turizm:      ['chloe', 'alistair', 'olivia'],
+  danismanlik: ['sterling', 'david'],
+  hukuk:       ['elena', 'sterling'],
+  medya:       ['jake', 'elena'],
+  diger:       [],
+};
+
 const SCENARIO_MAP: Record<string, Record<string, string[]>> = {
   enerji: {
     sterling: [
@@ -724,7 +741,40 @@ function CoachAvatar({ coach, size = 40, className = '' }: { coach: typeof COACH
   );
 }
 
+function CoachCard({ c, onSelect, featured }: { c: typeof COACHES[0]; onSelect: (c: typeof COACHES[0]) => void; featured?: boolean }) {
+  return (
+    <button onClick={() => onSelect(c)}
+      className="group bg-white rounded-xl border p-4 text-left transition-all hover:shadow-lg hover:-translate-y-1 relative"
+      style={{ borderColor: featured ? c.color : SILVER_MID, borderTopColor: c.color, borderTopWidth: 3 }}>
+      {featured && (
+        <span className="absolute top-3 right-3 text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full"
+          style={{ background: c.color + '18', color: c.color }}>
+          Uzman
+        </span>
+      )}
+      <div className="flex items-center gap-3 mb-3">
+        <CoachAvatar coach={c} size={40} />
+        <div>
+          <div className="font-bold text-sm" style={{ color: NAVY }}>{c.name}</div>
+          <div className="text-xs text-slate-400">{c.flag} {c.accent}</div>
+        </div>
+      </div>
+      <div className="text-xs font-semibold mb-1" style={{ color: c.color }}>{c.specialty}</div>
+      <div className="text-xs text-slate-400 italic leading-tight">{c.style}</div>
+      <div className="mt-3 text-xs font-semibold opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: c.color }}>Seç →</div>
+    </button>
+  );
+}
+
 function CoachScreen({ coaches, sector, onSelect, onBack }: { coaches: typeof COACHES; sector: typeof SECTORS[0]; onSelect: (c: typeof COACHES[0]) => void; onBack: () => void }) {
+  const featuredIds = SECTOR_COACHES[sector.id] ?? [];
+  const featured = featuredIds.length > 0
+    ? featuredIds.map(id => coaches.find(c => c.id === id)).filter(Boolean) as typeof COACHES
+    : coaches;
+  const others = featuredIds.length > 0
+    ? coaches.filter(c => !featuredIds.includes(c.id))
+    : [];
+
   return (
     <div className="max-w-5xl mx-auto px-8 py-12">
       <div className="mb-10">
@@ -735,24 +785,30 @@ function CoachScreen({ coaches, sector, onSelect, onBack }: { coaches: typeof CO
         <h1 className="text-3xl font-black mb-2" style={{ color: NAVY }}>Koçunuzu Seçin</h1>
         <p className="text-slate-500 text-sm">Her koç farklı bir uzmanlık ve koçluk tarzı sunar. Hedefinize en uygun olanı seçin.</p>
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-        {coaches.map(c => (
-          <button key={c.id} onClick={() => onSelect(c)}
-            className="group bg-white rounded-xl border p-4 text-left transition-all hover:shadow-lg hover:-translate-y-1"
-            style={{ borderColor: SILVER_MID, borderTopColor: c.color, borderTopWidth: 3 }}>
-            <div className="flex items-center gap-3 mb-3">
-              <CoachAvatar coach={c} size={40} />
-              <div>
-                <div className="font-bold text-sm" style={{ color: NAVY }}>{c.name}</div>
-                <div className="text-xs text-slate-400">{c.flag} {c.accent}</div>
-              </div>
-            </div>
-            <div className="text-xs font-semibold mb-1" style={{ color: c.color }}>{c.specialty}</div>
-            <div className="text-xs text-slate-400 italic leading-tight">{c.style}</div>
-            <div className="mt-3 text-xs font-semibold opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: c.color }}>Seç →</div>
-          </button>
-        ))}
-      </div>
+
+      {featuredIds.length > 0 && (
+        <>
+          <div className="flex items-center gap-3 mb-4">
+            <span className="text-xs font-bold uppercase tracking-widest" style={{ color: NAVY }}>Bu Sektörün Uzmanları</span>
+            <div className="flex-1 h-px" style={{ background: SILVER_MID }} />
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 mb-10">
+            {featured.map(c => <CoachCard key={c.id} c={c} onSelect={onSelect} featured />)}
+          </div>
+        </>
+      )}
+
+      {others.length > 0 && (
+        <>
+          <div className="flex items-center gap-3 mb-4">
+            <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Diğer Koçlar</span>
+            <div className="flex-1 h-px" style={{ background: SILVER_MID }} />
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+            {others.map(c => <CoachCard key={c.id} c={c} onSelect={onSelect} />)}
+          </div>
+        </>
+      )}
     </div>
   );
 }
