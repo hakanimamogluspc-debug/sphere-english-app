@@ -293,3 +293,75 @@ id = "Ijgx7L1o5GHtSDGwg12pq"
 uri = "file://assets/instagram/sphere-ai-studio-post-hq.jpg"
 type = "image"
 title = "Sphere English AI Studio — Yüksek Çözünürlüklü Instagram Görseli (2160×2160)"
+
+[[outputs]]
+id = "m4zzrjCNHjuT7MtVdo8dd"
+uri = "file://assets/instagram/coaches/01-sterling.jpg"
+type = "image"
+title = "01 - Sterling (Liderlik)"
+
+[[outputs]]
+id = "tHQF64QoQriRmFU4qDjP3"
+uri = "file://assets/instagram/coaches/02-jake.jpg"
+type = "image"
+title = "02 - Jake (Girişimcilik)"
+
+[[outputs]]
+id = "eU3T0Xno8T1WYrlwfXZ--"
+uri = "file://assets/instagram/coaches/03-david.jpg"
+type = "image"
+title = "03 - David (Finans)"
+
+[[outputs]]
+id = "YOLf12IPsIp2d3cGHHmUC"
+uri = "file://assets/instagram/coaches/04-emma.jpg"
+type = "image"
+title = "04 - Emma (İK)"
+
+[[outputs]]
+id = "48P9Ekf1T97evIkI01_B7"
+uri = "file://assets/instagram/coaches/05-raj.jpg"
+type = "image"
+title = "05 - Raj (BT & Yazılım)"
+
+[[outputs]]
+id = "IxYA_H4QX7jpPOz7bGKSX"
+uri = "file://assets/instagram/coaches/06-hans.jpg"
+type = "image"
+title = "06 - Hans (Lojistik)"
+
+[[outputs]]
+id = "lrGzgUli51H0ozf7776_S"
+uri = "file://assets/instagram/coaches/07-elena.jpg"
+type = "image"
+title = "07 - Elena (Hukuk)"
+
+[[outputs]]
+id = "q4ah48tHIqI_ca-DI6nNY"
+uri = "file://assets/instagram/coaches/08-alistair.jpg"
+type = "image"
+title = "08 - Alistair (Satış)"
+
+[[outputs]]
+id = "nlS7apRcGKdRLGd06zp4R"
+uri = "file://assets/instagram/coaches/09-chloe.jpg"
+type = "image"
+title = "09 - Chloe (Müşteri İlişkileri)"
+
+[[outputs]]
+id = "kebhB3K1_mzjgpm6u7nZP"
+uri = "file://assets/instagram/coaches/10-james.jpg"
+type = "image"
+title = "10 - James (Üretim)"
+
+[[outputs]]
+id = "w3ZdCU6RFWHQwgWlovxIA"
+uri = "file://assets/instagram/coaches/11-claire.jpg"
+type = "image"
+title = "11 - Dr. Claire (Gramer)"
+
+[[outputs]]
+id = "OGPfs-7CxkHSC1bU7wcHc"
+uri = "file://assets/instagram/coaches/12-olivia.jpg"
+type = "image"
+title = "12 - Dr. Olivia (Sağlık)"
