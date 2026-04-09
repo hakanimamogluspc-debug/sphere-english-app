@@ -75,7 +75,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const isStudent = response.user?.role === "student";
     if (isCorporate) {
       setLocation("/corporate/dashboard");
-    } else if (isStudent && !response.user?.placementTestCompleted) {
+    } else if (isStudent && !response.user?.company && !response.user?.placementTestCompleted) {
       setLocation("/placement-test");
     } else {
       setLocation("/dashboard");

@@ -87,6 +87,8 @@ export interface UserProfile {
   /** @nullable */
   badges?: string[] | null;
   placementTestCompleted?: boolean;
+  /** @nullable — kurumsal kayıtlı öğrencilerde dolu, bireysel kayıtlılarda null */
+  company?: { id: number; name: string; code: string } | null;
 }
 
 export interface AuthResponse {

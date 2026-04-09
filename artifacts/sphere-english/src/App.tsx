@@ -78,6 +78,7 @@ function ProtectedRoute({ component: Component, allowedRoles, skipPlacementCheck
   if (
     !skipPlacementCheck &&
     user?.role === "student" &&
+    !user?.company &&
     user?.placementTestCompleted === false &&
     location !== "/placement-test"
   ) {
@@ -117,7 +118,7 @@ function Router() {
 
   if (isAuthenticated && location === "/") {
     if (user?.role === "corporate") return <Redirect to="/corporate/dashboard" />;
-    if (user?.role === "student" && user?.placementTestCompleted === false) return <Redirect to="/placement-test" />;
+    if (user?.role === "student" && !user?.company && user?.placementTestCompleted === false) return <Redirect to="/placement-test" />;
     return <Redirect to="/dashboard" />;
   }
 
