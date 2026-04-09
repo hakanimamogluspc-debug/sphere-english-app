@@ -79,7 +79,7 @@ const Panel = ({ coaches, msgIdx }: { coaches: Coach[]; msgIdx: number }) => {
       }}>
         {coaches.map((c, i) => {
           const isSterling = !!c.isSterling;
-          const avatarD = isSterling ? px(192) : px(168);
+          const avatarD = isSterling ? px(192) : px(172);
 
           return (
             <div key={c.name} style={{ display: "flex", alignItems: "stretch", flex: 1 }}>
@@ -92,15 +92,15 @@ const Panel = ({ coaches, msgIdx }: { coaches: Coach[]; msgIdx: number }) => {
                 padding: `${px(24)}px ${px(6)}px`,
                 position: "relative",
                 background: isSterling
-                  ? "linear-gradient(175deg,rgba(56,189,248,0.06) 0%,rgba(30,58,110,0.04) 100%)"
-                  : "transparent",
-                borderRadius: isSterling ? px(28) : 0,
+                  ? "linear-gradient(175deg,rgba(56,189,248,0.07) 0%,rgba(30,58,110,0.05) 100%)"
+                  : "linear-gradient(175deg,rgba(255,255,255,0.72) 0%,rgba(230,240,252,0.55) 100%)",
+                borderRadius: px(28),
                 boxShadow: isSterling
-                  ? `0 ${px(8)}px ${px(40)}px rgba(30,58,110,0.10)`
-                  : "none",
+                  ? `0 ${px(8)}px ${px(44)}px rgba(30,58,110,0.13)`
+                  : `0 ${px(4)}px ${px(24)}px rgba(30,58,110,0.07)`,
                 zIndex: isSterling ? 2 : 1,
-                marginTop:    isSterling ? px(-20) : 0,
-                marginBottom: isSterling ? px(-20) : 0,
+                marginTop:    isSterling ? px(-20) : px(-8),
+                marginBottom: isSterling ? px(-20) : px(-8),
               }}>
                 {/* Avatar */}
                 <div style={{
@@ -108,10 +108,10 @@ const Panel = ({ coaches, msgIdx }: { coaches: Coach[]; msgIdx: number }) => {
                   borderRadius: "50%", overflow: "hidden", flexShrink: 0,
                   border: isSterling
                     ? `${px(3.5)}px solid ${GOLD}`
-                    : `${px(2)}px solid rgba(30,58,110,0.12)`,
+                    : `${px(2)}px solid rgba(30,58,110,0.10)`,
                   boxShadow: isSterling
                     ? `0 0 0 ${px(5)}px rgba(245,158,11,0.16), 0 ${px(12)}px ${px(40)}px rgba(30,58,110,0.20)`
-                    : `0 ${px(6)}px ${px(18)}px rgba(30,58,110,0.10)`,
+                    : `0 ${px(8)}px ${px(28)}px rgba(30,58,110,0.13)`,
                   background: "#e8effa",
                 }}>
                   <img
@@ -121,14 +121,14 @@ const Panel = ({ coaches, msgIdx }: { coaches: Coach[]; msgIdx: number }) => {
                 </div>
 
                 {/* İsim + uzmanlık */}
-                <div style={{ textAlign: "center", display: "flex", flexDirection: "column", gap: px(5) }}>
+                <div style={{ textAlign: "center", display: "flex", flexDirection: "column", gap: px(8) }}>
                   <div style={{
-                    fontSize: px(isSterling ? 17 : 15), fontWeight: 800, color: PRIMARY,
+                    fontSize: px(isSterling ? 20 : 18), fontWeight: 800, color: PRIMARY,
                     fontFamily: '"Outfit", sans-serif', lineHeight: 1.1,
                   }}>{c.flag} {c.name}</div>
                   <div style={{
-                    fontSize: px(10), fontWeight: 500,
-                    color: isSterling ? "rgba(30,58,110,0.65)" : "rgba(30,58,110,0.42)",
+                    fontSize: px(isSterling ? 13 : 12), fontWeight: 500,
+                    color: isSterling ? "rgba(30,58,110,0.70)" : "rgba(30,58,110,0.52)",
                     fontFamily: '"Plus Jakarta Sans", sans-serif', lineHeight: 1.3,
                   }}>{c.specialty}</div>
                 </div>
