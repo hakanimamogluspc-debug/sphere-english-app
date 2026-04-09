@@ -4,7 +4,7 @@ import { useState } from "react";
 import {
   Mic, PenLine, Brain, Gamepad2, Sparkles, Star,
   ChevronRight, BookOpen, MessageSquare, Trophy,
-  Volume2, CheckCircle, Zap, Users, ChevronDown, Menu, X
+  Volume2, CheckCircle, Zap, Users, ChevronDown, Menu, X, Briefcase
 } from "lucide-react";
 
 const NAVY = "#1e3a6e";
@@ -62,6 +62,19 @@ const AI_FEATURES = [
     bg: "from-amber-50 to-orange-50",
     link: "/student/vocab-game",
     tag: null,
+  },
+  {
+    icon: Briefcase,
+    title: "İş Senaryoları",
+    subtitle: "Business Simulation",
+    description:
+      "14 farklı sektörde gerçek iş senaryolarını simüle edin. Yatırımcı sunumundan müzakere oturumuna, sözleşme görüşmesinden kriz yönetimine — profesyonel dil pratiğinizi gerçek iş bağlamında yapın.",
+    highlights: ["14 sektör & 50+ senaryo", "12 uzman AI koç", "Gramer & kelime analizi", "Oturum raporu & skor"],
+    color: "#0f766e",
+    gradient: "from-teal-500 to-emerald-600",
+    bg: "from-teal-50 to-emerald-50",
+    link: "/student/simulation-mode",
+    tag: "Yeni",
   },
 ];
 
@@ -136,7 +149,7 @@ const COACHES = [
 
 const STATS = [
   { value: "11", label: "Yapay Zeka Koçu", icon: Users },
-  { value: "4", label: "AI Özelliği", icon: Sparkles },
+  { value: "5", label: "AI Özelliği", icon: Sparkles },
   { value: "4000+", label: "Kelime & Kural", icon: BookOpen },
   { value: "A1–C2", label: "CEFR Seviyeleri", icon: Trophy },
 ];
@@ -330,7 +343,7 @@ export default function AIStudio() {
                 — Yapay Zeka Araçları
               </span>
               <h2 className="text-4xl md:text-5xl font-black mt-3 mb-4" style={{ fontFamily: "'Outfit', sans-serif", color: NAVY }}>
-                4 Güçlü AI Özelliği
+                5 Güçlü AI Özelliği
               </h2>
               <p className="text-gray-500 text-lg max-w-xl mx-auto">
                 Her biri farklı bir öğrenme ihtiyacına yönelik, birlikte eksiksiz bir İngilizce deneyimi.

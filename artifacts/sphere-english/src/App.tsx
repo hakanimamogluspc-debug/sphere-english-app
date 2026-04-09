@@ -51,6 +51,7 @@ import PronunciationCoach from "./pages/student/PronunciationCoach";
 import WritingCoach from "./pages/student/WritingCoach";
 import VocabGame from "./pages/student/VocabGame";
 import GrammarCoach from "./pages/student/GrammarCoach";
+import SimulationMode from "./pages/student/SimulationMode";
 import AIStudio from "./pages/AIStudio";
 import PlacementTest from "./pages/PlacementTest";
 
@@ -151,6 +152,7 @@ function Router() {
       <Route path="/student/writing-coach"><LayoutWrapper component={WritingCoach} allowedRoles={['student', 'admin']} /></Route>
       <Route path="/student/vocab-game"><LayoutWrapper component={VocabGame} allowedRoles={['student', 'admin']} /></Route>
       <Route path="/student/grammar-coach"><LayoutWrapper component={GrammarCoach} allowedRoles={['student', 'admin']} /></Route>
+      <Route path="/student/simulation-mode"><LayoutWrapper component={SimulationMode} allowedRoles={['student', 'admin']} /></Route>
       <Route path="/forum"><LayoutWrapper component={Forum} /></Route>
 
       {/* Teacher Routes */}

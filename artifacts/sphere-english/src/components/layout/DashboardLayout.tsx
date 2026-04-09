@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   BookOpen, LayoutDashboard, Video, FileQuestion, LineChart, 
   Award, MessageSquare, Users, Megaphone, LogOut, Menu, Building2, BarChart3, GraduationCap, Mic, MessageCircle, FolderOpen, PenLine, TrendingUp, Settings2, Gamepad2,
-  Sparkles, ChevronDown, Brain
+  Sparkles, ChevronDown, Brain, Briefcase
 } from "lucide-react";
 import { Avatar } from "../ui/core";
 
@@ -63,6 +63,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       { name: 'Yazma Koçu',          href: '/student/writing-coach',          icon: PenLine,       moduleKey: 'student-writing-coach',        group: 'ai-studio' },
       { name: 'Kelime Oyunu',        href: '/student/vocab-game',             icon: Gamepad2,      moduleKey: 'student-vocab-game',           group: 'ai-studio' },
       { name: 'Dilbilgisi Koçu',    href: '/student/grammar-coach',          icon: Brain,         moduleKey: 'student-grammar-coach',        group: 'ai-studio' },
+      { name: 'İş Senaryoları',     href: '/student/simulation-mode',        icon: Briefcase,     moduleKey: 'student-simulation-mode',      group: 'ai-studio' },
       { name: 'Forum',               href: '/forum',                          icon: MessageCircle, moduleKey: 'student-forum' },
       { name: 'İlerleme Durumum',    href: '/progress',                       icon: LineChart,     moduleKey: 'student-progress' },
       { name: 'Sertifikalar',        href: '/certificates',                   icon: Award,         moduleKey: 'student-certificates' },
