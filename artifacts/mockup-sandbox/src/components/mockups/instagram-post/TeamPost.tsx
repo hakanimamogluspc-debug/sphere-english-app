@@ -113,11 +113,11 @@ const Panel = ({ coaches, msgIdx }: { coaches: Coach[]; msgIdx: number }) => {
               {/* İsim + uzmanlık */}
               <div style={{ textAlign: "center", display: "flex", flexDirection: "column", gap: px(8) }}>
                 <div style={{
-                  fontSize: px(18), fontWeight: 800, color: PRIMARY,
+                  fontSize: px(22), fontWeight: 800, color: PRIMARY,
                   fontFamily: '"Outfit", sans-serif', lineHeight: 1.1,
                 }}>{c.flag} {c.name}</div>
                 <div style={{
-                  fontSize: px(12), fontWeight: 500,
+                  fontSize: px(15), fontWeight: 500,
                   color: "rgba(30,58,110,0.55)",
                   fontFamily: '"Plus Jakarta Sans", sans-serif', lineHeight: 1.3,
                 }}>{c.specialty}</div>
