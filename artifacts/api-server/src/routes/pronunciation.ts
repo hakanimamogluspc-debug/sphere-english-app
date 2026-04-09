@@ -40,11 +40,13 @@ async function convertToMp3(inputBuffer: Buffer): Promise<Buffer> {
     fs.writeFileSync(tmpIn, inputBuffer);
     await execFileAsync("ffmpeg", [
       "-y", "-i", tmpIn,
-      "-ar", "16000", "-ac", "1", "-b:a", "64k",
-      tmpOut
+      "-vn",
+      "-ar", "16000", "-ac", "1",
+      "-b:a", "32k",
+      "-threads", "0",
+      tmpOut,
     ]);
-    const mp3Buffer = fs.readFileSync(tmpOut);
-    return mp3Buffer;
+    return fs.readFileSync(tmpOut);
   } finally {
     try { fs.unlinkSync(tmpIn); } catch {}
     try { fs.unlinkSync(tmpOut); } catch {}
@@ -62,9 +64,9 @@ async function transcribeVerbose(
 
     try {
       finalBuffer = await convertToMp3(audioBuffer);
-      console.info(`ffmpeg dönüşüm tamamlandı: ${audioBuffer.length} → ${finalBuffer.length} bytes`);
+      console.info(`ffmpeg dönüşüm: ${audioBuffer.length} → ${finalBuffer.length} bytes`);
     } catch (convErr: any) {
-      console.warn("ffmpeg dönüşüm başarısız, orijinal buffer deneniyor:", convErr?.message);
+      console.warn("ffmpeg başarısız, orijinal deneniyor:", convErr?.message);
       finalExt = "webm";
       finalMime = "audio/webm";
     }
@@ -77,7 +79,7 @@ async function transcribeVerbose(
       response_format: "verbose_json",
       timestamp_granularities: ["word"],
       temperature: 0.1,
-      prompt: "This is an English language learner practicing conversation. They may make grammar mistakes — transcribe exactly as said, do not correct grammar. IMPORTANT: The speaker may naturally insert Turkish proper nouns such as city names (Istanbul, Ankara, Izmir, Ayvalik, Antalya, Trabzon, Bursa, Eskisehir, Bodrum, Cappadocia, Pamukkale, Konya, Gaziantep, Adana, Mersin, Erzurum, Kayseri, Samsun, Diyarbakir, Alanya, Marmaris, Kusadasi, Fethiye, Çeşme, Edirne), Turkish person names (Ahmet, Mehmet, Fatma, Ayse, Ali, Kemal, Mustafa, Hasan, Hüseyin, Elif, Zeynep, Yusuf, Ibrahim, Ömer), and other Turkish words that may sound like English words. Preserve these as proper nouns rather than mapping them to English words.",
+      prompt: "English learner practicing conversation. Transcribe exactly as said, including grammar mistakes. May include Turkish proper nouns.",
     } as any);
     const data = res as any;
     const words: WhisperWord[] = (data.words || []).map((w: any) => ({
@@ -87,19 +89,16 @@ async function transcribeVerbose(
       probability: w.probability ?? 1,
     }));
     const text = (data.text || "").trim();
-    console.info(`Whisper transcription: "${text}" (${words.length} words, ${finalBuffer.length} bytes)`);
+    console.info(`Whisper: "${text}" (${words.length} words)`);
     return { text, words };
   } catch (e: any) {
     const status = e?.status ?? e?.code ?? "unknown";
     const msg = e?.message || String(e);
-    console.error(`Whisper transcription failed [${status}]:`, msg);
-    // Surface specific error type for better diagnostics
-    if (status === 401 || msg.includes("Incorrect API key") || msg.includes("invalid_api_key")) {
-      console.error("OPENAI_API_KEY geçersiz veya eksik — üretim ortamında env var ayarlanmış mı?");
+    console.error(`Whisper failed [${status}]:`, msg);
+    if (status === 401 || msg.includes("invalid_api_key")) {
+      console.error("OPENAI_API_KEY geçersiz");
     } else if (status === 429) {
-      console.error("OpenAI rate limit aşıldı — kota veya dakika limiti.");
-    } else if (status === 503 || msg.includes("overloaded") || msg.includes("unavailable")) {
-      console.error("OpenAI servisi geçici olarak kullanılamıyor.");
+      console.error("OpenAI rate limit");
     }
     return { text: "", words: [], apiError: true };
   }
@@ -130,33 +129,27 @@ async function analyzeSpeech(
   lowConfWords: string[]
 ): Promise<SpeechAnalysis> {
   const pronSection = lowConfWords.length > 0
-    ? `\nLow-confidence words (possible pronunciation issues): ${lowConfWords.join(", ")}`
+    ? `\nLow-confidence words: ${lowConfWords.join(", ")}`
     : "";
 
-  const systemPrompt = `You are an expert English language coach analyzing a student's spoken English. 
-Analyze the transcribed speech for grammar errors, vocabulary issues, and pronunciation tips.
+  const systemPrompt = `You are an English coach analyzing a student's spoken English.
 Always respond in valid JSON only — no extra text.
 
-Return this exact JSON structure:
+Return:
 {
-  "grammarErrors": [
-    { "original": "<exact wrong phrase>", "corrected": "<correct version>", "explanation": "<short Turkish explanation>" }
-  ],
-  "vocabularySuggestions": [
-    { "original": "<basic/wrong word>", "better": "<better alternative>", "explanation": "<short Turkish explanation>" }
-  ],
-  "pronunciationTips": ["<tip in Turkish about a specific word or sound>"],
+  "grammarErrors": [{"original": "<wrong>", "corrected": "<correct>", "explanation": "<Turkish, short>"}],
+  "vocabularySuggestions": [{"original": "<basic>", "better": "<better>", "explanation": "<Turkish, short>"}],
+  "pronunciationTips": ["<tip in Turkish>"],
   "overallScore": <40-100>,
-  "correctedText": "<full corrected version of the text>"
+  "correctedText": "<corrected English>"
 }
 
 Rules:
-- grammarErrors: Only real grammar mistakes (wrong tense, missing article, wrong preposition, subject-verb disagreement, etc). Max 4.
-- vocabularySuggestions: Only if there are clearly weak or incorrect word choices. Max 3.
-- pronunciationTips: Based on the low-confidence words list. Give phonetic tip in Turkish. Max 2. Empty array if no issues.
-- overallScore: 40-100. Good speech = 80+. Many errors = 40-60.
-- correctedText: The full corrected sentence(s) in English.
-- All explanations must be in Turkish. correctedText must be in English.`;
+- grammarErrors: Max 3. Only real mistakes.
+- vocabularySuggestions: Max 2. Only clearly better alternatives.
+- pronunciationTips: Max 2. Based on low-confidence words. Empty if none.
+- overallScore: 40-100. Good = 80+.
+- All explanations in Turkish. correctedText in English.`;
 
   const userMsg = `Transcribed speech: "${text}"${pronSection}`;
 
@@ -168,7 +161,7 @@ Rules:
         { role: "user", content: userMsg },
       ],
       temperature: 0.2,
-      max_tokens: 600,
+      max_tokens: 500,
     });
 
     const raw = completion.choices[0]?.message?.content ?? "";
@@ -213,7 +206,7 @@ router.post(
       }
 
       const mimeType = req.file.mimetype || "audio/webm";
-      console.info(`Received audio: ${req.file.buffer.length} bytes, type: ${mimeType}`);
+      console.info(`Audio received: ${req.file.buffer.length} bytes, type: ${mimeType}`);
 
       // ── Transcribe with Whisper verbose ──
       const whisperResult = await transcribeVerbose(req.file.buffer, mimeType);
@@ -222,7 +215,7 @@ router.post(
         return res.status(500).json({ error: "Yapay zeka servisi şu an ulaşılamıyor. Lütfen biraz bekleyip tekrar deneyin." });
       }
 
-      let userText = whisperResult?.text || "";
+      const userText = whisperResult?.text || "";
 
       if (!userText) {
         return res.status(400).json({ error: "Ses anlaşılamadı. Daha yüksek ve net konuşmayı deneyin." });
@@ -239,15 +232,11 @@ router.post(
         }))
         .filter((w) => w.word.trim().length > 0);
 
-      // ── Low confidence words for pronunciation tips ──
       const lowConfWords = whisperWords
         .filter((w) => w.probability < 0.82 && w.word.trim().length > 1)
         .map((w) => w.word.trim());
 
-      // ── Run speech analysis (grammar + vocabulary + pronunciation) in parallel with GPT conversation ──
-      const badWordsForPrompt = lowConfWords
-        .map((w) => `"${w}"`)
-        .join(", ");
+      const badWordsForPrompt = lowConfWords.map((w) => `"${w}"`).join(", ");
 
       const basePersonality = coachSystemPrompt
         ? coachSystemPrompt
@@ -256,18 +245,14 @@ router.post(
       const systemPrompt = `${basePersonality}
 
 CONVERSATION STYLE:
-- You are a real person having a genuine conversation — not a robot or a tutor lecturing the student.
-- Talk about ANYTHING: daily life, hobbies, travel, food, movies, weather, personal experiences, opinions — whatever flows naturally.
-- You have your own personality, opinions, and life experiences. Share them. Be curious about the student's life too.
-- When the student asks about or brings up topics related to your professional background, naturally engage with that depth — but don't force it.
-- Keep your responses SHORT (2-4 sentences max). Conversational, warm, and spontaneous — like texting a friend or chatting at a coffee break.
-- Always respond in English only.
-- Stay in character at all times — your personality, accent background, and communication style should feel authentic.
-- Ask follow-up questions to keep the conversation flowing naturally.
-- NEVER be preachy or lecture-y. If you correct something, do it once, gently, and move on.
-- Never be harsh. Be encouraging and human.${
+- Have a genuine conversation — not a lecture.
+- Talk about anything: daily life, hobbies, travel, food, opinions — whatever flows naturally.
+- Keep responses SHORT: 2-3 sentences max. Warm and spontaneous.
+- Always respond in English only. Stay in character.
+- Ask follow-up questions to keep conversation flowing.
+- NEVER be preachy. If correcting, do it once, gently, and move on.${
   badWordsForPrompt
-    ? `\n\nPRONUNCIATION NOTE (Whisper low-confidence words): ${badWordsForPrompt}\nIf natural, mention the most important one briefly and move on.`
+    ? `\n\nPRONUNCIATION NOTE — low-confidence words: ${badWordsForPrompt}\nIf natural, briefly mention the most important one.`
     : ""
 }`;
 
@@ -277,26 +262,31 @@ CONVERSATION STYLE:
         { role: "user", content: userText },
       ];
 
-      // ── Run GPT conversation + speech analysis in parallel ──
-      const [completion, speechAnalysis] = await Promise.all([
-        getOpenAI().chat.completions.create({
-          model: "gpt-4o-mini",
-          messages: gptMessages,
-          temperature: 0.75,
-          max_tokens: 150,
-        }),
-        analyzeSpeech(userText, lowConfWords),
-      ]);
+      // ── Fire GPT and speech analysis in parallel immediately ──
+      const gptPromise = getOpenAI().chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: gptMessages,
+        temperature: 0.75,
+        max_tokens: 120,
+      });
+      const analysisPromise = analyzeSpeech(userText, lowConfWords);
 
+      // ── GPT reply comes in, immediately fire TTS ──
+      const completion = await gptPromise;
       const reply = completion.choices[0].message.content?.trim() || "I see! Tell me more.";
 
-      // ── TTS ──
-      const ttsResponse = await getOpenAI().audio.speech.create({
-        model: "tts-1",
-        voice: safeVoice,
-        input: reply,
-        speed: 0.9,
-      });
+      // ── TTS and analysis run in parallel — no waiting for analysis before TTS! ──
+      const [ttsResponse, speechAnalysis] = await Promise.all([
+        getOpenAI().audio.speech.create({
+          model: "tts-1",
+          voice: safeVoice,
+          input: reply,
+          response_format: "mp3",
+          speed: 0.9,
+        }),
+        analysisPromise,
+      ]);
+
       const audioBase64 = Buffer.from(await ttsResponse.arrayBuffer()).toString("base64");
 
       return res.json({ userText, wordScores, reply, audioBase64, speechAnalysis });
@@ -345,6 +335,7 @@ router.post(
         model: "tts-1",
         voice: safeVoice,
         input: primaryText,
+        response_format: "mp3",
         speed: 0.85,
       });
       const audioBase64 = Buffer.from(await ttsResponse.arrayBuffer()).toString("base64");
@@ -366,7 +357,7 @@ router.post(
   }
 );
 
-// ── Practice streak endpoint — 10 dk AI koç pratiği → streak güncelle ──────
+// ── Practice streak endpoint ──────────────────────────────────────────────
 router.post("/pronunciation/practice-streak", authMiddleware, async (req: Request, res: Response) => {
   try {
     const userId = (req as any).userId as number;
@@ -382,7 +373,7 @@ router.post("/pronunciation/practice-streak", authMiddleware, async (req: Reques
   }
 });
 
-// ── Translation endpoint ────────────────────────────────────────────────────
+// ── Translation endpoint ──────────────────────────────────────────────────
 router.post("/pronunciation/translate", authMiddleware, async (req: Request, res: Response) => {
   try {
     const { text } = req.body as { text?: string };

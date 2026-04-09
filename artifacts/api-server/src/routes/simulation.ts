@@ -29,7 +29,14 @@ async function convertToMp3(inputBuffer: Buffer): Promise<Buffer> {
   const tmpOut = path.join(os.tmpdir(), `sim_out_${Date.now()}.mp3`);
   try {
     fs.writeFileSync(tmpIn, inputBuffer);
-    await execFileAsync("ffmpeg", ["-y", "-i", tmpIn, "-ar", "16000", "-ac", "1", "-b:a", "64k", tmpOut]);
+    await execFileAsync("ffmpeg", [
+      "-y", "-i", tmpIn,
+      "-vn",
+      "-ar", "16000", "-ac", "1",
+      "-b:a", "32k",
+      "-threads", "0",
+      tmpOut,
+    ]);
     return fs.readFileSync(tmpOut);
   } finally {
     try { fs.unlinkSync(tmpIn); } catch {}
@@ -54,7 +61,7 @@ async function transcribe(audioBuffer: Buffer): Promise<string> {
     language: "en",
     response_format: "text",
     temperature: 0.1,
-    prompt: "Business English conversation. Transcribe exactly as said. May include Turkish proper nouns.",
+    prompt: "Business English conversation.",
   } as any);
   return (res as unknown as string).trim();
 }
@@ -75,17 +82,17 @@ Always respond in valid JSON only.
 
 Return:
 {
-  "grammarErrors": [{"original": "<wrong>", "corrected": "<fixed>", "explanation": "<Turkish explanation, max 10 words>"}],
-  "vocabSuggestions": [{"original": "<basic/wrong>", "better": "<more professional>", "explanation": "<Turkish explanation, max 10 words>"}],
+  "grammarErrors": [{"original": "<wrong>", "corrected": "<fixed>", "explanation": "<Turkish, max 10 words>"}],
+  "vocabSuggestions": [{"original": "<basic>", "better": "<professional>", "explanation": "<Turkish, max 10 words>"}],
   "score": <50-100>,
-  "correctedText": "<full corrected version in English>"
+  "correctedText": "<full corrected English>"
 }
 
 Rules:
-- grammarErrors: Max 3. Only real mistakes (tense, articles, prepositions, agreement).
-- vocabSuggestions: Max 2. Only if there's a clearly more professional alternative.
-- score: 50-100. Professional fluent = 85+. Many errors = 50-65.
-- All explanations in Turkish. correctedText in English.
+- grammarErrors: Max 3. Only real mistakes.
+- vocabSuggestions: Max 2. Only clearly more professional alternatives.
+- score: 50-100. Fluent = 85+. Many errors = 50-65.
+- Explanations in Turkish. correctedText in English.
 - Return empty arrays if no issues.`;
 
   try {
@@ -96,7 +103,7 @@ Rules:
         { role: "user", content: `Transcribed speech: "${text}"` },
       ],
       temperature: 0.2,
-      max_tokens: 500,
+      max_tokens: 400,
     });
     const raw = completion.choices[0]?.message?.content ?? "";
     const match = raw.match(/\{[\s\S]*\}/);
@@ -137,7 +144,7 @@ router.post(
 SIMULATION RULES:
 - You are the professional counterpart in this business scenario (client, manager, partner, buyer, official, etc.).
 - The user is a Turkish professional practicing business English. Engage realistically.
-- Keep your responses concise: 2-4 sentences max.
+- Keep your responses concise: 2-3 sentences max.
 - Use natural, authentic business language appropriate to your character.
 - Ask follow-up questions or make requests to keep the conversation flowing.
 - Do NOT correct the user's English — just respond naturally as your character.
@@ -146,28 +153,35 @@ SIMULATION RULES:
 
       const gptMessages: { role: "system" | "user" | "assistant"; content: string }[] = [
         { role: "system", content: conversationSystemPrompt },
-        ...history.slice(-8).map((m) => ({ role: m.role as "user" | "assistant", content: m.content })),
+        ...history.slice(-6).map((m) => ({ role: m.role as "user" | "assistant", content: m.content })),
         { role: "user", content: userText },
       ];
 
-      const [completion, turnAnalysis] = await Promise.all([
-        getOpenAI().chat.completions.create({
-          model: "gpt-4o-mini",
-          messages: gptMessages,
-          temperature: 0.75,
-          max_tokens: 150,
-        }),
-        analyzeForSimulation(userText, sector),
-      ]);
+      // ── Fire GPT and Analysis in parallel immediately ──
+      const gptPromise = getOpenAI().chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: gptMessages,
+        temperature: 0.75,
+        max_tokens: 120,
+      });
+      const analysisPromise = analyzeForSimulation(userText, sector);
 
+      // ── Wait for GPT reply first, then immediately fire TTS ──
+      const completion = await gptPromise;
       const reply = completion.choices[0].message.content?.trim() || "I see. Please continue.";
 
-      const ttsResponse = await getOpenAI().audio.speech.create({
-        model: "tts-1",
-        voice: safeVoice,
-        input: reply,
-        speed: 0.95,
-      });
+      // ── TTS and analysis run in parallel — no more waiting! ──
+      const [ttsResponse, turnAnalysis] = await Promise.all([
+        getOpenAI().audio.speech.create({
+          model: "tts-1",
+          voice: safeVoice,
+          input: reply,
+          response_format: "mp3",
+          speed: 0.95,
+        }),
+        analysisPromise,
+      ]);
+
       const audioBase64 = Buffer.from(await ttsResponse.arrayBuffer()).toString("base64");
 
       return res.json({ userText, reply, audioBase64, turnAnalysis });
