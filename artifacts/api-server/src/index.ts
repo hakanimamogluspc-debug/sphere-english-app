@@ -104,6 +104,14 @@ async function runStartupMigrations() {
     `CREATE INDEX IF NOT EXISTS idx_vocab_words_level ON vocab_words(level)`,
     `CREATE INDEX IF NOT EXISTS idx_vocab_sessions_username ON vocab_game_sessions(username)`,
     `CREATE INDEX IF NOT EXISTS idx_vocab_session_words_session ON vocab_session_words(session_id)`,
+    // Anlık çevrimiçi kullanıcı takibi — her worker aynı DB'ye yazar
+    `CREATE TABLE IF NOT EXISTS user_presence (
+      user_id INTEGER PRIMARY KEY,
+      name VARCHAR(100) NOT NULL DEFAULT '',
+      role VARCHAR(20) NOT NULL DEFAULT 'student',
+      page VARCHAR(300) NOT NULL DEFAULT '/',
+      last_seen TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`,
   ];
   for (const sql of migrations) {
     try {

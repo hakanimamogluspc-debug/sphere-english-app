@@ -30,6 +30,7 @@ import vocabGameRouter from "./vocab-game";
 import grammarCoachRouter from "./grammar-coach";
 import placementTestRouter from "./placement-test";
 import simulationRouter from "./simulation";
+import presenceRouter from "./presence";
 
 const router: IRouter = Router();
 
@@ -64,5 +65,6 @@ router.use(vocabGameRouter);
 router.use(grammarCoachRouter);
 router.use(placementTestRouter);
 router.use(simulationRouter);
+router.use(presenceRouter);
 
 export default router;

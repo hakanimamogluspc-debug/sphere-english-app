@@ -5,6 +5,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import { AuthProvider, useAuth } from "./hooks/use-auth";
 import "./lib/fetch-interceptor";
+import { useEffect, type ReactNode } from "react";
+import { API } from "@/lib/api-url";
 
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
@@ -191,13 +193,44 @@ function Router() {
   );
 }
 
+function HeartbeatProvider({ children }: { children: ReactNode }) {
+  const { user, isAuthenticated } = useAuth();
+  const [location] = useLocation();
+
+  useEffect(() => {
+    if (!isAuthenticated || !user) return;
+
+    const sendHeartbeat = () => {
+      const token = localStorage.getItem("sphere_token");
+      if (!token) return;
+      fetch(`${API}/presence/heartbeat`, {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: `${user.firstName || ""} ${user.lastName || ""}`.trim() || user.email,
+          role: user.role,
+          page: window.location.pathname,
+        }),
+      }).catch(() => {});
+    };
+
+    sendHeartbeat();
+    const interval = setInterval(sendHeartbeat, 60_000);
+    return () => clearInterval(interval);
+  }, [isAuthenticated, user, location]);
+
+  return <>{children}</>;
+}
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
           <AuthProvider>
-            <Router />
+            <HeartbeatProvider>
+              <Router />
+            </HeartbeatProvider>
           </AuthProvider>
         </WouterRouter>
         <Toaster />

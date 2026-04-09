@@ -2,7 +2,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useGetDashboardStats, useGetMyProgress, useGetAdminDashboard } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle, Badge, Button } from "@/components/ui/core";
 import { formatDateTime, getLevelColor } from "@/lib/utils";
-import { Trophy, Flame, BookOpen, Video, Users, CheckCircle, TrendingUp, DollarSign, Megaphone, AlertCircle, Info, ChevronRight } from "lucide-react";
+import { Trophy, Flame, BookOpen, Video, Users, CheckCircle, TrendingUp, DollarSign, Megaphone, AlertCircle, Info, ChevronRight, Wifi, BookMarked, Cpu, LayoutDashboard, GraduationCap } from "lucide-react";
 import { Link } from "wouter";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useEffect, useState } from "react";
@@ -368,12 +368,69 @@ function TeacherDashboard() {
   );
 }
 
+function useActiveUsers() {
+  const [data, setData] = useState<{ count: number; users: Array<{ userId: number; name: string; role: string; page: string; lastSeenAgo: number }> } | null>(null);
+
+  useEffect(() => {
+    const fetch_ = () => {
+      const token = localStorage.getItem("sphere_token");
+      fetch(`${API}/presence/active`, { headers: { Authorization: `Bearer ${token}` } })
+        .then(r => r.json())
+        .then(d => setData(d))
+        .catch(() => {});
+    };
+    fetch_();
+    const id = setInterval(fetch_, 30_000);
+    return () => clearInterval(id);
+  }, []);
+
+  return data;
+}
+
+function pageLabelTR(path: string) {
+  if (path.includes("simulation")) return "İş Senaryoları";
+  if (path.includes("pronunciation")) return "Telaffuz Koçu";
+  if (path.includes("writing")) return "Yazma Koçu";
+  if (path.includes("grammar")) return "Dilbilgisi Koçu";
+  if (path.includes("lesson")) return "Ders";
+  if (path.includes("course")) return "Kurs";
+  if (path.includes("live")) return "Canlı Ders";
+  if (path.includes("quiz")) return "Quiz";
+  if (path.includes("forum")) return "Forum";
+  if (path.includes("dashboard")) return "Ana Sayfa";
+  if (path.includes("ai-studio")) return "AI Studio";
+  return "Uygulama";
+}
+
+function roleIconEl(role: string) {
+  if (role === "admin") return <span title="Admin" className="text-red-500"><LayoutDashboard size={13}/></span>;
+  if (role === "teacher") return <span title="Öğretmen" className="text-violet-500"><GraduationCap size={13}/></span>;
+  return <span title="Öğrenci" className="text-sky-500"><BookOpen size={13}/></span>;
+}
+
 function AdminDashboard() {
   const { data: stats } = useGetAdminDashboard();
+  const presence = useActiveUsers();
+  const count = presence?.count ?? 0;
   
   return (
     <div className="space-y-8">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        {/* Anlık online kullanıcı */}
+        <Card className="md:col-span-2 lg:col-span-1 border-green-200 bg-gradient-to-br from-green-50 to-emerald-50">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-sm font-semibold text-green-800">Şu An Online</p>
+              <span className="relative flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+              </span>
+            </div>
+            <h3 className="text-4xl font-bold font-display text-green-700">{count}</h3>
+            <p className="text-xs text-green-600 mt-1">aktif kullanıcı</p>
+          </CardContent>
+        </Card>
+
         <Card>
           <CardContent className="p-6">
             <p className="text-muted-foreground font-medium mb-1">Toplam Kullanıcı</p>
@@ -399,6 +456,39 @@ function AdminDashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Online kullanıcı listesi */}
+      {count > 0 && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Wifi size={16} className="text-green-500" />
+              Online Kullanıcılar
+              <Badge variant="secondary" className="ml-1 bg-green-100 text-green-700">{count}</Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="divide-y divide-border">
+              {presence?.users.map(u => (
+                <div key={u.userId} className="flex items-center justify-between py-2.5 gap-3">
+                  <div className="flex items-center gap-2 min-w-0">
+                    {roleIconEl(u.role)}
+                    <span className="font-medium text-sm truncate">{u.name}</span>
+                  </div>
+                  <div className="flex items-center gap-3 shrink-0">
+                    <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+                      {pageLabelTR(u.page)}
+                    </span>
+                    <span className="text-xs text-muted-foreground tabular-nums">
+                      {u.lastSeenAgo < 60 ? `${u.lastSeenAgo}s` : `${Math.floor(u.lastSeenAgo / 60)}dk`} önce
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
