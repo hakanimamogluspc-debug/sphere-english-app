@@ -53,6 +53,13 @@ async function runStartupMigrations() {
     ON CONFLICT (key) DO NOTHING`,
     // Ensure vocab-game and forum are always enabled (fix for production deployments)
     `UPDATE feature_settings SET is_enabled = true, visible_to = ARRAY['student']::TEXT[] WHERE key IN ('student-vocab-game', 'student-forum')`,
+    // AI Studio modülleri — grammar coach ve simulation mode ekle
+    `INSERT INTO feature_settings (key, label, is_enabled, visible_to, category) VALUES
+      ('student-grammar-coach',    'Dilbilgisi Koçu', true, ARRAY['student']::TEXT[], 'ai-studio'),
+      ('student-simulation-mode',  'İş Senaryoları',  true, ARRAY['student']::TEXT[], 'ai-studio')
+    ON CONFLICT (key) DO NOTHING`,
+    // Mevcut AI Studio modüllerini ai-studio kategorisine taşı
+    `UPDATE feature_settings SET category = 'ai-studio' WHERE key IN ('student-pronunciation-coach', 'student-writing-coach', 'student-vocab-game')`,
     `CREATE TABLE IF NOT EXISTS vocab_words (
       id SERIAL PRIMARY KEY,
       word TEXT NOT NULL,

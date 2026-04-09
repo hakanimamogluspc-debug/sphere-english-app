@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Toggle } from "@/components/ui/toggle";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Settings2, Users, BookOpen, Video, FileQuestion, Mic, PenLine, MessageCircle, LineChart, Award, FolderOpen } from "lucide-react";
+import { Settings2, Users, BookOpen, Video, FileQuestion, Mic, PenLine, MessageCircle, LineChart, Award, FolderOpen, Brain, Gamepad2, Briefcase } from "lucide-react";
 
 const API = import.meta.env.BASE_URL.replace(/\/$/, "") + "/api";
 
@@ -36,6 +36,9 @@ const MODULE_ICONS: Record<string, React.ElementType> = {
   "teacher-live-classes": Video,
   "teacher-quizzes": FileQuestion,
   "teacher-speaking-club": Mic,
+  "student-vocab-game": Gamepad2,
+  "student-grammar-coach": Brain,
+  "student-simulation-mode": Briefcase,
 };
 
 const ROLE_OPTIONS = [
@@ -49,6 +52,7 @@ const ROLE_OPTIONS = [
 const CATEGORY_LABELS: Record<string, string> = {
   student: "Öğrenci Modülleri",
   teacher: "Öğretmen Modülleri",
+  "ai-studio": "Sphere AI Studio",
 };
 
 function ModuleCard({ mod, onToggleEnabled, onToggleRole, saving }: {
@@ -159,7 +163,7 @@ export default function AdminModules() {
     patchMutation.mutate({ key, body: { visibleTo } });
   }
 
-  const categories = ["student", "teacher"];
+  const categories = ["student", "teacher", "ai-studio"];
 
   const enabledCount = modules.filter(m => m.isEnabled).length;
   const totalCount = modules.length;
