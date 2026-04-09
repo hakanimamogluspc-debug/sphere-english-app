@@ -60,6 +60,10 @@ async function runStartupMigrations() {
     ON CONFLICT (key) DO NOTHING`,
     // Mevcut AI Studio modüllerini ai-studio kategorisine taşı
     `UPDATE feature_settings SET category = 'ai-studio' WHERE key IN ('student-pronunciation-coach', 'student-writing-coach', 'student-vocab-game')`,
+    // student-courses modülünü ekle (yoksa)
+    `INSERT INTO feature_settings (key, label, is_enabled, visible_to, category) VALUES
+      ('student-courses', 'Kurslarım', true, ARRAY['student']::TEXT[], 'student')
+    ON CONFLICT (key) DO NOTHING`,
     `CREATE TABLE IF NOT EXISTS vocab_words (
       id SERIAL PRIMARY KEY,
       word TEXT NOT NULL,

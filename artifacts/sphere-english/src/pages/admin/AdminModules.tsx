@@ -22,6 +22,7 @@ type FeatureSetting = {
 };
 
 const MODULE_ICONS: Record<string, React.ElementType> = {
+  "student-courses": BookOpen,
   "student-materials": FolderOpen,
   "student-live-classes": Video,
   "student-quizzes": FileQuestion,
