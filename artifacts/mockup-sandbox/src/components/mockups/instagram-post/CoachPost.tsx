@@ -220,20 +220,20 @@ export default function CoachPost() {
 
           {/* Name */}
           <div>
-            <h2 style={{ fontFamily:"'Outfit',sans-serif", fontWeight:900, fontSize:px(52),
+            <h2 style={{ fontFamily:"'Outfit',sans-serif", fontWeight:900, fontSize:px(58),
               color:"#fff", margin:0, lineHeight:1.0, letterSpacing:"-0.02em" }}>
               {coach.name}
             </h2>
-            <p style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontWeight:600, fontSize:px(15),
-              color:"rgba(255,255,255,0.55)", margin:`${px(7)}px 0 0`, letterSpacing:"0.02em" }}>
+            <p style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontWeight:600, fontSize:px(18),
+              color:"rgba(255,255,255,0.55)", margin:`${px(8)}px 0 0`, letterSpacing:"0.02em" }}>
               🗣 {coach.accent}
             </p>
           </div>
 
           {/* Story */}
           <p style={{
-            fontFamily:"'Plus Jakarta Sans',sans-serif", fontWeight:400, fontSize:px(14),
-            color:"rgba(255,255,255,0.80)", lineHeight:1.65, margin:0,
+            fontFamily:"'Plus Jakarta Sans',sans-serif", fontWeight:400, fontSize:px(17),
+            color:"rgba(255,255,255,0.82)", lineHeight:1.70, margin:0,
           }}>
             {coach.story}
           </p>
@@ -242,11 +242,11 @@ export default function CoachPost() {
           <div style={{ display:"flex", gap:px(10), flexWrap:"wrap" }}>
             {coach.traits.map(t => (
               <span key={t} style={{
-                fontFamily:"'Plus Jakarta Sans',sans-serif", fontWeight:600, fontSize:px(11),
-                color:"rgba(255,255,255,0.75)",
+                fontFamily:"'Plus Jakarta Sans',sans-serif", fontWeight:600, fontSize:px(14),
+                color:"rgba(255,255,255,0.80)",
                 background:"rgba(255,255,255,0.08)",
                 border:`${px(1)}px solid rgba(255,255,255,0.15)`,
-                borderRadius:px(100), padding:`${px(6)}px ${px(14)}px`,
+                borderRadius:px(100), padding:`${px(8)}px ${px(18)}px`,
               }}>
                 {t}
               </span>
