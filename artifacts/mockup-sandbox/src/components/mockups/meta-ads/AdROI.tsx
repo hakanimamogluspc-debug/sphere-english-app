@@ -36,7 +36,7 @@ export default function AdROI() {
 
       {/* Tag */}
       <div style={{ position: "absolute", top: px(48), right: px(60), background: "rgba(56,189,248,0.2)", borderRadius: px(20), padding: `${px(6)}px ${px(16)}px` }}>
-        <span style={{ color: "#38bdf8", fontSize: px(12), fontWeight: 600, letterSpacing: "1px" }}>ÖLÇÜLEBILIR SONUÇ</span>
+        <span style={{ color: "#38bdf8", fontSize: px(12), fontWeight: 600, letterSpacing: "1px" }}>ÖLÇÜLEBİLİR SONUÇ</span>
       </div>
 
       {/* Headline */}
@@ -58,7 +58,7 @@ export default function AdROI() {
           </div>
           <div style={{ background: "#f0f9ff", borderRadius: px(10), padding: `${px(10)}px ${px(16)}px`, textAlign: "center" }}>
             <p style={{ margin: 0, color: "#1e3a6e", fontSize: px(28), fontWeight: 900 }}>+80<span style={{ fontSize: px(16) }}>%</span></p>
-            <p style={{ margin: 0, color: "#38bdf8", fontSize: px(11), fontWeight: 600 }}>ORTALAMA ARTIS</p>
+            <p style={{ margin: 0, color: "#38bdf8", fontSize: px(11), fontWeight: 600 }}>ORTALAMA ARTIŞ</p>
           </div>
         </div>
 

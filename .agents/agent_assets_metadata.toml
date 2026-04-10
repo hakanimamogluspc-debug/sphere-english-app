@@ -138,6 +138,12 @@ uri = "file://assets/instagram/meta-ads/ai-studio-ad.png"
 type = "image"
 title = "sphere english ai studio ad"
 
+[[generated]]
+id = "7SNXLyV_87uHGuaHI8HNO"
+uri = "file://assets/instagram/meta-ads/ai-studio-ad-tr.png"
+type = "image"
+title = "sphere english ai studio turkish ad"
+
 [[outputs]]
 id = "FsU4PAkDB_a1cFXTkO03x"
 uri = "file://artifacts/sphere-english/public/www-sitemap.xml"
@@ -376,22 +382,28 @@ title = "12 - Dr. Olivia"
 id = "-ebj3QGNrwbWBtL6KQH35"
 uri = "file://assets/instagram/meta-ads/ad-pain-point.jpg"
 type = "image"
-title = "Reklam 1 — Acı Noktası: Toplantılarda susmak"
+title = "Reklam 1 — Acı Noktası"
 
 [[outputs]]
 id = "xdDkBA_4mzEgQ0fnuELRx"
 uri = "file://assets/instagram/meta-ads/ad-authority.jpg"
 type = "image"
-title = "Reklam 2 — Otorite: Profesyonel İş İngilizcesi"
+title = "Reklam 2 — Otorite (Birebir koçluk düzeltildi)"
 
 [[outputs]]
 id = "nz19t8eZOFdvKzjmB4Msd"
 uri = "file://assets/instagram/meta-ads/ad-roi.jpg"
 type = "image"
-title = "Reklam 3 — ROI: 8 Haftada Dönüşüm"
+title = "Reklam 3 — ROI (ÖLÇÜLEBİLİR + ARTIŞ düzeltildi)"
 
 [[outputs]]
 id = "ATKkpKd4-ei6_m5DBGTOS"
 uri = "file://assets/instagram/meta-ads/ai-studio-ad.png"
 type = "image"
 title = "Sphere English AI Studio — Meta Reklam Kreatifl"
+
+[[outputs]]
+id = "HUMwVxvi0iJDs248LILRN"
+uri = "file://assets/instagram/meta-ads/ai-studio-ad-tr.png"
+type = "image"
+title = "AI Studio — Fotoğrafik Kreatifl (Türkçe UI)"

@@ -58,7 +58,7 @@ export default function AdAuthority() {
 
       {/* Feature list on left */}
       <div style={{ position: "absolute", bottom: px(80), left: px(56), display: "flex", flexDirection: "column", gap: px(14) }}>
-        {["Sektöre özel müfredat", "1-on-1 koçluk seansları", "Haftalık ilerleme raporu"].map((item) => (
+        {["Sektöre özel müfredat", "Birebir koçluk seansları", "Haftalık ilerleme raporu"].map((item) => (
           <div key={item} style={{ display: "flex", alignItems: "center", gap: px(12) }}>
             <div style={{ width: px(20), height: px(20), borderRadius: "50%", background: "#38bdf8", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
               <span style={{ color: "#1e3a6e", fontSize: px(11), fontWeight: 800 }}>✓</span>
