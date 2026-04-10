@@ -365,3 +365,21 @@ id = "OGPfs-7CxkHSC1bU7wcHc"
 uri = "file://assets/instagram/coaches/12-olivia.jpg"
 type = "image"
 title = "12 - Dr. Olivia"
+
+[[outputs]]
+id = "-ebj3QGNrwbWBtL6KQH35"
+uri = "file://assets/instagram/meta-ads/ad-pain-point.jpg"
+type = "image"
+title = "Reklam 1 — Acı Noktası: Toplantılarda susmak"
+
+[[outputs]]
+id = "xdDkBA_4mzEgQ0fnuELRx"
+uri = "file://assets/instagram/meta-ads/ad-authority.jpg"
+type = "image"
+title = "Reklam 2 — Otorite: Profesyonel İş İngilizcesi"
+
+[[outputs]]
+id = "nz19t8eZOFdvKzjmB4Msd"
+uri = "file://assets/instagram/meta-ads/ad-roi.jpg"
+type = "image"
+title = "Reklam 3 — ROI: 8 Haftada Dönüşüm"
