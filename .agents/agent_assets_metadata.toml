@@ -132,6 +132,12 @@ uri = "file://assets/instagram/sphere-ai-studio-post-1.png"
 type = "image"
 title = "sphere-english-ai-studio-instagram"
 
+[[generated]]
+id = "5k5ZpIfwMMotJm1xhuWFy"
+uri = "file://assets/instagram/meta-ads/ai-studio-ad.png"
+type = "image"
+title = "sphere english ai studio ad"
+
 [[outputs]]
 id = "FsU4PAkDB_a1cFXTkO03x"
 uri = "file://artifacts/sphere-english/public/www-sitemap.xml"
@@ -383,3 +389,9 @@ id = "nz19t8eZOFdvKzjmB4Msd"
 uri = "file://assets/instagram/meta-ads/ad-roi.jpg"
 type = "image"
 title = "Reklam 3 — ROI: 8 Haftada Dönüşüm"
+
+[[outputs]]
+id = "ATKkpKd4-ei6_m5DBGTOS"
+uri = "file://assets/instagram/meta-ads/ai-studio-ad.png"
+type = "image"
+title = "Sphere English AI Studio — Meta Reklam Kreatifl"
