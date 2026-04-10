@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import { db, usersTable, companiesTable } from "@workspace/db";
 import { eq, and, count, sql } from "drizzle-orm";
 import { authMiddleware, generateToken, type AuthRequest } from "../middlewares/auth.js";
+import { sendMetaEvent } from "../services/metaConversions.js";
 
 const router = Router();
 
@@ -40,6 +41,16 @@ router.post("/auth/login", async (req, res) => {
     maxAge: 7 * 24 * 60 * 60 * 1000,
     secure: process.env.NODE_ENV === "production",
   });
+
+  sendMetaEvent({
+    eventName: "Lead",
+    email,
+    clientIp: (req.headers["x-forwarded-for"] as string)?.split(",")[0]?.trim() || req.ip,
+    clientUserAgent: req.headers["user-agent"],
+    fbc: req.cookies?.["_fbc"],
+    fbp: req.cookies?.["_fbp"],
+    sourceUrl: "https://app.sphereenglish.com/login",
+  }).catch(() => {});
 
   res.json({ user: { ...userWithoutPassword, company: companyInfo }, token });
 });
@@ -90,6 +101,17 @@ router.post("/auth/register", async (req, res) => {
       maxAge: 7 * 24 * 60 * 60 * 1000,
       secure: process.env.NODE_ENV === "production",
     });
+
+    sendMetaEvent({
+      eventName: "CompleteRegistration",
+      email,
+      phone: phone || undefined,
+      clientIp: (req.headers["x-forwarded-for"] as string)?.split(",")[0]?.trim() || req.ip,
+      clientUserAgent: req.headers["user-agent"],
+      fbc: req.cookies?.["_fbc"],
+      fbp: req.cookies?.["_fbp"],
+      sourceUrl: "https://app.sphereenglish.com/register",
+    }).catch(() => {});
 
     res.status(201).json({ user: { ...userWithoutPassword, company: null }, token });
     return;
@@ -170,6 +192,17 @@ router.post("/auth/register", async (req, res) => {
     maxAge: 7 * 24 * 60 * 60 * 1000,
     secure: process.env.NODE_ENV === "production",
   });
+
+  sendMetaEvent({
+    eventName: "CompleteRegistration",
+    email,
+    phone: phone || undefined,
+    clientIp: (req.headers["x-forwarded-for"] as string)?.split(",")[0]?.trim() || req.ip,
+    clientUserAgent: req.headers["user-agent"],
+    fbc: req.cookies?.["_fbc"],
+    fbp: req.cookies?.["_fbp"],
+    sourceUrl: "https://app.sphereenglish.com/register",
+  }).catch(() => {});
 
   res.status(201).json({ user: { ...userWithoutPassword, company: companyInfo }, token });
 });
