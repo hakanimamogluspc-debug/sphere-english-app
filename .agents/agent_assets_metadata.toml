@@ -216,6 +216,78 @@ uri = "file://assets/coaches/dr-olivia.png"
 type = "image"
 title = "dr olivia coach portrait"
 
+[[generated]]
+id = "P8EOVxfedvJfxVhvsciZU"
+uri = "file://assets/coaches/standing/jake.png"
+type = "image"
+title = "jake standing full body"
+
+[[generated]]
+id = "zQ0JI7OazSx1d_s4GXFuS"
+uri = "file://assets/coaches/standing/david.png"
+type = "image"
+title = "david standing full body"
+
+[[generated]]
+id = "kzh6Bl5PlMD1qT8ncwSeC"
+uri = "file://assets/coaches/standing/emma.png"
+type = "image"
+title = "emma standing full body"
+
+[[generated]]
+id = "VFn8X2ul3kGbfPSsauqvR"
+uri = "file://assets/coaches/standing/raj.png"
+type = "image"
+title = "raj standing full body"
+
+[[generated]]
+id = "HaGqECrF794Xx2e7JZ3f0"
+uri = "file://assets/coaches/standing/hans.png"
+type = "image"
+title = "hans standing full body"
+
+[[generated]]
+id = "FcwGJuxz0Yek6q3W0Ndz_"
+uri = "file://assets/coaches/standing/sterling.png"
+type = "image"
+title = "sterling standing full body"
+
+[[generated]]
+id = "a33lwkB6h6iQQe7JUwdn9"
+uri = "file://assets/coaches/standing/elena.png"
+type = "image"
+title = "elena standing full body"
+
+[[generated]]
+id = "XqBB2UVmtfUqQRf4kXUKZ"
+uri = "file://assets/coaches/standing/alistair.png"
+type = "image"
+title = "alistair standing full body"
+
+[[generated]]
+id = "npccQiY19lVHMDbebZP-A"
+uri = "file://assets/coaches/standing/chloe.png"
+type = "image"
+title = "chloe standing full body"
+
+[[generated]]
+id = "Lben_IpB8Po4ovcMxtf0L"
+uri = "file://assets/coaches/standing/james.png"
+type = "image"
+title = "james standing full body"
+
+[[generated]]
+id = "ZLWUgnBPqw8cNp_kuMayS"
+uri = "file://assets/coaches/standing/dr-claire.png"
+type = "image"
+title = "dr claire standing full body"
+
+[[generated]]
+id = "3QGn8uvZrv1u5XqpXAJcU"
+uri = "file://assets/coaches/standing/dr-olivia.png"
+type = "image"
+title = "dr olivia standing full body"
+
 [[outputs]]
 id = "FsU4PAkDB_a1cFXTkO03x"
 uri = "file://artifacts/sphere-english/public/www-sitemap.xml"
@@ -623,3 +695,75 @@ id = "KDzXNx_qcNdNPTf9C8Nb9"
 uri = "file://artifacts/sphere-english/public/images/coach-olivia-health.png"
 type = "image"
 title = "Dr. Olivia"
+
+[[outputs]]
+id = "-Vf6lQDxLUh9SuqbgwOHw"
+uri = "file://assets/coaches/standing/jake.png"
+type = "image"
+title = "Jake — Tam Boy"
+
+[[outputs]]
+id = "EwwzgCj1hZcP8_jGt5bdh"
+uri = "file://assets/coaches/standing/david.png"
+type = "image"
+title = "David — Tam Boy"
+
+[[outputs]]
+id = "2XDf7AodvdGn9P_G8B2X1"
+uri = "file://assets/coaches/standing/emma.png"
+type = "image"
+title = "Emma — Tam Boy"
+
+[[outputs]]
+id = "nxnyu1YLRKIIfxyB5Pl_d"
+uri = "file://assets/coaches/standing/raj.png"
+type = "image"
+title = "Raj — Tam Boy"
+
+[[outputs]]
+id = "evGiipcxiVatDt26mv6SY"
+uri = "file://assets/coaches/standing/hans.png"
+type = "image"
+title = "Hans — Tam Boy"
+
+[[outputs]]
+id = "ArZSYPP-iCsfJ4VvmRzDo"
+uri = "file://assets/coaches/standing/sterling.png"
+type = "image"
+title = "Sterling — Tam Boy"
+
+[[outputs]]
+id = "1PFsnGm7ntD-X1ysI6qXd"
+uri = "file://assets/coaches/standing/elena.png"
+type = "image"
+title = "Elena — Tam Boy"
+
+[[outputs]]
+id = "Z00Wt8NBroMqwbFd5DcuW"
+uri = "file://assets/coaches/standing/alistair.png"
+type = "image"
+title = "Alistair — Tam Boy"
+
+[[outputs]]
+id = "K64rq0vT9REbSOGiq6Zoc"
+uri = "file://assets/coaches/standing/chloe.png"
+type = "image"
+title = "Chloe — Tam Boy"
+
+[[outputs]]
+id = "Lbt-A0P41gCV54LQuYXAF"
+uri = "file://assets/coaches/standing/james.png"
+type = "image"
+title = "James — Tam Boy"
+
+[[outputs]]
+id = "JNKt2e7bJRCn9R_mfQa2K"
+uri = "file://assets/coaches/standing/dr-claire.png"
+type = "image"
+title = "Dr. Claire — Tam Boy"
+
+[[outputs]]
+id = "v3MR0RLxitXnqSkQb4kcD"
+uri = "file://assets/coaches/standing/dr-olivia.png"
+type = "image"
+title = "Dr. Olivia — Tam Boy"
