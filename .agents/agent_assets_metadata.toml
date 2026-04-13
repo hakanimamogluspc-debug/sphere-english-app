@@ -551,3 +551,75 @@ id = "wWZdi2VQ8wBRgRhzErevv"
 uri = "file://assets/coaches/dr-olivia.png"
 type = "image"
 title = "Dr. Olivia"
+
+[[outputs]]
+id = "UEGmmsrdv8LR8bVWx00ri"
+uri = "file://artifacts/sphere-english/public/images/coach-jake.png"
+type = "image"
+title = "Jake"
+
+[[outputs]]
+id = "-_i5ewQXjPCCv6JLyomtm"
+uri = "file://artifacts/sphere-english/public/images/coach-david.png"
+type = "image"
+title = "David"
+
+[[outputs]]
+id = "rysAtKABqUHPtBDUlUYeL"
+uri = "file://artifacts/sphere-english/public/images/coach-emma-hr.png"
+type = "image"
+title = "Emma"
+
+[[outputs]]
+id = "BEpEd7iIIAf-8qvn6VkMa"
+uri = "file://artifacts/sphere-english/public/images/coach-raj.png"
+type = "image"
+title = "Raj"
+
+[[outputs]]
+id = "GKK9jUfXw8UoJmd-0T5sZ"
+uri = "file://artifacts/sphere-english/public/images/coach-hans.png"
+type = "image"
+title = "Hans"
+
+[[outputs]]
+id = "4cxu-qtUmnJdsG_B_orOo"
+uri = "file://artifacts/sphere-english/public/images/coach-sterling.png"
+type = "image"
+title = "Sterling"
+
+[[outputs]]
+id = "lgpfJr4BbP_t-m9iyve3R"
+uri = "file://artifacts/sphere-english/public/images/coach-elena.png"
+type = "image"
+title = "Elena"
+
+[[outputs]]
+id = "j_NTp3T7esxELnVzI--aE"
+uri = "file://artifacts/sphere-english/public/images/coach-alistair.png"
+type = "image"
+title = "Alistair"
+
+[[outputs]]
+id = "wbt7GEMq9-AgVwHlFZgJs"
+uri = "file://artifacts/sphere-english/public/images/coach-chloe.png"
+type = "image"
+title = "Chloe"
+
+[[outputs]]
+id = "7A8CC8KtmuLiw1f3tYpZg"
+uri = "file://artifacts/sphere-english/public/images/coach-james-mfg.png"
+type = "image"
+title = "James"
+
+[[outputs]]
+id = "J-VB43r9c3VNXO0cQ2exj"
+uri = "file://artifacts/sphere-english/public/images/coach-claire-grammar.png"
+type = "image"
+title = "Dr. Claire"
+
+[[outputs]]
+id = "KDzXNx_qcNdNPTf9C8Nb9"
+uri = "file://artifacts/sphere-english/public/images/coach-olivia-health.png"
+type = "image"
+title = "Dr. Olivia"
