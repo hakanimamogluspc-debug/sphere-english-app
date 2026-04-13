@@ -144,6 +144,78 @@ uri = "file://assets/instagram/meta-ads/ai-studio-ad-tr.png"
 type = "image"
 title = "sphere english ai studio turkish ad"
 
+[[generated]]
+id = "VZw48KuQz7cckSekEyRc_"
+uri = "file://assets/coaches/jake.png"
+type = "image"
+title = "jake coach portrait"
+
+[[generated]]
+id = "nPJnqVUDD32_j_929A3U-"
+uri = "file://assets/coaches/david.png"
+type = "image"
+title = "david coach portrait"
+
+[[generated]]
+id = "8TZdvC8UrD_WLz_tWH_rV"
+uri = "file://assets/coaches/emma.png"
+type = "image"
+title = "emma coach portrait"
+
+[[generated]]
+id = "5BMwM1qdZaoMIpk92U89H"
+uri = "file://assets/coaches/raj.png"
+type = "image"
+title = "raj coach portrait"
+
+[[generated]]
+id = "3UiegHx0dVfICjBqULNsZ"
+uri = "file://assets/coaches/hans.png"
+type = "image"
+title = "hans coach portrait"
+
+[[generated]]
+id = "kvu1e9FOs_xEVO9IbgEXt"
+uri = "file://assets/coaches/sterling.png"
+type = "image"
+title = "sterling coach portrait"
+
+[[generated]]
+id = "QlkXpwwL09vZsL2e0ZPuf"
+uri = "file://assets/coaches/elena.png"
+type = "image"
+title = "elena coach portrait"
+
+[[generated]]
+id = "e133ZArStq5V2bA-p6sgQ"
+uri = "file://assets/coaches/alistair.png"
+type = "image"
+title = "alistair coach portrait"
+
+[[generated]]
+id = "aWzd5cXKaH_PGZ3ScQ0vv"
+uri = "file://assets/coaches/chloe.png"
+type = "image"
+title = "chloe coach portrait"
+
+[[generated]]
+id = "5mJeNht5GzSQeTF8UZ4Dw"
+uri = "file://assets/coaches/james.png"
+type = "image"
+title = "james coach portrait"
+
+[[generated]]
+id = "-VDvf9Y0keqS9CMBnAcMS"
+uri = "file://assets/coaches/dr-claire.png"
+type = "image"
+title = "dr claire coach portrait"
+
+[[generated]]
+id = "1nM9NT1F5jCamtzH0OfY6"
+uri = "file://assets/coaches/dr-olivia.png"
+type = "image"
+title = "dr olivia coach portrait"
+
 [[outputs]]
 id = "FsU4PAkDB_a1cFXTkO03x"
 uri = "file://artifacts/sphere-english/public/www-sitemap.xml"
@@ -407,3 +479,75 @@ id = "HUMwVxvi0iJDs248LILRN"
 uri = "file://assets/instagram/meta-ads/ai-studio-ad-tr.png"
 type = "image"
 title = "AI Studio — Fotoğrafik Kreatifl (Türkçe UI)"
+
+[[outputs]]
+id = "hRIja07A9_62TsGRsZK11"
+uri = "file://assets/coaches/jake.png"
+type = "image"
+title = "Jake"
+
+[[outputs]]
+id = "-9dj2fp-rgiscGb_ROBMV"
+uri = "file://assets/coaches/david.png"
+type = "image"
+title = "David"
+
+[[outputs]]
+id = "19iCgJec11d3OW2FQq4Be"
+uri = "file://assets/coaches/emma.png"
+type = "image"
+title = "Emma"
+
+[[outputs]]
+id = "9ZaffukumeLPZ5CEhapjC"
+uri = "file://assets/coaches/raj.png"
+type = "image"
+title = "Raj"
+
+[[outputs]]
+id = "6wNZZv_YadA0mUWA8DZw7"
+uri = "file://assets/coaches/hans.png"
+type = "image"
+title = "Hans"
+
+[[outputs]]
+id = "K-EQxczmW0AJj6a-_j6CF"
+uri = "file://assets/coaches/sterling.png"
+type = "image"
+title = "Sterling"
+
+[[outputs]]
+id = "v3CqGrccc5TasdPWwzSxR"
+uri = "file://assets/coaches/elena.png"
+type = "image"
+title = "Elena"
+
+[[outputs]]
+id = "yLObwh9edmhM2C4G7eqKj"
+uri = "file://assets/coaches/alistair.png"
+type = "image"
+title = "Alistair"
+
+[[outputs]]
+id = "Z8aEPwyzuTY99G0fIK61Y"
+uri = "file://assets/coaches/chloe.png"
+type = "image"
+title = "Chloe"
+
+[[outputs]]
+id = "hYAMNYjYi9mdu2PWtJYNj"
+uri = "file://assets/coaches/james.png"
+type = "image"
+title = "James"
+
+[[outputs]]
+id = "JPAHC08vqH2H2xUpjj0HD"
+uri = "file://assets/coaches/dr-claire.png"
+type = "image"
+title = "Dr. Claire"
+
+[[outputs]]
+id = "wWZdi2VQ8wBRgRhzErevv"
+uri = "file://assets/coaches/dr-olivia.png"
+type = "image"
+title = "Dr. Olivia"
