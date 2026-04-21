@@ -288,6 +288,13 @@ router.post(
   }
 );
 
+function extractNameFromEmail(email: string): string {
+  const local = email.split("@")[0] || "";
+  const parts = local.split(/[._\-+]/);
+  const first = parts[0] || local;
+  return first.charAt(0).toUpperCase() + first.slice(1).toLowerCase();
+}
+
 async function getFilteredUsers(filter: string, customEmails?: string[]) {
   if (filter === "custom" && customEmails && customEmails.length > 0) {
     const emails = customEmails.map(e => e.trim().toLowerCase()).filter(Boolean);
@@ -321,7 +328,7 @@ router.post(
   requireRole("admin"),
   async (req: AuthRequest, res: Response) => {
     try {
-      const { subject, body, filter, variables, customEmails } = req.body as { subject: string; body: string; filter: string; variables?: Record<string, string>; customEmails?: string[] };
+      const { subject, body, filter, variables, customEmails, customName } = req.body as { subject: string; body: string; filter: string; variables?: Record<string, string>; customEmails?: string[]; customName?: string };
 
       if (!subject?.trim() || !body?.trim()) {
         return res.status(400).json({ error: "Konu ve içerik zorunludur." });
@@ -369,11 +376,14 @@ router.post(
 
         for (const user of recipients) {
           try {
+            // For non-registered users: use customName if given, else extract from email
+            const resolvedFirstName = user.firstName || customName?.trim() || extractNameFromEmail(user.email);
+            const resolvedLastName = user.lastName || "";
             let personalizedBody = body
               .replace(/\{\{EMAIL\}\}/g, user.email || "")
-              .replace(/\{\{AD\}\}/g, user.firstName || "")
-              .replace(/\{\{SOYAD\}\}/g, user.lastName || "")
-              .replace(/\{\{AD_SOYAD\}\}/g, `${user.firstName || ""} ${user.lastName || ""}`.trim());
+              .replace(/\{\{AD\}\}/g, resolvedFirstName)
+              .replace(/\{\{SOYAD\}\}/g, resolvedLastName)
+              .replace(/\{\{AD_SOYAD\}\}/g, `${resolvedFirstName} ${resolvedLastName}`.trim());
             if (variables && typeof variables === "object") {
               for (const [key, val] of Object.entries(variables)) {
                 personalizedBody = personalizedBody.replace(new RegExp(`\\{\\{${key}\\}\\}`, "g"), val);

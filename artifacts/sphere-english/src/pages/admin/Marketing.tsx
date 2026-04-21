@@ -152,6 +152,7 @@ export default function AdminMarketing() {
   const [sendResult, setSendResult] = useState<{ ok: boolean; msg: string } | null>(null);
   const [customVars, setCustomVars] = useState<Record<string, string>>({});
   const [customEmailsText, setCustomEmailsText] = useState("");
+  const [customName, setCustomName] = useState("");
   const [smtpTestResult, setSmtpTestResult] = useState<{ ok: boolean; config?: any; message?: string; error?: string } | null>(null);
   const [smtpTesting, setSmtpTesting] = useState(false);
 
@@ -253,12 +254,13 @@ export default function AdminMarketing() {
         method: "POST", body: JSON.stringify({
           subject, body, filter: recipientFilter, variables: customVars,
           customEmails: recipientFilter === "custom" ? parsedCustomEmails : undefined,
+          customName: recipientFilter === "custom" && customName.trim() ? customName.trim() : undefined,
         }),
       });
       let msg = `${data.sent} / ${data.total} kişiye gönderildi!${data.provider === "demo" ? " (demo mod)" : ""}`;
       if (data.errors?.length) msg += ` — ${data.errors.length} hata: ${data.errors[0]}`;
       setSendResult({ ok: data.sent > 0, msg });
-      setSubject(""); setBody(""); setCustomVars({}); setCustomEmailsText("");
+      setSubject(""); setBody(""); setCustomVars({}); setCustomEmailsText(""); setCustomName("");
       loadAll();
     } catch (e: any) {
       setSendResult({ ok: false, msg: e.message });
@@ -683,7 +685,7 @@ export default function AdminMarketing() {
                 </select>
 
                 {recipientFilter === "custom" && (
-                  <div className="mt-2 space-y-1">
+                  <div className="mt-2 space-y-2">
                     <textarea
                       value={customEmailsText}
                       onChange={e => setCustomEmailsText(e.target.value)}
@@ -696,6 +698,18 @@ export default function AdminMarketing() {
                         {parsedCustomEmails.length} adres tanımlandı
                       </p>
                     )}
+                    <div>
+                      <label className="text-xs font-medium text-gray-500 mb-1 block">
+                        Alıcı adı <span className="text-gray-400 font-normal">(isteğe bağlı — {"{{AD}}"} için)</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={customName}
+                        onChange={e => setCustomName(e.target.value)}
+                        placeholder="Örn: Mehmet — boş bırakılırsa e-postadan tahmin edilir"
+                        className="w-full border border-blue-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400 bg-blue-50"
+                      />
+                    </div>
                   </div>
                 )}
 
