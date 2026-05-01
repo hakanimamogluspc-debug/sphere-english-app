@@ -802,29 +802,44 @@ export default function AdminMarketing() {
             </div>
           </div>
 
-          {/* Webhook Kurulum Rehberi */}
-          <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
-            <div className="flex items-start gap-3">
-              <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                <Mail size={16} className="text-blue-600" />
+          {/* Takip Bilgi Kartı */}
+          <div className="space-y-3">
+            {/* Resend Dashboard linki */}
+            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+              <p className="text-sm font-semibold text-gray-800 mb-2">Geçmiş E-postalar</p>
+              <p className="text-xs text-gray-500 mb-3">Önceden gönderilen e-postaların açılma durumunu Resend'in kendi panelinden görebilirsiniz:</p>
+              <a
+                href="https://resend.com/emails"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 justify-center w-full bg-gray-900 hover:bg-black text-white text-xs font-medium py-2 px-3 rounded-lg transition"
+              >
+                <Mail size={13} />
+                resend.com/emails — Tüm e-postaları gör
+              </a>
+            </div>
+
+            {/* Webhook Kurulum */}
+            <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
+              <p className="text-sm font-semibold text-blue-800 mb-1">Gelecek E-postalar İçin Takip</p>
+              <p className="text-xs text-blue-600 mb-2">Bu panelde açılma/tıklama verilerini görmek için Resend'de 1 kez webhook kurun:</p>
+              <div className="bg-white border border-blue-200 rounded-lg px-3 py-2 mb-2">
+                <p className="text-xs font-mono text-gray-700 break-all">https://app.sphereenglish.com/webhooks/resend</p>
               </div>
-              <div className="flex-1">
-                <p className="text-sm font-semibold text-blue-800">E-posta Takibini Aktifleştir</p>
-                <p className="text-xs text-blue-600 mt-0.5 leading-relaxed">
-                  Açılma ve tıklama oranlarını görmek için Resend'de webhook ekleyin:
-                </p>
-                <div className="mt-2 bg-white border border-blue-200 rounded-lg px-3 py-2">
-                  <p className="text-xs font-mono text-gray-700 break-all">https://app.sphereenglish.com/webhooks/resend</p>
-                </div>
-                <p className="text-xs text-blue-500 mt-2">
-                  <a href="https://resend.com/webhooks" target="_blank" rel="noopener noreferrer" className="underline">resend.com/webhooks</a> → Add Webhook → yukarıdaki URL'yi yapıştırın → <strong>email.opened, email.clicked, email.delivered, email.bounced</strong> olaylarını seçin.
-                </p>
-              </div>
+              <a
+                href="https://resend.com/webhooks"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 justify-center w-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium py-2 px-3 rounded-lg transition"
+              >
+                Webhook Kur →
+              </a>
+              <p className="text-xs text-blue-500 mt-2">Add Webhook → URL'yi yapıştır → <strong>email.opened, email.clicked, email.delivered, email.bounced</strong> seç → Kaydet</p>
             </div>
           </div>
 
-          {/* Campaign History */}
-          <div className="space-y-3">
+          {/* Campaign History — tam genişlik */}
+          <div className="lg:col-span-3 space-y-3">
             <h3 className="font-semibold text-gray-800 text-sm flex items-center gap-2"><Clock size={14} /> Kampanya Geçmişi</h3>
             {campaigns.length === 0 ? (
               <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 text-center text-gray-400 text-sm">
