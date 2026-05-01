@@ -1,0 +1,264 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" width="100%" height="100%">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1B365D" />
+      <stop offset="100%" stop-color="#162d52" />
+    </linearGradient>
+
+    <!-- Academic Grid Pattern -->
+    <pattern id="academic-grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 40 40 L 0 40" fill="none" stroke="#00BCD4" stroke-opacity="0.05" stroke-width="1" />
+      <circle cx="40" cy="40" r="1" fill="#00BCD4" fill-opacity="0.2" />
+    </pattern>
+
+    <!-- Filters -->
+    <filter id="drop-shadow" x="-20%" y="-20%" width="150%" height="150%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#0a1526" flood-opacity="0.6" />
+    </filter>
+    
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="8" result="blur1" />
+      <feGaussianBlur stdDeviation="15" result="blur2" />
+      <feMerge>
+        <feMergeNode in="blur2" />
+        <feMergeNode in="blur1" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+
+    <filter id="soft-shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#0a1526" flood-opacity="0.4" />
+    </filter>
+
+    <!-- Book Page Gradients -->
+    <linearGradient id="page-left" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="85%" stop-color="#F5F2EE" />
+      <stop offset="100%" stop-color="#D5CCC0" />
+    </linearGradient>
+    
+    <linearGradient id="page-right" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#D5CCC0" />
+      <stop offset="15%" stop-color="#F5F2EE" />
+      <stop offset="100%" stop-color="#FFFFFF" />
+    </linearGradient>
+
+    <!-- Pen Gradients -->
+    <linearGradient id="pen-body" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#10203a" />
+      <stop offset="50%" stop-color="#1B365D" />
+      <stop offset="100%" stop-color="#0d1b2e" />
+    </linearGradient>
+
+    <linearGradient id="pen-metal" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="50%" stop-color="#C4B9AC" />
+      <stop offset="100%" stop-color="#8a7f72" />
+    </linearGradient>
+
+    <!-- Vignette Overlay -->
+    <radialGradient id="vignette" cx="50%" cy="50%" r="75%">
+      <stop offset="40%" stop-color="#1B365D" stop-opacity="0" />
+      <stop offset="100%" stop-color="#0a1526" stop-opacity="0.8" />
+    </radialGradient>
+
+    <!-- Fountain Pen Group -->
+    <g id="fountain-pen">
+      <!-- Shadow -->
+      <path d="M -10 90 L 10 90 L 14 -10 L 8 -50 L 0 -100 L -8 -50 L -14 -10 Z" fill="#0a1526" opacity="0.5" filter="url(#soft-shadow)" transform="translate(-10, 15)" />
+      <!-- Barrel -->
+      <path d="M -12 -10 L 12 -10 L 10 90 L -10 90 Z" fill="url(#pen-body)" />
+      <!-- Barrel Highlight -->
+      <path d="M -6 -10 L -2 -10 L -2 88 L -6 88 Z" fill="#FFFFFF" opacity="0.15" />
+      <!-- Turquoise Ring -->
+      <path d="M -13 -10 L 13 -10 L 13 -4 L -13 -4 Z" fill="#00BCD4" />
+      <!-- Beige Ring -->
+      <path d="M -12.5 -4 L 12.5 -4 L 12.5 0 L -12.5 0 Z" fill="#C4B9AC" />
+      <!-- Grip -->
+      <path d="M -12 0 L 12 0 L 8 -50 L -8 -50 Z" fill="#0d1b2e" />
+      <!-- Nib Base -->
+      <path d="M -8 -50 L 8 -50 L 6 -75 L -6 -75 Z" fill="url(#pen-metal)" />
+      <!-- Nib Tip -->
+      <path d="M -6 -75 L 6 -75 L 0 -105 Z" fill="url(#pen-metal)" />
+      <!-- Nib Slit & Hole -->
+      <line x1="0" y1="-105" x2="0" y2="-70" stroke="#0d1b2e" stroke-width="1.5" />
+      <circle cx="0" cy="-70" r="1.5" fill="#0d1b2e" />
+      <!-- End Cap -->
+      <path d="M -10 90 L 10 90 L 6 110 L -6 110 Z" fill="url(#pen-metal)" />
+    </g>
+  </defs>
+
+  <style><![CDATA[
+.float-slow { animation: float 6s ease-in-out infinite; }
+    .float-med { animation: float 4.5s ease-in-out infinite; }
+    .float-fast { animation: float 3s ease-in-out infinite; }
+    .float-delay-1 { animation-delay: 1s; }
+    .float-delay-2 { animation-delay: 2s; }
+    
+    .pulse { animation: pulse 4s ease-in-out infinite; }
+    .dash-flow { animation: dash 20s linear infinite; }
+    .dash-flow-reverse { animation: dash-reverse 25s linear infinite; }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-12px); }
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 0.4; }
+      50% { opacity: 1; }
+    }
+    @keyframes dash {
+      to { stroke-dashoffset: -200; }
+    }
+    @keyframes dash-reverse {
+      to { stroke-dashoffset: 200; }
+    }
+]]></style>
+
+  <!-- 1. Background -->
+  <rect width="100%" height="100%" fill="url(#bg-grad)" />
+  <rect width="100%" height="100%" fill="url(#academic-grid)" />
+
+  <!-- 2. Ambient Glows -->
+  <circle cx="250" cy="150" r="100" fill="#00BCD4" opacity="0.05" filter="url(#glow)" />
+  <circle cx="600" cy="350" r="120" fill="#C4B9AC" opacity="0.03" filter="url(#glow)" />
+
+  <!-- 3. Geometric Accent Lines (Background) -->
+  <g stroke="#00BCD4" fill="none" opacity="0.3">
+    <!-- Static structural lines -->
+    <path d="M 0 120 L 200 120 L 250 170 L 250 500" stroke-width="1" />
+    <path d="M 800 380 L 600 380 L 550 330 L 550 0" stroke-width="1" />
+    
+    <!-- Animated flow lines -->
+    <path d="M -50 250 L 150 250 L 200 300 L 400 300" stroke-width="1.5" stroke-dasharray="6 6" class="dash-flow" />
+    <path d="M 850 150 L 650 150 L 600 100 L 400 100" stroke-width="1.5" stroke-dasharray="4 8" class="dash-flow-reverse" />
+    
+    <!-- Crosshairs & Nodes -->
+    <g stroke-width="1.5">
+      <line x1="190" y1="120" x2="210" y2="120" />
+      <line x1="200" y1="110" x2="200" y2="130" />
+      <circle cx="250" cy="170" r="3" fill="#1B365D" />
+      
+      <line x1="590" y1="380" x2="610" y2="380" />
+      <line x1="600" y1="370" x2="600" y2="390" />
+      <circle cx="550" cy="330" r="3" fill="#1B365D" />
+    </g>
+  </g>
+
+  <!-- 4. Main Subject: The Open Book -->
+  <g id="book-group" transform="translate(0, -10)">
+    <!-- Book Cover Base (Shadow/Thickness) -->
+    <path d="M 400 410 Q 280 420 155 370 L 155 150 Q 280 200 400 190 Z" fill="#0a1526" />
+    <path d="M 400 410 Q 520 420 645 370 L 645 150 Q 520 200 400 190 Z" fill="#0a1526" />
+    
+    <!-- Book Cover -->
+    <path d="M 400 400 Q 280 410 160 360 L 160 140 Q 280 190 400 180 Z" fill="#10203a" stroke="#C4B9AC" stroke-width="2" stroke-linejoin="round" />
+    <path d="M 400 400 Q 520 410 640 360 L 640 140 Q 520 190 400 180 Z" fill="#10203a" stroke="#C4B9AC" stroke-width="2" stroke-linejoin="round" />
+
+    <!-- Stacked Pages (Depth) -->
+    <path d="M 175 350 L 175 358 Q 290 408 400 388 L 400 380 Q 290 400 175 350 Z" fill="#D5CCC0" />
+    <path d="M 625 350 L 625 358 Q 510 408 400 388 L 400 380 Q 510 400 625 350 Z" fill="#D5CCC0" />
+    <path d="M 178 345 L 178 352 Q 290 402 400 382 L 400 375 Q 290 395 178 345 Z" fill="#F5F2EE" />
+    <path d="M 622 345 L 622 352 Q 510 402 400 382 L 400 375 Q 510 395 622 345 Z" fill="#F5F2EE" />
+
+    <!-- Bookmark Ribbon -->
+    <path d="M 390 380 L 410 380 L 410 460 L 400 445 L 390 460 Z" fill="#00BCD4" filter="url(#soft-shadow)" />
+    <path d="M 390 380 L 400 380 L 400 445 L 390 460 Z" fill="#0097A7" /> <!-- Ribbon shadow -->
+
+    <!-- Top Pages -->
+    <path d="M 400 380 Q 290 400 180 340 L 180 130 Q 290 190 400 170 Z" fill="url(#page-left)" filter="url(#soft-shadow)" />
+    <path d="M 400 380 Q 510 400 620 340 L 620 130 Q 510 190 400 170 Z" fill="url(#page-right)" filter="url(#soft-shadow)" />
+
+    <!-- Center Spine Crease -->
+    <path d="M 400 170 L 400 380" stroke="#C4B9AC" stroke-width="1.5" opacity="0.6" />
+    <path d="M 398 171 L 398 379" stroke="#0a1526" stroke-width="1" opacity="0.2" />
+    <path d="M 402 171 L 402 379" stroke="#FFFFFF" stroke-width="1" opacity="0.5" />
+
+    <!-- Text Lines on Left Page -->
+    <g stroke="#C4B9AC" stroke-width="3" stroke-linecap="round" fill="none" opacity="0.7">
+      <path d="M 210 180 Q 290 220 370 205" />
+      <path d="M 210 210 Q 290 250 370 235" />
+      <path d="M 210 240 Q 290 280 370 265" />
+      <path d="M 210 270 Q 290 310 330 295" />
+      <path d="M 210 300 Q 290 340 370 325" />
+      <!-- Highlight line -->
+      <path d="M 210 240 Q 290 280 300 273" stroke="#00BCD4" stroke-width="3.5" opacity="1" />
+    </g>
+
+    <!-- Text Lines on Right Page -->
+    <g stroke="#C4B9AC" stroke-width="3" stroke-linecap="round" fill="none" opacity="0.7">
+      <path d="M 430 205 Q 510 220 590 180" />
+      <path d="M 430 235 Q 510 250 590 210" />
+      <path d="M 430 265 Q 510 280 590 240" />
+      <path d="M 430 295 Q 510 310 550 270" />
+      <path d="M 430 325 Q 510 340 590 300" />
+      <!-- Highlight line -->
+      <path d="M 430 205 Q 480 215 500 210" stroke="#00BCD4" stroke-width="3.5" opacity="1" />
+    </g>
+  </g>
+
+  <!-- 5. Fountain Pen -->
+  <g class="float-slow float-delay-1">
+    <use href="#fountain-pen" transform="translate(520, 240) rotate(-125)" />
+    <!-- Ink Dots near nib -->
+    <circle cx="435" cy="305" r="3" fill="#00BCD4" />
+    <circle cx="420" cy="315" r="1.5" fill="#C4B9AC" />
+    <circle cx="445" cy="320" r="2" fill="#00BCD4" opacity="0.6" />
+  </g>
+
+  <!-- 6. Speech Bubble -->
+  <g class="float-med" transform="translate(180, 60)">
+    <!-- Bubble Shape -->
+    <path d="M 20 0 h 110 a 20 20 0 0 1 20 20 v 60 a 20 20 0 0 1 -20 20 h -40 l -25 25 l -10 -25 h -35 a 20 20 0 0 1 -20 -20 v -60 a 20 20 0 0 1 20 -20 z" fill="#FFFFFF" filter="url(#drop-shadow)" />
+    
+    <!-- Quotation Mark -->
+    <text x="75" y="70" font-family="Georgia, 'Times New Roman', serif" font-size="72" font-weight="bold" fill="#1B365D" text-anchor="middle">“</text>
+    
+    <!-- Accent Dot -->
+    <circle cx="125" cy="25" r="4" fill="#00BCD4" />
+  </g>
+
+  <!-- 7. Floating Letters (A B C) -->
+  <g font-family="Georgia, 'Times New Roman', serif" font-weight="bold" fill="#C4B9AC">
+    <!-- Letter A -->
+    <g class="float-fast">
+      <text x="120" y="280" font-size="52" filter="url(#soft-shadow)">A</text>
+      <!-- Connecting dashed line -->
+      <path d="M 140 290 L 140 330 L 180 330" fill="none" stroke="#C4B9AC" stroke-width="1" stroke-dasharray="3 3" opacity="0.4" />
+    </g>
+    
+    <!-- Letter B -->
+    <g class="float-slow float-delay-2">
+      <text x="660" y="130" font-size="64" filter="url(#soft-shadow)">B</text>
+      <circle cx="695" cy="85" r="2" fill="#00BCD4" />
+    </g>
+    
+    <!-- Letter C -->
+    <g class="float-med float-delay-1">
+      <text x="680" y="420" font-size="46" filter="url(#soft-shadow)">C</text>
+      <path d="M 695 380 L 695 350 L 650 350" fill="none" stroke="#C4B9AC" stroke-width="1" stroke-dasharray="3 3" opacity="0.4" />
+    </g>
+  </g>
+
+  <!-- 8. Foreground Accents & Particles -->
+  <g fill="#00BCD4" opacity="0.8">
+    <circle cx="100" cy="400" r="2" class="pulse" />
+    <circle cx="720" cy="250" r="3" class="pulse float-delay-1" />
+    <circle cx="350" cy="80" r="1.5" class="pulse float-delay-2" />
+    
+    <!-- Small geometric crosses -->
+    <g transform="translate(700, 60)" opacity="0.5">
+      <line x1="-4" y1="0" x2="4" y2="0" stroke="#C4B9AC" stroke-width="1.5" />
+      <line x1="0" y1="-4" x2="0" y2="4" stroke="#C4B9AC" stroke-width="1.5" />
+    </g>
+    <g transform="translate(80, 200)" opacity="0.5">
+      <line x1="-3" y1="0" x2="3" y2="0" stroke="#00BCD4" stroke-width="1" />
+      <line x1="0" y1="-3" x2="0" y2="3" stroke="#00BCD4" stroke-width="1" />
+    </g>
+  </g>
+
+  <!-- 9. Vignette Overlay (pointer-events="none" to not block interactions if any) -->
+  <rect width="100%" height="100%" fill="url(#vignette)" pointer-events="none" />
+
+</svg>

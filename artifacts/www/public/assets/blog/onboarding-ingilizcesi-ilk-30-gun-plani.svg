@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 580 400" width="580" height="400">
+    <defs>
+      <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style="stop-color:#0a1628"/>
+        <stop offset="100%" style="stop-color:#0d1f3c"/>
+      </linearGradient>
+      <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" style="stop-color:#7c3aed"/>
+        <stop offset="100%" style="stop-color:#a78bfa"/>
+      </linearGradient>
+    </defs>
+    <rect width="580" height="400" fill="url(#bg)"/>
+    <circle cx="0" cy="0" r="120" fill="#7c3aed" opacity="0.08"/><circle cx="580" cy="400" r="140" fill="#a78bfa" opacity="0.06"/><circle cx="81" cy="181" r="3" fill="#f0f9ff" opacity="0.36"/><circle cx="152" cy="352" r="1" fill="#f0f9ff" opacity="0.43"/><circle cx="223" cy="143" r="2" fill="#f0f9ff" opacity="0.15"/><circle cx="294" cy="314" r="3" fill="#f0f9ff" opacity="0.22"/><circle cx="365" cy="105" r="1" fill="#f0f9ff" opacity="0.29"/><circle cx="436" cy="276" r="2" fill="#f0f9ff" opacity="0.36"/><circle cx="507" cy="67" r="3" fill="#f0f9ff" opacity="0.43"/><circle cx="578" cy="238" r="1" fill="#f0f9ff" opacity="0.15"/><circle cx="69" cy="29" r="2" fill="#f0f9ff" opacity="0.22"/><circle cx="140" cy="200" r="3" fill="#f0f9ff" opacity="0.29"/><circle cx="211" cy="371" r="1" fill="#f0f9ff" opacity="0.36"/><circle cx="282" cy="162" r="2" fill="#f0f9ff" opacity="0.43"/><circle cx="353" cy="333" r="3" fill="#f0f9ff" opacity="0.15"/><circle cx="424" cy="124" r="1" fill="#f0f9ff" opacity="0.22"/><circle cx="495" cy="295" r="2" fill="#f0f9ff" opacity="0.29"/><circle cx="566" cy="86" r="3" fill="#f0f9ff" opacity="0.36"/><circle cx="57" cy="257" r="1" fill="#f0f9ff" opacity="0.43"/><circle cx="128" cy="48" r="2" fill="#f0f9ff" opacity="0.15"/><circle cx="199" cy="219" r="3" fill="#f0f9ff" opacity="0.22"/><circle cx="270" cy="10" r="1" fill="#f0f9ff" opacity="0.29"/>
+    <rect x="0" y="0" width="580" height="4" fill="#7c3aed" opacity="0.7"/>
+    <rect x="180" y="140" width="220" height="180" rx="8" fill="none" stroke="#22d3ee" stroke-width="3"/>
+  <line x1="180" y1="175" x2="400" y2="175" stroke="#22d3ee" stroke-width="2" opacity="0.6"/>
+  <rect x="215" y="155" width="15" height="25" rx="3" fill="#38bdf8"/>
+  <rect x="350" y="155" width="15" height="25" rx="3" fill="#38bdf8"/>
+  <text x="200" y="215" font-size="14" fill="#f0f9ff" opacity="0.5">P T Ç P C C P</text>
+  <circle cx="330" cy="255" r="20" fill="#22d3ee" opacity="0.3"/>
+  <path d="M320 255 L327 263 L343 247" stroke="#22d3ee" stroke-width="3" fill="none"/>
+    <rect x="0" y="360" width="580" height="40" fill="url(#accent)" opacity="0.15"/>
+  </svg>

@@ -1,0 +1,22 @@
+kind = "web"
+previewPath = "/www/"
+title = "Sphere English — Marketing Site"
+version = "1.0.0"
+id = "artifacts/www"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/www/" ]
+localPort = 4028
+
+[services.development]
+run = "pnpm --filter @workspace/www run dev"
+
+[services.env]
+PORT = "4028"
+BASE_PATH = "/www/"

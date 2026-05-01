@@ -1,0 +1,261 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&subset=latin,latin-ext&display=swap');
+
+:root {
+  --color-fog: #F4F5F7;
+  --color-aluminum: #D1D5DB;
+  --color-charcoal: #1C2340;
+  --color-sapphire: #082567;
+  --color-sapphire-dark: #051840;
+  --color-sapphire-light: #EEF2FB;
+  --color-sapphire-mid: #1A3A8F;
+  --color-blue: #082567;
+  --color-blue-dark: #051840;
+  --color-blue-light: #EEF2FB;
+  --color-green: #86BC25;
+  --color-green-light: #F0F7E0;
+  --color-card: #FFFFFF;
+  --color-dark: #0A1535;
+  --color-muted: #6B7280;
+  --color-anthracite: #3D4454;
+  --color-border: #E5E7EB;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Nunito', sans-serif;
+  background-color: #FFFFFF;
+  color: var(--color-charcoal);
+  overflow-x: hidden;
+  font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+.font-display {
+  font-family: 'Nunito', sans-serif;
+}
+
+/* Grid lines background */
+.grid-lines-bg {
+  background-image:
+    linear-gradient(to right, rgba(134, 188, 37, 0.07) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(134, 188, 37, 0.07) 1px, transparent 1px);
+  background-size: 80px 80px;
+}
+
+/* Section accent bar */
+.section-label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.section-label::before {
+  content: '';
+  display: block;
+  width: 2px;
+  height: 16px;
+  background: var(--color-green);
+  flex-shrink: 0;
+}
+
+/* Module card */
+.module-card {
+  background: var(--color-card);
+  border: 1px solid var(--color-aluminum);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.module-card:hover {
+  border-color: var(--color-sapphire);
+  box-shadow: 0 8px 32px rgba(8, 37, 103, 0.10);
+  transform: translateY(-2px);
+}
+
+/* Scroll reveal */
+.reveal-card {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1), transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.reveal-card.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Sticky bar */
+.sticky-cta {
+  transform: translateY(100%);
+  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.sticky-cta.visible {
+  transform: translateY(0);
+}
+
+/* ICP card */
+.icp-card {
+  background: var(--color-card);
+  border: 1px solid var(--color-aluminum);
+  transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.icp-card:hover {
+  border-color: var(--color-sapphire);
+  box-shadow: 0 4px 24px rgba(8, 37, 103, 0.08);
+}
+
+.icp-card:hover .icp-number {
+  color: var(--color-sapphire);
+}
+
+/* Progress bar animation */
+@keyframes fillBar {
+  from { width: 0; }
+  to { width: var(--fill-width); }
+}
+
+.fill-bar {
+  animation: fillBar 1.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* Form input */
+.form-input {
+  background: var(--color-fog);
+  border: 1px solid var(--color-aluminum);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  font-family: 'Nunito', sans-serif;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: var(--color-sapphire);
+  box-shadow: 0 0 0 3px rgba(8, 37, 103, 0.12);
+}
+
+/* Primary button — Sapphire */
+.btn-primary {
+  background: var(--color-sapphire);
+  color: white;
+  transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.btn-primary:hover {
+  background: var(--color-sapphire-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(8, 37, 103, 0.35);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+/* Ghost button */
+.btn-ghost {
+  border: 1.5px solid var(--color-aluminum);
+  color: var(--color-charcoal);
+  background: transparent;
+  transition: border-color 0.2s ease, color 0.2s ease;
+}
+
+.btn-ghost:hover {
+  border-color: var(--color-sapphire);
+  color: var(--color-sapphire);
+}
+
+/* Ghost white button (for dark backgrounds) */
+.btn-ghost-white {
+  border: 1.5px solid rgba(255,255,255,0.4);
+  color: white;
+  background: transparent;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.btn-ghost-white:hover {
+  border-color: white;
+  background: rgba(255,255,255,0.1);
+}
+
+/* Bento card */
+.bento-card {
+  background: var(--color-card);
+  border: 1px solid var(--color-aluminum);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  border-radius: 2px;
+}
+
+.bento-card:hover {
+  border-color: var(--color-sapphire);
+  box-shadow: 0 8px 32px rgba(8, 37, 103, 0.08);
+  transform: translateY(-2px);
+}
+
+/* Package card */
+.package-card {
+  background: var(--color-card);
+  border: 1px solid var(--color-aluminum);
+  transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.package-card:hover {
+  border-color: var(--color-sapphire);
+  box-shadow: 0 12px 40px rgba(8, 37, 103, 0.10);
+  transform: translateY(-3px);
+}
+
+.package-card.featured {
+  background: var(--color-sapphire);
+  border-color: var(--color-sapphire);
+}
+
+/* Tab active */
+.tab-active {
+  border-bottom: 2px solid var(--color-sapphire);
+  color: var(--color-sapphire);
+}
+
+/* Watermark text */
+.watermark {
+  font-family: 'Nunito', sans-serif;
+  font-size: clamp(80px, 18vw, 280px);
+  font-weight: 800;
+  color: white;
+  opacity: 0.04;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  user-select: none;
+  pointer-events: none;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: var(--color-fog); }
+::-webkit-scrollbar-thumb { background: var(--color-aluminum); border-radius: 3px; }
+
+@media (max-width: 768px) {
+  .watermark { font-size: clamp(60px, 22vw, 120px); }
+}
+
+@layer utilities {
+  .animate-marquee {
+    animation: marquee 20s linear infinite;
+  }
+
+  @keyframes marquee {
+    0% {
+      transform: translateX(0%);
+    }
+    100% {
+      transform: translateX(-50%);
+    }
+  }
+}

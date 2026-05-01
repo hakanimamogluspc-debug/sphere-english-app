@@ -1,0 +1,308 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" width="100%" height="100%">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1B365D" />
+      <stop offset="100%" stop-color="#0d2a4e" />
+    </linearGradient>
+
+    <!-- Screen Glow Gradient -->
+    <linearGradient id="screenGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00BCD4" />
+      <stop offset="100%" stop-color="#0A1B35" />
+    </linearGradient>
+
+    <!-- Sphere Gradient -->
+    <radialGradient id="sphereGrad" cx="30%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#00BCD4" />
+      <stop offset="70%" stop-color="#005C6A" />
+      <stop offset="100%" stop-color="#003340" />
+    </radialGradient>
+
+    <!-- Cylinder Top Gradient -->
+    <linearGradient id="cylTopGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#E3D8C9" />
+      <stop offset="100%" stop-color="#C4B9AC" />
+    </linearGradient>
+
+    <!-- Vignette Overlay -->
+    <radialGradient id="vignette" cx="50%" cy="50%" r="75%">
+      <stop offset="40%" stop-color="#08152B" stop-opacity="0" />
+      <stop offset="100%" stop-color="#040A15" stop-opacity="0.6" />
+    </radialGradient>
+
+    <!-- Glow Filters -->
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="8" result="blur1" />
+      <feGaussianBlur stdDeviation="15" result="blur2" />
+      <feMerge>
+        <feMergeNode in="blur2" />
+        <feMergeNode in="blur1" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+
+    <filter id="softShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feGaussianBlur stdDeviation="12" result="blur" />
+      <feColorMatrix type="matrix" values="0 0 0 0 0   0 0 0 0 0   0 0 0 0 0  0 0 0 0.5 0"/>
+      <feOffset dx="0" dy="15" result="offsetBlur" />
+      <feMerge>
+        <feMergeNode in="offsetBlur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+
+    <!-- Isometric Grid Pattern -->
+    <pattern id="isoGrid" width="80" height="46.188" patternUnits="userSpaceOnUse">
+      <path d="M 0 23.094 L 40 0 L 80 23.094 L 40 46.188 Z" fill="none" stroke="#FFFFFF" stroke-width="1" stroke-opacity="0.03"/>
+      <path d="M 40 0 L 40 46.188" fill="none" stroke="#FFFFFF" stroke-width="1" stroke-opacity="0.03"/>
+      <path d="M 0 23.094 L 80 23.094" fill="none" stroke="#FFFFFF" stroke-width="1" stroke-opacity="0.03"/>
+    </pattern>
+
+    <!-- Corner Icons -->
+    <g id="icon-book">
+      <path d="M 2 5 L 12 2 L 22 5 L 22 19 L 12 16 L 2 19 Z" fill="none" stroke="#FFFFFF" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+      <path d="M 12 2 L 12 16" fill="none" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round"/>
+      <path d="M 5 7 L 9 5.5 M 5 10 L 9 8.5 M 15 5.5 L 19 7 M 15 8.5 L 19 10" fill="none" stroke="#FFFFFF" stroke-width="1" stroke-linecap="round" opacity="0.6"/>
+    </g>
+
+    <g id="icon-grad-cap">
+      <path d="M 2 9 L 12 4 L 22 9 L 12 14 Z" fill="none" stroke="#FFFFFF" stroke-width="1.5" stroke-linejoin="round"/>
+      <path d="M 6 11 L 6 17 Q 12 20 18 17 L 18 11" fill="none" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round"/>
+      <path d="M 22 9 L 22 17" fill="none" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round"/>
+      <circle cx="22" cy="18" r="1" fill="#FFFFFF"/>
+    </g>
+  </defs>
+
+  <style><![CDATA[
+.float-slow { animation: float 6s ease-in-out infinite; }
+    .float-med { animation: float 4s ease-in-out infinite; }
+    .float-fast { animation: float 3s ease-in-out infinite; }
+    .float-delay { animation: float 5s ease-in-out infinite 2s; }
+    
+    @keyframes float {
+      0% { transform: translateY(0px); }
+      50% { transform: translateY(-12px); }
+      100% { transform: translateY(0px); }
+    }
+
+    .pulse { animation: pulse 3s ease-in-out infinite; }
+    @keyframes pulse {
+      0% { opacity: 0.4; }
+      50% { opacity: 0.8; }
+      100% { opacity: 0.4; }
+    }
+
+    .flow-line {
+      stroke-dasharray: 6 12;
+      animation: flow 20s linear infinite;
+    }
+    @keyframes flow {
+      from { stroke-dashoffset: 200; }
+      to { stroke-dashoffset: 0; }
+    }
+
+    .screen-content {
+      animation: slideUp 4s ease-in-out infinite alternate;
+    }
+    @keyframes slideUp {
+      0% { transform: translateY(0) translateX(0); }
+      100% { transform: translateY(-3px) translateX(1.5px); }
+    }
+]]></style>
+
+  <!-- Background Layer -->
+  <rect width="100%" height="100%" fill="url(#bgGrad)" />
+  <rect width="100%" height="100%" fill="url(#isoGrid)" />
+
+  <!-- Ambient Screen Glow -->
+  <ellipse cx="400" cy="250" rx="250" ry="150" fill="#00BCD4" opacity="0.08" filter="url(#glow)" pointer-events="none"/>
+
+  <!-- Data Flow Lines (Background) -->
+  <g stroke="#00BCD4" stroke-width="1.5" fill="none" opacity="0.3" class="flow-line">
+    <path d="M 400 360 L 400 440 L 150 315" />
+    <path d="M 560 280 L 680 340 L 680 180" />
+    <path d="M 240 120 L 240 50 L 450 -55" />
+  </g>
+
+  <!-- Animated Data Particles -->
+  <g fill="#00BCD4" filter="url(#glow)">
+    <circle r="2.5">
+      <animateMotion dur="4s" repeatCount="indefinite" path="M 400 360 L 400 440 L 150 315" />
+    </circle>
+    <circle r="2.5">
+      <animateMotion dur="5s" repeatCount="indefinite" path="M 560 280 L 680 340 L 680 180" />
+    </circle>
+    <circle r="2.5">
+      <animateMotion dur="3.5s" repeatCount="indefinite" path="M 240 120 L 240 50 L 450 -55" />
+    </circle>
+  </g>
+
+  <!-- ========================================== -->
+  <!-- PRIMARY SUBJECT: ISOMETRIC LAPTOP          -->
+  <!-- ========================================== -->
+  <g id="laptop" filter="url(#softShadow)">
+    <!-- Laptop Drop Shadow -->
+    <polygon points="220,310 400,400 580,310 400,220" fill="#040A15" opacity="0.6" filter="url(#glow)"/>
+
+    <!-- Base Right Edge -->
+    <polygon points="400,360 560,280 560,295 400,375" fill="#0d2a4e" />
+    <!-- Base Left Edge -->
+    <polygon points="240,280 400,360 400,375 240,295" fill="#142A4A" />
+    <!-- Base Top Surface -->
+    <polygon points="240,280 400,360 560,280 400,200" fill="#1B365D" />
+
+    <!-- Keyboard Well -->
+    <polygon points="260,280 400,350 540,280 400,210" fill="#10223D" />
+    
+    <!-- Keyboard Keys (Stylized) -->
+    <g fill="#1B365D" stroke="#142A4A" stroke-width="0.5">
+      <!-- Spacebar -->
+      <polygon points="360,320 400,340 440,320 400,300" fill="#244473" />
+      <!-- Enter Key -->
+      <polygon points="480,270 510,285 500,290 470,275" fill="#00BCD4" opacity="0.8" />
+      <!-- Shift Key -->
+      <polygon points="280,270 310,285 300,290 270,275" fill="#C4B9AC" opacity="0.8" />
+      <!-- Decorative Key Rows -->
+      <path d="M 290 260 L 470 230 M 300 270 L 480 240 M 310 280 L 490 250" stroke="#244473" stroke-width="3" stroke-dasharray="10 4" />
+      <path d="M 320 290 L 380 260 M 420 280 L 480 250" stroke="#244473" stroke-width="3" stroke-dasharray="8 4" />
+    </g>
+
+    <!-- Trackpad -->
+    <polygon points="365,335 400,352.5 435,335 400,317.5" fill="#142A4A" />
+
+    <!-- Lid Inner Face (Screen Bezel) -->
+    <polygon points="240,120 400,40 400,200 240,280" fill="#0A1B35" />
+    
+    <!-- Lid Top Edge (Thickness) -->
+    <polygon points="240,120 400,40 405,45 245,125" fill="#C4B9AC" />
+    <!-- Lid Right Edge (Thickness) -->
+    <polygon points="400,40 405,45 405,205 400,200" fill="#A3988C" />
+
+    <!-- Glowing Screen -->
+    <polygon points="250,135 385,67 385,190 250,258" fill="url(#screenGrad)" />
+    <polygon points="250,135 385,67 385,190 250,258" fill="#00BCD4" opacity="0.15" filter="url(#glow)" />
+
+    <!-- Screen Content (Isometric UI) -->
+    <g class="screen-content">
+      <!-- UI Window 1 (Background) -->
+      <polygon points="260,150 330,115 330,175 260,210" fill="#142A4A" stroke="#00BCD4" stroke-width="0.5" opacity="0.8"/>
+      <!-- UI Window 1 Header -->
+      <polygon points="260,150 330,115 330,125 260,160" fill="#00BCD4" opacity="0.9"/>
+      <!-- Code Lines -->
+      <path d="M 265 165 L 295 150 M 265 175 L 315 150 M 265 185 L 285 175" stroke="#C4B9AC" stroke-width="1.5" stroke-linecap="round"/>
+
+      <!-- UI Window 2 (Foreground Chart) -->
+      <polygon points="300,140 375,102 375,172 300,210" fill="#1B365D" stroke="#C4B9AC" stroke-width="0.5" opacity="0.95"/>
+      <!-- Chart Area -->
+      <polygon points="305,185 325,160 345,165 370,130 370,165 305,198" fill="#00BCD4" opacity="0.3"/>
+      <!-- Chart Line -->
+      <path d="M 305 185 L 325 160 L 345 165 L 370 130" fill="none" stroke="#FFFFFF" stroke-width="1.5" stroke-linejoin="round"/>
+      <!-- Chart Data Points -->
+      <circle cx="325" cy="160" r="1.5" fill="#C4B9AC"/>
+      <circle cx="345" cy="165" r="1.5" fill="#C4B9AC"/>
+      <circle cx="370" cy="130" r="1.5" fill="#C4B9AC"/>
+    </g>
+    
+    <!-- Screen Glare -->
+    <polygon points="250,135 320,100 250,170" fill="#FFFFFF" opacity="0.05" />
+  </g>
+
+  <!-- ========================================== -->
+  <!-- FLOATING ELEMENTS (EDUCATION & TECH)       -->
+  <!-- ========================================== -->
+
+  <!-- Floating Graduation Cap (Top Right) -->
+  <g class="float-med" transform="translate(0, -10)">
+    <g filter="url(#softShadow)">
+      <!-- Board Bottom -->
+      <polygon points="550,120 600,95 650,120 600,145" fill="#1B365D" stroke="#00BCD4" stroke-width="1"/>
+      <!-- Board Left Thickness -->
+      <polygon points="550,120 600,145 600,150 550,125" fill="#00BCD4"/>
+      <!-- Board Right Thickness -->
+      <polygon points="600,145 650,120 650,125 600,150" fill="#008B9C"/>
+      
+      <!-- Skullcap Base -->
+      <polygon points="585,135 615,120 615,145 585,160" fill="#142A4A"/>
+      <!-- Skullcap Curve -->
+      <path d="M 585 160 Q 600 170 615 145 L 615 120 L 585 135 Z" fill="#142A4A"/>
+      
+      <!-- Tassel Button -->
+      <ellipse cx="600" cy="120" rx="4" ry="2" fill="#C4B9AC"/>
+      <!-- Tassel String -->
+      <path d="M 600 120 Q 620 125 630 145" fill="none" stroke="#C4B9AC" stroke-width="1.5"/>
+      <!-- Tassel Fringe -->
+      <polygon points="630,145 625,160 635,160" fill="#C4B9AC"/>
+    </g>
+  </g>
+
+  <!-- Floating Document / Paper (Mid Left) -->
+  <g class="float-slow" transform="translate(-20, 20)">
+    <g filter="url(#softShadow)">
+      <!-- Paper Base -->
+      <polygon points="150,180 220,145 260,165 190,200" fill="#FFFFFF" opacity="0.95"/>
+      <!-- Paper Thickness -->
+      <polygon points="150,180 190,200 190,203 150,183" fill="#C4B9AC"/>
+      <polygon points="190,200 260,165 260,168 190,203" fill="#A3988C"/>
+      
+      <!-- Text Lines -->
+      <path d="M 165 175 L 205 155 M 175 180 L 215 160 M 185 185 L 205 175" stroke="#C4B9AC" stroke-width="2" stroke-linecap="round"/>
+      
+      <!-- Turquoise Bookmark -->
+      <polygon points="190,200 200,195 210,205 200,210" fill="#00BCD4"/>
+    </g>
+  </g>
+
+  <!-- Floating Turquoise Sphere (Bottom Left) -->
+  <g class="float-fast" transform="translate(20, 20)">
+    <ellipse cx="180" cy="380" rx="25" ry="12.5" fill="#040A15" opacity="0.4" filter="url(#glow)"/>
+    <circle cx="180" cy="350" r="25" fill="url(#sphereGrad)" filter="url(#softShadow)"/>
+    <!-- Sphere Highlight -->
+    <path d="M 165 335 Q 180 330 190 340 Q 175 345 165 335 Z" fill="#FFFFFF" opacity="0.3"/>
+  </g>
+
+  <!-- Floating Beige Cylinder (Top Left) -->
+  <g class="float-delay" transform="translate(0, -30)">
+    <g filter="url(#softShadow)">
+      <!-- Cylinder Top -->
+      <polygon points="120,90 150,75 180,90 150,105" fill="url(#cylTopGrad)"/>
+      <!-- Cylinder Left Body -->
+      <polygon points="120,90 150,105 150,145 120,130" fill="#C4B9AC"/>
+      <!-- Cylinder Right Body -->
+      <polygon points="150,105 180,90 180,130 150,145" fill="#A3988C"/>
+    </g>
+  </g>
+
+  <!-- Abstract Geometric Accents (Particles) -->
+  <g class="pulse">
+    <circle cx="680" cy="280" r="4" fill="#00BCD4" filter="url(#glow)"/>
+    <circle cx="280" cy="80" r="3" fill="#C4B9AC" filter="url(#glow)"/>
+    <circle cx="500" cy="420" r="5" fill="#00BCD4" filter="url(#glow)"/>
+    <circle cx="100" cy="250" r="2" fill="#FFFFFF" opacity="0.5"/>
+    <circle cx="720" cy="150" r="2.5" fill="#C4B9AC" opacity="0.7"/>
+  </g>
+
+  <!-- Floating Rings / Tech Circles -->
+  <g class="float-slow" stroke="#00BCD4" stroke-width="1" fill="none" opacity="0.5">
+    <ellipse cx="650" cy="380" rx="30" ry="15" />
+    <ellipse cx="650" cy="380" rx="20" ry="10" stroke="#C4B9AC" />
+    <circle cx="650" cy="380" r="2" fill="#00BCD4" />
+  </g>
+
+  <!-- ========================================== -->
+  <!-- FOREGROUND / OVERLAYS                      -->
+  <!-- ========================================== -->
+
+  <!-- Vignette Overlay for Depth -->
+  <rect width="100%" height="100%" fill="url(#vignette)" pointer-events="none" />
+
+  <!-- Corner Icons (Clean, White, Minimal) -->
+  <g transform="translate(40, 40) scale(1.4)" opacity="0.85">
+    <use href="#icon-book" />
+  </g>
+  
+  <g transform="translate(720, 420) scale(1.4)" opacity="0.85">
+    <use href="#icon-grad-cap" />
+  </g>
+
+</svg>

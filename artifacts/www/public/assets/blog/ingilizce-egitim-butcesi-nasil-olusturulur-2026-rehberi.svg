@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 580 400" width="580" height="400">
+    <defs>
+      <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style="stop-color:#0a1628"/>
+        <stop offset="100%" style="stop-color:#0d1f3c"/>
+      </linearGradient>
+      <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" style="stop-color:#059669"/>
+        <stop offset="100%" style="stop-color:#34d399"/>
+      </linearGradient>
+    </defs>
+    <rect width="580" height="400" fill="url(#bg)"/>
+    <circle cx="0" cy="0" r="120" fill="#059669" opacity="0.08"/><circle cx="580" cy="400" r="140" fill="#34d399" opacity="0.06"/><circle cx="452" cy="252" r="1" fill="#f0f9ff" opacity="0.22"/><circle cx="314" cy="114" r="2" fill="#f0f9ff" opacity="0.29"/><circle cx="176" cy="356" r="3" fill="#f0f9ff" opacity="0.36"/><circle cx="38" cy="218" r="1" fill="#f0f9ff" opacity="0.43"/><circle cx="480" cy="80" r="2" fill="#f0f9ff" opacity="0.15"/><circle cx="342" cy="322" r="3" fill="#f0f9ff" opacity="0.22"/><circle cx="204" cy="184" r="1" fill="#f0f9ff" opacity="0.29"/><circle cx="66" cy="46" r="2" fill="#f0f9ff" opacity="0.36"/><circle cx="508" cy="288" r="3" fill="#f0f9ff" opacity="0.43"/><circle cx="370" cy="150" r="1" fill="#f0f9ff" opacity="0.15"/><circle cx="232" cy="12" r="2" fill="#f0f9ff" opacity="0.22"/><circle cx="94" cy="254" r="3" fill="#f0f9ff" opacity="0.29"/><circle cx="536" cy="116" r="1" fill="#f0f9ff" opacity="0.36"/><circle cx="398" cy="358" r="2" fill="#f0f9ff" opacity="0.43"/><circle cx="260" cy="220" r="3" fill="#f0f9ff" opacity="0.15"/><circle cx="122" cy="82" r="1" fill="#f0f9ff" opacity="0.22"/><circle cx="564" cy="324" r="2" fill="#f0f9ff" opacity="0.29"/><circle cx="426" cy="186" r="3" fill="#f0f9ff" opacity="0.36"/><circle cx="288" cy="48" r="1" fill="#f0f9ff" opacity="0.43"/><circle cx="150" cy="290" r="2" fill="#f0f9ff" opacity="0.15"/>
+    <rect x="0" y="0" width="580" height="4" fill="#059669" opacity="0.7"/>
+    <rect x="210" y="140" width="160" height="210" rx="10" fill="none" stroke="#22d3ee" stroke-width="3"/>
+  <rect x="228" y="160" width="125" height="55" rx="5" fill="#0891b2" opacity="0.3"/>
+  <text x="305" y="198" font-size="20" fill="#22d3ee" text-anchor="middle">₺</text>
+  <rect x="228" y="228" width="35" height="25" rx="3" fill="#38bdf8" opacity="0.4"/>
+  <rect x="272" y="228" width="35" height="25" rx="3" fill="#38bdf8" opacity="0.4"/>
+  <rect x="316" y="228" width="35" height="25" rx="3" fill="#38bdf8" opacity="0.4"/>
+  <rect x="228" y="263" width="35" height="25" rx="3" fill="#22d3ee" opacity="0.4"/>
+  <rect x="272" y="263" width="35" height="25" rx="3" fill="#22d3ee" opacity="0.4"/>
+  <rect x="316" y="263" width="75" height="25" rx="3" fill="#f59e0b" opacity="0.5"/>
+    <rect x="0" y="360" width="580" height="40" fill="url(#accent)" opacity="0.15"/>
+  </svg>

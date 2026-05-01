@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 580 400" width="580" height="400">
+    <defs>
+      <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style="stop-color:#0a1628"/>
+        <stop offset="100%" style="stop-color:#0d1f3c"/>
+      </linearGradient>
+      <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" style="stop-color:#059669"/>
+        <stop offset="100%" style="stop-color:#34d399"/>
+      </linearGradient>
+    </defs>
+    <rect width="580" height="400" fill="url(#bg)"/>
+    <circle cx="0" cy="0" r="120" fill="#059669" opacity="0.08"/><circle cx="580" cy="400" r="140" fill="#34d399" opacity="0.06"/><circle cx="47" cy="127" r="3" fill="#f0f9ff" opacity="0.22"/><circle cx="84" cy="244" r="1" fill="#f0f9ff" opacity="0.29"/><circle cx="121" cy="361" r="2" fill="#f0f9ff" opacity="0.36"/><circle cx="158" cy="98" r="3" fill="#f0f9ff" opacity="0.43"/><circle cx="195" cy="215" r="1" fill="#f0f9ff" opacity="0.15"/><circle cx="232" cy="332" r="2" fill="#f0f9ff" opacity="0.22"/><circle cx="269" cy="69" r="3" fill="#f0f9ff" opacity="0.29"/><circle cx="306" cy="186" r="1" fill="#f0f9ff" opacity="0.36"/><circle cx="343" cy="303" r="2" fill="#f0f9ff" opacity="0.43"/><circle cx="380" cy="40" r="3" fill="#f0f9ff" opacity="0.15"/><circle cx="417" cy="157" r="1" fill="#f0f9ff" opacity="0.22"/><circle cx="454" cy="274" r="2" fill="#f0f9ff" opacity="0.29"/><circle cx="491" cy="11" r="3" fill="#f0f9ff" opacity="0.36"/><circle cx="528" cy="128" r="1" fill="#f0f9ff" opacity="0.43"/><circle cx="565" cy="245" r="2" fill="#f0f9ff" opacity="0.15"/><circle cx="22" cy="362" r="3" fill="#f0f9ff" opacity="0.22"/><circle cx="59" cy="99" r="1" fill="#f0f9ff" opacity="0.29"/><circle cx="96" cy="216" r="2" fill="#f0f9ff" opacity="0.36"/><circle cx="133" cy="333" r="3" fill="#f0f9ff" opacity="0.43"/><circle cx="170" cy="70" r="1" fill="#f0f9ff" opacity="0.15"/>
+    <rect x="0" y="0" width="580" height="4" fill="#059669" opacity="0.7"/>
+    <circle cx="290" cy="220" r="110" fill="none" stroke="#22d3ee" stroke-width="4" opacity="0.3"/>
+  <circle cx="290" cy="220" r="75" fill="none" stroke="#38bdf8" stroke-width="4" opacity="0.5"/>
+  <circle cx="290" cy="220" r="40" fill="none" stroke="#22d3ee" stroke-width="4" opacity="0.8"/>
+  <circle cx="290" cy="220" r="12" fill="#f59e0b"/>
+  <path d="M210 140 L290 220 M270 125 L210 140 L225 200" fill="#f59e0b" opacity="0.9"/>
+    <rect x="0" y="360" width="580" height="40" fill="url(#accent)" opacity="0.15"/>
+  </svg>
