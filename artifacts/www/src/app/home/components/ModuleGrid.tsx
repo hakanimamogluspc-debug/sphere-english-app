@@ -80,7 +80,7 @@ export default function BentoGrid() {
           },
         });
 
-        const cards = gridRef.current?.querySelectorAll('.bento-card');
+        const cards = gridRef.current?.querySelectorAll('.module-grid-card');
         if (cards && cards.length > 0) {
           gsap.from(cards, {
             y: 60,
@@ -123,7 +123,8 @@ export default function BentoGrid() {
           {bentoItems.map((item) => (
             <div
               key={item.title}
-              className="bento-card rounded-3xl p-8 flex flex-col gap-5 shadow-sm hover:shadow-md transition-shadow duration-300 bg-[#1B365D]"
+              className="module-grid-card rounded-3xl p-8 flex flex-col gap-5 shadow-sm hover:shadow-md transition-shadow duration-300"
+              style={{ background: '#1B365D' }}
             >
               <div
                 className="w-12 h-12 rounded-2xl flex items-center justify-center"
