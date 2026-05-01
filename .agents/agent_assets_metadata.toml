@@ -767,3 +767,63 @@ id = "v3MR0RLxitXnqSkQb4kcD"
 uri = "file://assets/coaches/standing/dr-olivia.png"
 type = "image"
 title = "Dr. Olivia — Tam Boy"
+
+[[outputs]]
+id = "M3klQhK6VcgA_pkr7gP_s"
+uri = "file://attached_assets/presentation-screenshots/01-dashboard.png"
+type = "image"
+title = "1 — Dashboard (Öğrenci Paneli)"
+
+[[outputs]]
+id = "nGZZgl8L1NkOOImZk1yxx"
+uri = "file://attached_assets/presentation-screenshots/02-ai-studio.png"
+type = "image"
+title = "2 — AI Studio (Ana Ekran)"
+
+[[outputs]]
+id = "EM1Aqhz2xR18-e7EP8tQZ"
+uri = "file://attached_assets/presentation-screenshots/03-pronunciation.png"
+type = "image"
+title = "3 — AI Studio: Telaffuz Koçu"
+
+[[outputs]]
+id = "WkvSld1eDv-sYOZz0kZX4"
+uri = "file://attached_assets/presentation-screenshots/04-grammar.png"
+type = "image"
+title = "4 — AI Studio: Gramer Koçu"
+
+[[outputs]]
+id = "UO5CavPJ2sREM9GzgNIVh"
+uri = "file://attached_assets/presentation-screenshots/05-writing.png"
+type = "image"
+title = "5 — AI Studio: Yazma Koçu"
+
+[[outputs]]
+id = "bsEgmIri3zQDhZ4w-EbqO"
+uri = "file://attached_assets/presentation-screenshots/06-simulation.png"
+type = "image"
+title = "6 — AI Studio: Simülasyon Modu"
+
+[[outputs]]
+id = "PCLhTauy9gPmFvjvmHa0b"
+uri = "file://attached_assets/presentation-screenshots/07-vocab.png"
+type = "image"
+title = "7 — AI Studio: Kelime Oyunu"
+
+[[outputs]]
+id = "d--LBhsHi9bl37ECLokWS"
+uri = "file://attached_assets/presentation-screenshots/08-progress.png"
+type = "image"
+title = "8 — İlerleme & İstatistik"
+
+[[outputs]]
+id = "KzzU-h-Yr4ADIzvsJFqAe"
+uri = "file://attached_assets/presentation-screenshots/09-students.png"
+type = "image"
+title = "9 — Kurum Yetkilisi: Öğrenci Takibi"
+
+[[outputs]]
+id = "rPr5H05RjiaE44ZY7ithM"
+uri = "file://attached_assets/presentation-screenshots/10-companies.png"
+type = "image"
+title = "10 — Kurum Yetkilisi: Kurumlar Listesi"

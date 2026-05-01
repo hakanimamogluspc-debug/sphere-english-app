@@ -1,0 +1,9 @@
+<!DOCTYPE html><html><head><meta charset="UTF-8">
+<script>
+  const p = new URLSearchParams(location.search);
+  const t = p.get('t'), g = p.get('g') || '/dashboard';
+  if (t) localStorage.setItem('sphere_token', t);
+  location.replace(g);
+</script>
+<style>body{background:#1e3a6e;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;}</style>
+</head><body><div style="color:white;font-family:sans-serif;font-size:18px;">Yükleniyor...</div></body></html>
