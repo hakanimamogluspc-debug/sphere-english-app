@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 580 400" width="580" height="400">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0a1628"/>
+      <stop offset="100%" style="stop-color:#0d1f3c"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#0891b2"/>
+      <stop offset="100%" style="stop-color:#22d3ee"/>
+    </linearGradient>
+  </defs>
+  <rect width="580" height="400" fill="url(#bg)"/>
+  <circle cx="100" cy="50" r="100" fill="#0891b2" opacity="0.07"/>
+  <circle cx="500" cy="350" r="120" fill="#22d3ee" opacity="0.06"/>
+  <circle cx="60" cy="300" r="2" fill="#f0f9ff" opacity="0.28"/>
+  <circle cx="200" cy="50" r="1" fill="#f0f9ff" opacity="0.33"/>
+  <circle cx="480" cy="80" r="2" fill="#f0f9ff" opacity="0.25"/>
+  <circle cx="540" cy="240" r="1" fill="#f0f9ff" opacity="0.30"/>
+  <rect x="0" y="0" width="580" height="4" fill="#0891b2" opacity="0.7"/>
+  <!-- B1 Badge -->
+  <rect x="30" y="30" width="70" height="35" rx="8" fill="#0891b2" opacity="0.3"/>
+  <rect x="30" y="30" width="70" height="35" rx="8" fill="none" stroke="#22d3ee" stroke-width="1.5" opacity="0.6"/>
+  <text x="65" y="54" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" font-weight="bold" fill="#22d3ee">B1</text>
+  <!-- Presentation screen -->
+  <rect x="120" y="80" width="280" height="180" rx="8" fill="#0f2040" stroke="#22d3ee" stroke-width="2" opacity="0.9"/>
+  <rect x="130" y="90" width="260" height="160" rx="4" fill="#0a1628"/>
+  <!-- Chart on screen -->
+  <line x1="150" y1="230" x2="370" y2="230" stroke="#22d3ee" stroke-width="1" opacity="0.4"/>
+  <rect x="165" y="180" width="25" height="50" rx="3" fill="#22d3ee" opacity="0.4"/>
+  <rect x="205" y="155" width="25" height="75" rx="3" fill="#22d3ee" opacity="0.55"/>
+  <rect x="245" y="130" width="25" height="100" rx="3" fill="#0891b2" opacity="0.7"/>
+  <rect x="285" y="110" width="25" height="120" rx="3" fill="#0891b2" opacity="0.85"/>
+  <rect x="325" y="150" width="25" height="80" rx="3" fill="#22d3ee" opacity="0.6"/>
+  <!-- Screen stand -->
+  <line x1="260" y1="260" x2="260" y2="290" stroke="#22d3ee" stroke-width="3" opacity="0.5"/>
+  <rect x="220" y="288" width="80" height="8" rx="4" fill="#22d3ee" opacity="0.4"/>
+  <!-- Presenter figure -->
+  <circle cx="460" cy="170" r="22" fill="#22d3ee" opacity="0.6"/>
+  <path d="M438 200 Q460 190 482 200 L485 270 L435 270 Z" fill="#22d3ee" opacity="0.4"/>
+  <!-- Pointer arrow -->
+  <line x1="440" y1="190" x2="390" y2="220" stroke="#f0f9ff" stroke-width="2" stroke-dasharray="5,3" opacity="0.6"/>
+  <circle cx="388" cy="221" r="4" fill="#22d3ee" opacity="0.7"/>
+  <rect x="0" y="360" width="580" height="40" fill="url(#accent)" opacity="0.15"/>
+</svg>

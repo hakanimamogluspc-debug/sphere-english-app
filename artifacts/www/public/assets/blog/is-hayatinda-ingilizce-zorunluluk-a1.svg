@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 580 400" width="580" height="400">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0a1628"/>
+      <stop offset="100%" style="stop-color:#0d1f3c"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#0891b2"/>
+      <stop offset="100%" style="stop-color:#22d3ee"/>
+    </linearGradient>
+  </defs>
+  <rect width="580" height="400" fill="url(#bg)"/>
+  <circle cx="0" cy="0" r="120" fill="#0891b2" opacity="0.08"/>
+  <circle cx="580" cy="400" r="140" fill="#22d3ee" opacity="0.06"/>
+  <circle cx="54" cy="174" r="3" fill="#f0f9ff" opacity="0.25"/>
+  <circle cx="98" cy="338" r="1" fill="#f0f9ff" opacity="0.35"/>
+  <circle cx="142" cy="122" r="2" fill="#f0f9ff" opacity="0.40"/>
+  <circle cx="186" cy="286" r="3" fill="#f0f9ff" opacity="0.15"/>
+  <circle cx="230" cy="70" r="1" fill="#f0f9ff" opacity="0.20"/>
+  <circle cx="450" cy="130" r="3" fill="#f0f9ff" opacity="0.20"/>
+  <circle cx="494" cy="294" r="1" fill="#f0f9ff" opacity="0.28"/>
+  <circle cx="538" cy="78" r="2" fill="#f0f9ff" opacity="0.33"/>
+  <rect x="0" y="0" width="580" height="4" fill="#0891b2" opacity="0.7"/>
+  <!-- A1 Badge -->
+  <rect x="220" y="80" width="140" height="60" rx="12" fill="#0891b2" opacity="0.25"/>
+  <rect x="220" y="80" width="140" height="60" rx="12" fill="none" stroke="#22d3ee" stroke-width="2" opacity="0.6"/>
+  <text x="290" y="120" text-anchor="middle" font-family="Arial, sans-serif" font-size="32" font-weight="bold" fill="#22d3ee">A1</text>
+  <!-- Staircase steps going up -->
+  <rect x="100" y="290" width="50" height="20" rx="4" fill="#22d3ee" opacity="0.3"/>
+  <rect x="155" y="265" width="50" height="45" rx="4" fill="#22d3ee" opacity="0.4"/>
+  <rect x="210" y="235" width="50" height="75" rx="4" fill="#22d3ee" opacity="0.5"/>
+  <rect x="265" y="200" width="50" height="110" rx="4" fill="#22d3ee" opacity="0.65"/>
+  <rect x="320" y="165" width="50" height="145" rx="4" fill="#0891b2" opacity="0.8"/>
+  <!-- Arrow on top of last step -->
+  <polyline points="345,160 345,130 355,145 345,130 335,145" stroke="#22d3ee" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <!-- Small person icon at start -->
+  <circle cx="125" cy="270" r="10" fill="#f0f9ff" opacity="0.6"/>
+  <path d="M115 295 Q125 283 135 295" stroke="#f0f9ff" stroke-width="2" fill="none" opacity="0.6"/>
+  <!-- Label -->
+  <rect x="0" y="360" width="580" height="40" fill="url(#accent)" opacity="0.15"/>
+</svg>

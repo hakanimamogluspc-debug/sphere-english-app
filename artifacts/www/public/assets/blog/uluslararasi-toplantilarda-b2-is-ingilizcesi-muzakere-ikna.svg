@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 580 400" width="580" height="400">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0a1628"/>
+      <stop offset="100%" style="stop-color:#0d1f3c"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#0891b2"/>
+      <stop offset="100%" style="stop-color:#22d3ee"/>
+    </linearGradient>
+  </defs>
+  <rect width="580" height="400" fill="url(#bg)"/>
+  <circle cx="290" cy="0" r="130" fill="#0891b2" opacity="0.06"/>
+  <circle cx="0" cy="400" r="110" fill="#22d3ee" opacity="0.05"/>
+  <circle cx="580" cy="200" r="90" fill="#0891b2" opacity="0.06"/>
+  <circle cx="100" cy="100" r="2" fill="#f0f9ff" opacity="0.28"/>
+  <circle cx="480" cy="60" r="1" fill="#f0f9ff" opacity="0.33"/>
+  <circle cx="520" cy="320" r="2" fill="#f0f9ff" opacity="0.25"/>
+  <circle cx="60" cy="340" r="1" fill="#f0f9ff" opacity="0.30"/>
+  <rect x="0" y="0" width="580" height="4" fill="#0891b2" opacity="0.7"/>
+  <!-- B2 Badge -->
+  <rect x="30" y="30" width="70" height="35" rx="8" fill="#0891b2" opacity="0.3"/>
+  <rect x="30" y="30" width="70" height="35" rx="8" fill="none" stroke="#22d3ee" stroke-width="1.5" opacity="0.6"/>
+  <text x="65" y="54" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" font-weight="bold" fill="#22d3ee">B2</text>
+  <!-- Two people facing each other — negotiation -->
+  <!-- Person left -->
+  <circle cx="160" cy="160" r="28" fill="#22d3ee" opacity="0.55"/>
+  <path d="M128 195 Q160 180 192 195 L198 290 L122 290 Z" fill="#22d3ee" opacity="0.35"/>
+  <!-- Person right -->
+  <circle cx="420" cy="160" r="28" fill="#0891b2" opacity="0.65"/>
+  <path d="M388 195 Q420 180 452 195 L458 290 L382 290 Z" fill="#0891b2" opacity="0.4"/>
+  <!-- Handshake in middle -->
+  <path d="M192 240 Q250 215 290 225 Q330 235 388 240" stroke="#22d3ee" stroke-width="3" fill="none" opacity="0.7" stroke-linecap="round"/>
+  <!-- Connection dots -->
+  <circle cx="230" cy="222" r="5" fill="#22d3ee" opacity="0.6"/>
+  <circle cx="290" cy="225" r="7" fill="#22d3ee" opacity="0.8"/>
+  <circle cx="350" cy="237" r="5" fill="#0891b2" opacity="0.7"/>
+  <!-- Speech bubbles -->
+  <rect x="60" y="80" width="80" height="40" rx="8" fill="#22d3ee" opacity="0.25"/>
+  <polygon points="90,120 80,135 105,120" fill="#22d3ee" opacity="0.25"/>
+  <rect x="440" y="80" width="80" height="40" rx="8" fill="#0891b2" opacity="0.25"/>
+  <polygon points="470,120 495,120 485,135" fill="#0891b2" opacity="0.25"/>
+  <!-- Globe hint -->
+  <circle cx="290" cy="160" r="35" fill="none" stroke="#22d3ee" stroke-width="1" opacity="0.2" stroke-dasharray="4,4"/>
+  <circle cx="290" cy="160" r="20" fill="none" stroke="#22d3ee" stroke-width="1" opacity="0.15" stroke-dasharray="3,3"/>
+  <rect x="0" y="360" width="580" height="40" fill="url(#accent)" opacity="0.15"/>
+</svg>
