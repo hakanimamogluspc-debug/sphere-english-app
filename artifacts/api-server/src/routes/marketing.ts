@@ -1,5 +1,5 @@
 import { Router, Request, Response } from "express";
-import { db, usersTable, contactLeadsTable, emailCampaignsTable, pageViewsTable, emailTemplatesTable } from "@workspace/db";
+import { db, pool, usersTable, contactLeadsTable, emailCampaignsTable, emailEventsTable, pageViewsTable, emailTemplatesTable } from "@workspace/db";
 import { eq, desc, gte, count, and, or, inArray, sql } from "drizzle-orm";
 import { authMiddleware, requireRole, type AuthRequest } from "../middlewares/auth.js";
 import nodemailer from "nodemailer";
@@ -64,12 +64,12 @@ async function sendEmailViaResendOrSmtp(
   fromEmail: string,
   resend: Resend | null,
   transporter: ReturnType<typeof getTransporter>
-): Promise<{ ok: boolean; error?: string }> {
+): Promise<{ ok: boolean; error?: string; resendEmailId?: string }> {
   const from = `Sphere English <${fromEmail}>`;
   if (resend) {
-    const { error } = await resend.emails.send({ from, to, subject, html });
+    const { data, error } = await resend.emails.send({ from, to, subject, html });
     if (error) return { ok: false, error: error.message };
-    return { ok: true };
+    return { ok: true, resendEmailId: data?.id };
   }
   if (transporter) {
     await transporter.sendMail({ from, to, subject, html });
@@ -392,6 +392,13 @@ router.post(
             const result = await sendEmailViaResendOrSmtp(user.email, subject, personalizedBody, fromEmail, resend, transporter);
             if (result.ok) {
               sentCount++;
+              // Resend email ID'sini kaydet (webhook ile eşleştirmek için)
+              if (result.resendEmailId) {
+                await pool.query(
+                  `INSERT INTO email_events (campaign_id, resend_email_id, recipient_email, event_type) VALUES ($1, $2, $3, 'email.sent')`,
+                  [campaign.id, result.resendEmailId, user.email]
+                );
+              }
             } else {
               sendErrors.push(`${user.email}: ${result.error}`);
             }

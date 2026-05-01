@@ -1,4 +1,4 @@
-import { pgTable, serial, text, timestamp, integer, boolean } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, timestamp, integer } from "drizzle-orm/pg-core";
 
 export const contactLeadsTable = pgTable("contact_leads", {
   id: serial("id").primaryKey(),
@@ -21,9 +21,22 @@ export const emailCampaignsTable = pgTable("email_campaigns", {
   recipientFilter: text("recipient_filter").notNull().default("all"),
   recipientCount: integer("recipient_count").notNull().default(0),
   sentCount: integer("sent_count").notNull().default(0),
+  openedCount: integer("opened_count").notNull().default(0),
+  clickedCount: integer("clicked_count").notNull().default(0),
+  deliveredCount: integer("delivered_count").notNull().default(0),
+  bouncedCount: integer("bounced_count").notNull().default(0),
   status: text("status", { enum: ["draft", "sending", "sent", "failed"] }).notNull().default("draft"),
   sentAt: timestamp("sent_at"),
   createdBy: integer("created_by"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const emailEventsTable = pgTable("email_events", {
+  id: serial("id").primaryKey(),
+  campaignId: integer("campaign_id"),
+  resendEmailId: text("resend_email_id"),
+  recipientEmail: text("recipient_email"),
+  eventType: text("event_type").notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
@@ -51,5 +64,6 @@ export const emailTemplatesTable = pgTable("email_templates", {
 export type ContactLead = typeof contactLeadsTable.$inferSelect;
 export type InsertContactLead = typeof contactLeadsTable.$inferInsert;
 export type EmailCampaign = typeof emailCampaignsTable.$inferSelect;
+export type EmailEvent = typeof emailEventsTable.$inferSelect;
 export type PageView = typeof pageViewsTable.$inferSelect;
 export type EmailTemplate = typeof emailTemplatesTable.$inferSelect;

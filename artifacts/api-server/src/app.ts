@@ -8,6 +8,7 @@ import path from "path";
 import fs from "fs";
 import rateLimit from "express-rate-limit";
 import router from "./routes";
+import webhooksRouter from "./routes/webhooks";
 import { logger } from "./lib/logger";
 
 const app: Express = express();
@@ -180,6 +181,9 @@ if (fs.existsSync(vocabGameDir)) {
   app.use("/vocab-game", express.static(vocabGameDir));
   logger.info({ vocabGameDir }, "Serving vocab game static files");
 }
+
+// Resend webhook — /api prefix'i yok, ham JSON gerekiyor
+app.use(webhooksRouter);
 
 app.use("/api", router);
 app.use("/api-server/api", router);

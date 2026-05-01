@@ -116,6 +116,22 @@ async function runStartupMigrations() {
       page VARCHAR(300) NOT NULL DEFAULT '/',
       last_seen TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )`,
+    // E-posta takip sütunları — kampanya açılma/tıklama istatistikleri
+    `ALTER TABLE email_campaigns ADD COLUMN IF NOT EXISTS opened_count INTEGER NOT NULL DEFAULT 0`,
+    `ALTER TABLE email_campaigns ADD COLUMN IF NOT EXISTS clicked_count INTEGER NOT NULL DEFAULT 0`,
+    `ALTER TABLE email_campaigns ADD COLUMN IF NOT EXISTS delivered_count INTEGER NOT NULL DEFAULT 0`,
+    `ALTER TABLE email_campaigns ADD COLUMN IF NOT EXISTS bounced_count INTEGER NOT NULL DEFAULT 0`,
+    // E-posta olayları tablosu — Resend webhook ile dolar
+    `CREATE TABLE IF NOT EXISTS email_events (
+      id SERIAL PRIMARY KEY,
+      campaign_id INTEGER,
+      resend_email_id TEXT,
+      recipient_email TEXT,
+      event_type TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`,
+    `CREATE INDEX IF NOT EXISTS idx_email_events_campaign ON email_events(campaign_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_email_events_resend_id ON email_events(resend_email_id)`,
   ];
   for (const sql of migrations) {
     try {

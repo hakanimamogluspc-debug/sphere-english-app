@@ -52,8 +52,10 @@ interface Lead {
 
 interface Campaign {
   id: number; subject: string; body: string; recipientFilter: string;
-  recipientCount: number; sentCount: number; status: string;
-  sentAt?: string; createdAt: string;
+  recipientCount: number; sentCount: number;
+  openedCount: number; clickedCount: number;
+  deliveredCount: number; bouncedCount: number;
+  status: string; sentAt?: string; createdAt: string;
 }
 
 interface EmailTemplate {
@@ -503,9 +505,13 @@ export default function AdminMarketing() {
                     <CheckCircle size={16} className={c.status === "sent" ? "text-green-500" : "text-gray-300"} />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-gray-800 truncate">{c.subject}</p>
-                      <p className="text-xs text-gray-400">{c.sentCount} kişiye gönderildi · {new Date(c.createdAt).toLocaleDateString("tr-TR")}</p>
+                      <p className="text-xs text-gray-400">{c.sentCount} kişi · {new Date(c.createdAt).toLocaleDateString("tr-TR")}</p>
                     </div>
-                    <span className="text-xs text-gray-400">{RECIPIENT_OPTIONS.find(o => o.value === c.recipientFilter)?.label || c.recipientFilter}</span>
+                    <div className="flex items-center gap-2 text-xs">
+                      {c.openedCount > 0 && <span className="text-green-600 font-medium">%{Math.round((c.openedCount / (c.sentCount || 1)) * 100)} açıldı</span>}
+                      {c.clickedCount > 0 && <span className="text-purple-600 font-medium">%{Math.round((c.clickedCount / (c.sentCount || 1)) * 100)} tıklandı</span>}
+                      {c.openedCount === 0 && c.status === "sent" && <span className="text-gray-300">—</span>}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -796,6 +802,27 @@ export default function AdminMarketing() {
             </div>
           </div>
 
+          {/* Webhook Kurulum Rehberi */}
+          <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                <Mail size={16} className="text-blue-600" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-blue-800">E-posta Takibini Aktifleştir</p>
+                <p className="text-xs text-blue-600 mt-0.5 leading-relaxed">
+                  Açılma ve tıklama oranlarını görmek için Resend'de webhook ekleyin:
+                </p>
+                <div className="mt-2 bg-white border border-blue-200 rounded-lg px-3 py-2">
+                  <p className="text-xs font-mono text-gray-700 break-all">https://app.sphereenglish.com/webhooks/resend</p>
+                </div>
+                <p className="text-xs text-blue-500 mt-2">
+                  <a href="https://resend.com/webhooks" target="_blank" rel="noopener noreferrer" className="underline">resend.com/webhooks</a> → Add Webhook → yukarıdaki URL'yi yapıştırın → <strong>email.opened, email.clicked, email.delivered, email.bounced</strong> olaylarını seçin.
+                </p>
+              </div>
+            </div>
+          </div>
+
           {/* Campaign History */}
           <div className="space-y-3">
             <h3 className="font-semibold text-gray-800 text-sm flex items-center gap-2"><Clock size={14} /> Kampanya Geçmişi</h3>
@@ -805,7 +832,11 @@ export default function AdminMarketing() {
               </div>
             ) : (
               <div className="space-y-2">
-                {campaigns.map(c => (
+                {campaigns.map(c => {
+                  const base = c.sentCount || 1;
+                  const openRate = c.openedCount > 0 ? Math.round((c.openedCount / base) * 100) : null;
+                  const clickRate = c.clickedCount > 0 ? Math.round((c.clickedCount / base) * 100) : null;
+                  return (
                   <div key={c.id} className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
                     <div className="flex items-start justify-between gap-2">
                       <p className="font-medium text-gray-800 text-sm truncate">{c.subject}</p>
@@ -813,13 +844,35 @@ export default function AdminMarketing() {
                         {c.status === "sent" ? "Gönderildi" : c.status === "sending" ? "Gönderiliyor" : c.status}
                       </span>
                     </div>
-                    <div className="mt-1.5 text-xs text-gray-400 space-y-0.5">
+                    <div className="mt-1.5 text-xs text-gray-400">
                       <p>{RECIPIENT_OPTIONS.find(o => o.value === c.recipientFilter)?.label || c.recipientFilter}</p>
-                      <p>{c.sentCount} / {c.recipientCount} kişi</p>
-                      <p>{new Date(c.createdAt).toLocaleString("tr-TR")}</p>
+                      <p className="mt-0.5">{c.sentCount} / {c.recipientCount} kişiye gönderildi · {new Date(c.createdAt).toLocaleString("tr-TR")}</p>
                     </div>
+                    {/* Takip istatistikleri */}
+                    <div className="mt-3 grid grid-cols-4 gap-2">
+                      <div className="bg-blue-50 rounded-lg p-2 text-center">
+                        <p className="text-xs text-blue-500 font-medium">Teslim</p>
+                        <p className="text-sm font-bold text-blue-700">{c.deliveredCount || c.sentCount}</p>
+                      </div>
+                      <div className="bg-green-50 rounded-lg p-2 text-center">
+                        <p className="text-xs text-green-500 font-medium">Açıldı</p>
+                        <p className="text-sm font-bold text-green-700">{c.openedCount}{openRate !== null ? <span className="text-xs font-normal ml-0.5">%{openRate}</span> : ""}</p>
+                      </div>
+                      <div className="bg-purple-50 rounded-lg p-2 text-center">
+                        <p className="text-xs text-purple-500 font-medium">Tıklandı</p>
+                        <p className="text-sm font-bold text-purple-700">{c.clickedCount}{clickRate !== null ? <span className="text-xs font-normal ml-0.5">%{clickRate}</span> : ""}</p>
+                      </div>
+                      <div className="bg-red-50 rounded-lg p-2 text-center">
+                        <p className="text-xs text-red-400 font-medium">Bounced</p>
+                        <p className="text-sm font-bold text-red-600">{c.bouncedCount}</p>
+                      </div>
+                    </div>
+                    {c.openedCount === 0 && c.clickedCount === 0 && c.status === "sent" && (
+                      <p className="mt-2 text-xs text-gray-300 italic">Takip verileri bekleniyor — Resend webhook aktif olduğunda güncellenir</p>
+                    )}
                   </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
