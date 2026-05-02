@@ -188,6 +188,18 @@ async function runStartupMigrations() {
     `INSERT INTO feature_settings (key, label, is_enabled, visible_to, category) VALUES
       ('subscription-enforcement', 'Abonelik Kilitleri (Pro paywall)', false, ARRAY['admin']::TEXT[], 'system')
       ON CONFLICT (key) DO NOTHING`,
+    // Yeni AI Studio modülleri — interview-sim, presentation-sim, ai-quiz, ai-tutor, learning-path
+    `INSERT INTO feature_settings (key, label, is_enabled, visible_to, category) VALUES
+      ('student-interview-sim',     'Mülakat Simülatörü',     true, ARRAY['student','bireysel_ogrenci','kurumsal_ogrenci','admin']::TEXT[], 'ai-studio'),
+      ('student-presentation-sim',  'Sunum Simülatörü',       true, ARRAY['student','bireysel_ogrenci','kurumsal_ogrenci','admin']::TEXT[], 'ai-studio'),
+      ('student-ai-quiz',           'Akıllı Quiz Üretici',    true, ARRAY['student','bireysel_ogrenci','kurumsal_ogrenci','admin']::TEXT[], 'ai-studio'),
+      ('student-ai-tutor',          'Kişisel AI Öğretmen',    true, ARRAY['student','bireysel_ogrenci','kurumsal_ogrenci','admin']::TEXT[], 'ai-studio'),
+      ('student-learning-path',     'Adaptif Öğrenme Yolu',   true, ARRAY['student','bireysel_ogrenci','kurumsal_ogrenci','admin']::TEXT[], 'ai-studio')
+      ON CONFLICT (key) DO NOTHING`,
+    // Kurumsal AI raporu
+    `INSERT INTO feature_settings (key, label, is_enabled, visible_to, category) VALUES
+      ('corporate-ai-report', 'AI Performans Raporu', true, ARRAY['admin']::TEXT[], 'corporate')
+      ON CONFLICT (key) DO NOTHING`,
     // Sidebar'da görünsün
     `INSERT INTO feature_settings (key, label, is_enabled, visible_to, category) VALUES
       ('student-subscription', 'Aboneliğim', true, ARRAY['student']::TEXT[], 'student'),
