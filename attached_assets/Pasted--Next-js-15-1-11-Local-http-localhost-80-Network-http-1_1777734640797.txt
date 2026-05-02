@@ -1,0 +1,321 @@
+   ▲ Next.js 15.1.11
+   - Local:        http://localhost:80
+   - Network:      http://10.11.17.251:80
+
+ ✓ Starting...
+(node:1) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///app/image-hosts.config.js is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ Ready in 419ms
+   ▲ Next.js 15.1.11
+   - Local:        http://localhost:80
+   - Network:      http://10.11.17.252:80
+
+ ✓ Starting...
+(node:1) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///app/image-hosts.config.js is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ Ready in 396ms
+   ▲ Next.js 15.1.11
+   - Local:        http://localhost:80
+   - Network:      http://10.11.17.253:80
+
+ ✓ Starting...
+(node:1) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///app/image-hosts.config.js is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ Ready in 420ms
+   ▲ Next.js 15.1.11
+   - Local:        http://localhost:80
+   - Network:      http://10.11.17.254:80
+
+ ✓ Starting...
+(node:1) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///app/image-hosts.config.js is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ⚠ Invalid next.config.mjs options detected: 
+ ⚠     Unrecognized key(s) in object: 'turbopack'
+Payload: You can safely ignore the "Invalid next.config" warning above. This only occurs on Next.js 15.2.x or lower. We recommend upgrading to the latest supported Next.js version to resolve this warning.
+ ⚠ See more info here: https://nextjs.org/docs/messages/invalid-next-config
+ ✓ Ready in 313ms
+[15:06:03] ERROR: Error: cannot connect to Postgres. Details: connect ECONNREFUSED 127.0.0.1:5432
+    err: {
+      "type": "Error",
+      "message": "connect ECONNREFUSED 127.0.0.1:5432",
+      "stack":
+          Error: connect ECONNREFUSED 127.0.0.1:5432
+              at /app/node_modules/pg-pool/index.js:45:11
+              at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+              at async u (/app/.next/server/chunks/796.js:190:82138)
+              at async Object.A [as connect] (/app/.next/server/chunks/796.js:190:82380)
+              at async tO.init (/app/.next/server/chunks/796.js:315:8867)
+              at async tj (/app/.next/server/chunks/796.js:315:12057)
+              at async /app/.next/server/app/(payload)/admin/[[...segments]]/page.js:211:294094
+      "errno": -111,
+      "code": "ECONNREFUSED",
+      "syscall": "connect",
+      "address": "127.0.0.1",
+      "port": 5432
+    }
+undefined
+ ⨯ unhandledRejection:  undefined
+ ⨯ Error: Error: cannot connect to Postgres: connect ECONNREFUSED 127.0.0.1:5432
+    at <unknown> (Error: Error: cannot connect to Postgres: connect ECONNREFUSED 127.0.0.1:5432)
+    at Object.A [as connect] (.next/server/chunks/796.js:190:83522)
+    at async tO.init (.next/server/chunks/796.js:315:8867)
+    at async tj (.next/server/chunks/796.js:315:12057)
+    at async (.next/server/app/(payload)/admin/[[...segments]]/page.js:211:294094) {
+  payloadInitError: true,
+  digest: '3954564418'
+}
+ ⨯ Error: Error: cannot connect to Postgres: connect ECONNREFUSED 127.0.0.1:5432
+    at <unknown> (Error: Error: cannot connect to Postgres: connect ECONNREFUSED 127.0.0.1:5432)
+    at Object.A [as connect] (.next/server/chunks/796.js:190:83522)
+    at async tO.init (.next/server/chunks/796.js:315:8867)
+    at async tj (.next/server/chunks/796.js:315:12057)
+    at async (.next/server/app/(payload)/admin/[[...segments]]/page.js:211:294094) {
+  payloadInitError: true,
+  digest: '3954564418'
+}
+ ⨯ Error: Error: cannot connect to Postgres: connect ECONNREFUSED 127.0.0.1:5432
+    at <unknown> (Error: Error: cannot connect to Postgres: connect ECONNREFUSED 127.0.0.1:5432)
+    at Object.A [as connect] (.next/server/chunks/796.js:190:83522)
+    at async tO.init (.next/server/chunks/796.js:315:8867)
+    at async tj (.next/server/chunks/796.js:315:12057)
+    at async (.next/server/app/(payload)/admin/[[...segments]]/page.js:211:294094) {
+  payloadInitError: true,
+  digest: '3954564418'
+}
+[15:06:03] ERROR: Error: cannot connect to Postgres. Details: connect ECONNREFUSED 127.0.0.1:5432
+    err: {
+      "type": "Error",
+      "message": "connect ECONNREFUSED 127.0.0.1:5432",
+      "stack":
+          Error: connect ECONNREFUSED 127.0.0.1:5432
+              at /app/node_modules/pg-pool/index.js:45:11
+              at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+              at async u (/app/.next/server/chunks/796.js:190:82138)
+              at async Object.A [as connect] (/app/.next/server/chunks/796.js:190:82380)
+              at async tO.init (/app/.next/server/chunks/796.js:315:8867)
+              at async tj (/app/.next/server/chunks/796.js:315:12057)
+              at async /app/.next/server/app/(payload)/admin/[[...segments]]/page.js:211:294094
+      "errno": -111,
+      "code": "ECONNREFUSED",
+      "syscall": "connect",
+      "address": "127.0.0.1",
+      "port": 5432
+    }
+undefined
+ ⨯ unhandledRejection:  undefined
+ ⨯ Error: Error: cannot connect to Postgres: connect ECONNREFUSED 127.0.0.1:5432
+    at <unknown> (Error: Error: cannot connect to Postgres: connect ECONNREFUSED 127.0.0.1:5432)
+    at Object.A [as connect] (.next/server/chunks/796.js:190:83522)
+    at async tO.init (.next/server/chunks/796.js:315:8867)
+    at async tj (.next/server/chunks/796.js:315:12057)
+    at async (.next/server/app/(payload)/admin/[[...segments]]/page.js:211:294094) {
+  payloadInitError: true,
+  digest: '3954564418'
+}
+ ⨯ Error: Error: cannot connect to Postgres: connect ECONNREFUSED 127.0.0.1:5432
+    at <unknown> (Error: Error: cannot connect to Postgres: connect ECONNREFUSED 127.0.0.1:5432)
+    at Object.A [as connect] (.next/server/chunks/796.js:190:83522)
+    at async tO.init (.next/server/chunks/796.js:315:8867)
+    at async tj (.next/server/chunks/796.js:315:12057)
+    at async (.next/server/app/(payload)/admin/[[...segments]]/page.js:211:294094) {
+  payloadInitError: true,
+  digest: '3954564418'
+}
+ ⨯ Error: Error: cannot connect to Postgres: connect ECONNREFUSED 127.0.0.1:5432
+    at <unknown> (Error: Error: cannot connect to Postgres: connect ECONNREFUSED 127.0.0.1:5432)
+    at Object.A [as connect] (.next/server/chunks/796.js:190:83522)
+    at async tO.init (.next/server/chunks/796.js:315:8867)
+    at async tj (.next/server/chunks/796.js:315:12057)
+    at async (.next/server/app/(payload)/admin/[[...segments]]/page.js:211:294094) {
+  payloadInitError: true,
+  digest: '3954564418'
+}
+[15:06:23] ERROR: Error: cannot connect to Postgres. Details: connect ECONNREFUSED 127.0.0.1:5432
+    err: {
+      "type": "Error",
+      "message": "connect ECONNREFUSED 127.0.0.1:5432",
+      "stack":
+          Error: connect ECONNREFUSED 127.0.0.1:5432
+              at /app/node_modules/pg-pool/index.js:45:11
+              at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+              at async u (/app/.next/server/chunks/796.js:190:82138)
+              at async Object.A [as connect] (/app/.next/server/chunks/796.js:190:82380)
+              at async tO.init (/app/.next/server/chunks/796.js:315:8867)
+              at async tj (/app/.next/server/chunks/796.js:315:12057)
+              at async /app/.next/server/app/(payload)/admin/[[...segments]]/page.js:211:294094
+      "errno": -111,
+      "code": "ECONNREFUSED",
+      "syscall": "connect",
+      "address": "127.0.0.1",
+      "port": 5432
+    }
+undefined
+ ⨯ unhandledRejection:  undefined
+ ⨯ Error: Error: cannot connect to Postgres: connect ECONNREFUSED 127.0.0.1:5432
+    at <unknown> (Error: Error: cannot connect to Postgres: connect ECONNREFUSED 127.0.0.1:5432)
+    at Object.A [as connect] (.next/server/chunks/796.js:190:83522)
+    at async tO.init (.next/server/chunks/796.js:315:8867)
+    at async tj (.next/server/chunks/796.js:315:12057)
+    at async (.next/server/app/(payload)/admin/[[...segments]]/page.js:211:294094) {
+  payloadInitError: true,
+  digest: '3954564418'
+}
+ ⨯ Error: Error: cannot connect to Postgres: connect ECONNREFUSED 127.0.0.1:5432
+    at <unknown> (Error: Error: cannot connect to Postgres: connect ECONNREFUSED 127.0.0.1:5432)
+    at Object.A [as connect] (.next/server/chunks/796.js:190:83522)
+    at async tO.init (.next/server/chunks/796.js:315:8867)
+    at async tj (.next/server/chunks/796.js:315:12057)
+    at async (.next/server/app/(payload)/admin/[[...segments]]/page.js:211:294094) {
+  payloadInitError: true,
+  digest: '3954564418'
+}
+ ⨯ Error: Error: cannot connect to Postgres: connect ECONNREFUSED 127.0.0.1:5432
+    at <unknown> (Error: Error: cannot connect to Postgres: connect ECONNREFUSED 127.0.0.1:5432)
+    at Object.A [as connect] (.next/server/chunks/796.js:190:83522)
+    at async tO.init (.next/server/chunks/796.js:315:8867)
+    at async tj (.next/server/chunks/796.js:315:12057)
+    at async (.next/server/app/(payload)/admin/[[...segments]]/page.js:211:294094) {
+  payloadInitError: true,
+  digest: '3954564418'
+}
+   ▲ Next.js 15.1.11
+   - Local:        http://localhost:80
+   - Network:      http://10.11.17.255:80
+
+ ✓ Starting...
+(node:1) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///app/image-hosts.config.js is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ⚠ Invalid next.config.mjs options detected: 
+ ⚠     Unrecognized key(s) in object: 'turbopack'
+Payload: You can safely ignore the "Invalid next.config" warning above. This only occurs on Next.js 15.2.x or lower. We recommend upgrading to the latest supported Next.js version to resolve this warning.
+ ⚠ See more info here: https://nextjs.org/docs/messages/invalid-next-config
+ ✓ Ready in 323ms
+[15:08:55] ERROR: Error: cannot connect to Postgres. Details: getaddrinfo ENOTFOUND ...buraya-kopyaladığın-değer...
+    err: {
+      "type": "Error",
+      "message": "getaddrinfo ENOTFOUND ...buraya-kopyaladığın-değer...",
+      "stack":
+          Error: getaddrinfo ENOTFOUND ...buraya-kopyaladığın-değer...
+              at /app/node_modules/pg-pool/index.js:45:11
+              at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+              at async u (/app/.next/server/chunks/796.js:190:82138)
+              at async Object.A [as connect] (/app/.next/server/chunks/796.js:190:82380)
+              at async tO.init (/app/.next/server/chunks/796.js:315:8867)
+              at async tj (/app/.next/server/chunks/796.js:315:12057)
+              at async /app/.next/server/app/(payload)/admin/[[...segments]]/page.js:211:294094
+      "errno": -3008,
+      "code": "ENOTFOUND",
+      "syscall": "getaddrinfo",
+      "hostname": "...buraya-kopyaladığın-değer..."
+    }
+undefined
+ ⨯ unhandledRejection:  undefined
+ ⨯ Error: Error: cannot connect to Postgres: getaddrinfo ENOTFOUND ...buraya-kopyaladığın-değer...
+    at Object.A [as connect] (.next/server/chunks/796.js:190:83522)
+    at async tO.init (.next/server/chunks/796.js:315:8867)
+    at async tj (.next/server/chunks/796.js:315:12057)
+    at async (.next/server/app/(payload)/admin/[[...segments]]/page.js:211:294094) {
+  payloadInitError: true,
+  digest: '2341988418'
+}
+ ⨯ Error: Error: cannot connect to Postgres: getaddrinfo ENOTFOUND ...buraya-kopyaladığın-değer...
+    at Object.A [as connect] (.next/server/chunks/796.js:190:83522)
+    at async tO.init (.next/server/chunks/796.js:315:8867)
+    at async tj (.next/server/chunks/796.js:315:12057)
+    at async (.next/server/app/(payload)/admin/[[...segments]]/page.js:211:294094) {
+  payloadInitError: true,
+  digest: '2341988418'
+}
+ ⨯ Error: Error: cannot connect to Postgres: getaddrinfo ENOTFOUND ...buraya-kopyaladığın-değer...
+    at Object.A [as connect] (.next/server/chunks/796.js:190:83522)
+    at async tO.init (.next/server/chunks/796.js:315:8867)
+    at async tj (.next/server/chunks/796.js:315:12057)
+    at async (.next/server/app/(payload)/admin/[[...segments]]/page.js:211:294094) {
+  payloadInitError: true,
+  digest: '2341988418'
+}
+[15:08:58] ERROR: Error: cannot connect to Postgres. Details: getaddrinfo ENOTFOUND ...buraya-kopyaladığın-değer...
+    err: {
+      "type": "Error",
+      "message": "getaddrinfo ENOTFOUND ...buraya-kopyaladığın-değer...",
+      "stack":
+          Error: getaddrinfo ENOTFOUND ...buraya-kopyaladığın-değer...
+              at /app/node_modules/pg-pool/index.js:45:11
+              at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+              at async u (/app/.next/server/chunks/796.js:190:82138)
+              at async Object.A [as connect] (/app/.next/server/chunks/796.js:190:82380)
+              at async tO.init (/app/.next/server/chunks/796.js:315:8867)
+              at async tj (/app/.next/server/chunks/796.js:315:12057)
+              at async /app/.next/server/app/(payload)/admin/[[...segments]]/page.js:211:294094
+      "errno": -3008,
+      "code": "ENOTFOUND",
+      "syscall": "getaddrinfo",
+      "hostname": "...buraya-kopyaladığın-değer..."
+    }
+undefined
+ ⨯ unhandledRejection:  undefined
+ ⨯ Error: Error: cannot connect to Postgres: getaddrinfo ENOTFOUND ...buraya-kopyaladığın-değer...
+    at Object.A [as connect] (.next/server/chunks/796.js:190:83522)
+    at async tO.init (.next/server/chunks/796.js:315:8867)
+    at async tj (.next/server/chunks/796.js:315:12057)
+    at async (.next/server/app/(payload)/admin/[[...segments]]/page.js:211:294094) {
+  payloadInitError: true,
+  digest: '2341988418'
+}
+ ⨯ Error: Error: cannot connect to Postgres: getaddrinfo ENOTFOUND ...buraya-kopyaladığın-değer...
+    at Object.A [as connect] (.next/server/chunks/796.js:190:83522)
+    at async tO.init (.next/server/chunks/796.js:315:8867)
+    at async tj (.next/server/chunks/796.js:315:12057)
+    at async (.next/server/app/(payload)/admin/[[...segments]]/page.js:211:294094) {
+  payloadInitError: true,
+  digest: '2341988418'
+}
+ ⨯ Error: Error: cannot connect to Postgres: getaddrinfo ENOTFOUND ...buraya-kopyaladığın-değer...
+    at Object.A [as connect] (.next/server/chunks/796.js:190:83522)
+    at async tO.init (.next/server/chunks/796.js:315:8867)
+    at async tj (.next/server/chunks/796.js:315:12057)
+    at async (.next/server/app/(payload)/admin/[[...segments]]/page.js:211:294094) {
+  payloadInitError: true,
+  digest: '2341988418'
+}
+[15:09:25] ERROR: Error: cannot connect to Postgres. Details: getaddrinfo ENOTFOUND ...buraya-kopyaladığın-değer...
+    err: {
+      "type": "Error",
+      "message": "getaddrinfo ENOTFOUND ...buraya-kopyaladığın-değer...",
+      "stack":
+          Error: getaddrinfo ENOTFOUND ...buraya-kopyaladığın-değer...
+              at /app/node_modules/pg-pool/index.js:45:11
+              at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+              at async u (/app/.next/server/chunks/796.js:190:82138)
+              at async Object.A [as connect] (/app/.next/server/chunks/796.js:190:82380)
+              at async tO.init (/app/.next/server/chunks/796.js:315:8867)
+              at async tj (/app/.next/server/chunks/796.js:315:12057)
+              at async n (/app/.next/server/app/blog/page.js:1:12764)
+              at async c (/app/.next/server/app/blog/page.js:1:13075)
+              at async j (/app/.next/server/app/home/page.js:11:59359)
+      "errno": -3008,
+      "code": "ENOTFOUND",
+      "syscall": "getaddrinfo",
+      "hostname": "...buraya-kopyaladığın-değer..."
+    }
+[home] CMS fetch hatası — varsayılan içerik kullanılacak: Error: Error: cannot connect to Postgres: getaddrinfo ENOTFOUND ...buraya-kopyaladığın-değer...
+    at Object.A [as connect] (.next/server/chunks/796.js:190:83522)
+    at async tO.init (.next/server/chunks/796.js:315:8867)
+    at async tj (.next/server/chunks/796.js:315:12057)
+    at async n (.next/server/app/blog/page.js:1:12764)
+    at async c (.next/server/app/blog/page.js:1:13075)
+    at async j (.next/server/app/home/page.js:11:59359) {
+  payloadInitError: true
+}
+undefined
+ ⨯ unhandledRejection:  undefined
