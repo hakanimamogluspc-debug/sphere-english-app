@@ -34,6 +34,20 @@ function extractRichText(richText: any[]): string {
   return richText.map((t: any) => t?.plain_text || t?.text?.content || '').join('');
 }
 
+/**
+ * Sanitize cover URLs from Notion DB.
+ * Legacy Notion entries store URLs like `/api/media/file/...` that pointed to a
+ * previous Payload media setup; those files no longer exist (return 500), so
+ * drop them and let the page fall back to the default SVG cover.
+ */
+function sanitizeCover(url: string | undefined | null): string {
+  const u = (url || '').trim();
+  if (!u) return '';
+  if (u.startsWith('/api/media/file/')) return '';
+  if (u.startsWith('/api/media/')) return '';
+  return u;
+}
+
 function pageToPost(page: any): BlogPost {
   const props = page.properties || {};
   return {
@@ -43,7 +57,7 @@ function pageToPost(page: any): BlogPost {
     summary: props.Summary?.rich_text?.[0]?.plain_text || '',
     category: props.Category?.select?.name || '',
     status: props.Status?.select?.name || 'Draft',
-    cover: props.Cover?.url || '',
+    cover: sanitizeCover(props.Cover?.url),
     date: props.Date?.date?.start || '',
     author: props.Author?.rich_text?.[0]?.plain_text || 'Sphere English',
   };

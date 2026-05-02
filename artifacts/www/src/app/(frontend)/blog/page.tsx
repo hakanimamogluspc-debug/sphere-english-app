@@ -38,8 +38,16 @@ function formatDate(dateStr: string): string {
   return date.toLocaleDateString('tr-TR', { year: 'numeric', month: 'long', day: 'numeric' });
 }
 
+function sanitizeCover(url: string | undefined | null): string {
+  const u = (url || '').trim();
+  if (!u) return '';
+  if (u.startsWith('/api/media/file/')) return '';
+  if (u.startsWith('/api/media/')) return '';
+  return u;
+}
+
 function normalizePayloadPost(p: any): BlogPost {
-  const cover = p.cover && typeof p.cover === 'object' ? (p.cover.sizes?.card?.url || p.cover.url || '') : '';
+  const rawCover = p.cover && typeof p.cover === 'object' ? (p.cover.sizes?.card?.url || p.cover.url || '') : '';
   return {
     id: p.id,
     title: p.title,
@@ -47,7 +55,7 @@ function normalizePayloadPost(p: any): BlogPost {
     summary: p.summary || '',
     category: p.category || '',
     status: p.status || 'Published',
-    cover: cover || `/assets/blog/${p.slug}.svg`,
+    cover: sanitizeCover(rawCover),
     date: p.date || '',
     author: p.author || 'Sphere English',
   };
