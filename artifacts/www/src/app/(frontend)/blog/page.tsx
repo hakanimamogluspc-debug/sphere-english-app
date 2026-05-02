@@ -93,29 +93,59 @@ function BlogCard({ post }: { post: BlogPost }) {
 
 export default async function BlogPage() {
   let posts: BlogPost[] = [];
-  let source: 'cms' | 'notion' | 'empty' = 'empty';
   let error: string | null = null;
 
-  // 1) Try Payload CMS first
-  try {
-    const cmsPosts = await fetchPublishedBlogPosts();
-    if (cmsPosts && cmsPosts.length > 0) {
-      posts = cmsPosts.map(normalizePayloadPost);
-      source = 'cms';
-    }
-  } catch (err) {
-    // CMS unavailable — silently try Notion
-    console.warn('[blog] Payload fetch failed, falling back to Notion:', err);
+  // Fetch BOTH sources in parallel and merge.
+  // Payload (CMS) wins on slug collision; Notion fills in legacy posts.
+  const [cmsResult, notionResult] = await Promise.allSettled([
+    fetchPublishedBlogPosts(),
+    getBlogPosts(),
+  ]);
+
+  const cmsPosts: BlogPost[] =
+    cmsResult.status === 'fulfilled' && cmsResult.value
+      ? cmsResult.value.map(normalizePayloadPost)
+      : [];
+
+  const notionPosts: BlogPost[] =
+    notionResult.status === 'fulfilled' && notionResult.value
+      ? notionResult.value
+      : [];
+
+  if (cmsResult.status === 'rejected') {
+    console.warn('[blog] Payload fetch failed:', cmsResult.reason);
+  }
+  if (notionResult.status === 'rejected') {
+    console.warn('[blog] Notion fetch failed:', notionResult.reason);
   }
 
-  // 2) Fallback to Notion if CMS empty
-  if (posts.length === 0) {
-    try {
-      posts = await getBlogPosts();
-      if (posts.length > 0) source = 'notion';
-    } catch (err: any) {
-      error = err?.message || 'Blog yazıları yüklenirken bir hata oluştu.';
+  // Merge: CMS first (wins on slug), then Notion (fills gaps)
+  const slugSeen = new Set<string>();
+  const merged: BlogPost[] = [];
+  for (const p of cmsPosts) {
+    if (p.slug && !slugSeen.has(p.slug)) {
+      slugSeen.add(p.slug);
+      merged.push(p);
     }
+  }
+  for (const p of notionPosts) {
+    if (p.slug && !slugSeen.has(p.slug)) {
+      slugSeen.add(p.slug);
+      merged.push(p);
+    }
+  }
+
+  // Sort by date desc (newest first); posts without dates go last.
+  merged.sort((a, b) => {
+    const da = a.date ? new Date(a.date).getTime() : 0;
+    const db = b.date ? new Date(b.date).getTime() : 0;
+    return db - da;
+  });
+
+  posts = merged;
+
+  if (posts.length === 0 && cmsResult.status === 'rejected' && notionResult.status === 'rejected') {
+    error = 'Blog yazıları yüklenirken bir hata oluştu.';
   }
 
   return (
