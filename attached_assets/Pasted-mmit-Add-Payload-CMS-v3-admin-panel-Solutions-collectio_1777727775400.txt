@@ -1,0 +1,619 @@
+mmit: Add Payload CMS v3 — admin panel, Solutions collection, HomePage global, CMS-driven cozumler & home pages 
+##########################################
+### Download Github Archive Started...
+### Sat, 02 May 2026 13:12:12 GMT
+##########################################
+
+#0 building with "default" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 1.21kB done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/node:20-alpine
+#2 DONE 0.6s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 149B done
+#3 DONE 0.0s
+
+#4 [deps 1/5] FROM docker.io/library/node:20-alpine@sha256:fb4cd12c85ee03686f6af5362a0b0d56d50c58a04632e6c0fb8363f609372293
+#4 resolve docker.io/library/node:20-alpine@sha256:fb4cd12c85ee03686f6af5362a0b0d56d50c58a04632e6c0fb8363f609372293 0.0s done
+#4 DONE 0.0s
+
+#5 [deps 2/5] WORKDIR /app
+#5 CACHED
+
+#6 [internal] load build context
+#6 transferring context: 33.89MB 0.4s done
+#6 DONE 0.4s
+
+#7 [runner  3/13] RUN apk add --no-cache libc6-compat vips
+#7 0.707 ( 1/72) Installing musl-obstack (1.2.3-r2)
+#7 0.712 ( 2/72) Installing libucontext (1.3.3-r0)
+#7 0.717 ( 3/72) Installing gcompat (1.1.0-r4)
+#7 0.722 ( 4/72) Installing openexr-libiex (3.4.2-r0)
+#7 0.732 ( 5/72) Installing openexr-libilmthread (3.4.2-r0)
+#7 0.738 ( 6/72) Installing imath (3.1.12-r0)
+#7 0.746 ( 7/72) Installing libdeflate (1.25-r0)
+#7 0.754 ( 8/72) Installing openexr (3.4.2-r0)
+#7 0.765 ( 9/72) Installing openexr-libopenexrcore (3.4.2-r0)
+#7 0.779 (10/72) Installing openexr-libopenexr (3.4.2-r0)
+#7 0.796 (11/72) Installing acl-libs (2.3.2-r1)
+#7 0.801 (12/72) Installing libbz2 (1.0.8-r6)
+#7 0.807 (13/72) Installing libexpat (2.7.5-r0)
+#7 0.813 (14/72) Installing lz4-libs (1.10.0-r0)
+#7 0.821 (15/72) Installing xz-libs (5.8.3-r0)
+#7 0.829 (16/72) Installing zstd-libs (1.5.7-r2)
+#7 0.841 (17/72) Installing libarchive (3.8.5-r0)
+#7 0.853 (18/72) Installing libxau (1.0.12-r0)
+#7 0.858 (19/72) Installing libmd (1.1.0-r0)
+#7 0.864 (20/72) Installing libbsd (0.12.2-r0)
+#7 0.870 (21/72) Installing libxdmcp (1.1.5-r1)
+#7 0.878 (22/72) Installing libxcb (1.17.0-r1)
+#7 0.892 (23/72) Installing libx11 (1.8.12-r1)
+#7 0.938 (24/72) Installing libxext (1.3.6-r2)
+#7 0.945 (25/72) Installing libxrender (0.9.12-r0)
+#7 0.954 (26/72) Installing brotli-libs (1.2.0-r0)
+#7 0.975 (27/72) Installing libpng (1.6.57-r0)
+#7 0.985 (28/72) Installing freetype (2.14.1-r0)
+#7 1.005 (29/72) Installing fontconfig (2.17.1-r0)
+#7 1.025 (30/72) Installing pixman (0.46.4-r0)
+#7 1.039 (31/72) Installing cairo (1.18.4-r0)
+#7 1.063 (32/72) Installing c-ares (1.34.6-r0)
+#7 1.072 (33/72) Installing libunistring (1.4.1-r0)
+#7 1.099 (34/72) Installing libidn2 (2.3.8-r0)
+#7 1.108 (35/72) Installing nghttp2-libs (1.69.0-r0)
+#7 1.115 (36/72) Installing nghttp3 (1.13.1-r0)
+#7 1.122 (37/72) Installing libpsl (0.21.5-r3)
+#7 1.131 (38/72) Installing libcurl (8.17.0-r1)
+#7 1.148 (39/72) Installing cfitsio (4.6.3-r0)
+#7 1.176 (40/72) Installing cgif (0.5.0-r1)
+#7 1.182 (41/72) Installing libexif (0.6.26-r0)
+#7 1.191 (42/72) Installing fftw-double-libs (3.3.10-r7)
+#7 1.229 (43/72) Installing libffi (3.5.2-r0)
+#7 1.234 (44/72) Installing libintl (0.24.1-r1)
+#7 1.240 (45/72) Installing libeconf (0.8.3-r0)
+#7 1.246 (46/72) Installing libblkid (2.41.4-r0)
+#7 1.255 (47/72) Installing libmount (2.41.4-r0)
+#7 1.265 (48/72) Installing pcre2 (10.47-r0)
+#7 1.281 (49/72) Installing glib (2.86.3-r0)
+#7 1.353 (50/72) Installing libhwy (1.3.0-r0)
+#7 1.361 (51/72) Installing libimagequant (4.2.2-r0)
+#7 1.375 (52/72) Installing libjpeg-turbo (3.1.2-r0)
+#7 1.390 (53/72) Installing lcms2 (2.19-r0)
+#7 1.400 (54/72) Installing openjpeg (2.5.4-r1)
+#7 1.410 (55/72) Installing libxft (2.3.9-r0)
+#7 1.418 (56/72) Installing fribidi (1.0.16-r2)
+#7 1.425 (57/72) Installing graphite2 (1.3.14-r6)
+#7 1.434 (58/72) Installing harfbuzz (12.2.0-r0)
+#7 1.463 (59/72) Installing pango (1.56.4-r0)
+#7 1.480 (60/72) Installing libdav1d (1.5.2-r0)
+#7 1.510 (61/72) Installing pkgconf (2.5.1-r0)
+#7 1.518 (62/72) Installing libxml2 (2.13.9-r0)
+#7 1.541 (63/72) Installing shared-mime-info (2.4-r6)
+#7 1.566 (64/72) Installing libsharpyuv (1.6.0-r0)
+#7 1.573 (65/72) Installing libwebp (1.6.0-r0)
+#7 1.589 (66/72) Installing tiff (4.7.1-r0)
+#7 1.599 (67/72) Installing gdk-pixbuf (2.44.4-r0)
+#7 1.612 (68/72) Installing librsvg (2.61.2-r0)
+#7 1.671 (69/72) Installing libspng (0.7.4-r1)
+#7 1.677 (70/72) Installing libwebpdemux (1.6.0-r0)
+#7 1.684 (71/72) Installing libwebpmux (1.6.0-r0)
+#7 1.690 (72/72) Installing vips (8.17.3-r1)
+#7 1.760 Executing busybox-1.37.0-r30.trigger
+#7 1.767 Executing glib-2.86.3-r0.trigger
+#7 1.773 Executing shared-mime-info-2.4-r6.trigger
+#7 2.167 Executing gdk-pixbuf-2.44.4-r0.trigger
+#7 2.195 OK: 54.6 MiB in 90 packages
+#7 DONE 2.3s
+
+#8 [builder 3/6] RUN apk add --no-cache libc6-compat vips-dev
+#8 0.789 (  1/203) Installing musl-obstack (1.2.3-r2)
+#8 0.794 (  2/203) Installing libucontext (1.3.3-r0)
+#8 0.799 (  3/203) Installing gcompat (1.1.0-r4)
+#8 0.805 (  4/203) Installing libffi (3.5.2-r0)
+#8 0.811 (  5/203) Installing libintl (0.24.1-r1)
+#8 0.819 (  6/203) Installing libeconf (0.8.3-r0)
+#8 0.828 (  7/203) Installing libblkid (2.41.4-r0)
+#8 0.836 (  8/203) Installing libmount (2.41.4-r0)
+#8 0.847 (  9/203) Installing pcre2 (10.47-r0)
+#8 0.862 ( 10/203) Installing glib (2.86.3-r0)
+#8 0.965 ( 11/203) Installing openexr-libiex (3.4.2-r0)
+#8 0.977 ( 12/203) Installing openexr-libilmthread (3.4.2-r0)
+#8 0.984 ( 13/203) Installing imath (3.1.12-r0)
+#8 0.994 ( 14/203) Installing libdeflate (1.25-r0)
+#8 1.002 ( 15/203) Installing openexr (3.4.2-r0)
+#8 1.015 ( 16/203) Installing openexr-libopenexrcore (3.4.2-r0)
+#8 1.033 ( 17/203) Installing openexr-libopenexr (3.4.2-r0)
+#8 1.058 ( 18/203) Installing acl-libs (2.3.2-r1)
+#8 1.064 ( 19/203) Installing libbz2 (1.0.8-r6)
+#8 1.069 ( 20/203) Installing libexpat (2.7.5-r0)
+#8 1.076 ( 21/203) Installing lz4-libs (1.10.0-r0)
+#8 1.085 ( 22/203) Installing xz-libs (5.8.3-r0)
+#8 1.096 ( 23/203) Installing zstd-libs (1.5.7-r2)
+#8 1.117 ( 24/203) Installing libarchive (3.8.5-r0)
+#8 1.135 ( 25/203) Installing libxau (1.0.12-r0)
+#8 1.140 ( 26/203) Installing libmd (1.1.0-r0)
+#8 1.145 ( 27/203) Installing libbsd (0.12.2-r0)
+#8 1.151 ( 28/203) Installing libxdmcp (1.1.5-r1)
+#8 1.157 ( 29/203) Installing libxcb (1.17.0-r1)
+#8 1.174 ( 30/203) Installing libx11 (1.8.12-r1)
+#8 1.235 ( 31/203) Installing libxext (1.3.6-r2)
+#8 1.242 ( 32/203) Installing libxrender (0.9.12-r0)
+#8 1.248 ( 33/203) Installing brotli-libs (1.2.0-r0)
+#8 1.277 ( 34/203) Installing libpng (1.6.57-r0)
+#8 1.288 ( 35/203) Installing freetype (2.14.1-r0)
+#8 1.311 ( 36/203) Installing fontconfig (2.17.1-r0)
+#8 1.332 ( 37/203) Installing pixman (0.46.4-r0)
+#8 1.350 ( 38/203) Installing cairo (1.18.4-r0)
+#8 1.388 ( 39/203) Installing c-ares (1.34.6-r0)
+#8 1.398 ( 40/203) Installing libunistring (1.4.1-r0)
+#8 1.436 ( 41/203) Installing libidn2 (2.3.8-r0)
+#8 1.448 ( 42/203) Installing nghttp2-libs (1.69.0-r0)
+#8 1.456 ( 43/203) Installing nghttp3 (1.13.1-r0)
+#8 1.464 ( 44/203) Installing libpsl (0.21.5-r3)
+#8 1.471 ( 45/203) Installing libcurl (8.17.0-r1)
+#8 1.491 ( 46/203) Installing cfitsio (4.6.3-r0)
+#8 1.526 ( 47/203) Installing cgif (0.5.0-r1)
+#8 1.533 ( 48/203) Installing libexif (0.6.26-r0)
+#8 1.542 ( 49/203) Installing fftw-double-libs (3.3.10-r7)
+#8 1.586 ( 50/203) Installing libhwy (1.3.0-r0)
+#8 1.593 ( 51/203) Installing libimagequant (4.2.2-r0)
+#8 1.609 ( 52/203) Installing libjpeg-turbo (3.1.2-r0)
+#8 1.623 ( 53/203) Installing lcms2 (2.19-r0)
+#8 1.639 ( 54/203) Installing openjpeg (2.5.4-r1)
+#8 1.655 ( 55/203) Installing libxft (2.3.9-r0)
+#8 1.661 ( 56/203) Installing fribidi (1.0.16-r2)
+#8 1.669 ( 57/203) Installing graphite2 (1.3.14-r6)
+#8 1.678 ( 58/203) Installing harfbuzz (12.2.0-r0)
+#8 1.712 ( 59/203) Installing pango (1.56.4-r0)
+#8 1.731 ( 60/203) Installing libdav1d (1.5.2-r0)
+#8 1.765 ( 61/203) Installing pkgconf (2.5.1-r0)
+#8 1.772 ( 62/203) Installing libxml2 (2.13.9-r0)
+#8 1.793 ( 63/203) Installing shared-mime-info (2.4-r6)
+#8 1.827 ( 64/203) Installing libsharpyuv (1.6.0-r0)
+#8 1.834 ( 65/203) Installing libwebp (1.6.0-r0)
+#8 1.848 ( 66/203) Installing tiff (4.7.1-r0)
+#8 1.871 ( 67/203) Installing gdk-pixbuf (2.44.4-r0)
+#8 1.888 ( 68/203) Installing librsvg (2.61.2-r0)
+#8 1.969 ( 69/203) Installing libspng (0.7.4-r1)
+#8 1.980 ( 70/203) Installing libwebpdemux (1.6.0-r0)
+#8 1.986 ( 71/203) Installing libwebpmux (1.6.0-r0)
+#8 1.994 ( 72/203) Installing vips (8.17.3-r1)
+#8 2.056 ( 73/203) Installing vips-cpp (8.17.3-r1)
+#8 2.065 ( 74/203) Installing libdeflate-static (1.25-r0)
+#8 2.073 ( 75/203) Installing openexr-libopenexrutil (3.4.2-r0)
+#8 2.082 ( 76/203) Installing gdbm (1.26-r0)
+#8 2.089 ( 77/203) Installing mpdecimal (4.0.1-r0)
+#8 2.100 ( 78/203) Installing ncurses-terminfo-base (6.5_p20251123-r0)
+#8 2.109 ( 79/203) Installing libncursesw (6.5_p20251123-r0)
+#8 2.121 ( 80/203) Installing libpanelw (6.5_p20251123-r0)
+#8 2.129 ( 81/203) Installing readline (8.3.1-r0)
+#8 2.140 ( 82/203) Installing sqlite-libs (3.51.2-r0)
+#8 2.178 ( 83/203) Installing python3 (3.12.13-r0)
+#8 2.486 ( 84/203) Installing python3-pycache-pyc0 (3.12.13-r0)
+#8 2.632 ( 85/203) Installing pyc (3.12.13-r0)
+#8 2.632 ( 86/203) Installing python3-pyc (3.12.13-r0)
+#8 2.632 ( 87/203) Installing boost1.84-python3 (1.84.0-r3)
+#8 2.641 ( 88/203) Installing py3-imath (3.1.12-r0)
+#8 2.799 ( 89/203) Installing imath-dev (3.1.12-r0)
+#8 2.817 ( 90/203) Installing libdeflate-dev (1.25-r0)
+#8 2.824 ( 91/203) Installing openexr-dev (3.4.2-r0)
+#8 2.847 ( 92/203) Installing cairo-tools (1.18.4-r0)
+#8 2.853 ( 93/203) Installing expat (2.7.5-r0)
+#8 2.861 ( 94/203) Installing expat-dev (2.7.5-r0)
+#8 2.868 ( 95/203) Installing bzip2-dev (1.0.8-r6)
+#8 2.874 ( 96/203) Installing brotli (1.2.0-r0)
+#8 2.880 ( 97/203) Installing brotli-dev (1.2.0-r0)
+#8 2.888 ( 98/203) Installing zlib-dev (1.3.2-r0)
+#8 2.895 ( 99/203) Installing libpng-dev (1.6.57-r0)
+#8 2.906 (100/203) Installing freetype-dev (2.14.1-r0)
+#8 2.929 (101/203) Installing fontconfig-dev (2.17.1-r0)
+#8 2.936 (102/203) Installing xorgproto (2024.1-r0)
+#8 2.961 (103/203) Installing libxau-dev (1.0.12-r0)
+#8 2.968 (104/203) Installing xcb-proto (1.17.0-r0)
+#8 2.980 (105/203) Installing xcb-proto-pyc (1.17.0-r0)
+#8 2.989 (106/203) Installing libxdmcp-dev (1.1.5-r1)
+#8 2.995 (107/203) Installing libxcb-dev (1.17.0-r1)
+#8 3.013 (108/203) Installing xtrans (1.6.0-r0)
+#8 3.021 (109/203) Installing libx11-dev (1.8.12-r1)
+#8 3.030 (110/203) Installing libxext-dev (1.3.6-r2)
+#8 3.037 (111/203) Installing libxrender-dev (0.9.12-r0)
+#8 3.043 (112/203) Installing pixman-dev (0.46.4-r0)
+#8 3.049 (113/203) Installing util-macros (1.20.2-r0)
+#8 3.056 (114/203) Installing xcb-util (0.4.1-r3)
+#8 3.062 (115/203) Installing xcb-util-dev (0.4.1-r3)
+#8 3.069 (116/203) Installing cairo-gobject (1.18.4-r0)
+#8 3.078 (117/203) Installing libxml2-utils (2.13.9-r0)
+#8 3.085 (118/203) Installing docbook-xml (4.5-r10)
+#8 3.111   Executing docbook-xml-4.5-r10.post-install
+#8 3.125 (119/203) Installing libxslt (1.1.43-r3)
+#8 3.136 (120/203) Installing docbook-xsl-ns (1.79.2-r13)
+#8 3.287   Executing docbook-xsl-ns-1.79.2-r13.post-install
+#8 3.313 (121/203) Installing docbook-xsl-nons (1.79.2-r13)
+#8 3.471   Executing docbook-xsl-nons-1.79.2-r13.post-install
+#8 3.504 (122/203) Installing docbook-xsl (1.79.2-r13)
+#8 3.509 (123/203) Installing xz (5.8.3-r0)
+#8 3.520 (124/203) Installing gettext-asprintf (0.24.1-r1)
+#8 3.528 (125/203) Installing gettext-libs (0.24.1-r1)
+#8 3.549 (126/203) Installing gettext-envsubst (0.24.1-r1)
+#8 3.556 (127/203) Installing libgomp (15.2.0-r2)
+#8 3.568 (128/203) Installing gettext (0.24.1-r1)
+#8 3.604 (129/203) Installing gettext-dev (0.24.1-r1)
+#8 3.637 (130/203) Installing py3-parsing (3.2.5-r0)
+#8 3.668 (131/203) Installing py3-parsing-pyc (3.2.5-r0)
+#8 3.686 (132/203) Installing py3-packaging (25.0-r0)
+#8 3.696 (133/203) Installing py3-packaging-pyc (25.0-r0)
+#8 3.707 (134/203) Installing linux-headers (6.16.12-r0)
+#8 3.821 (135/203) Installing libffi-dev (3.5.2-r0)
+#8 3.830 (136/203) Installing bsd-compat-headers (0.7.2-r6)
+#8 3.837 (137/203) Installing libformw (6.5_p20251123-r0)
+#8 3.844 (138/203) Installing libmenuw (6.5_p20251123-r0)
+#8 3.853 (139/203) Installing libncurses++ (6.5_p20251123-r0)
+#8 3.860 (140/203) Installing ncurses-dev (6.5_p20251123-r0)
+#8 3.872 (141/203) Installing libedit (20251016.3.1-r0)
+#8 3.880 (142/203) Installing libedit-dev (20251016.3.1-r0)
+#8 3.886 (143/203) Installing libpcre2-16 (10.47-r0)
+#8 3.906 (144/203) Installing libpcre2-32 (10.47-r0)
+#8 3.925 (145/203) Installing pcre2-dev (10.47-r0)
+#8 3.933 (146/203) Installing libuuid (2.41.4-r0)
+#8 3.940 (147/203) Installing libfdisk (2.41.4-r0)
+#8 3.952 (148/203) Installing liblastlog2 (2.41.4-r0)
+#8 3.958 (149/203) Installing libsmartcols (2.41.4-r0)
+#8 3.966 (150/203) Installing sqlite (3.51.2-r0)
+#8 4.029 (151/203) Installing sqlite-dev (3.51.2-r0)
+#8 4.046 (152/203) Installing util-linux-dev (2.41.4-r0)
+#8 4.058 (153/203) Installing glib-dev (2.86.3-r0)
+#8 4.173 (154/203) Installing cairo-dev (1.18.4-r0)
+#8 4.183 (155/203) Installing cfitsio-dev (4.6.3-r0)
+#8 4.202 (156/203) Installing cgif-dev (0.5.0-r1)
+#8 4.212 (157/203) Installing fftw-long-double-libs (3.3.10-r7)
+#8 4.236 (158/203) Installing fftw-single-libs (3.3.10-r7)
+#8 4.296 (159/203) Installing fftw-dev (3.3.10-r7)
+#8 4.304 (160/203) Installing libimagequant-dev (4.2.2-r0)
+#8 4.311 (161/203) Installing lcms2-plugins (2.19-r0)
+#8 4.318 (162/203) Installing libturbojpeg (3.1.2-r0)
+#8 4.342 (163/203) Installing libjpeg-turbo-dev (3.1.2-r0)
+#8 4.352 (164/203) Installing libtiffxx (4.7.1-r0)
+#8 4.359 (165/203) Installing libwebpdecoder (1.6.0-r0)
+#8 4.377 (166/203) Installing libwebp-dev (1.6.0-r0)
+#8 4.385 (167/203) Installing zstd (1.5.7-r2)
+#8 4.403 (168/203) Installing zstd-dev (1.5.7-r2)
+#8 4.413 (169/203) Installing tiff-dev (4.7.1-r0)
+#8 4.422 (170/203) Installing lcms2-dev (2.19-r0)
+#8 4.431 (171/203) Installing openssl-dev (3.5.6-r0)
+#8 4.474 (172/203) Installing libarchive-dev (3.8.5-r0)
+#8 4.483 (173/203) Installing libexif-dev (0.6.26-r0)
+#8 4.492 (174/203) Installing libhwy_contrib (1.3.0-r0)
+#8 4.605 (175/203) Installing libhwy_test (1.3.0-r0)
+#8 4.610 (176/203) Installing gtest (1.17.0-r0)
+#8 4.626 (177/203) Installing gmock (1.17.0-r0)
+#8 4.634 (178/203) Installing gtest-dev (1.17.0-r0)
+#8 4.661 (179/203) Installing highway-dev (1.3.0-r0)
+#8 4.711 (180/203) Installing openjpeg-tools (2.5.4-r1)
+#8 4.727 (181/203) Installing openjpeg-dev (2.5.4-r1)
+#8 4.765 (182/203) Installing rsvg-convert (2.61.2-r0)
+#8 4.884 (183/203) Installing dav1d-dev (1.5.2-r0)
+#8 4.891 (184/203) Installing gdk-pixbuf-dev (2.44.4-r0)
+#8 4.904 (185/203) Installing harfbuzz-cairo (12.2.0-r0)
+#8 4.911 (186/203) Installing harfbuzz-gobject (12.2.0-r0)
+#8 4.917 (187/203) Installing icu-data-en (76.1-r1)
+#8 4.979   Executing icu-data-en-76.1-r1.post-install
+#8 4.982   * 
+#8 4.982   * If you need ICU with non-English locales and legacy charset support, install
+#8 4.982   * package icu-data-full.
+#8 4.982   * 
+#8 4.982 (188/203) Installing icu-libs (76.1-r1)
+#8 5.100 (189/203) Installing harfbuzz-icu (12.2.0-r0)
+#8 5.107 (190/203) Installing harfbuzz-subset (12.2.0-r0)
+#8 5.147 (191/203) Installing graphite2-dev (1.3.14-r6)
+#8 5.154 (192/203) Installing icu (76.1-r1)
+#8 5.181 (193/203) Installing icu-dev (76.1-r1)
+#8 5.249 (194/203) Installing harfbuzz-dev (12.2.0-r0)
+#8 5.276 (195/203) Installing xz-dev (5.8.3-r0)
+#8 5.287 (196/203) Installing libxml2-dev (2.13.9-r0)
+#8 5.304 (197/203) Installing pango-tools (1.56.4-r0)
+#8 5.311 (198/203) Installing fribidi-dev (1.0.16-r2)
+#8 5.318 (199/203) Installing libxft-dev (2.3.9-r0)
+#8 5.328 (200/203) Installing pango-dev (1.56.4-r0)
+#8 5.348 (201/203) Installing librsvg-dev (2.61.2-r0)
+#8 5.357 (202/203) Installing libspng-dev (0.7.4-r1)
+#8 5.363 (203/203) Installing vips-dev (8.17.3-r1)
+#8 5.388 Executing busybox-1.37.0-r30.trigger
+#8 5.395 Executing glib-2.86.3-r0.trigger
+#8 5.413 * No schema files found: doing nothing.
+#8 5.416 Executing shared-mime-info-2.4-r6.trigger
+#8 5.740 Executing gdk-pixbuf-2.44.4-r0.trigger
+#8 5.810 OK: 228.9 MiB in 221 packages
+#8 DONE 6.1s
+
+#9 [deps 3/5] RUN apk add --no-cache libc6-compat python3 make g++ vips-dev
+#9 0.611 (  1/215) Installing libstdc++-dev (15.2.0-r2)
+#9 0.792 (  2/215) Installing jansson (2.14.1-r0)
+#9 0.798 (  3/215) Installing zstd-libs (1.5.7-r2)
+#9 0.821 (  4/215) Installing binutils (2.45.1-r0)
+#9 1.008 (  5/215) Installing libgomp (15.2.0-r2)
+#9 1.022 (  6/215) Installing libatomic (15.2.0-r2)
+#9 1.027 (  7/215) Installing gmp (6.3.0-r4)
+#9 1.042 (  8/215) Installing isl26 (0.26-r1)
+#9 1.094 (  9/215) Installing mpfr4 (4.2.2-r0)
+#9 1.115 ( 10/215) Installing mpc1 (1.3.1-r1)
+#9 1.123 ( 11/215) Installing gcc (15.2.0-r2)
+#9 3.751 ( 12/215) Installing musl-dev (1.2.5-r23)
+#9 3.897 ( 13/215) Installing g++ (15.2.0-r2)
+#9 4.415 ( 14/215) Installing musl-obstack (1.2.3-r2)
+#9 4.421 ( 15/215) Installing libucontext (1.3.3-r0)
+#9 4.427 ( 16/215) Installing gcompat (1.1.0-r4)
+#9 4.434 ( 17/215) Installing make (4.4.1-r3)
+#9 4.443 ( 18/215) Installing libbz2 (1.0.8-r6)
+#9 4.448 ( 19/215) Installing libexpat (2.7.5-r0)
+#9 4.455 ( 20/215) Installing libffi (3.5.2-r0)
+#9 4.461 ( 21/215) Installing gdbm (1.26-r0)
+#9 4.467 ( 22/215) Installing xz-libs (5.8.3-r0)
+#9 4.476 ( 23/215) Installing mpdecimal (4.0.1-r0)
+#9 4.485 ( 24/215) Installing ncurses-terminfo-base (6.5_p20251123-r0)
+#9 4.494 ( 25/215) Installing libncursesw (6.5_p20251123-r0)
+#9 4.503 ( 26/215) Installing libpanelw (6.5_p20251123-r0)
+#9 4.508 ( 27/215) Installing readline (8.3.1-r0)
+#9 4.517 ( 28/215) Installing sqlite-libs (3.51.2-r0)
+#9 4.549 ( 29/215) Installing python3 (3.12.13-r0)
+#9 4.799 ( 30/215) Installing python3-pycache-pyc0 (3.12.13-r0)
+#9 4.934 ( 31/215) Installing pyc (3.12.13-r0)
+#9 4.934 ( 32/215) Installing python3-pyc (3.12.13-r0)
+#9 4.934 ( 33/215) Installing libintl (0.24.1-r1)
+#9 4.941 ( 34/215) Installing libeconf (0.8.3-r0)
+#9 4.948 ( 35/215) Installing libblkid (2.41.4-r0)
+#9 4.956 ( 36/215) Installing libmount (2.41.4-r0)
+#9 4.966 ( 37/215) Installing pcre2 (10.47-r0)
+#9 4.983 ( 38/215) Installing glib (2.86.3-r0)
+#9 5.054 ( 39/215) Installing openexr-libiex (3.4.2-r0)
+#9 5.066 ( 40/215) Installing openexr-libilmthread (3.4.2-r0)
+#9 5.073 ( 41/215) Installing imath (3.1.12-r0)
+#9 5.082 ( 42/215) Installing libdeflate (1.25-r0)
+#9 5.090 ( 43/215) Installing openexr (3.4.2-r0)
+#9 5.104 ( 44/215) Installing openexr-libopenexrcore (3.4.2-r0)
+#9 5.123 ( 45/215) Installing openexr-libopenexr (3.4.2-r0)
+#9 5.143 ( 46/215) Installing acl-libs (2.3.2-r1)
+#9 5.148 ( 47/215) Installing lz4-libs (1.10.0-r0)
+#9 5.156 ( 48/215) Installing libarchive (3.8.5-r0)
+#9 5.172 ( 49/215) Installing libxau (1.0.12-r0)
+#9 5.178 ( 50/215) Installing libmd (1.1.0-r0)
+#9 5.183 ( 51/215) Installing libbsd (0.12.2-r0)
+#9 5.189 ( 52/215) Installing libxdmcp (1.1.5-r1)
+#9 5.196 ( 53/215) Installing libxcb (1.17.0-r1)
+#9 5.213 ( 54/215) Installing libx11 (1.8.12-r1)
+#9 5.262 ( 55/215) Installing libxext (1.3.6-r2)
+#9 5.273 ( 56/215) Installing libxrender (0.9.12-r0)
+#9 5.281 ( 57/215) Installing brotli-libs (1.2.0-r0)
+#9 5.298 ( 58/215) Installing libpng (1.6.57-r0)
+#9 5.306 ( 59/215) Installing freetype (2.14.1-r0)
+#9 5.321 ( 60/215) Installing fontconfig (2.17.1-r0)
+#9 5.339 ( 61/215) Installing pixman (0.46.4-r0)
+#9 5.352 ( 62/215) Installing cairo (1.18.4-r0)
+#9 5.373 ( 63/215) Installing c-ares (1.34.6-r0)
+#9 5.381 ( 64/215) Installing libunistring (1.4.1-r0)
+#9 5.405 ( 65/215) Installing libidn2 (2.3.8-r0)
+#9 5.414 ( 66/215) Installing nghttp2-libs (1.69.0-r0)
+#9 5.421 ( 67/215) Installing nghttp3 (1.13.1-r0)
+#9 5.427 ( 68/215) Installing libpsl (0.21.5-r3)
+#9 5.433 ( 69/215) Installing libcurl (8.17.0-r1)
+#9 5.454 ( 70/215) Installing cfitsio (4.6.3-r0)
+#9 5.489 ( 71/215) Installing cgif (0.5.0-r1)
+#9 5.497 ( 72/215) Installing libexif (0.6.26-r0)
+#9 5.506 ( 73/215) Installing fftw-double-libs (3.3.10-r7)
+#9 5.536 ( 74/215) Installing libhwy (1.3.0-r0)
+#9 5.544 ( 75/215) Installing libimagequant (4.2.2-r0)
+#9 5.558 ( 76/215) Installing libjpeg-turbo (3.1.2-r0)
+#9 5.578 ( 77/215) Installing lcms2 (2.19-r0)
+#9 5.589 ( 78/215) Installing openjpeg (2.5.4-r1)
+#9 5.600 ( 79/215) Installing libxft (2.3.9-r0)
+#9 5.608 ( 80/215) Installing fribidi (1.0.16-r2)
+#9 5.615 ( 81/215) Installing graphite2 (1.3.14-r6)
+#9 5.624 ( 82/215) Installing harfbuzz (12.2.0-r0)
+#9 5.649 ( 83/215) Installing pango (1.56.4-r0)
+#9 5.667 ( 84/215) Installing libdav1d (1.5.2-r0)
+#9 5.693 ( 85/215) Installing pkgconf (2.5.1-r0)
+#9 5.700 ( 86/215) Installing libxml2 (2.13.9-r0)
+#9 5.717 ( 87/215) Installing shared-mime-info (2.4-r6)
+#9 5.734 ( 88/215) Installing libsharpyuv (1.6.0-r0)
+#9 5.741 ( 89/215) Installing libwebp (1.6.0-r0)
+#9 5.754 ( 90/215) Installing tiff (4.7.1-r0)
+#9 5.766 ( 91/215) Installing gdk-pixbuf (2.44.4-r0)
+#9 5.777 ( 92/215) Installing librsvg (2.61.2-r0)
+#9 5.826 ( 93/215) Installing libspng (0.7.4-r1)
+#9 5.832 ( 94/215) Installing libwebpdemux (1.6.0-r0)
+#9 5.840 ( 95/215) Installing libwebpmux (1.6.0-r0)
+#9 5.857 ( 96/215) Installing vips (8.17.3-r1)
+#9 5.890 ( 97/215) Installing vips-cpp (8.17.3-r1)
+#9 5.901 ( 98/215) Installing libdeflate-static (1.25-r0)
+#9 5.911 ( 99/215) Installing openexr-libopenexrutil (3.4.2-r0)
+#9 5.921 (100/215) Installing boost1.84-python3 (1.84.0-r3)
+#9 5.930 (101/215) Installing py3-imath (3.1.12-r0)
+#9 6.053 (102/215) Installing imath-dev (3.1.12-r0)
+#9 6.071 (103/215) Installing libdeflate-dev (1.25-r0)
+#9 6.077 (104/215) Installing openexr-dev (3.4.2-r0)
+#9 6.107 (105/215) Installing cairo-tools (1.18.4-r0)
+#9 6.118 (106/215) Installing expat (2.7.5-r0)
+#9 6.125 (107/215) Installing expat-dev (2.7.5-r0)
+#9 6.131 (108/215) Installing bzip2-dev (1.0.8-r6)
+#9 6.137 (109/215) Installing brotli (1.2.0-r0)
+#9 6.142 (110/215) Installing brotli-dev (1.2.0-r0)
+#9 6.152 (111/215) Installing zlib-dev (1.3.2-r0)
+#9 6.160 (112/215) Installing libpng-dev (1.6.57-r0)
+#9 6.170 (113/215) Installing freetype-dev (2.14.1-r0)
+#9 6.195 (114/215) Installing fontconfig-dev (2.17.1-r0)
+#9 6.203 (115/215) Installing xorgproto (2024.1-r0)
+#9 6.236 (116/215) Installing libxau-dev (1.0.12-r0)
+#9 6.242 (117/215) Installing xcb-proto (1.17.0-r0)
+#9 6.254 (118/215) Installing xcb-proto-pyc (1.17.0-r0)
+#9 6.265 (119/215) Installing libxdmcp-dev (1.1.5-r1)
+#9 6.272 (120/215) Installing libxcb-dev (1.17.0-r1)
+#9 6.307 (121/215) Installing xtrans (1.6.0-r0)
+#9 6.317 (122/215) Installing libx11-dev (1.8.12-r1)
+#9 6.330 (123/215) Installing libxext-dev (1.3.6-r2)
+#9 6.340 (124/215) Installing libxrender-dev (0.9.12-r0)
+#9 6.347 (125/215) Installing pixman-dev (0.46.4-r0)
+#9 6.355 (126/215) Installing util-macros (1.20.2-r0)
+#9 6.363 (127/215) Installing xcb-util (0.4.1-r3)
+#9 6.369 (128/215) Installing xcb-util-dev (0.4.1-r3)
+#9 6.378 (129/215) Installing cairo-gobject (1.18.4-r0)
+#9 6.384 (130/215) Installing libxml2-utils (2.13.9-r0)
+#9 6.392 (131/215) Installing docbook-xml (4.5-r10)
+#9 6.433   Executing docbook-xml-4.5-r10.post-install
+#9 6.447 (132/215) Installing libxslt (1.1.43-r3)
+#9 6.461 (133/215) Installing docbook-xsl-ns (1.79.2-r13)
+#9 6.609   Executing docbook-xsl-ns-1.79.2-r13.post-install
+#9 6.649 (134/215) Installing docbook-xsl-nons (1.79.2-r13)
+#9 6.799   Executing docbook-xsl-nons-1.79.2-r13.post-install
+#9 6.846 (135/215) Installing docbook-xsl (1.79.2-r13)
+#9 6.856 (136/215) Installing xz (5.8.3-r0)
+#9 6.874 (137/215) Installing gettext-asprintf (0.24.1-r1)
+#9 6.882 (138/215) Installing gettext-libs (0.24.1-r1)
+#9 6.898 (139/215) Installing gettext-envsubst (0.24.1-r1)
+#9 6.906 (140/215) Installing gettext (0.24.1-r1)
+#9 6.944 (141/215) Installing gettext-dev (0.24.1-r1)
+#9 6.969 (142/215) Installing py3-parsing (3.2.5-r0)
+#9 6.984 (143/215) Installing py3-parsing-pyc (3.2.5-r0)
+#9 6.995 (144/215) Installing py3-packaging (25.0-r0)
+#9 7.003 (145/215) Installing py3-packaging-pyc (25.0-r0)
+#9 7.011 (146/215) Installing linux-headers (6.16.12-r0)
+#9 7.112 (147/215) Installing libffi-dev (3.5.2-r0)
+#9 7.119 (148/215) Installing bsd-compat-headers (0.7.2-r6)
+#9 7.128 (149/215) Installing libformw (6.5_p20251123-r0)
+#9 7.136 (150/215) Installing libmenuw (6.5_p20251123-r0)
+#9 7.142 (151/215) Installing libncurses++ (6.5_p20251123-r0)
+#9 7.149 (152/215) Installing ncurses-dev (6.5_p20251123-r0)
+#9 7.160 (153/215) Installing libedit (20251016.3.1-r0)
+#9 7.168 (154/215) Installing libedit-dev (20251016.3.1-r0)
+#9 7.175 (155/215) Installing libpcre2-16 (10.47-r0)
+#9 7.190 (156/215) Installing libpcre2-32 (10.47-r0)
+#9 7.204 (157/215) Installing pcre2-dev (10.47-r0)
+#9 7.210 (158/215) Installing libuuid (2.41.4-r0)
+#9 7.217 (159/215) Installing libfdisk (2.41.4-r0)
+#9 7.228 (160/215) Installing liblastlog2 (2.41.4-r0)
+#9 7.236 (161/215) Installing libsmartcols (2.41.4-r0)
+#9 7.245 (162/215) Installing sqlite (3.51.2-r0)
+#9 7.273 (163/215) Installing sqlite-dev (3.51.2-r0)
+#9 7.284 (164/215) Installing util-linux-dev (2.41.4-r0)
+#9 7.292 (165/215) Installing glib-dev (2.86.3-r0)
+#9 7.370 (166/215) Installing cairo-dev (1.18.4-r0)
+#9 7.379 (167/215) Installing cfitsio-dev (4.6.3-r0)
+#9 7.387 (168/215) Installing cgif-dev (0.5.0-r1)
+#9 7.392 (169/215) Installing fftw-long-double-libs (3.3.10-r7)
+#9 7.406 (170/215) Installing fftw-single-libs (3.3.10-r7)
+#9 7.433 (171/215) Installing fftw-dev (3.3.10-r7)
+#9 7.440 (172/215) Installing libimagequant-dev (4.2.2-r0)
+#9 7.446 (173/215) Installing lcms2-plugins (2.19-r0)
+#9 7.453 (174/215) Installing libturbojpeg (3.1.2-r0)
+#9 7.468 (175/215) Installing libjpeg-turbo-dev (3.1.2-r0)
+#9 7.477 (176/215) Installing libtiffxx (4.7.1-r0)
+#9 7.485 (177/215) Installing libwebpdecoder (1.6.0-r0)
+#9 7.499 (178/215) Installing libwebp-dev (1.6.0-r0)
+#9 7.511 (179/215) Installing zstd (1.5.7-r2)
+#9 7.524 (180/215) Installing zstd-dev (1.5.7-r2)
+#9 7.535 (181/215) Installing tiff-dev (4.7.1-r0)
+#9 7.546 (182/215) Installing lcms2-dev (2.19-r0)
+#9 7.556 (183/215) Installing openssl-dev (3.5.6-r0)
+#9 7.594 (184/215) Installing libarchive-dev (3.8.5-r0)
+#9 7.601 (185/215) Installing libexif-dev (0.6.26-r0)
+#9 7.609 (186/215) Installing libhwy_contrib (1.3.0-r0)
+#9 7.663 (187/215) Installing libhwy_test (1.3.0-r0)
+#9 7.669 (188/215) Installing gtest (1.17.0-r0)
+#9 7.680 (189/215) Installing gmock (1.17.0-r0)
+#9 7.687 (190/215) Installing gtest-dev (1.17.0-r0)
+#9 7.704 (191/215) Installing highway-dev (1.3.0-r0)
+#9 7.736 (192/215) Installing openjpeg-tools (2.5.4-r1)
+#9 7.748 (193/215) Installing openjpeg-dev (2.5.4-r1)
+#9 7.765 (194/215) Installing rsvg-convert (2.61.2-r0)
+#9 7.814 (195/215) Installing dav1d-dev (1.5.2-r0)
+#9 7.821 (196/215) Installing gdk-pixbuf-dev (2.44.4-r0)
+#9 7.829 (197/215) Installing harfbuzz-cairo (12.2.0-r0)
+#9 7.836 (198/215) Installing harfbuzz-gobject (12.2.0-r0)
+#9 7.844 (199/215) Installing icu-data-en (76.1-r1)
+#9 7.873   Executing icu-data-en-76.1-r1.post-install
+#9 7.878   * 
+#9 7.878   * If you need ICU with non-English locales and legacy charset support, install
+#9 7.878   * package icu-data-full.
+#9 7.878   * 
+#9 7.878 (200/215) Installing icu-libs (76.1-r1)
+#9 7.939 (201/215) Installing harfbuzz-icu (12.2.0-r0)
+#9 7.945 (202/215) Installing harfbuzz-subset (12.2.0-r0)
+#9 7.971 (203/215) Installing graphite2-dev (1.3.14-r6)
+#9 7.980 (204/215) Installing icu (76.1-r1)
+#9 8.000 (205/215) Installing icu-dev (76.1-r1)
+#9 8.052 (206/215) Installing harfbuzz-dev (12.2.0-r0)
+#9 8.070 (207/215) Installing xz-dev (5.8.3-r0)
+#9 8.078 (208/215) Installing libxml2-dev (2.13.9-r0)
+#9 8.089 (209/215) Installing pango-tools (1.56.4-r0)
+#9 8.096 (210/215) Installing fribidi-dev (1.0.16-r2)
+#9 8.104 (211/215) Installing libxft-dev (2.3.9-r0)
+#9 8.111 (212/215) Installing pango-dev (1.56.4-r0)
+#9 8.127 (213/215) Installing librsvg-dev (2.61.2-r0)
+#9 8.135 (214/215) Installing libspng-dev (0.7.4-r1)
+#9 8.141 (215/215) Installing vips-dev (8.17.3-r1)
+#9 8.160 Executing busybox-1.37.0-r30.trigger
+#9 8.168 Executing glib-2.86.3-r0.trigger
+#9 8.172 * No schema files found: doing nothing.
+#9 8.175 Executing shared-mime-info-2.4-r6.trigger
+#9 8.502 Executing gdk-pixbuf-2.44.4-r0.trigger
+#9 8.541 OK: 482.0 MiB in 233 packages
+#9 DONE 8.8s
+
+#10 [deps 4/5] COPY package.json ./
+#10 DONE 0.1s
+
+#11 [deps 5/5] RUN npm install --legacy-peer-deps
+#11 181.9 npm warn deprecated @humanwhocodes/object-schema@2.0.3: Use @eslint/object-schema instead
+#11 182.0 npm warn deprecated @humanwhocodes/config-array@0.13.0: Use @eslint/config-array instead
+#11 182.5 npm warn deprecated inflight@1.0.6: This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.
+#11 182.5 npm warn deprecated glob@7.2.3: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+#11 183.5 npm warn deprecated rimraf@3.0.2: Rimraf versions prior to v4 are no longer supported
+#11 184.3 npm warn deprecated @esbuild-kit/esm-loader@2.6.5: Merged into tsx: https://tsx.is
+#11 184.3 npm warn deprecated @esbuild-kit/core-utils@3.3.2: Merged into tsx: https://tsx.is
+#11 189.2 npm warn deprecated eslint@8.57.1: This version is no longer supported. Please see https://eslint.org/version-support for other options.
+#11 202.7 npm error code 1
+#11 202.7 npm error path /app/node_modules/sharp
+#11 202.7 npm error command failed
+#11 202.7 npm error command sh -c node install/check.js || npm run build
+#11 202.7 npm error > sharp@0.34.5 build
+#11 202.7 npm error > node install/build.js
+#11 202.7 npm error
+#11 202.7 npm error sharp: Attempting to build from source via node-gyp
+#11 202.7 npm error sharp: See https://sharp.pixelplumbing.com/install#building-from-source
+#11 202.7 npm error sharp: Please add node-addon-api to your dependencies
+#11 202.7 npm notice
+#11 202.7 npm notice New major version of npm available! 10.8.2 -> 11.13.0
+#11 202.7 npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.13.0
+#11 202.7 npm notice To update run: npm install -g npm@11.13.0
+#11 202.7 npm notice
+#11 202.7 npm error A complete log of this run can be found in: /root/.npm/_logs/2026-05-02T13_12_24_517Z-debug-0.log
+#11 ERROR: process "/bin/sh -c npm install --legacy-peer-deps" did not complete successfully: exit code: 1
+------
+ > [deps 5/5] RUN npm install --legacy-peer-deps:
+202.7 npm error
+202.7 npm error sharp: Attempting to build from source via node-gyp
+202.7 npm error sharp: See https://sharp.pixelplumbing.com/install#building-from-source
+202.7 npm error sharp: Please add node-addon-api to your dependencies
+202.7 npm notice
+202.7 npm notice New major version of npm available! 10.8.2 -> 11.13.0
+202.7 npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.13.0
+202.7 npm notice To update run: npm install -g npm@11.13.0
+202.7 npm notice
+202.7 npm error A complete log of this run can be found in: /root/.npm/_logs/2026-05-02T13_12_24_517Z-debug-0.log
+------
+Dockerfile:6
+--------------------
+   4 |     RUN apk add --no-cache libc6-compat python3 make g++ vips-dev
+   5 |     COPY package.json ./
+   6 | >>> RUN npm install --legacy-peer-deps
+   7 |     
+   8 |     FROM node:20-alpine AS builder
+--------------------
+ERROR: failed to build: failed to solve: process "/bin/sh -c npm install --legacy-peer-deps" did not complete successfully: exit code: 1
+##########################################
+### Error
+### Sat, 02 May 2026 13:15:47 GMT
+##########################################
+
+Command failed with exit code 1: docker buildx build --network host -f /etc/easypanel/projects/sphere-english/sphere-www/code/Dockerfile -t easypanel/sphere-english/sphere-www --label 'keep=true' --build-arg 'BREVO_API_KEY=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' --build-arg 'NOTION_API_KEY=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' --build-arg 'NOTION_DATABASE_ID=1efaf60b706a4083bc4d483f4b1cbe9f' --build-arg 'NEXT_PUBLIC_GA_MEASUREMENT_ID=G-ELDF1FF5S1' --build-arg 'META_CONVERSIONS_API_TOKEN=EAAYrdftJHeEBRKrACew58SdpdyXwSZBegVkdnyo6pa6g2OURGnVtE9akqF7nOEg2TX9ytoHfKnxNH7O24NMt9ELgrvObYt0iwGmFhlPhjK6AkLUJaiXWjPWHoBdJItEEouIVRbjqidbT36RZCkykMo3BZBX5HqKmZCxkxzOhZAwI2D3r2mgeyeOmbuO5PQQZDZD' --build-arg 'PAYLOAD_SECRET=<rastgele 32+ karakter>' --build-arg 'PAYLOAD_DB_PUSH=true' --build-arg 'SEED_TOKEN=<güçlü rastgele token>' --build-arg 'GIT_SHA=2e0f579ecf8b213a4c2305b057d18b8bc6c622fe' /etc/easypanel/projects/sphere-english/sphere-www/code/

@@ -9,8 +9,8 @@ export const modules: ModuleMap = {
   "./components/mockups/instagram-post/FoundersPost.tsx": () => import("../components/mockups/instagram-post/FoundersPost.tsx"),
   "./components/mockups/instagram-post/TeamPost.tsx": () => import("../components/mockups/instagram-post/TeamPost.tsx"),
   "./components/mockups/instagram-post/TrilogyPost.tsx": () => import("../components/mockups/instagram-post/TrilogyPost.tsx"),
-  "./components/mockups/sim-mode/SimMode.tsx": () => import("../components/mockups/sim-mode/SimMode.tsx"),
   "./components/mockups/meta-ads/AdAuthority.tsx": () => import("../components/mockups/meta-ads/AdAuthority.tsx"),
   "./components/mockups/meta-ads/AdPainPoint.tsx": () => import("../components/mockups/meta-ads/AdPainPoint.tsx"),
-  "./components/mockups/meta-ads/AdROI.tsx": () => import("../components/mockups/meta-ads/AdROI.tsx")
+  "./components/mockups/meta-ads/AdROI.tsx": () => import("../components/mockups/meta-ads/AdROI.tsx"),
+  "./components/mockups/sim-mode/SimMode.tsx": () => import("../components/mockups/sim-mode/SimMode.tsx")
 };
