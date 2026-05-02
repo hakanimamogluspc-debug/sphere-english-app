@@ -3,6 +3,8 @@ import { imageHosts } from './image-hosts.config.js';
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  basePath: process.env.BASE_PATH || undefined,
+  assetPrefix: process.env.BASE_PATH || undefined,
   poweredByHeader: false,
   productionBrowserSourceMaps: false,
   experimental: {

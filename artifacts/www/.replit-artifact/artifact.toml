@@ -1,0 +1,24 @@
+kind = "web"
+previewPath = "/__www"
+title = "Sphere Marketing Site"
+version = "1.0.0"
+id = "artifacts/www"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/__www" ]
+localPort = 3000
+
+[services.env]
+PORT = "3000"
+BASE_PATH = "/__www"
+
+[services.development]
+run = "cd artifacts/www && PORT=3000 BASE_PATH=/__www pnpm run dev"
+
+[services.production]
