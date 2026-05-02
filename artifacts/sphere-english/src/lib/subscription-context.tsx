@@ -20,6 +20,7 @@ interface Ctx {
   loading: boolean;
   entitlement: Entitlement | null;
   proModuleKeys: string[];
+  enforcementEnabled: boolean;
   isProModule: (key?: string | null) => boolean;
   isLockedForMe: (key?: string | null) => boolean;
   refresh: () => Promise<void>;
@@ -43,11 +44,20 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [entitlement, setEntitlement] = useState<Entitlement | null>(null);
   const [proModuleKeys, setProModuleKeys] = useState<string[]>([]);
+  const [enforcementEnabled, setEnforcementEnabled] = useState<boolean>(false);
 
   const refresh = useCallback(async () => {
     const token = localStorage.getItem(TOKEN_KEY);
     if (!token) {
       setEntitlement(null);
+      // Token yoksa public plans endpoint'inden enforcement durumunu yine de oku
+      try {
+        const r = await fetch(`${API}/subscription/plans`);
+        if (r.ok) {
+          const d = await r.json();
+          setEnforcementEnabled(!!d.enforcementEnabled);
+        }
+      } catch {}
       setLoading(false);
       return;
     }
@@ -57,6 +67,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         const data = await res.json();
         setEntitlement(data.entitlement);
         setProModuleKeys(data.proModuleKeys || []);
+        setEnforcementEnabled(!!data.enforcementEnabled);
       }
     } catch (e) {
       console.error("subscription/me failed", e);
@@ -76,12 +87,13 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
 
   const isLockedForMe = useCallback(
     (key?: string | null) => {
+      if (!enforcementEnabled) return false; // Global kapalıysa hiç kilitleme yok
       if (!key || !proModuleKeys.includes(key)) return false;
       const role = getRole();
       if (role === "admin" || role === "teacher") return false;
       return !entitlement?.active;
     },
-    [proModuleKeys, entitlement]
+    [proModuleKeys, entitlement, enforcementEnabled]
   );
 
   const startTrial = useCallback(
@@ -129,7 +141,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
 
   return (
     <SubscriptionContext.Provider
-      value={{ loading, entitlement, proModuleKeys, isProModule, isLockedForMe, refresh, startTrial, cancelSub, resumeSub }}
+      value={{ loading, entitlement, proModuleKeys, enforcementEnabled, isProModule, isLockedForMe, refresh, startTrial, cancelSub, resumeSub }}
     >
       {children}
     </SubscriptionContext.Provider>

@@ -184,6 +184,10 @@ async function runStartupMigrations() {
            CHECK (plan_key IS NULL OR plan_key IN ('pro_monthly','pro_yearly'));
        END IF;
      END $$`,
+    // Genel "abonelik kilitlemesi açık mı?" anahtarı — Iyzico hazır olana kadar kapalı
+    `INSERT INTO feature_settings (key, label, is_enabled, visible_to, category) VALUES
+      ('subscription-enforcement', 'Abonelik Kilitleri (Pro paywall)', false, ARRAY['admin']::TEXT[], 'system')
+      ON CONFLICT (key) DO NOTHING`,
     // Sidebar'da görünsün
     `INSERT INTO feature_settings (key, label, is_enabled, visible_to, category) VALUES
       ('student-subscription', 'Aboneliğim', true, ARRAY['student']::TEXT[], 'student'),

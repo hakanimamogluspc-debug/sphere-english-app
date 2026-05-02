@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
-import { Crown, Search, Plus, X, Loader2, Users, Sparkles, Clock, AlertTriangle } from "lucide-react";
+import { Crown, Search, Plus, X, Loader2, Users, Sparkles, Clock, AlertTriangle, Power } from "lucide-react";
 
 const TOKEN_KEY = "sphere_token";
 const API = import.meta.env.BASE_URL.replace(/\/$/, "") + "/api";
@@ -56,8 +56,47 @@ export default function AdminSubscriptions() {
   const [grantPlan, setGrantPlan] = useState<"pro_monthly" | "pro_yearly">("pro_monthly");
   const [grantNotes, setGrantNotes] = useState("");
   const [msg, setMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
+  const [enforcement, setEnforcement] = useState<boolean | null>(null);
+  const [enforcementBusy, setEnforcementBusy] = useState(false);
 
   const headers = useMemo(() => ({ Authorization: `Bearer ${localStorage.getItem(TOKEN_KEY) || ""}` }), []);
+
+  async function loadEnforcement() {
+    try {
+      const r = await fetch(`${API}/admin/feature-settings`, { headers }).then((x) => x.json());
+      const row = (Array.isArray(r) ? r : []).find((x: any) => x.key === "subscription-enforcement");
+      setEnforcement(!!row?.isEnabled);
+    } catch {
+      setEnforcement(false);
+    }
+  }
+
+  async function toggleEnforcement() {
+    if (enforcement === null) return;
+    const next = !enforcement;
+    if (
+      next &&
+      !confirm(
+        "Pro paywall'ı AKTİF etmek üzeresin. Tüm öğrencilerin AI Studio modülleri kilitlenecek (deneme veya abonelik gerekecek). Devam edilsin mi?"
+      )
+    )
+      return;
+    setEnforcementBusy(true);
+    try {
+      const res = await fetch(`${API}/admin/feature-settings/subscription-enforcement`, {
+        method: "PATCH",
+        headers: { ...headers, "Content-Type": "application/json" },
+        body: JSON.stringify({ isEnabled: next }),
+      });
+      if (!res.ok) throw new Error((await res.json()).error || "Güncelleme başarısız.");
+      setEnforcement(next);
+      setMsg({ type: "ok", text: next ? "Pro paywall aktif edildi." : "Pro paywall pasifleştirildi — tüm AI özellikleri serbest." });
+    } catch (e: any) {
+      setMsg({ type: "err", text: e.message });
+    } finally {
+      setEnforcementBusy(false);
+    }
+  }
 
   async function load() {
     setLoading(true);
@@ -77,6 +116,7 @@ export default function AdminSubscriptions() {
 
   useEffect(() => {
     load();
+    loadEnforcement();
   }, []);
 
   const filtered = useMemo(() => {
@@ -136,6 +176,64 @@ export default function AdminSubscriptions() {
   return (
     <div style={{ maxWidth: 1200, margin: "0 auto", padding: 24 }}>
       <div style={{ marginBottom: 24 }}>
+        {/* Master switch — Iyzico hazır olana kadar paywall'u kapalı tutmak için */}
+        <div
+          style={{
+            background: enforcement ? "linear-gradient(135deg,#ecfdf5,#d1fae5)" : "linear-gradient(135deg,#fff7ed,#ffedd5)",
+            border: `2px solid ${enforcement ? "#10b981" : "#f59e0b"}`,
+            borderRadius: 14,
+            padding: 16,
+            marginBottom: 20,
+            display: "flex",
+            alignItems: "center",
+            gap: 14,
+          }}
+        >
+          <div
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: 12,
+              background: enforcement ? "#10b981" : "#f59e0b",
+              color: "#fff",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+            }}
+          >
+            <Power size={22} />
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 15, fontWeight: 700, color: "#1f2937" }}>
+              Pro Paywall: {enforcement === null ? "Yükleniyor…" : enforcement ? "AKTİF" : "PASİF (kilitler kapalı)"}
+            </div>
+            <div style={{ fontSize: 13, color: "#6b7280", marginTop: 2 }}>
+              {enforcement
+                ? "Öğrenciler AI Studio modüllerine erişmek için deneme/abonelik başlatmak zorunda."
+                : "Iyzico kurulumu tamamlanana kadar tüm öğrenciler AI özelliklerini ücretsiz kullanabiliyor. Hazır olduğunda buradan açabilirsin."}
+            </div>
+          </div>
+          <button
+            onClick={toggleEnforcement}
+            disabled={enforcement === null || enforcementBusy}
+            style={{
+              padding: "10px 18px",
+              background: enforcement ? "#dc2626" : "#10b981",
+              color: "#fff",
+              border: "none",
+              borderRadius: 8,
+              fontSize: 14,
+              fontWeight: 600,
+              cursor: enforcement === null || enforcementBusy ? "not-allowed" : "pointer",
+              opacity: enforcementBusy ? 0.6 : 1,
+              whiteSpace: "nowrap",
+            }}
+          >
+            {enforcementBusy ? "..." : enforcement ? "Pasifleştir" : "Aktif Et"}
+          </button>
+        </div>
+
         <h1 style={{ fontSize: 26, fontWeight: 700, color: "#1f2937", marginBottom: 6, display: "flex", alignItems: "center", gap: 10 }}>
           <Crown size={26} color="#7c3aed" /> Abonelik Yönetimi
         </h1>

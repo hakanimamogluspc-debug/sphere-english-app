@@ -2,6 +2,7 @@ import { Router } from "express";
 import { db, featureSettingsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { authMiddleware, requireRole, type AuthRequest } from "../middlewares/auth.js";
+import { invalidateEnforcementCache } from "../lib/subscription.js";
 
 const router = Router();
 
@@ -62,6 +63,7 @@ router.patch("/admin/feature-settings/:key", authMiddleware, requireRole("admin"
   }
 
   invalidateCache(); // güncelleme sonrası önbelleği temizle
+  if (key === "subscription-enforcement") invalidateEnforcementCache();
   res.json(updated);
 });
 

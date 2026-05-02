@@ -1,5 +1,5 @@
 import type { Request, Response, NextFunction } from "express";
-import { getEntitlement } from "../lib/subscription.js";
+import { getEntitlement, isEnforcementEnabled } from "../lib/subscription.js";
 import { db } from "@workspace/db";
 import { usersTable } from "@workspace/db/schema";
 import { eq } from "drizzle-orm";
@@ -7,9 +7,15 @@ import { eq } from "drizzle-orm";
 /**
  * Gate behind an active subscription (trial or paid). Admins always pass.
  * Must be mounted AFTER authMiddleware — it relies on req.userId.
+ *
+ * If global "subscription-enforcement" feature flag is OFF, paywall is fully
+ * disabled (open access for everyone) — useful while Iyzico is not yet wired up.
  */
 export async function requireSubscription(req: Request, res: Response, next: NextFunction) {
   try {
+    // Global kapalıysa hiç kilitleme yok
+    if (!(await isEnforcementEnabled())) return next();
+
     const userId = (req as any).userId as number | undefined;
     if (!userId) return res.status(401).json({ error: "Yetkisiz." });
 

@@ -3,26 +3,31 @@ import { db } from "@workspace/db";
 import { subscriptionsTable } from "@workspace/db/schema";
 import { eq, sql } from "drizzle-orm";
 import { authMiddleware } from "../middlewares/auth.js";
-import { PLANS, getPlan, getEntitlement, PRO_MODULE_KEYS } from "../lib/subscription.js";
+import { PLANS, getPlan, getEntitlement, PRO_MODULE_KEYS, isEnforcementEnabled } from "../lib/subscription.js";
 
 const router = Router();
 
-router.get("/subscription/plans", (_req, res) => {
+router.get("/subscription/plans", async (_req, res) => {
   res.json({
     plans: PLANS,
     proModuleKeys: Array.from(PRO_MODULE_KEYS),
     trialDays: 7,
+    enforcementEnabled: await isEnforcementEnabled(),
   });
 });
 
 router.get("/subscription/me", authMiddleware, async (req: Request, res: Response) => {
   try {
     const userId = (req as any).userId as number;
-    const { entitlement, raw } = await getEntitlement(userId);
+    const [{ entitlement, raw }, enforcementEnabled] = await Promise.all([
+      getEntitlement(userId),
+      isEnforcementEnabled(),
+    ]);
     res.json({
       entitlement,
       subscription: raw,
       proModuleKeys: Array.from(PRO_MODULE_KEYS),
+      enforcementEnabled,
     });
   } catch (err: any) {
     console.error("subscription/me error:", err?.message || err);

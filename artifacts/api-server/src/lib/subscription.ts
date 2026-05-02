@@ -1,6 +1,30 @@
 import { db } from "@workspace/db";
-import { subscriptionsTable, type Subscription, type SubscriptionPlanKey } from "@workspace/db/schema";
+import { subscriptionsTable, featureSettingsTable, type Subscription, type SubscriptionPlanKey } from "@workspace/db/schema";
 import { eq } from "drizzle-orm";
+
+// ── Enforcement flag (admin toggleable). Iyzico hazır olana kadar kapalı kalabilir.
+let enforcementCache: { value: boolean; expiresAt: number } | null = null;
+const ENFORCEMENT_TTL_MS = 30_000;
+
+export async function isEnforcementEnabled(): Promise<boolean> {
+  if (enforcementCache && Date.now() < enforcementCache.expiresAt) return enforcementCache.value;
+  try {
+    const [row] = await db
+      .select({ isEnabled: featureSettingsTable.isEnabled })
+      .from(featureSettingsTable)
+      .where(eq(featureSettingsTable.key, "subscription-enforcement"))
+      .limit(1);
+    const value = !!row?.isEnabled;
+    enforcementCache = { value, expiresAt: Date.now() + ENFORCEMENT_TTL_MS };
+    return value;
+  } catch {
+    return false; // güvenli varsayılan: kapalı (kilitsiz)
+  }
+}
+
+export function invalidateEnforcementCache() {
+  enforcementCache = null;
+}
 
 /**
  * Static plan catalog. No payment is collected yet — Iyzico will plug in later.
