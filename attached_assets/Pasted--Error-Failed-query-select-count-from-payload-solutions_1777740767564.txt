@@ -1,0 +1,59 @@
+ Error: Failed query: select count(*) from "payload"."solutions" where "payload"."solutions"."slug" = $1
+params: toplanti-ingilizcesi
+    at y.queryWithCache (.next/server/chunks/796.js:288:25871)
+    at async (.next/server/chunks/796.js:282:3383)
+    at async Object.a [as countDistinct] (.next/server/chunks/796.js:209:179)
+    at async g (.next/server/chunks/796.js:207:5960)
+    at async Q (.next/server/chunks/796.js:290:43700)
+    at async a (.next/server/app/(frontend)/cozumler/[slug]/page.js:1:18003)
+    at async f (.next/server/app/(frontend)/cozumler/[slug]/page.js:1:14360) {
+  query: 'select count(*) from "payload"."solutions" where "payload"."solutions"."slug" = $1',
+   ▲ Next.js 15.1.11
+   - Local:        http://localhost:80
+   - Network:      http://10.11.18.3:80
+
+ ✓ Starting...
+(node:1) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///app/image-hosts.config.js is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ⚠ Invalid next.config.mjs options detected: 
+ ⚠     Unrecognized key(s) in object: 'turbopack'
+Payload: You can safely ignore the "Invalid next.config" warning above. This only occurs on Next.js 15.2.x or lower. We recommend upgrading to the latest supported Next.js version to resolve this warning.
+ ⚠ See more info here: https://nextjs.org/docs/messages/invalid-next-config
+ ✓ Ready in 318ms
+[16:50:39] WARN: No email adapter provided. Email will be written to console. More info at https://payloadcms.com/docs/email/overview.
+ ⨯ Error: Failed query: select "users"."id", "users"."name", "users"."updated_at", "users"."created_at", "users"."email", "users"."reset_password_token", "users"."reset_password_expiration", "users"."salt", "users"."hash", "users"."login_attempts", "users"."lock_until", "users_sessions"."data" as "sessions" from "payload"."users" "users" left join lateral (select coalesce(json_agg(json_build_array("users_sessions"."_order", "users_sessions"."id", "users_sessions"."created_at", "users_sessions"."expires_at") order by "users_sessions"."_order" asc), '[]'::json) as "data" from (select * from "payload"."users_sessions" "users_sessions" where "users_sessions"."_parent_id" = "users"."id" order by "users_sessions"."_order" asc) "users_sessions") "users_sessions" on true order by "users"."created_at" desc limit $1
+params: 1
+    at y.queryWithCache (.next/server/chunks/796.js:288:25871)
+    at async (.next/server/chunks/796.js:282:3383)
+    at async g (.next/server/chunks/796.js:207:6094)
+    at async Object.a [as findOne] (.next/server/chunks/796.js:207:9303)
+    at async eM (.next/server/app/(payload)/admin/[[...segments]]/page.js:211:377769) {
+  query: `select "users"."id", "users"."name", "users"."updated_at", "users"."created_at", "users"."email", "users"."reset_password_token", "users"."reset_password_expiration", "users"."salt", "users"."hash", "users"."login_attempts", "users"."lock_until", "users_sessions"."data" as "sessions" from "payload"."users" "users" left join lateral (select coalesce(json_agg(json_build_array("users_sessions"."_order", "users_sessions"."id", "users_sessions"."created_at", "users_sessions"."expires_at") order by "users_sessions"."_order" asc), '[]'::json) as "data" from (select * from "payload"."users_sessions" "users_sessions" where "users_sessions"."_parent_id" = "users"."id" order by "users_sessions"."_order" asc) "users_sessions") "users_sessions" on true order by "users"."created_at" desc limit $1`,
+  params: [Array],
+  digest: '2784820392',
+  [cause]: error: relation "payload.users" does not exist
+      at async (.next/server/chunks/796.js:282:3593)
+      at async y.queryWithCache (.next/server/chunks/796.js:288:25846)
+      at async (.next/server/chunks/796.js:282:3383)
+      at async g (.next/server/chunks/796.js:207:6094)
+      at async Object.a [as findOne] (.next/server/chunks/796.js:207:9303)
+      at async eM (.next/server/app/(payload)/admin/[[...segments]]/page.js:211:377769) {
+    length: 113,
+    severity: 'ERROR',
+    code: '42P01',
+    detail: undefined,
+    hint: undefined,
+    position: '291',
+    internalPosition: undefined,
+    internalQuery: undefined,
+    where: undefined,
+    schema: undefined,
+    table: undefined,
+    column: undefined,
+    dataType: undefined,
+    constraint: undefined,
+    file: 'parse_relation.c',
+    line: '1428',
+    routine: 'parserOpenTable'

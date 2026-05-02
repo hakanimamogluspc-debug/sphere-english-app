@@ -46,7 +46,11 @@ COPY --from=builder /app/next.config.mjs ./next.config.mjs
 COPY --from=builder /app/payload.config.ts ./payload.config.ts
 COPY --from=builder /app/tsconfig.json ./tsconfig.json
 COPY --from=builder /app/src ./src
+COPY --from=builder /app/scripts ./scripts
 COPY --from=builder /app/image-hosts.config.js ./image-hosts.config.js
 COPY --from=builder /app/image-hosts.config.mjs ./image-hosts.config.mjs
 EXPOSE 80
-CMD ["node_modules/.bin/next", "start", "-p", "80"]
+# On startup: if PAYLOAD_DB_PUSH=true, run a one-shot schema push (NODE_ENV=development
+# is required to bypass the @payloadcms/db-postgres prod guard that disables push).
+# Failure is non-fatal — server still starts so we can debug from logs.
+CMD ["sh", "-c", "if [ \"$PAYLOAD_DB_PUSH\" = \"true\" ]; then echo '>>> Running one-shot schema push'; NODE_ENV=development node_modules/.bin/tsx scripts/push-schema.ts || echo '>>> Schema push failed (continuing to start server)'; else echo '>>> PAYLOAD_DB_PUSH not set — skipping schema push'; fi && exec node_modules/.bin/next start -p 80"]
