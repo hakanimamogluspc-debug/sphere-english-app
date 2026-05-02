@@ -76,8 +76,78 @@ const AI_FEATURES = [
     color: '#0f766e',
     bg: 'from-teal-50 to-emerald-50',
     link: 'https://app.sphereenglish.com/student/simulation-mode',
+    tag: null,
+    tagBg: null,
+  },
+  {
+    icon: '🤝',
+    title: 'Mülakat Simülatörü',
+    subtitle: 'INTERVIEW SIMULATOR',
+    description:
+      'İş görüşmelerine yapay zeka ile hazırlanın. Pozisyon, sektör ve şirket türünü seçin; AI mülakatçı size pozisyona özel sorular sorsun. Cevaplarınız anlık olarak değerlendirilir; içerik, yapı, ton ve dil kullanımı için detaylı geri bildirim alırsınız.',
+    highlights: ['Pozisyona özel mülakat soruları', 'STAR yöntemi destekli cevap analizi', 'Ton, kendine güven & dil değerlendirmesi', 'Mülakat sonu özet rapor'],
+    detail: 'Behavioral, technical ve case interview türlerini destekler. Junior\'dan C-level\'a kadar pozisyon ayarlanabilir; mülakat sonunda güçlü/zayıf yönleriniz ile somut iyileştirme önerileri sunulur.',
+    color: '#dc2626',
+    bg: 'from-rose-50 to-red-50',
+    link: 'https://app.sphereenglish.com/student/interview-sim',
     tag: 'Yeni',
-    tagBg: '#0f766e',
+    tagBg: '#dc2626',
+  },
+  {
+    icon: '🎤',
+    title: 'Sunum Simülatörü',
+    subtitle: 'PRESENTATION SIMULATOR',
+    description:
+      'Yönetim kurulu sunumundan konferans konuşmasına, ürün lansmanından satış pitch\'ine — sunumlarınızı yapay zeka karşısında prova edin. Açılış, akış, vurgu, geçişler ve kapanışınız için profesyonel sunum koçluğu seviyesinde geri bildirim alın.',
+    highlights: ['Açılış, gövde & kapanış analizi', 'Vurgu, hız & duraklama önerileri', 'Hedef kitleye uygunluk skoru', 'Slayt başına geri bildirim'],
+    detail: 'Pitch deck, keynote, panel konuşması ve workshop türlerini destekler. Sunumunuz CEFR uyumlu olarak değerlendirilir; daha güçlü cümle alternatifleri ve geçiş örnekleri sunulur.',
+    color: '#9333ea',
+    bg: 'from-purple-50 to-fuchsia-50',
+    link: 'https://app.sphereenglish.com/student/presentation-sim',
+    tag: 'Yeni',
+    tagBg: '#9333ea',
+  },
+  {
+    icon: '⚡',
+    title: 'Akıllı Quiz Üretici',
+    subtitle: 'AI QUIZ GENERATOR',
+    description:
+      'İstediğiniz konu, seviye ve formatta saniyeler içinde quiz oluşturun. Vocabulary, grammar, reading veya exam-prep — yapay zeka size CEFR uyumlu sorular hazırlar. Her sorunun ardından detaylı açıklama ve doğru cevap mantığı sunulur.',
+    highlights: ['Konu & seviye seçimli üretim', '4 farklı soru formatı', 'Anında açıklamalı geri bildirim', 'Geçmiş quizler & ilerleme grafiği'],
+    detail: 'Multiple choice, fill-in-the-blank, true/false ve short answer formatları desteklenir. IELTS, TOEFL, YDS, YÖKDİL ve KPDS sınav modları mevcuttur.',
+    color: '#0891b2',
+    bg: 'from-cyan-50 to-sky-50',
+    link: 'https://app.sphereenglish.com/student/ai-quiz',
+    tag: 'Yeni',
+    tagBg: '#0891b2',
+  },
+  {
+    icon: '🎓',
+    title: 'Kişisel AI Öğretmen',
+    subtitle: 'PERSONAL AI TUTOR',
+    description:
+      '7/24 yanınızda olan kişisel İngilizce öğretmeniniz. Aklınıza takılan herhangi bir gramer kuralını sorun, bir cümleyi nasıl daha doğal söyleyeceğinizi öğrenin, kelime farklarını anlayın. Tıpkı bir özel öğretmen gibi sabırlı, açıklayıcı ve seviyenize uygun.',
+    highlights: ['Doğal sohbet ile soru-cevap', 'Konuşma geçmişi & devam edebilen oturumlar', 'Seviyenize göre uyarlanmış açıklama', 'Türkçe & İngilizce iki dilli destek'],
+    detail: 'Hangi kelimeyi nerede kullanacağınızdan, deyimlerin gerçek anlamına; sınav stratejilerinden günlük konuşma kalıplarına kadar her şeyi sorabilirsiniz.',
+    color: '#1B365D',
+    bg: 'from-blue-50 to-indigo-50',
+    link: 'https://app.sphereenglish.com/student/ai-tutor',
+    tag: 'Yeni',
+    tagBg: '#1B365D',
+  },
+  {
+    icon: '🗺️',
+    title: 'Adaptif Öğrenme Yolu',
+    subtitle: 'ADAPTIVE LEARNING PATH',
+    description:
+      'Yapay zeka size kişisel bir öğrenme yol haritası çizer. Hedeflerinizi (sınav, iş, seyahat), mevcut seviyenizi ve zaman ayırabileceğiniz süreyi belirtin; AI haftalık planı, hangi modülde ne kadar pratik yapmanız gerektiğini ve önceliklerinizi otomatik oluşturur.',
+    highlights: ['Hedef bazlı kişisel müfredat', 'Haftalık adım adım yol haritası', 'İlerleme oldukça yeniden uyarlama', 'Tüm AI Studio modülleriyle entegre'],
+    detail: 'IELTS, iş İngilizcesi, akademik İngilizce, sağlık turizmi gibi onlarca hedef için optimize. İlerlemeniz yavaş ya da hızlı olduğunda plan otomatik güncellenir.',
+    color: '#16a34a',
+    bg: 'from-green-50 to-lime-50',
+    link: 'https://app.sphereenglish.com/student/learning-path',
+    tag: 'Yeni',
+    tagBg: '#16a34a',
     span: true,
   },
 ];
@@ -99,7 +169,7 @@ const COACHES = [
 
 const STATS = [
   { value: '11', label: 'Yapay Zeka Koçu' },
-  { value: '5', label: 'AI Özelliği' },
+  { value: '10', label: 'AI Özelliği' },
   { value: '4000+', label: 'Kelime & Kural' },
   { value: 'A1–C2', label: 'CEFR Seviyeleri' },
 ];
@@ -121,7 +191,7 @@ const TECH_STACK = [
 const FAQS = [
   {
     q: 'Sphere AI Studio nedir?',
-    a: 'Sphere AI Studio, Sphere English LMS platformunun yapay zeka destekli eğitim bölümüdür. 12 farklı yapay zeka koçu, 5 özellik (Telaffuz Koçu, İş Senaryoları, Yazma Koçu, Dilbilgisi Koçu, Kelime Oyunu) ve A1–C2 CEFR ölçeğinde kapsamlı içerikler sunar. GPT-4o ve Whisper AI teknolojileri kullanılarak geliştirilmiştir.',
+    a: 'Sphere AI Studio, Sphere English LMS platformunun yapay zeka destekli eğitim bölümüdür. 12 farklı yapay zeka koçu ve 10 güçlü özellik (Telaffuz Koçu, Yazma Koçu, Dilbilgisi Koçu, Kelime Oyunu, İş Senaryoları, Mülakat Simülatörü, Sunum Simülatörü, Akıllı Quiz Üretici, Kişisel AI Öğretmen ve Adaptif Öğrenme Yolu) ile A1–C2 CEFR ölçeğinde kapsamlı içerikler sunar. GPT-4o ve Whisper AI teknolojileri kullanılarak geliştirilmiştir.',
   },
   {
     q: 'AI Studio\'yu kullanmak için ne kadar İngilizce bilmem gerekiyor?',
@@ -220,7 +290,7 @@ export default function AIStudioPage() {
               Sphere <span style={{ color: '#0ea5e9' }}>AI</span><br />Studio
             </h1>
             <p className="text-xl text-white/60 mt-6 mb-4 max-w-2xl mx-auto leading-relaxed">
-              GPT-4o ve Whisper AI destekli 12 yapay zeka koçuyla gerçek zamanlı konuşma pratiği, iş senaryosu simülasyonu, akıllı yazma analizi, dilbilgisi öğrenimi ve oyunlaştırılmış kelime geliştirme — tek platformda.
+              GPT-4o ve Whisper AI destekli 12 yapay zeka koçu, mülakat & sunum simülatörleri, akıllı quiz üretici, kişisel AI öğretmen ve adaptif öğrenme yolu — İngilizce öğrenmenin tüm boyutları tek platformda.
             </p>
             <p className="text-sm text-white/40 max-w-xl mx-auto mb-10">
               Oxford müfredatı · CEFR A1–C2 · 7/24 erişim · Kurumsal raporlama
@@ -285,10 +355,10 @@ export default function AIStudioPage() {
             <div className="text-center mb-16">
               <span className="text-xs font-bold uppercase tracking-widest" style={{ color: TURQUOISE }}>— Yapay Zeka Araçları</span>
               <h2 className="text-4xl md:text-5xl font-black mt-3 mb-4" style={{ fontFamily: "'Outfit', sans-serif", color: NAVY }}>
-                5 Güçlü AI Özelliği
+                10 Güçlü AI Özelliği
               </h2>
               <p className="text-gray-500 text-lg max-w-2xl mx-auto">
-                Konuşma, yazma, dilbilgisi, kelime ve iş senaryosu — İngilizce öğrenmenin beş temel boyutu, tek platformda yapay zeka ile destekleniyor.
+                Konuşma, yazma, dilbilgisi, kelime, iş senaryoları, mülakat & sunum, akıllı quiz, kişisel öğretmen ve adaptif öğrenme yolu — İngilizce öğrenmenin tüm boyutları, tek platformda yapay zeka ile.
               </p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

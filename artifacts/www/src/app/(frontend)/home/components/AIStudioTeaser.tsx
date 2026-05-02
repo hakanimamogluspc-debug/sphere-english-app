@@ -11,6 +11,11 @@ const TOOLS = [
   { icon: '🧠', label: 'Dilbilgisi Koçu' },
   { icon: '🎮', label: 'Kelime Oyunu' },
   { icon: '💼', label: 'İş Senaryoları' },
+  { icon: '🤝', label: 'Mülakat Simülatörü' },
+  { icon: '🎤', label: 'Sunum Simülatörü' },
+  { icon: '⚡', label: 'Akıllı Quiz Üretici' },
+  { icon: '🎓', label: 'Kişisel AI Öğretmen' },
+  { icon: '🗺️', label: 'Adaptif Öğrenme Yolu' },
 ];
 
 export default function AIStudioTeaser() {
@@ -88,7 +93,7 @@ export default function AIStudioTeaser() {
 
           {/* sub */}
           <p className="text-center text-white/60 text-[16px] leading-relaxed max-w-xl mx-auto mb-12">
-            Telaffuz koçundan iş senaryolarına, kelime oyunundan yazma analizine — 5 güçlü yapay
+            Telaffuz koçundan iş senaryolarına, mülakat & sunum simülatöründen kişisel AI öğretmene — 10 güçlü yapay
             zeka aracı tek platformda. 7/24 aktif, sınırsız pratik.
           </p>
 
@@ -109,7 +114,7 @@ export default function AIStudioTeaser() {
           {/* stats row */}
           <div className="flex flex-wrap justify-center gap-10 mb-14">
             {[
-              { value: '5', label: 'Yapay Zeka Aracı' },
+              { value: '10', label: 'Yapay Zeka Aracı' },
               { value: '7/24', label: 'Erişim' },
               { value: '11', label: 'AI Koç & Aksan' },
             ].map((s) => (
