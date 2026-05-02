@@ -41,25 +41,35 @@
   "scripts": {
     "dev": "next dev -p $PORT",
     "build": "next build",
-    "start": "next dev -p $PORT",
+    "start": "next start -p ${PORT:-3000}",
     "lint": "next lint",
     "lint:fix": "next lint --fix",
     "format": "prettier --write \"src/**/*.{ts,tsx,css,md,json}\"",
     "serve": "next start",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "payload": "payload",
+    "generate:types": "payload generate:types",
+    "generate:importmap": "payload generate:importmap",
+    "seed": "tsx scripts/seed.ts"
   },
   "dependencies": {
     "@dhiwise/component-tagger": "^1.0.14",
     "@getbrevo/brevo": "3.0.4",
     "@heroicons/react": "^2.2.0",
+    "@payloadcms/db-postgres": "^3.84.1",
+    "@payloadcms/next": "^3.84.1",
+    "@payloadcms/richtext-lexical": "^3.84.1",
     "@tailwindcss/forms": "^0.5.10",
     "@tailwindcss/typography": "^0.5.16",
     "critters": "^0.0.20",
+    "graphql": "^16.13.2",
     "gsap": "^3.15.0",
     "next": "15.1.11",
+    "payload": "^3.84.1",
     "react": "19.0.3",
     "react-dom": "19.0.3",
-    "recharts": "^2.15.2"
+    "recharts": "^2.15.2",
+    "sharp": "^0.34.5"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
@@ -78,6 +88,7 @@
     "prettier": "^3.5.3",
     "tailwindcss": "3.4.6",
     "tailwindcss-animate": "^1.0.7",
+    "tsx": "catalog:",
     "typescript": "^5"
   }
 }

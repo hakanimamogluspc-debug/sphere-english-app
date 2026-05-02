@@ -1,3 +1,4 @@
+import { withPayload } from '@payloadcms/next/withPayload';
 import { imageHosts } from './image-hosts.config.js';
 
 /** @type {import('next').NextConfig} */
@@ -6,6 +7,7 @@ const nextConfig = {
   productionBrowserSourceMaps: false,
   experimental: {
     optimizeCss: true,
+    reactCompiler: false,
   },
   distDir: process.env.DIST_DIR || '.next',
   typescript: {
@@ -20,7 +22,8 @@ const nextConfig = {
   async headers() {
     return [
       {
-        source: '/:path*',
+        // Public site headers (admin paneli muaf)
+        source: '/((?!admin|api).*)',
         headers: [
           { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
           { key: 'X-Content-Type-Options', value: 'nosniff' },
@@ -50,7 +53,6 @@ const nextConfig = {
   async redirects() {
     return [
       {
-        // sphereenglish.com → www.sphereenglish.com (SEO canonical redirect)
         source: '/:path*',
         has: [{ type: 'host', value: 'sphereenglish.com' }],
         destination: 'https://www.sphereenglish.com/:path*',
@@ -64,6 +66,5 @@ const nextConfig = {
     ];
   },
 };
-// Note: @dhiwise/component-tagger webpack plugin removed — caused 270ms TBT in production
 
-export default nextConfig;
+export default withPayload(nextConfig, { devBundleServerPackages: false });

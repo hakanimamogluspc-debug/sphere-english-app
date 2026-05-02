@@ -191,3 +191,73 @@ The server automatically seeds the database (admin/teacher/student accounts + co
 - `DATABASE_URL` — PostgreSQL connection string (set by Replit)
 - `JWT_SECRET` — JWT signing secret (fallback: `sphere-english-secret-key-2024`)
 - `PORT` — Server port (default 8080 for API)
+
+---
+
+## Marketing Site (www.sphereenglish.com)
+
+Separate Next.js 15.1 app at `artifacts/www/` deployed to **EasyPanel** with its own GitHub repo `hakanimamogluspc-debug/sphereenglish-www`.
+
+### Payload CMS v3 (embedded)
+
+- **Admin URL**: `/admin` (e.g., `https://www.sphereenglish.com/admin`)
+- **Database**: Same PostgreSQL as LMS, **separate `payload` schema** (auto-created via `push: true`)
+- **Auth**: First-user setup wizard creates initial admin on first `/admin` visit
+- **Collections**:
+  - `users` — auth-protected admin users
+  - `media` — file uploads → `public/media/` (3 sizes: thumbnail, card, tablet via sharp)
+  - `solutions` — 13 Çözüm sayfaları (slug, title, category, body, highlights, ctaText)
+  - `blog-posts` — blog yazıları (status: Draft/Published, hero image, related solutions)
+- **Globals**:
+  - `home-page` — Ana sayfa içeriği, 5 sekmeli (Hero, Neden Biz, Modüller, AI Koçlar, SSS)
+
+### CMS-driven pages
+
+| Route | Source | Component |
+|-------|--------|-----------|
+| `/home` | `home-page` global | `HomePage` server component → passes `data` prop to client sections |
+| `/cozumler/[slug]` | `solutions` collection | Server component, `revalidate: 60` |
+
+All section components (HeroSection, NedenBizSection, ModuleGrid, AICoachesSection, FAQSection) accept optional `data` prop and **fall back to hardcoded defaults** if CMS is empty.
+
+### Seed endpoint
+
+POST `/api/seed-cms` with header `x-seed-token: $SEED_TOKEN` (default `dev-seed-only` in dev).
+- Idempotent: skips solutions that already exist
+- Always upserts the HomePage global
+- Source data: `src/payload/seed-data.ts`
+
+### Required env vars (production)
+
+| Var | Required | Purpose |
+|---|---|---|
+| `DATABASE_URI` | ✅ | PostgreSQL connection string (same as LMS) |
+| `PAYLOAD_SECRET` | ✅ | Min 16 chars; **app fails to boot without it in prod** |
+| `SEED_TOKEN` | ✅ if seeding | Required to call `/api/seed-cms` in prod (no default fallback) |
+| `PAYLOAD_DB_PUSH` | First deploy only | Set to `true` once to auto-create the `payload` schema, then remove |
+| `NOTION_API_KEY`, `NOTION_DATABASE_ID` | Optional | Legacy blog fallback — used only when Payload `blog-posts` is empty |
+
+### Blog (Payload-first, Notion fallback)
+
+`/blog` and `/blog/[slug]` query Payload `blog-posts` (status=Published) first.
+If empty or unavailable, gracefully fall back to legacy Notion content.
+Payload Lexical content is rendered via `src/payload/lexical-render.tsx`.
+
+### Files
+
+| File | Purpose |
+|------|---------|
+| `artifacts/www/payload.config.ts` | Payload root config (DB, collections, globals, sharp) |
+| `artifacts/www/src/payload/api.ts` | Cached server helpers: `fetchHomePage`, `fetchSolution`, etc |
+| `artifacts/www/src/payload/seed-data.ts` | Hardcoded migration source |
+| `artifacts/www/src/app/(payload)/admin/[[...segments]]/page.tsx` | Admin UI mount |
+| `artifacts/www/src/app/(payload)/api/[...slug]/route.ts` | Payload REST + Local API |
+| `artifacts/www/src/app/api/seed-cms/route.ts` | One-time seed trigger |
+| `artifacts/www/src/payload/lexical-render.tsx` | Lexical → JSX renderer for CMS blog content |
+| `artifacts/www/src/app/blog/page.tsx` | Blog list (Payload-first, Notion fallback) |
+| `artifacts/www/src/app/blog/[slug]/page.tsx` | Blog detail (Payload-first, Notion fallback) |
+
+### GitHub deploy (EasyPanel)
+
+Repo: `hakanimamogluspc-debug/sphereenglish-www` → branch `main`.
+EasyPanel auto-deploys on push. Latest commit pushed via REST Trees API (no git CLI).
