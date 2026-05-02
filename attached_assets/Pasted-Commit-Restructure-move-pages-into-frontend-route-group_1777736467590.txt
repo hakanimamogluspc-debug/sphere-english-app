@@ -1,0 +1,116 @@
+Commit: Restructure: move pages into (frontend) route group; minimal root layout to fix nested html in /admin 
+##########################################
+### Download Github Archive Started...
+### Sat, 02 May 2026 15:39:52 GMT
+##########################################
+
+#0 building with "default" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 1.81kB done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/node:20-bookworm-slim
+#2 DONE 0.7s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 149B done
+#3 DONE 0.0s
+
+#4 [deps 1/4] FROM docker.io/library/node:20-bookworm-slim@sha256:2cf067cfed83d5ea958367df9f966191a942351a2df77d6f0193e162b5febfc0
+#4 resolve docker.io/library/node:20-bookworm-slim@sha256:2cf067cfed83d5ea958367df9f966191a942351a2df77d6f0193e162b5febfc0 0.0s done
+#4 DONE 0.0s
+
+#5 [internal] load build context
+#5 transferring context: 33.89MB 0.2s done
+#5 DONE 0.2s
+
+#6 [deps 2/4] WORKDIR /app
+#6 CACHED
+
+#7 [deps 3/4] COPY package.json ./
+#7 CACHED
+
+#8 [deps 4/4] RUN npm install --legacy-peer-deps --include=optional
+#8 CACHED
+
+#9 [builder 3/5] COPY --from=deps /app/node_modules ./node_modules
+#9 CACHED
+
+#10 [builder 4/5] COPY . .
+#10 DONE 0.1s
+
+#11 [builder 5/5] RUN npm run build
+#11 0.528 
+#11 0.528 > @workspace/www@0.1.0 build
+#11 0.528 > next build
+#11 0.528 
+#11 1.185 (node:18) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///app/image-hosts.config.js is not specified and it doesn't parse as CommonJS.
+#11 1.185 Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+#11 1.185 To eliminate this warning, add "type": "module" to /app/package.json.
+#11 1.185 (Use `node --trace-warnings ...` to show where the warning was created)
+#11 1.198  ⚠ Invalid next.config.mjs options detected: 
+#11 1.198  ⚠     Unrecognized key(s) in object: 'turbopack'
+#11 1.198 Payload: You can safely ignore the "Invalid next.config" warning above. This only occurs on Next.js 15.2.x or lower. We recommend upgrading to the latest supported Next.js version to resolve this warning.
+#11 1.198  ⚠ See more info here: https://nextjs.org/docs/messages/invalid-next-config
+#11 1.249    ▲ Next.js 15.1.11
+#11 1.249    - Experiments (use with caution):
+#11 1.249      · optimizeCss
+#11 1.249      · reactCompiler
+#11 1.249 
+#11 1.376    Creating an optimized production build ...
+#11 28.55 Failed to compile.
+#11 28.55 
+#11 28.55 ./src/app/(frontend)/layout.tsx
+#11 28.55 Module not found: Can't resolve '../styles/tailwind.css'
+#11 28.55 
+#11 28.55 https://nextjs.org/docs/messages/module-not-found
+#11 28.55 
+#11 28.55 
+#11 28.55 > Build failed because of webpack errors
+#11 28.72 npm notice
+#11 28.72 npm notice New major version of npm available! 10.8.2 -> 11.13.0
+#11 28.72 npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.13.0
+#11 28.72 npm notice To update run: npm install -g npm@11.13.0
+#11 28.72 npm notice
+#11 ERROR: process "/bin/sh -c npm run build" did not complete successfully: exit code: 1
+------
+ > [builder 5/5] RUN npm run build:
+28.55 
+28.55 https://nextjs.org/docs/messages/module-not-found
+28.55 
+28.55 
+28.55 > Build failed because of webpack errors
+28.72 npm notice
+28.72 npm notice New major version of npm available! 10.8.2 -> 11.13.0
+28.72 npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.13.0
+28.72 npm notice To update run: npm install -g npm@11.13.0
+28.72 npm notice
+------
+
+ 10 warnings found (use docker --debug to expand):
+ - SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ENV "PAYLOAD_SECRET") (line 21)
+ - SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "BREVO_API_KEY") (line 10)
+ - SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "SEED_TOKEN") (line 17)
+ - SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ENV "BREVO_API_KEY") (line 21)
+ - SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ENV "NOTION_API_KEY") (line 21)
+ - SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ENV "META_CONVERSIONS_API_TOKEN") (line 21)
+ - SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ENV "SEED_TOKEN") (line 21)
+ - SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "NOTION_API_KEY") (line 11)
+ - SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "META_CONVERSIONS_API_TOKEN") (line 14)
+ - SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "PAYLOAD_SECRET") (line 15)
+Dockerfile:35
+--------------------
+  33 |     COPY --from=deps /app/node_modules ./node_modules
+  34 |     COPY . .
+  35 | >>> RUN npm run build
+  36 |     
+  37 |     FROM node:20-bookworm-slim AS runner
+--------------------
+ERROR: failed to build: failed to solve: process "/bin/sh -c npm run build" did not complete successfully: exit code: 1
+##########################################
+### Error
+### Sat, 02 May 2026 15:40:26 GMT
+##########################################
+
+Command failed with exit code 1: docker buildx build --network host -f /etc/easypanel/projects/sphere-english/sphere-www/code/Dockerfile -t easypanel/sphere-english/sphere-www --label 'keep=true' --build-arg 'BREVO_API_KEY=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' --build-arg 'NOTION_API_KEY=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' --build-arg 'NOTION_DATABASE_ID=1efaf60b706a4083bc4d483f4b1cbe9f' --build-arg 'NEXT_PUBLIC_GA_MEASUREMENT_ID=G-ELDF1FF5S1' --build-arg 'META_CONVERSIONS_API_TOKEN=EAAYrdftJHeEBRKrACew58SdpdyXwSZBegVkdnyo6pa6g2OURGnVtE9akqF7nOEg2TX9ytoHfKnxNH7O24NMt9ELgrvObYt0iwGmFhlPhjK6AkLUJaiXWjPWHoBdJItEEouIVRbjqidbT36RZCkykMo3BZBX5HqKmZCxkxzOhZAwI2D3r2mgeyeOmbuO5PQQZDZD' --build-arg 'PAYLOAD_SECRET=<rastgele 32+ karakter>' --build-arg 'PAYLOAD_DB_PUSH=true' --build-arg 'SEED_TOKEN=<güçlü rastgele token>' --build-arg 'DATABASE_URL=postgres://postgres:Hk163178.,!1@sphere-english_sphere-db:5432/sphere-english?sslmode=disable' --build-arg 'GIT_SHA=a547ff7952cde2f294e14da315f1ec4c45488446' /etc/easypanel/projects/sphere-english/sphere-www/code/
