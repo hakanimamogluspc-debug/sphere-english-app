@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import type { Metadata } from 'next';
 import React from 'react';
 import Header from '@/components/Header';
@@ -30,8 +32,6 @@ export const metadata: Metadata = {
     images: [{ url: '/assets/images/hero_online_english_lesson.png', width: 1200, height: 630 }],
   },
 };
-
-export const revalidate = 60;
 
 export default async function HomePage() {
   let cms: any = null;

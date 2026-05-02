@@ -1,17 +1,16 @@
+export const dynamic = 'force-dynamic';
+
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import Header from '@/components/Header';
 import {
   fetchSolution,
-  fetchAllSolutionSlugs,
 } from '@/payload/api';
 
 interface PageProps {
   params: Promise<{ slug: string }>;
 }
-
-export const revalidate = 60;
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
@@ -27,15 +26,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       url: `https://www.sphereenglish.com/cozumler/${slug}`,
     },
   };
-}
-
-export async function generateStaticParams() {
-  try {
-    const slugs = await fetchAllSolutionSlugs();
-    return slugs.map((slug) => ({ slug }));
-  } catch {
-    return [];
-  }
 }
 
 export default async function CozumlerPage({ params }: PageProps) {
