@@ -1,0 +1,25 @@
+PostgreSQL Database directory appears to contain a database; Skipping initialization
+
+2026-05-02 17:13:11.453 UTC [8] LOG:  starting PostgreSQL 17.9 (Debian 17.9-1.pgdg13+1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 14.2.0-19) 14.2.0, 64-bit
+2026-05-02 17:13:11.453 UTC [8] LOG:  listening on IPv4 address "0.0.0.0", port 5432
+2026-05-02 17:13:11.453 UTC [8] LOG:  listening on IPv6 address "::", port 5432
+2026-05-02 17:13:11.456 UTC [8] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+2026-05-02 17:13:11.460 UTC [30] LOG:  database system was shut down at 2026-05-02 17:13:10 UTC
+2026-05-02 17:13:11.469 UTC [8] LOG:  database system is ready to accept connections
+2026-05-02 17:14:28.460 UTC [8] LOG:  received fast shutdown request
+2026-05-02 17:14:28.462 UTC [8] LOG:  aborting any active transactions
+2026-05-02 17:14:28.467 UTC [8] LOG:  background worker "logical replication launcher" (PID 33) exited with exit code 1
+2026-05-02 17:14:28.473 UTC [36] FATAL:  terminating connection due to administrator command
+2026-05-02 17:14:28.478 UTC [28] LOG:  shutting down
+2026-05-02 17:14:28.479 UTC [28] LOG:  checkpoint starting: shutdown immediate
+2026-05-02 17:14:28.487 UTC [28] LOG:  checkpoint complete: wrote 4 buffers (0.0%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.002 s, sync=0.002 s, total=0.010 s; sync files=3, longest=0.001 s, average=0.001 s; distance=2 kB, estimate=2 kB; lsn=0/31D8DC0, redo lsn=0/31D8DC0
+2026-05-02 17:14:28.491 UTC [8] LOG:  database system is shut down
+
+PostgreSQL Database directory appears to contain a database; Skipping initialization
+
+2026-05-02 17:14:29.019 UTC [7] LOG:  starting PostgreSQL 17.9 (Debian 17.9-1.pgdg13+1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 14.2.0-19) 14.2.0, 64-bit
+2026-05-02 17:14:29.019 UTC [7] LOG:  listening on IPv4 address "0.0.0.0", port 5432
+2026-05-02 17:14:29.020 UTC [7] LOG:  listening on IPv6 address "::", port 5432
+2026-05-02 17:14:29.022 UTC [7] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+2026-05-02 17:14:29.028 UTC [30] LOG:  database system was shut down at 2026-05-02 17:14:28 UTC
+2026-05-02 17:14:29.032 UTC [7] LOG:  database system is ready to accept connections
