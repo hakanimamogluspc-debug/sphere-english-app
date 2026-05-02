@@ -47,6 +47,8 @@ import CorporateDashboard from "./pages/corporate/CorporateDashboard";
 import CorporateStudents from "./pages/corporate/CorporateStudents";
 import CorporateReports from "./pages/corporate/CorporateReports";
 import CorporateAIReport from "./pages/corporate/CorporateAIReport";
+import LevelExams from "./pages/student/LevelExams";
+import LevelExamTaking from "./pages/student/LevelExamTaking";
 import StudentSpeakingClub from "./pages/student/StudentSpeakingClub";
 import StudentMaterials from "./pages/student/StudentMaterials";
 import Forum from "./pages/student/Forum";
@@ -168,6 +170,8 @@ function Router() {
       <Route path="/student/ai-quiz"><LayoutWrapper component={AIQuizGenerator} allowedRoles={['student', 'admin']} /></Route>
       <Route path="/student/ai-tutor"><LayoutWrapper component={AITutor} allowedRoles={['student', 'admin']} /></Route>
       <Route path="/student/learning-path"><LayoutWrapper component={LearningPath} allowedRoles={['student', 'admin']} /></Route>
+      <Route path="/student/level-exams"><LayoutWrapper component={LevelExams} allowedRoles={['student', 'admin']} /></Route>
+      <Route path="/student/level-exams/:level"><LayoutWrapper component={LevelExamTaking} allowedRoles={['student', 'admin']} /></Route>
       <Route path="/forum"><LayoutWrapper component={Forum} /></Route>
 
       {/* Teacher Routes */}

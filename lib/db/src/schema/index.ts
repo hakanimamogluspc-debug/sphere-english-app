@@ -21,3 +21,4 @@ export * from "./presentation-sessions";
 export * from "./ai-quiz-sessions";
 export * from "./ai-tutor";
 export * from "./learning-paths";
+export * from "./level-exams";

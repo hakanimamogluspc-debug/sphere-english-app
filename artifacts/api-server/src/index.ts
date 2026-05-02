@@ -132,6 +132,25 @@ async function runStartupMigrations() {
     )`,
     `CREATE INDEX IF NOT EXISTS idx_email_events_campaign ON email_events(campaign_id)`,
     `CREATE INDEX IF NOT EXISTS idx_email_events_resend_id ON email_events(resend_email_id)`,
+    // Seviye geçme sınavları — CEFR başına Oxford Business Result tabanlı
+    `CREATE TABLE IF NOT EXISTS level_exam_attempts (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      cefr_level TEXT NOT NULL,
+      score INTEGER NOT NULL DEFAULT 0,
+      total INTEGER NOT NULL,
+      percent INTEGER NOT NULL DEFAULT 0,
+      passed BOOLEAN NOT NULL DEFAULT false,
+      answers JSONB NOT NULL DEFAULT '[]'::jsonb,
+      started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      completed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`,
+    `CREATE INDEX IF NOT EXISTS idx_level_exam_attempts_user ON level_exam_attempts(user_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_level_exam_attempts_user_level ON level_exam_attempts(user_id, cefr_level)`,
+    // Feature setting — sidebar'da gözüksün
+    `INSERT INTO feature_settings (key, label, is_enabled, visible_to, category) VALUES
+      ('student-level-exams', 'Seviye Geçme Sınavı', true, ARRAY['student','admin']::TEXT[], 'student')
+    ON CONFLICT (key) DO UPDATE SET is_enabled = true, visible_to = EXCLUDED.visible_to, category = EXCLUDED.category`,
   ];
   for (const sql of migrations) {
     try {

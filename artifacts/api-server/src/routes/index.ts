@@ -38,6 +38,7 @@ import aiQuizRouter from "./ai-quiz";
 import tutorRouter from "./tutor";
 import learningPathRouter from "./learning-path";
 import corporateAiReportRouter from "./corporate-ai-report";
+import levelExamsRouter from "./level-exams";
 
 const router: IRouter = Router();
 
@@ -80,5 +81,6 @@ router.use(aiQuizRouter);
 router.use(tutorRouter);
 router.use(learningPathRouter);
 router.use(corporateAiReportRouter);
+router.use(levelExamsRouter);
 
 export default router;
