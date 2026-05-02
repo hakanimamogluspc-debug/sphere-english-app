@@ -1,0 +1,35 @@
+ ⨯ Error: Failed query: select count(*) from "payload"."solutions" where "payload"."solutions"."slug" = $1
+>>> Running one-shot schema push
+/app/node_modules/payload/dist/bin/loadEnv.js:3
+const { loadEnvConfig } = nextEnvImport;
+        ^
+
+
+TypeError: Cannot destructure property 'loadEnvConfig' of 'import_env.default' as it is undefined.
+    at loadedEnvFiles (/app/node_modules/payload/dist/bin/loadEnv.js:3:9)
+    at Object.<anonymous> (/app/node_modules/payload/dist/bin/loadEnv.js:6:21)
+    at Module._compile (node:internal/modules/cjs/loader:1521:14)
+    at Object.transformer (/app/node_modules/tsx/dist/register-D46fvsV_.cjs:3:1104)
+    at Module.load (node:internal/modules/cjs/loader:1266:32)
+    at Module._load (node:internal/modules/cjs/loader:1091:12)
+    at Module.require (node:internal/modules/cjs/loader:1289:19)
+    at require (node:internal/modules/helpers:182:18)
+    at <anonymous> (/app/node_modules/payload/dist/exports/node.js:4:25)
+    at Object.<anonymous> (/app/node_modules/payload/dist/exports/node.js:5:28)
+
+Node.js v20.20.2
+>>> Schema push failed (continuing to start server)
+   ▲ Next.js 15.1.11
+   - Local:        http://localhost:80
+   - Network:      http://10.0.1.108:80
+
+ ✓ Starting...
+(node:1) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///app/image-hosts.config.js is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ⚠ Invalid next.config.mjs options detected: 
+ ⚠     Unrecognized key(s) in object: 'turbopack'
+Payload: You can safely ignore the "Invalid next.config" warning above. This only occurs on Next.js 15.2.x or lower. We recommend upgrading to the latest supported Next.js version to resolve this warning.
+ ⚠ See more info here: https://nextjs.org/docs/messages/invalid-next-config
+ ✓ Ready in 496ms

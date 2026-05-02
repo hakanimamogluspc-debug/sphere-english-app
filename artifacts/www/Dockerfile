@@ -2,6 +2,17 @@ FROM node:20-bookworm-slim AS deps
 WORKDIR /app
 COPY package.json ./
 RUN npm install --legacy-peer-deps --include=optional
+# Patch payload's loadEnv.js: it uses `import x from '@next/env'` (default import)
+# but @next/env only has named exports, causing a crash on load.
+# Change default import → namespace import so destructuring works.
+RUN if [ -f /app/node_modules/payload/dist/bin/loadEnv.js ]; then \
+      sed -i "s|import nextEnvImport from '@next/env';|import * as nextEnvImport from '@next/env';|" \
+        /app/node_modules/payload/dist/bin/loadEnv.js && \
+      echo '[patch] payload/dist/bin/loadEnv.js patched successfully' && \
+      head -3 /app/node_modules/payload/dist/bin/loadEnv.js; \
+    else \
+      echo '[patch] loadEnv.js not found — skipping'; \
+    fi
 
 FROM node:20-bookworm-slim AS builder
 WORKDIR /app
