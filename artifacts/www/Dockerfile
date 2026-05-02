@@ -1,23 +1,19 @@
-FROM node:20-alpine AS deps
+FROM node:20-bookworm-slim AS deps
 WORKDIR /app
-# Native deps for sharp (used by Payload Media uploads) + libc compat
-RUN apk add --no-cache libc6-compat python3 make g++ vips-dev
 COPY package.json ./
-RUN npm install --legacy-peer-deps
+RUN npm install --legacy-peer-deps --include=optional
 
-FROM node:20-alpine AS builder
+FROM node:20-bookworm-slim AS builder
 WORKDIR /app
-RUN apk add --no-cache libc6-compat vips-dev
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
 
-FROM node:20-alpine AS runner
+FROM node:20-bookworm-slim AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
-RUN apk add --no-cache libc6-compat vips
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/node_modules ./node_modules
