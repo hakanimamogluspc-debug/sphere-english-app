@@ -5,9 +5,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   BookOpen, LayoutDashboard, Video, FileQuestion, LineChart, 
   Award, MessageSquare, Users, Megaphone, LogOut, Menu, Building2, BarChart3, GraduationCap, Mic, MessageCircle, FolderOpen, PenLine, TrendingUp, Settings2, Gamepad2,
-  Sparkles, ChevronDown, Brain, Briefcase
+  Sparkles, ChevronDown, Brain, Briefcase, Presentation, Wand2, Compass
 } from "lucide-react";
 import { Avatar } from "../ui/core";
+import { NotificationBell } from "../NotificationBell";
 
 const API = import.meta.env.BASE_URL.replace(/\/$/, "") + "/api";
 
@@ -64,6 +65,11 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       { name: 'Kelime Oyunu',        href: '/student/vocab-game',             icon: Gamepad2,      moduleKey: 'student-vocab-game',           group: 'ai-studio' },
       { name: 'Dilbilgisi Koçu',    href: '/student/grammar-coach',          icon: Brain,         moduleKey: 'student-grammar-coach',        group: 'ai-studio' },
       { name: 'İş Senaryoları',     href: '/student/simulation-mode',        icon: Briefcase,     moduleKey: 'student-simulation-mode',      group: 'ai-studio' },
+      { name: 'Mülakat Simülatörü', href: '/student/interview-sim',          icon: GraduationCap, moduleKey: 'student-interview-sim',        group: 'ai-studio' },
+      { name: 'Sunum Simülatörü',   href: '/student/presentation-sim',       icon: Presentation,  moduleKey: 'student-presentation-sim',     group: 'ai-studio' },
+      { name: 'Akıllı Quiz Üretici', href: '/student/ai-quiz',               icon: Wand2,         moduleKey: 'student-ai-quiz',              group: 'ai-studio' },
+      { name: 'Kişisel AI Öğretmen', href: '/student/ai-tutor',              icon: GraduationCap, moduleKey: 'student-ai-tutor',             group: 'ai-studio' },
+      { name: 'Adaptif Öğrenme Yolu', href: '/student/learning-path',        icon: Compass,       moduleKey: 'student-learning-path',        group: 'ai-studio' },
       { name: 'Forum',               href: '/forum',                          icon: MessageCircle, moduleKey: 'student-forum' },
       { name: 'İlerleme Durumum',    href: '/progress',                       icon: LineChart,     moduleKey: 'student-progress' },
       { name: 'Sertifikalar',        href: '/certificates',                   icon: Award,         moduleKey: 'student-certificates' },
@@ -104,6 +110,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       { name: 'Genel Bakış',         href: '/corporate/dashboard',            icon: LayoutDashboard },
       { name: 'Öğrencilerim',        href: '/corporate/students',             icon: Users },
       { name: 'Raporlar',            href: '/corporate/reports',              icon: BarChart3 },
+      { name: 'AI Performans Raporu', href: '/corporate/ai-report',           icon: Sparkles },
     ],
   };
 
@@ -272,12 +279,13 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                 ? 'Sphere AI Studio'
                 : currentNav.find(n => n.href === location || location.startsWith(n.href))?.name || 'Kontrol Paneli'}
             </h1>
-            <div className="flex items-center gap-x-4 lg:gap-x-6 ml-auto">
+            <div className="flex items-center gap-x-3 lg:gap-x-4 ml-auto">
               {user?.role !== 'corporate' && (
                 <div className="flex items-center gap-2 bg-secondary/50 px-4 py-1.5 rounded-full border border-border">
                   <span className="text-sm font-semibold">🔥 {user?.streak || 0} Günlük Seri</span>
                 </div>
               )}
+              <NotificationBell />
             </div>
           </div>
         </header>

@@ -46,6 +46,7 @@ import AdminModules from "./pages/admin/AdminModules";
 import CorporateDashboard from "./pages/corporate/CorporateDashboard";
 import CorporateStudents from "./pages/corporate/CorporateStudents";
 import CorporateReports from "./pages/corporate/CorporateReports";
+import CorporateAIReport from "./pages/corporate/CorporateAIReport";
 import StudentSpeakingClub from "./pages/student/StudentSpeakingClub";
 import StudentMaterials from "./pages/student/StudentMaterials";
 import Forum from "./pages/student/Forum";
@@ -54,6 +55,12 @@ import WritingCoach from "./pages/student/WritingCoach";
 import VocabGame from "./pages/student/VocabGame";
 import GrammarCoach from "./pages/student/GrammarCoach";
 import SimulationMode from "./pages/student/SimulationMode";
+import StudentSettings from "./pages/student/StudentSettings";
+import InterviewSimulator from "./pages/student/InterviewSimulator";
+import PresentationSimulator from "./pages/student/PresentationSimulator";
+import AIQuizGenerator from "./pages/student/AIQuizGenerator";
+import AITutor from "./pages/student/AITutor";
+import LearningPath from "./pages/student/LearningPath";
 import AIStudio from "./pages/AIStudio";
 import PlacementTest from "./pages/PlacementTest";
 
@@ -155,6 +162,12 @@ function Router() {
       <Route path="/student/vocab-game"><LayoutWrapper component={VocabGame} allowedRoles={['student', 'admin']} /></Route>
       <Route path="/student/grammar-coach"><LayoutWrapper component={GrammarCoach} allowedRoles={['student', 'admin']} /></Route>
       <Route path="/student/simulation-mode"><LayoutWrapper component={SimulationMode} allowedRoles={['student', 'admin']} /></Route>
+      <Route path="/student/settings"><LayoutWrapper component={StudentSettings} allowedRoles={['student']} /></Route>
+      <Route path="/student/interview-sim"><LayoutWrapper component={InterviewSimulator} allowedRoles={['student', 'admin']} /></Route>
+      <Route path="/student/presentation-sim"><LayoutWrapper component={PresentationSimulator} allowedRoles={['student', 'admin']} /></Route>
+      <Route path="/student/ai-quiz"><LayoutWrapper component={AIQuizGenerator} allowedRoles={['student', 'admin']} /></Route>
+      <Route path="/student/ai-tutor"><LayoutWrapper component={AITutor} allowedRoles={['student', 'admin']} /></Route>
+      <Route path="/student/learning-path"><LayoutWrapper component={LearningPath} allowedRoles={['student', 'admin']} /></Route>
       <Route path="/forum"><LayoutWrapper component={Forum} /></Route>
 
       {/* Teacher Routes */}
@@ -187,6 +200,7 @@ function Router() {
       <Route path="/corporate/dashboard"><LayoutWrapper component={CorporateDashboard} allowedRoles={['corporate', 'admin']} /></Route>
       <Route path="/corporate/students"><LayoutWrapper component={CorporateStudents} allowedRoles={['corporate', 'admin']} /></Route>
       <Route path="/corporate/reports"><LayoutWrapper component={CorporateReports} allowedRoles={['corporate', 'admin']} /></Route>
+      <Route path="/corporate/ai-report"><LayoutWrapper component={CorporateAIReport} allowedRoles={['corporate', 'admin']} /></Route>
 
       <Route component={NotFound} />
     </Switch>

@@ -2,7 +2,18 @@
 
 ## Overview
 
-Full-stack English Learning Management System (LMS) built as a pnpm monorepo. Features role-based dashboards for admin/teacher/student, course management with A1-C2 levels, live class scheduling, quizzes, progress tracking with gamification (points, streaks, badges), certificates with QR verification, messaging, leaderboards, a vocab game (Kelime Oyunu) with 407 words and AI-powered Turkish hints, and an AI Simulation Mode (İş Simülasyonu) with 12 sector-aware business coaches, voice-first conversation via Whisper + GPT-4o + TTS, real-time grammar/vocab analysis per turn, and a session report screen.
+Full-stack English Learning Management System (LMS) built as a pnpm monorepo. Features role-based dashboards for admin/teacher/student/corporate, course management with A1-C2 levels, live class scheduling, quizzes, progress tracking with gamification (points, streaks, badges), certificates with QR verification, messaging, leaderboards, a vocab game (Kelime Oyunu) with 407 words and AI-powered Turkish hints, and an AI Simulation Mode (İş Simülasyonu) with 12 sector-aware business coaches, voice-first conversation via Whisper + GPT-4o + TTS, real-time grammar/vocab analysis per turn, and a session report screen.
+
+### Sphere AI Studio (8 features completed May 2026)
+The full AI roadmap for personalized learning + corporate analytics is live, all powered by `gpt-4o-mini`:
+- **T001 Telaffuz Koçu** — CEFR estimate + weak areas + recommendations after each pronunciation session.
+- **T002 Smart Notifications** — Streak-risk, inactivity, level-up, new assessment triggers across email (Resend) + in-app bell.
+- **T003 Mülakat Simülatörü** — Multi-turn job interview practice with role/company context and final report.
+- **T004 Sunum Simülatörü** — Slide-deck-driven presentation practice with structured feedback.
+- **T005 Akıllı Quiz Üretici** — `/student/ai-quiz`. AI generates personalized quizzes from a topic OR pasted text (vocab/grammar/comprehension; MC/TF/fill-blank). Final report includes CEFR-fit, category bars, weak areas, study plan, encouragement. Output strictly length-clipped before persisting.
+- **T006 Kişisel AI Öğretmen** — `/student/ai-tutor`. ChatGPT-style Turkish English tutor with 6 focus areas, persistent memory (background fact extraction, max 25 facts), 20-message context window (DB-side ORDER BY desc + LIMIT — no full-history scan), auto-generated conversation titles.
+- **T007 Adaptive Learning Path** — `/student/learning-path`. Aggregates the user's full activity snapshot (last 5 pronunciations, 3 interviews, 3 presentations, 5 quizzes, tutor memory) into a 4-week plan with 4–5 day-level steps per week, each linked to an in-app feature route. Step toggle, weekly progress bars, regenerate flow.
+- **T008 Corporate AI Performans Raporu** — `/corporate/ai-report`. Manager dashboard aggregating cohort metrics across the company (CEFR distribution, 7d/30d active, avg streak/points, activity volumes, avg scores, top performers, top weak areas) — all activity queries windowed to last 90 days. Plus AI executive summary in Turkish with 3–5 insights and 3–5 manager recommendations. Authorization: `corporate` role bound to own `companyId`; `admin` may pass `?companyId=`.
 
 ## Stack
 

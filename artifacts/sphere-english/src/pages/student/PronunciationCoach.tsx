@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Mic, MicOff, Volume2, ChevronLeft, ChevronDown, ChevronUp, AlertCircle, BookOpen, Mic2, RotateCcw, Languages, PhoneOff, Award, Clock, MessageSquare, TrendingUp, CheckCircle2 } from "lucide-react";
+import { Mic, MicOff, Volume2, ChevronLeft, ChevronDown, ChevronUp, AlertCircle, BookOpen, Mic2, RotateCcw, Languages, PhoneOff, Award, Clock, MessageSquare, TrendingUp, CheckCircle2, Sparkles, Target, Zap, Loader2, History } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const TOKEN_KEY = "sphere_token";
@@ -132,6 +132,21 @@ interface SessionReport {
   vocabSuggestions: VocabSuggestion[];
   pronunciationTips: string[];
 }
+interface Assessment {
+  id: number;
+  estimatedCefr: "A1" | "A2" | "B1" | "B2" | "C1" | "C2";
+  cefrConfidence: "low" | "medium" | "high";
+  strengths: string[];
+  weakAreas: {
+    phonemes: string[];
+    grammar: string[];
+    vocabulary: string[];
+    fluency: string[];
+  };
+  recommendations: Array<{ title: string; action: string; priority: "high" | "medium" | "low" }>;
+  aiSummary: string;
+  createdAt: string;
+}
 type Phase = "idle" | "recording" | "processing" | "speaking";
 type Screen = "select" | "intro" | "chat" | "report";
 
@@ -261,9 +276,208 @@ function CoachIntroScreen({ teacher, onStart, onBack }: { teacher: Teacher; onSt
   );
 }
 
+// ─── CEFR Badge ────────────────────────────────────────────────────────────────
+const CEFR_INFO: Record<string, { color: string; bg: string; border: string; label: string; description: string }> = {
+  A1: { color: "#7c3aed", bg: "#f5f3ff", border: "#ddd6fe", label: "Başlangıç", description: "Temel kelimeler ve basit ifadeler" },
+  A2: { color: "#2563eb", bg: "#eff6ff", border: "#bfdbfe", label: "Temel", description: "Günlük konularda basit cümleler" },
+  B1: { color: "#0d9488", bg: "#f0fdfa", border: "#99f6e4", label: "Orta-Alt", description: "Bağlantılı konuşma, deneyim aktarımı" },
+  B2: { color: "#16a34a", bg: "#f0fdf4", border: "#bbf7d0", label: "Orta-Üst", description: "Net ve detaylı, tartışma yetisi" },
+  C1: { color: "#d97706", bg: "#fffbeb", border: "#fde68a", label: "İleri", description: "Akıcı, nüanslı, karmaşık dil yapıları" },
+  C2: { color: "#dc2626", bg: "#fef2f2", border: "#fecaca", label: "Üstün", description: "Anadil seviyesine yakın hassasiyet" },
+};
+
+function CefrBadge({ assessment }: { assessment: Assessment }) {
+  const info = CEFR_INFO[assessment.estimatedCefr] || CEFR_INFO.B1;
+  const confidenceLabel = assessment.cefrConfidence === "high" ? "Yüksek güvenilirlik"
+    : assessment.cefrConfidence === "medium" ? "Orta güvenilirlik"
+    : "Düşük güvenilirlik (daha çok pratik öneririz)";
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.4 }}
+      className="rounded-2xl p-5 shadow-md border-2"
+      style={{ background: info.bg, borderColor: info.border }}
+    >
+      <div className="flex items-start gap-4">
+        <div
+          className="flex-shrink-0 w-20 h-20 rounded-2xl flex flex-col items-center justify-center font-bold text-white shadow-md"
+          style={{ background: `linear-gradient(135deg, ${info.color}, ${info.color}dd)` }}
+        >
+          <span className="text-2xl leading-none">{assessment.estimatedCefr}</span>
+          <span className="text-[9px] uppercase tracking-wide mt-0.5 opacity-90">CEFR</span>
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-1.5 mb-0.5">
+            <Sparkles size={13} style={{ color: info.color }} />
+            <p className="text-[10px] font-bold uppercase tracking-wide" style={{ color: info.color }}>
+              Tahmini Seviyen
+            </p>
+          </div>
+          <p className="font-bold text-gray-900 text-base">{assessment.estimatedCefr} — {info.label}</p>
+          <p className="text-xs text-gray-600 mt-0.5 leading-snug">{info.description}</p>
+          <p className="text-[10px] text-gray-400 mt-1.5 italic">{confidenceLabel}</p>
+        </div>
+      </div>
+      {assessment.aiSummary && (
+        <div className="mt-4 pt-4 border-t" style={{ borderColor: info.border }}>
+          <p className="text-[10px] font-bold uppercase tracking-wide mb-1.5" style={{ color: info.color }}>
+            AI Yorumu
+          </p>
+          <p className="text-xs text-gray-700 leading-relaxed">{assessment.aiSummary}</p>
+        </div>
+      )}
+    </motion.div>
+  );
+}
+
+function StrengthsBlock({ strengths, color }: { strengths: string[]; color: string }) {
+  if (strengths.length === 0) return null;
+  return (
+    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
+      className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-50">
+        <CheckCircle2 size={14} className="text-green-500" />
+        <p className="text-sm font-semibold text-gray-700">Güçlü Yönlerin</p>
+      </div>
+      <div className="p-3 space-y-1.5">
+        {strengths.map((s, i) => (
+          <div key={i} className="flex items-start gap-2 bg-green-50 rounded-xl px-3 py-2 text-xs text-gray-700">
+            <span className="text-green-500 font-bold mt-0.5">✓</span>
+            <span className="flex-1 leading-relaxed">{s}</span>
+          </div>
+        ))}
+      </div>
+    </motion.div>
+  );
+}
+
+function WeakAreasBlock({ weakAreas }: { weakAreas: Assessment["weakAreas"] }) {
+  const sections = [
+    { key: "phonemes", label: "Telaffuz / Sesler", color: "#7c3aed", bg: "bg-purple-50", text: "text-purple-700", items: weakAreas.phonemes },
+    { key: "grammar", label: "Gramer Kalıpları", color: "#ea580c", bg: "bg-orange-50", text: "text-orange-700", items: weakAreas.grammar },
+    { key: "vocabulary", label: "Kelime Hazinesi", color: "#2563eb", bg: "bg-blue-50", text: "text-blue-700", items: weakAreas.vocabulary },
+    { key: "fluency", label: "Akıcılık & Tempo", color: "#0d9488", bg: "bg-teal-50", text: "text-teal-700", items: weakAreas.fluency },
+  ];
+  const hasAny = sections.some((s) => s.items.length > 0);
+  if (!hasAny) return null;
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+      className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-50">
+        <Target size={14} className="text-rose-500" />
+        <p className="text-sm font-semibold text-gray-700">Geliştirilecek Alanlar</p>
+      </div>
+      <div className="p-3 space-y-3">
+        {sections.map((s) =>
+          s.items.length > 0 ? (
+            <div key={s.key}>
+              <p className="text-[10px] font-bold uppercase tracking-wide mb-1.5" style={{ color: s.color }}>
+                {s.label}
+              </p>
+              <div className="space-y-1.5">
+                {s.items.map((it, i) => (
+                  <div key={i} className={`${s.bg} rounded-xl px-3 py-2 text-xs ${s.text} leading-relaxed`}>
+                    {it}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null,
+        )}
+      </div>
+    </motion.div>
+  );
+}
+
+function RecommendationsBlock({ recommendations, color }: { recommendations: Assessment["recommendations"]; color: string }) {
+  if (recommendations.length === 0) return null;
+  const priorityStyle = {
+    high: { bg: "#fef2f2", border: "#fecaca", text: "#dc2626", label: "Öncelikli" },
+    medium: { bg: "#fffbeb", border: "#fde68a", text: "#d97706", label: "Önerilen" },
+    low: { bg: "#f0f9ff", border: "#bae6fd", text: "#0284c7", label: "İsteğe bağlı" },
+  };
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
+      className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-50">
+        <Zap size={14} style={{ color }} />
+        <p className="text-sm font-semibold text-gray-700">Önerilen Aksiyonlar</p>
+      </div>
+      <div className="p-3 space-y-2">
+        {recommendations.map((r, i) => {
+          const p = priorityStyle[r.priority] || priorityStyle.medium;
+          return (
+            <div key={i} className="rounded-xl border p-3" style={{ background: p.bg, borderColor: p.border }}>
+              <div className="flex items-start justify-between gap-2 mb-1">
+                <p className="text-xs font-bold text-gray-800">{r.title}</p>
+                <span className="text-[9px] font-bold uppercase px-2 py-0.5 rounded-full whitespace-nowrap"
+                  style={{ background: p.text + "22", color: p.text }}>
+                  {p.label}
+                </span>
+              </div>
+              <p className="text-xs text-gray-600 leading-relaxed">{r.action}</p>
+            </div>
+          );
+        })}
+      </div>
+    </motion.div>
+  );
+}
+
+function AssessmentLoadingCard({ teacherColor }: { teacherColor: string }) {
+  return (
+    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+      className="rounded-2xl p-5 shadow-sm border-2 border-dashed bg-gradient-to-br from-gray-50 to-white"
+      style={{ borderColor: teacherColor + "55" }}>
+      <div className="flex items-center gap-3">
+        <div className="relative">
+          <Loader2 size={24} className="animate-spin" style={{ color: teacherColor }} />
+        </div>
+        <div className="flex-1">
+          <p className="text-sm font-bold text-gray-800 flex items-center gap-1.5">
+            <Sparkles size={13} style={{ color: teacherColor }} />
+            Sphere AI seansını analiz ediyor...
+          </p>
+          <p className="text-xs text-gray-500 mt-0.5">CEFR seviyeni ve gelişim alanlarını çıkarıyor (10-20 saniye)</p>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+function AssessmentErrorCard({ error, onRetry }: { error: string; onRetry: () => void }) {
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+      className="rounded-2xl p-4 border border-amber-200 bg-amber-50">
+      <div className="flex items-start gap-2">
+        <AlertCircle size={16} className="text-amber-600 mt-0.5 flex-shrink-0" />
+        <div className="flex-1">
+          <p className="text-sm font-semibold text-amber-800">CEFR raporu üretilemedi</p>
+          <p className="text-xs text-amber-700 mt-0.5">{error}</p>
+          <button onClick={onRetry}
+            className="mt-2 text-xs font-semibold px-3 py-1.5 rounded-lg bg-amber-600 text-white hover:bg-amber-700">
+            Tekrar dene
+          </button>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
 // ─── Session Report Screen ─────────────────────────────────────────────────────
-function SessionReportScreen({ report, teacher, onNewSession, onChangeCoach }: {
-  report: SessionReport; teacher: Teacher; onNewSession: () => void; onChangeCoach: () => void;
+function SessionReportScreen({ report, teacher, assessment, assessmentLoading, assessmentError, onAssessmentRetry, onNewSession, onChangeCoach }: {
+  report: SessionReport;
+  teacher: Teacher;
+  assessment: Assessment | null;
+  assessmentLoading: boolean;
+  assessmentError: string | null;
+  onAssessmentRetry: () => void;
+  onNewSession: () => void;
+  onChangeCoach: () => void;
 }) {
   const scoreColor = report.avgScore >= 80 ? "#16a34a" : report.avgScore >= 60 ? "#d97706" : "#dc2626";
   const scoreBg = report.avgScore >= 80 ? "#f0fdf4" : report.avgScore >= 60 ? "#fffbeb" : "#fef2f2";
@@ -330,6 +544,24 @@ function SessionReportScreen({ report, teacher, onNewSession, onChangeCoach }: {
               <span>0</span><span>50</span><span>100</span>
             </div>
           </motion.div>
+        )}
+
+        {/* AI CEFR Assessment Section */}
+        {report.messageCount > 0 && (
+          <>
+            {assessmentLoading && <AssessmentLoadingCard teacherColor={teacher.color} />}
+            {assessmentError && !assessmentLoading && (
+              <AssessmentErrorCard error={assessmentError} onRetry={onAssessmentRetry} />
+            )}
+            {assessment && !assessmentLoading && (
+              <>
+                <CefrBadge assessment={assessment} />
+                <StrengthsBlock strengths={assessment.strengths} color={teacher.color} />
+                <WeakAreasBlock weakAreas={assessment.weakAreas} />
+                <RecommendationsBlock recommendations={assessment.recommendations} color={teacher.color} />
+              </>
+            )}
+          </>
         )}
 
         {/* Grammar Errors */}
@@ -751,6 +983,10 @@ export default function PronunciationCoach() {
   const [error, setError] = useState("");
   const [showEndDialog, setShowEndDialog] = useState(false);
   const [sessionReport, setSessionReport] = useState<SessionReport | null>(null);
+  const [assessment, setAssessment] = useState<Assessment | null>(null);
+  const [assessmentLoading, setAssessmentLoading] = useState(false);
+  const [assessmentError, setAssessmentError] = useState<string | null>(null);
+  const lastSessionMessagesRef = useRef<Message[]>([]);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -938,25 +1174,86 @@ export default function PronunciationCoach() {
     return { duration, messageCount, avgScore, grammarErrors, vocabSuggestions, pronunciationTips };
   };
 
+  const fetchAssessment = useCallback(async (sessionMessages: Message[], report: SessionReport) => {
+    if (report.messageCount === 0) return;
+    setAssessmentLoading(true);
+    setAssessmentError(null);
+    try {
+      const token = localStorage.getItem(TOKEN_KEY);
+      const userMessages = sessionMessages
+        .filter((m) => m.role === "user")
+        .map((m) => ({
+          role: "user" as const,
+          text: m.text,
+          score: m.speechAnalysis?.overallScore,
+          grammarErrors: m.speechAnalysis?.grammarErrors || [],
+          vocabSuggestions: m.speechAnalysis?.vocabularySuggestions || [],
+          pronunciationTips: m.speechAnalysis?.pronunciationTips || [],
+          lowConfidenceWords: (m.wordScores || []).filter((w) => !w.ok).map((w) => w.word),
+        }));
+
+      const res = await fetch(`${getApiBase()}/api/pronunciation/assess-session`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          teacherId: teacher.id,
+          teacherName: teacher.name,
+          durationSeconds: report.duration,
+          avgScore: report.avgScore,
+          messages: userMessages,
+        }),
+      });
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({}));
+        throw new Error((errBody as any).error || "Değerlendirme alınamadı.");
+      }
+      const data = await res.json();
+      setAssessment(data.assessment as Assessment);
+    } catch (e: any) {
+      setAssessmentError(e?.message || "Bilinmeyen bir hata oluştu.");
+    } finally {
+      setAssessmentLoading(false);
+    }
+  }, [teacher]);
+
   const handleEndSession = () => {
     stopStream(); stopTimer();
     if (audioRef.current) { audioRef.current.pause(); }
     setPhase("idle");
     const report = computeReport(messages);
     setSessionReport(report);
+    setAssessment(null);
+    setAssessmentError(null);
+    lastSessionMessagesRef.current = messages;
     setShowEndDialog(false);
     setScreen("report");
+    if (report.messageCount > 0) {
+      fetchAssessment(messages, report);
+    }
+  };
+
+  const handleAssessmentRetry = () => {
+    if (sessionReport) fetchAssessment(lastSessionMessagesRef.current, sessionReport);
   };
 
   const handleSelectTeacher = (t: Teacher) => {
     setTeacher(t);
     setMessages([]);
     setSessionReport(null);
+    setAssessment(null);
+    setAssessmentError(null);
+    setAssessmentLoading(false);
     setScreen("intro");
   };
 
   const handleStartSession = () => {
     setMessages([]);
+    setAssessment(null);
+    setAssessmentError(null);
+    setAssessmentLoading(false);
     chatStartTimeRef.current = Date.now();
     setScreen("chat");
   };
@@ -964,6 +1261,9 @@ export default function PronunciationCoach() {
   const handleNewSession = () => {
     setMessages([]);
     setSessionReport(null);
+    setAssessment(null);
+    setAssessmentError(null);
+    setAssessmentLoading(false);
     chatStartTimeRef.current = Date.now();
     setScreen("chat");
   };
@@ -987,6 +1287,10 @@ export default function PronunciationCoach() {
     <SessionReportScreen
       report={sessionReport}
       teacher={teacher}
+      assessment={assessment}
+      assessmentLoading={assessmentLoading}
+      assessmentError={assessmentError}
+      onAssessmentRetry={handleAssessmentRetry}
       onNewSession={handleNewSession}
       onChangeCoach={handleBack}
     />

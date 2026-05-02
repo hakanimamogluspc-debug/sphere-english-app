@@ -31,6 +31,13 @@ import grammarCoachRouter from "./grammar-coach";
 import placementTestRouter from "./placement-test";
 import simulationRouter from "./simulation";
 import presenceRouter from "./presence";
+import notificationsRouter from "./notifications";
+import interviewRouter from "./interview";
+import presentationRouter from "./presentation";
+import aiQuizRouter from "./ai-quiz";
+import tutorRouter from "./tutor";
+import learningPathRouter from "./learning-path";
+import corporateAiReportRouter from "./corporate-ai-report";
 
 const router: IRouter = Router();
 
@@ -66,5 +73,12 @@ router.use(grammarCoachRouter);
 router.use(placementTestRouter);
 router.use(simulationRouter);
 router.use(presenceRouter);
+router.use(notificationsRouter);
+router.use(interviewRouter);
+router.use(presentationRouter);
+router.use(aiQuizRouter);
+router.use(tutorRouter);
+router.use(learningPathRouter);
+router.use(corporateAiReportRouter);
 
 export default router;

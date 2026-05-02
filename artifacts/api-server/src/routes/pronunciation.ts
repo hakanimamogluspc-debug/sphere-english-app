@@ -8,9 +8,10 @@ import fs from "fs";
 import os from "os";
 import path from "path";
 import { db } from "@workspace/db";
-import { usersTable } from "@workspace/db/schema";
-import { eq } from "drizzle-orm";
+import { usersTable, pronunciationAssessmentsTable } from "@workspace/db/schema";
+import { eq, desc } from "drizzle-orm";
 import { applyActivityStreak, computeEffectiveStreak } from "../utils/streak.js";
+import { notifyNewAssessment, notifyLevelUp } from "../lib/notifications.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -395,6 +396,290 @@ router.post("/pronunciation/translate", authMiddleware, async (req: Request, res
   } catch (err: any) {
     console.error("Translation error:", err?.message || err);
     return res.status(500).json({ error: "Çeviri başarısız oldu." });
+  }
+});
+
+// ─── Session Assessment — CEFR + Weak Areas Report ───────────────────────
+
+interface AssessSessionBody {
+  teacherId: string;
+  teacherName: string;
+  durationSeconds: number;
+  messages: Array<{
+    role: "user" | "teacher";
+    text: string;
+    score?: number;
+    grammarErrors?: GrammarError[];
+    vocabSuggestions?: VocabularySuggestion[];
+    pronunciationTips?: string[];
+    lowConfidenceWords?: string[];
+  }>;
+  avgScore: number;
+}
+
+interface AssessmentResult {
+  estimatedCefr: "A1" | "A2" | "B1" | "B2" | "C1" | "C2";
+  cefrConfidence: "low" | "medium" | "high";
+  strengths: string[];
+  weakAreas: {
+    phonemes: string[];
+    grammar: string[];
+    vocabulary: string[];
+    fluency: string[];
+  };
+  recommendations: Array<{ title: string; action: string; priority: "high" | "medium" | "low" }>;
+  aiSummary: string;
+}
+
+router.post("/pronunciation/assess-session", authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).userId as number;
+    const body = req.body as AssessSessionBody;
+
+    if (!body || !Array.isArray(body.messages)) {
+      return res.status(400).json({ error: "Geçersiz veri." });
+    }
+
+    const userMessages = body.messages.filter((m) => m.role === "user");
+    if (userMessages.length === 0) {
+      return res.status(400).json({ error: "Değerlendirme için en az bir konuşma gerekli." });
+    }
+
+    // ── Aggregate metrics ──
+    const allGrammarErrors: GrammarError[] = [];
+    const allVocabSuggestions: VocabularySuggestion[] = [];
+    const allPronunciationTips: string[] = [];
+    const allLowConfWords: string[] = [];
+
+    for (const m of userMessages) {
+      if (m.grammarErrors) allGrammarErrors.push(...m.grammarErrors);
+      if (m.vocabSuggestions) allVocabSuggestions.push(...m.vocabSuggestions);
+      if (m.pronunciationTips) allPronunciationTips.push(...m.pronunciationTips);
+      if (m.lowConfidenceWords) allLowConfWords.push(...m.lowConfidenceWords);
+    }
+
+    const uniqueLowConf = Array.from(new Set(allLowConfWords)).slice(0, 30);
+
+    // ── Build prompt for GPT ──
+    const transcriptForGpt = userMessages
+      .map((m, i) => `[${i + 1}] (skor:${m.score ?? "?"}/100) "${m.text}"`)
+      .join("\n");
+
+    const grammarSummary = allGrammarErrors
+      .slice(0, 15)
+      .map((e) => `- "${e.original}" → "${e.corrected}"`)
+      .join("\n");
+
+    const vocabSummary = allVocabSuggestions
+      .slice(0, 10)
+      .map((v) => `- "${v.original}" → "${v.better}"`)
+      .join("\n");
+
+    const systemPrompt = `You are a CEFR-certified English assessor analyzing a Turkish learner's spoken English session.
+Always respond in valid JSON only — no extra text, no markdown.
+
+Return EXACTLY this structure:
+{
+  "estimatedCefr": "A1" | "A2" | "B1" | "B2" | "C1" | "C2",
+  "cefrConfidence": "low" | "medium" | "high",
+  "strengths": ["<2-4 strengths in Turkish, short>"],
+  "weakAreas": {
+    "phonemes": ["<phoneme/sound issues in Turkish, max 4>"],
+    "grammar": ["<grammar pattern weaknesses in Turkish, max 4>"],
+    "vocabulary": ["<vocab gaps in Turkish, max 3>"],
+    "fluency": ["<fluency/pace issues in Turkish, max 3>"]
+  },
+  "recommendations": [
+    {"title": "<Turkish title>", "action": "<concrete Turkish action>", "priority": "high" | "medium" | "low"}
+  ],
+  "aiSummary": "<2-3 sentence Turkish summary of the session, encouraging tone>"
+}
+
+Rules:
+- estimatedCefr: Use total transcript length, vocabulary range, grammar complexity, error density.
+  - A1: very basic, present tense only, single words/short phrases
+  - A2: simple sentences, frequent errors in basic grammar
+  - B1: connected speech, can describe experiences, occasional complex sentences
+  - B2: clear & detailed, varied vocab, can argue a point with some errors
+  - C1: fluent, nuanced, complex grammar mostly correct
+  - C2: near-native precision and range
+- cefrConfidence: low if very few user messages (<3) or very short, medium otherwise, high if 8+ rich messages
+- recommendations: 3-5 items max, prioritized
+- All Turkish text must be natural and encouraging (not harsh)`;
+
+    const userPrompt = `Session metrics:
+- Duration: ${body.durationSeconds} seconds
+- User turns: ${userMessages.length}
+- Average word-level score: ${body.avgScore}/100
+- Low-confidence words flagged by Whisper: ${uniqueLowConf.length > 0 ? uniqueLowConf.join(", ") : "none"}
+
+User transcript (turn by turn):
+${transcriptForGpt}
+
+${grammarSummary ? `Grammar errors observed:\n${grammarSummary}` : "No major grammar errors observed."}
+
+${vocabSummary ? `Vocabulary improvements suggested:\n${vocabSummary}` : ""}
+
+Now produce the assessment JSON.`;
+
+    let assessment: AssessmentResult;
+    try {
+      const completion = await getOpenAI().chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt },
+        ],
+        temperature: 0.3,
+        max_tokens: 900,
+        response_format: { type: "json_object" },
+      });
+
+      const raw = completion.choices[0]?.message?.content ?? "{}";
+      assessment = JSON.parse(raw) as AssessmentResult;
+
+      // Defensive defaults
+      if (!assessment.estimatedCefr) assessment.estimatedCefr = "B1";
+      if (!assessment.cefrConfidence) assessment.cefrConfidence = "medium";
+      if (!Array.isArray(assessment.strengths)) assessment.strengths = [];
+      if (!assessment.weakAreas) assessment.weakAreas = { phonemes: [], grammar: [], vocabulary: [], fluency: [] };
+      if (!Array.isArray(assessment.recommendations)) assessment.recommendations = [];
+      if (typeof assessment.aiSummary !== "string") assessment.aiSummary = "";
+    } catch (e: any) {
+      console.error("Assessment GPT failed:", e?.message);
+      return res.status(500).json({ error: "Değerlendirme üretilemedi. Lütfen tekrar deneyin." });
+    }
+
+    // ── Save to DB ──
+    const transcriptSummary = userMessages.slice(-12).map((m) => ({
+      role: "user" as const,
+      text: m.text.slice(0, 300),
+      score: m.score,
+    }));
+
+    const inserted = await db
+      .insert(pronunciationAssessmentsTable)
+      .values({
+        userId,
+        teacherId: body.teacherId.slice(0, 64),
+        teacherName: body.teacherName.slice(0, 64),
+        durationSeconds: Math.max(0, Math.floor(body.durationSeconds || 0)),
+        messageCount: userMessages.length,
+        avgScore: Math.max(0, Math.min(100, Math.floor(body.avgScore || 0))),
+        estimatedCefr: assessment.estimatedCefr,
+        cefrConfidence: assessment.cefrConfidence,
+        strengths: assessment.strengths,
+        weakAreas: assessment.weakAreas,
+        recommendations: assessment.recommendations,
+        aiSummary: assessment.aiSummary,
+        transcriptSummary,
+        rawMetrics: {
+          totalGrammarErrors: allGrammarErrors.length,
+          totalVocabSuggestions: allVocabSuggestions.length,
+          totalPronunciationTips: allPronunciationTips.length,
+          lowConfidenceWords: uniqueLowConf,
+        },
+      })
+      .returning();
+
+    // Update user's currentLevel only if confidence is medium/high and we have a stronger estimate
+    let leveledUpFrom: string | null = null;
+    let leveledUpTo: string | null = null;
+    try {
+      const user = await db.select().from(usersTable).where(eq(usersTable.id, userId)).limit(1);
+      const currentLevel = user[0]?.currentLevel;
+      const cefrOrder = ["A1", "A2", "B1", "B2", "C1", "C2"];
+      const newIdx = cefrOrder.indexOf(assessment.estimatedCefr);
+      const oldIdx = currentLevel ? cefrOrder.indexOf(currentLevel) : -1;
+      const shouldUpdate =
+        assessment.cefrConfidence !== "low" &&
+        newIdx >= 0 &&
+        (oldIdx < 0 || newIdx > oldIdx); // only upgrade
+      if (shouldUpdate) {
+        await db
+          .update(usersTable)
+          .set({ currentLevel: assessment.estimatedCefr, updatedAt: new Date() })
+          .where(eq(usersTable.id, userId));
+        leveledUpFrom = currentLevel ?? null;
+        leveledUpTo = assessment.estimatedCefr;
+      }
+    } catch (e: any) {
+      console.warn("CEFR level update skipped:", e?.message);
+    }
+
+    // Fire notifications (non-blocking)
+    notifyNewAssessment(userId, {
+      cefr: assessment.estimatedCefr,
+      assessmentId: inserted[0].id,
+      teacherName: body.teacherName,
+      aiSummary: assessment.aiSummary,
+    }).catch((e) => console.warn("notifyNewAssessment failed:", e?.message));
+
+    if (leveledUpTo) {
+      notifyLevelUp(userId, { fromLevel: leveledUpFrom, toLevel: leveledUpTo }).catch((e) =>
+        console.warn("notifyLevelUp failed:", e?.message),
+      );
+    }
+
+    return res.json({ assessment: inserted[0] });
+  } catch (err: any) {
+    console.error("Assess session error:", err?.message || err);
+    return res.status(500).json({ error: "Değerlendirme sırasında bir hata oluştu." });
+  }
+});
+
+// ── Assessment history ──
+router.get("/pronunciation/assessments", authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).userId as number;
+    const limit = Math.min(50, parseInt(String(req.query.limit ?? "20"), 10) || 20);
+
+    const rows = await db
+      .select({
+        id: pronunciationAssessmentsTable.id,
+        teacherId: pronunciationAssessmentsTable.teacherId,
+        teacherName: pronunciationAssessmentsTable.teacherName,
+        durationSeconds: pronunciationAssessmentsTable.durationSeconds,
+        messageCount: pronunciationAssessmentsTable.messageCount,
+        avgScore: pronunciationAssessmentsTable.avgScore,
+        estimatedCefr: pronunciationAssessmentsTable.estimatedCefr,
+        cefrConfidence: pronunciationAssessmentsTable.cefrConfidence,
+        aiSummary: pronunciationAssessmentsTable.aiSummary,
+        createdAt: pronunciationAssessmentsTable.createdAt,
+      })
+      .from(pronunciationAssessmentsTable)
+      .where(eq(pronunciationAssessmentsTable.userId, userId))
+      .orderBy(desc(pronunciationAssessmentsTable.createdAt))
+      .limit(limit);
+
+    return res.json({ assessments: rows });
+  } catch (err: any) {
+    console.error("List assessments error:", err?.message || err);
+    return res.status(500).json({ error: "Geçmiş raporlar alınamadı." });
+  }
+});
+
+// ── Single assessment detail ──
+router.get("/pronunciation/assessments/:id", authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).userId as number;
+    const id = parseInt(req.params.id, 10);
+    if (!Number.isFinite(id)) return res.status(400).json({ error: "Geçersiz id." });
+
+    const rows = await db
+      .select()
+      .from(pronunciationAssessmentsTable)
+      .where(eq(pronunciationAssessmentsTable.id, id))
+      .limit(1);
+
+    const row = rows[0];
+    if (!row || row.userId !== userId) {
+      return res.status(404).json({ error: "Rapor bulunamadı." });
+    }
+    return res.json({ assessment: row });
+  } catch (err: any) {
+    console.error("Get assessment error:", err?.message || err);
+    return res.status(500).json({ error: "Rapor alınamadı." });
   }
 });
 
