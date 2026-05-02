@@ -1,0 +1,167 @@
+Commit: Use Debian-slim base image so sharp prebuilt binary installs cleanly 
+##########################################
+### Download Github Archive Started...
+### Sat, 02 May 2026 13:27:44 GMT
+##########################################
+
+#0 building with "default" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 1.03kB done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/node:20-bookworm-slim
+#2 DONE 1.2s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 149B done
+#3 DONE 0.0s
+
+#4 [deps 1/4] FROM docker.io/library/node:20-bookworm-slim@sha256:2cf067cfed83d5ea958367df9f966191a942351a2df77d6f0193e162b5febfc0
+#4 resolve docker.io/library/node:20-bookworm-slim@sha256:2cf067cfed83d5ea958367df9f966191a942351a2df77d6f0193e162b5febfc0 0.0s done
+#4 DONE 0.1s
+
+#5 [internal] load build context
+#5 transferring context: 33.89MB 0.2s done
+#5 DONE 0.2s
+
+#4 [deps 1/4] FROM docker.io/library/node:20-bookworm-slim@sha256:2cf067cfed83d5ea958367df9f966191a942351a2df77d6f0193e162b5febfc0
+#4 sha256:64cfb949317c9824fd081d55c59a7225bfe1f650c6395ba42d7ed0ccf51993d2 1.35MB / 1.71MB 0.3s
+#4 sha256:804d4d68057cbb26cbcde9a735148ebc6589911bad32cf9dbddb5b0ba878bf1f 0B / 41.42MB 0.2s
+#4 sha256:e54aec64c365815cd7b91e718f00ac6e625562b1de09036b38614621b42c7582 0B / 3.31kB 0.2s
+#4 sha256:3c02fd806613748139b8b8a14a69ae3518a1b0e863c57c35aada3b92ed87fb31 0B / 447B 0.2s
+#4 sha256:64cfb949317c9824fd081d55c59a7225bfe1f650c6395ba42d7ed0ccf51993d2 1.71MB / 1.71MB 0.3s done
+#4 sha256:e54aec64c365815cd7b91e718f00ac6e625562b1de09036b38614621b42c7582 3.31kB / 3.31kB 0.4s done
+#4 sha256:804d4d68057cbb26cbcde9a735148ebc6589911bad32cf9dbddb5b0ba878bf1f 26.21MB / 41.42MB 0.6s
+#4 sha256:3c02fd806613748139b8b8a14a69ae3518a1b0e863c57c35aada3b92ed87fb31 447B / 447B 0.5s done
+#4 sha256:ff86ea2e5edce334d19a34fbc65d1a511aa1fc823dba1110422f991aa56b44d4 0B / 28.24MB 0.2s
+#4 sha256:804d4d68057cbb26cbcde9a735148ebc6589911bad32cf9dbddb5b0ba878bf1f 38.80MB / 41.42MB 0.8s
+#4 sha256:ff86ea2e5edce334d19a34fbc65d1a511aa1fc823dba1110422f991aa56b44d4 4.19MB / 28.24MB 0.3s
+#4 sha256:804d4d68057cbb26cbcde9a735148ebc6589911bad32cf9dbddb5b0ba878bf1f 41.42MB / 41.42MB 0.8s done
+#4 sha256:ff86ea2e5edce334d19a34fbc65d1a511aa1fc823dba1110422f991aa56b44d4 28.24MB / 28.24MB 0.5s done
+#4 extracting sha256:ff86ea2e5edce334d19a34fbc65d1a511aa1fc823dba1110422f991aa56b44d4
+#4 extracting sha256:ff86ea2e5edce334d19a34fbc65d1a511aa1fc823dba1110422f991aa56b44d4 0.7s done
+#4 DONE 1.7s
+
+#4 [deps 1/4] FROM docker.io/library/node:20-bookworm-slim@sha256:2cf067cfed83d5ea958367df9f966191a942351a2df77d6f0193e162b5febfc0
+#4 extracting sha256:e54aec64c365815cd7b91e718f00ac6e625562b1de09036b38614621b42c7582 0.0s done
+#4 extracting sha256:804d4d68057cbb26cbcde9a735148ebc6589911bad32cf9dbddb5b0ba878bf1f
+#4 extracting sha256:804d4d68057cbb26cbcde9a735148ebc6589911bad32cf9dbddb5b0ba878bf1f 0.9s done
+#4 DONE 2.6s
+
+#4 [deps 1/4] FROM docker.io/library/node:20-bookworm-slim@sha256:2cf067cfed83d5ea958367df9f966191a942351a2df77d6f0193e162b5febfc0
+#4 extracting sha256:64cfb949317c9824fd081d55c59a7225bfe1f650c6395ba42d7ed0ccf51993d2 0.1s done
+#4 extracting sha256:3c02fd806613748139b8b8a14a69ae3518a1b0e863c57c35aada3b92ed87fb31 done
+#4 DONE 2.7s
+
+#6 [deps 2/4] WORKDIR /app
+#6 DONE 0.1s
+
+#7 [deps 3/4] COPY package.json ./
+#7 DONE 0.0s
+
+#8 [deps 4/4] RUN npm install --legacy-peer-deps --include=optional
+#8 169.7 npm warn deprecated @humanwhocodes/object-schema@2.0.3: Use @eslint/object-schema instead
+#8 170.0 npm warn deprecated @humanwhocodes/config-array@0.13.0: Use @eslint/config-array instead
+#8 170.1 npm warn deprecated inflight@1.0.6: This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.
+#8 170.6 npm warn deprecated glob@7.2.3: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+#8 171.2 npm warn deprecated rimraf@3.0.2: Rimraf versions prior to v4 are no longer supported
+#8 171.8 npm warn deprecated @esbuild-kit/core-utils@3.3.2: Merged into tsx: https://tsx.is
+#8 171.8 npm warn deprecated @esbuild-kit/esm-loader@2.6.5: Merged into tsx: https://tsx.is
+#8 175.9 npm warn deprecated eslint@8.57.1: This version is no longer supported. Please see https://eslint.org/version-support for other options.
+#8 187.5 
+#8 187.5 added 777 packages, and audited 778 packages in 3m
+#8 187.5 
+#8 187.5 254 packages are looking for funding
+#8 187.5   run `npm fund` for details
+#8 187.6 
+#8 187.6 13 vulnerabilities (12 moderate, 1 critical)
+#8 187.6 
+#8 187.6 To address issues that do not require attention, run:
+#8 187.6   npm audit fix
+#8 187.6 
+#8 187.6 To address all issues possible (including breaking changes), run:
+#8 187.6   npm audit fix --force
+#8 187.6 
+#8 187.6 Some issues need review, and may require choosing
+#8 187.6 a different dependency.
+#8 187.6 
+#8 187.6 Run `npm audit` for details.
+#8 187.6 npm notice
+#8 187.6 npm notice New major version of npm available! 10.8.2 -> 11.13.0
+#8 187.6 npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.13.0
+#8 187.6 npm notice To update run: npm install -g npm@11.13.0
+#8 187.6 npm notice
+#8 DONE 187.9s
+
+#9 [builder 3/5] COPY --from=deps /app/node_modules ./node_modules
+#9 DONE 17.6s
+
+#10 [builder 4/5] COPY . .
+#10 DONE 0.7s
+
+#11 [builder 5/5] RUN npm run build
+#11 0.710 
+#11 0.710 > @workspace/www@0.1.0 build
+#11 0.710 > next build
+#11 0.710 
+#11 1.171 (node:19) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///app/image-hosts.config.js is not specified and it doesn't parse as CommonJS.
+#11 1.171 Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+#11 1.171 To eliminate this warning, add "type": "module" to /app/package.json.
+#11 1.171 (Use `node --trace-warnings ...` to show where the warning was created)
+#11 1.182  ⚠ Invalid next.config.mjs options detected: 
+#11 1.183  ⚠     Unrecognized key(s) in object: 'turbopack'
+#11 1.183 Payload: You can safely ignore the "Invalid next.config" warning above. This only occurs on Next.js 15.2.x or lower. We recommend upgrading to the latest supported Next.js version to resolve this warning.
+#11 1.183  ⚠ See more info here: https://nextjs.org/docs/messages/invalid-next-config
+#11 1.243    ▲ Next.js 15.1.11
+#11 1.243    - Experiments (use with caution):
+#11 1.243      · optimizeCss
+#11 1.243      · reactCompiler
+#11 1.243 
+#11 1.395    Creating an optimized production build ...
+#11 43.29  ✓ Compiled successfully
+#11 43.29    Skipping validation of types
+#11 43.29    Skipping linting
+#11 43.74    Collecting page data ...
+#11 44.50 Error: PAYLOAD_SECRET env var is required in production (min 16 chars).
+#11 44.50     at <unknown> (.next/server/chunks/594.js:1:620)
+#11 44.50     at <unknown> (.next/server/chunks/594.js:1:695)
+#11 44.50 
+#11 44.50 > Build error occurred
+#11 44.51 [Error: Failed to collect page data for /api/[...slug]] {
+#11 44.51   type: 'Error'
+#11 44.51 }
+#11 44.69 npm notice
+#11 44.69 npm notice New major version of npm available! 10.8.2 -> 11.13.0
+#11 44.69 npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.13.0
+#11 44.69 npm notice To update run: npm install -g npm@11.13.0
+#11 44.69 npm notice
+#11 ERROR: process "/bin/sh -c npm run build" did not complete successfully: exit code: 1
+------
+ > [builder 5/5] RUN npm run build:
+44.50 
+44.50 > Build error occurred
+44.51 [Error: Failed to collect page data for /api/[...slug]] {
+44.51   type: 'Error'
+44.51 }
+44.69 npm notice
+44.69 npm notice New major version of npm available! 10.8.2 -> 11.13.0
+44.69 npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.13.0
+44.69 npm notice To update run: npm install -g npm@11.13.0
+44.69 npm notice
+------
+Dockerfile:11
+--------------------
+   9 |     COPY . .
+  10 |     ENV NEXT_TELEMETRY_DISABLED=1
+  11 | >>> RUN npm run build
+  12 |     
+  13 |     FROM node:20-bookworm-slim AS runner
+--------------------
+ERROR: failed to build: failed to solve: process "/bin/sh -c npm run build" did not complete successfully: exit code: 1
+##########################################
+### Error
+### Sat, 02 May 2026 13:32:17 GMT
+##########################################
+
+Command failed with exit code 1: docker buildx build --network host -f /etc/easypanel/projects/sphere-english/sphere-www/code/Dockerfile -t easypanel/sphere-english/sphere-www --label 'keep=true' --build-arg 'BREVO_API_KEY=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' --build-arg 'NOTION_API_KEY=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' --build-arg 'NOTION_DATABASE_ID=1efaf60b706a4083bc4d483f4b1cbe9f' --build-arg 'NEXT_PUBLIC_GA_MEASUREMENT_ID=G-ELDF1FF5S1' --build-arg 'META_CONVERSIONS_API_TOKEN=EAAYrdftJHeEBRKrACew58SdpdyXwSZBegVkdnyo6pa6g2OURGnVtE9akqF7nOEg2TX9ytoHfKnxNH7O24NMt9ELgrvObYt0iwGmFhlPhjK6AkLUJaiXWjPWHoBdJItEEouIVRbjqidbT36RZCkykMo3BZBX5HqKmZCxkxzOhZAwI2D3r2mgeyeOmbuO5PQQZDZD' --build-arg 'PAYLOAD_SECRET=<rastgele 32+ karakter>' --build-arg 'PAYLOAD_DB_PUSH=true' --build-arg 'SEED_TOKEN=<güçlü rastgele token>' --build-arg 'GIT_SHA=8998c1618edfebe62f74a03b2e56d243b3e4674e' /etc/easypanel/projects/sphere-english/sphere-www/code/
