@@ -1,0 +1,98 @@
+Commit: Restructure: move pages into (frontend) route group; minimal root layout 
+##########################################
+### Download Github Archive Started...
+### Sat, 02 May 2026 17:04:34 GMT
+##########################################
+
+#0 building with "default" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 3.05kB done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/node:20-bookworm-slim
+#2 DONE 0.6s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 149B done
+#3 DONE 0.0s
+
+#4 [deps 1/5] FROM docker.io/library/node:20-bookworm-slim@sha256:2cf067cfed83d5ea958367df9f966191a942351a2df77d6f0193e162b5febfc0
+#4 resolve docker.io/library/node:20-bookworm-slim@sha256:2cf067cfed83d5ea958367df9f966191a942351a2df77d6f0193e162b5febfc0 0.0s done
+#4 DONE 0.0s
+
+#5 [internal] load build context
+#5 transferring context: 33.89MB 0.2s done
+#5 DONE 0.2s
+
+#6 [deps 3/5] COPY package.json ./
+#6 CACHED
+
+#7 [deps 2/5] WORKDIR /app
+#7 CACHED
+
+#8 [deps 4/5] RUN npm install --legacy-peer-deps --include=optional
+#8 CACHED
+
+#9 [deps 5/5] RUN if [ -f /app/node_modules/payload/dist/bin/loadEnv.js ]; then       sed -i "s|import nextEnvImport from '@next/env';|import * as nextEnvImport from '@next/env';|"         /app/node_modules/payload/dist/bin/loadEnv.js &&       echo '[patch] payload/dist/bin/loadEnv.js patched successfully' &&       head -3 /app/node_modules/payload/dist/bin/loadEnv.js;     else       echo '[patch] loadEnv.js not found — skipping';     fi
+#9 3.146 [patch] payload/dist/bin/loadEnv.js patched successfully
+#9 3.147 import * as nextEnvImport from '@next/env';
+#9 3.147 import { findUpSync } from '../utilities/findUp.js';
+#9 3.147 const { loadEnvConfig } = nextEnvImport;
+#9 DONE 3.2s
+
+#7 [deps 2/5] WORKDIR /app
+#7 CACHED
+
+#10 [builder 3/5] COPY --from=deps /app/node_modules ./node_modules
+#10 DONE 27.7s
+
+#11 [builder 4/5] COPY . .
+#11 DONE 0.7s
+
+#12 [builder 5/5] RUN npm run build
+#12 0.725 
+#12 0.725 > @workspace/www@0.1.0 build
+#12 0.725 > next build
+#12 0.725 
+#12 1.259 (node:19) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///app/image-hosts.config.js is not specified and it doesn't parse as CommonJS.
+#12 1.259 Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+#12 1.259 To eliminate this warning, add "type": "module" to /app/package.json.
+#12 1.259 (Use `node --trace-warnings ...` to show where the warning was created)
+#12 1.270  ⚠ Invalid next.config.mjs options detected: 
+#12 1.270  ⚠     Unrecognized key(s) in object: 'turbopack'
+#12 1.270 Payload: You can safely ignore the "Invalid next.config" warning above. This only occurs on Next.js 15.2.x or lower. We recommend upgrading to the latest supported Next.js version to resolve this warning.
+#12 1.270  ⚠ See more info here: https://nextjs.org/docs/messages/invalid-next-config
+#12 1.316    ▲ Next.js 15.1.11
+#12 1.316    - Experiments (use with caution):
+#12 1.316      · optimizeCss
+#12 1.316      · reactCompiler
+#12 1.316 
+#12 1.455    Creating an optimized production build ...
+#12 121.7  ✓ Compiled successfully
+#12 121.7    Skipping validation of types
+#12 121.7    Skipping linting
+#12 122.2    Collecting page data ...
+#12 123.3 [17:07:38] ERROR: Error: cannot connect to Postgres. Details: getaddrinfo EAI_AGAIN sphere-english_sphere-db
+#12 123.3     err: {
+#12 123.3       "type": "Error",
+#12 123.3       "message": "getaddrinfo EAI_AGAIN sphere-english_sphere-db",
+#12 123.3       "stack":
+#12 123.3           Error: getaddrinfo EAI_AGAIN sphere-english_sphere-db
+#12 123.3               at /app/node_modules/pg-pool/index.js:45:11
+#12 123.3               at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+#12 123.3               at async u (/app/.next/server/chunks/796.js:190:82138)
+#12 123.3               at async Object.A [as connect] (/app/.next/server/chunks/796.js:190:82380)
+#12 123.3               at async tO.init (/app/.next/server/chunks/796.js:315:8867)
+#12 123.3               at async tj (/app/.next/server/chunks/796.js:315:12057)
+#12 123.3               at async u (/app/.next/server/app/(frontend)/cozumler/[slug]/page.js:1:17929)
+#12 123.3               at async l (/app/.next/server/app/(frontend)/cozumler/[slug]/page.js:1:18114)
+#12 123.3               at async Object.p [as generateStaticParams] (/app/.next/server/app/(frontend)/cozumler/[slug]/page.js:1:14256)
+#12 123.3               at async builtRouteParams (/app/node_modules/next/dist/build/utils.js:983:36)
+#12 123.3       "errno": -3001,
+#12 123.3       "code": "EAI_AGAIN",
+#12 123.3       "syscall": "getaddrinfo",
+#12 123.3       "hostname": "sphere-english_sphere-db"
+#12 123.3     }
+#12 123.3 undefined
+#12 301.2    Generating static pages (0/14) ...
