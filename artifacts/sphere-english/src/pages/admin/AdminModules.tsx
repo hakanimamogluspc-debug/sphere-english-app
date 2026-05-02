@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Toggle } from "@/components/ui/toggle";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Settings2, Users, BookOpen, Video, FileQuestion, Mic, PenLine, MessageCircle, LineChart, Award, FolderOpen, Brain, Gamepad2, Briefcase } from "lucide-react";
+import { Settings2, Users, BookOpen, Video, FileQuestion, Mic, PenLine, MessageCircle, LineChart, Award, FolderOpen, Brain, Gamepad2, Briefcase, GraduationCap, Sparkles, Presentation, UserCheck, Route, BarChart3, CreditCard, Lock, Calendar, Trophy } from "lucide-react";
 
 const API = import.meta.env.BASE_URL.replace(/\/$/, "") + "/api";
 
@@ -24,7 +24,7 @@ type FeatureSetting = {
 const MODULE_ICONS: Record<string, React.ElementType> = {
   "student-courses": BookOpen,
   "student-materials": FolderOpen,
-  "student-live-classes": Video,
+  "student-live-classes": Calendar,
   "student-quizzes": FileQuestion,
   "student-speaking-club": Mic,
   "student-pronunciation-coach": Mic,
@@ -32,7 +32,9 @@ const MODULE_ICONS: Record<string, React.ElementType> = {
   "student-forum": MessageCircle,
   "student-progress": LineChart,
   "student-certificates": Award,
-  "student-leaderboard": Users,
+  "student-leaderboard": Trophy,
+  "student-level-exams": GraduationCap,
+  "student-subscription": CreditCard,
   "teacher-materials": FolderOpen,
   "teacher-live-classes": Video,
   "teacher-quizzes": FileQuestion,
@@ -40,6 +42,14 @@ const MODULE_ICONS: Record<string, React.ElementType> = {
   "student-vocab-game": Gamepad2,
   "student-grammar-coach": Brain,
   "student-simulation-mode": Briefcase,
+  "student-interview-sim": UserCheck,
+  "student-presentation-sim": Presentation,
+  "student-ai-quiz": Sparkles,
+  "student-ai-tutor": GraduationCap,
+  "student-learning-path": Route,
+  "corporate-ai-report": BarChart3,
+  "admin-subscriptions": CreditCard,
+  "subscription-enforcement": Lock,
 };
 
 const ROLE_OPTIONS = [
@@ -54,6 +64,9 @@ const CATEGORY_LABELS: Record<string, string> = {
   student: "Öğrenci Modülleri",
   teacher: "Öğretmen Modülleri",
   "ai-studio": "Sphere AI Studio",
+  corporate: "Kurumsal Modüller",
+  admin: "Admin Modülleri",
+  system: "Sistem Ayarları",
 };
 
 function ModuleCard({ mod, onToggleEnabled, onToggleRole, saving }: {
@@ -164,7 +177,7 @@ export default function AdminModules() {
     patchMutation.mutate({ key, body: { visibleTo } });
   }
 
-  const categories = ["student", "teacher", "ai-studio"];
+  const categories = ["ai-studio", "student", "teacher", "corporate", "admin", "system"];
 
   const enabledCount = modules.filter(m => m.isEnabled).length;
   const totalCount = modules.length;
