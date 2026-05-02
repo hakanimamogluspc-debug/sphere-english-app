@@ -65,6 +65,21 @@ import AITutor from "./pages/student/AITutor";
 import LearningPath from "./pages/student/LearningPath";
 import AIStudio from "./pages/AIStudio";
 import PlacementTest from "./pages/PlacementTest";
+import Subscription from "./pages/student/Subscription";
+import AdminSubscriptions from "./pages/admin/AdminSubscriptions";
+import { SubscriptionProvider } from "./lib/subscription-context";
+import { withProGate } from "./components/subscription/ProGate";
+
+const PronunciationCoachPro    = withProGate(PronunciationCoach,    "student-pronunciation-coach", "Telaffuz Koçu");
+const WritingCoachPro          = withProGate(WritingCoach,          "student-writing-coach",        "Yazma Koçu");
+const VocabGamePro             = withProGate(VocabGame,             "student-vocab-game",           "Kelime Oyunu");
+const GrammarCoachPro          = withProGate(GrammarCoach,          "student-grammar-coach",        "Dilbilgisi Koçu");
+const SimulationModePro        = withProGate(SimulationMode,        "student-simulation-mode",      "İş Senaryoları");
+const InterviewSimulatorPro    = withProGate(InterviewSimulator,    "student-interview-sim",        "Mülakat Simülatörü");
+const PresentationSimulatorPro = withProGate(PresentationSimulator, "student-presentation-sim",     "Sunum Simülatörü");
+const AIQuizGeneratorPro       = withProGate(AIQuizGenerator,       "student-ai-quiz",              "Akıllı Quiz Üretici");
+const AITutorPro               = withProGate(AITutor,               "student-ai-tutor",             "Kişisel AI Öğretmen");
+const LearningPathPro          = withProGate(LearningPath,          "student-learning-path",        "Adaptif Öğrenme Yolu");
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -159,17 +174,18 @@ function Router() {
       <Route path="/certificates"><LayoutWrapper component={Certificates} /></Route>
       <Route path="/student/speaking-club"><LayoutWrapper component={StudentSpeakingClub} allowedRoles={['student']} /></Route>
       <Route path="/student/materials"><LayoutWrapper component={StudentMaterials} allowedRoles={['student']} /></Route>
-      <Route path="/student/pronunciation-coach"><LayoutWrapper component={PronunciationCoach} allowedRoles={['student', 'admin']} /></Route>
-      <Route path="/student/writing-coach"><LayoutWrapper component={WritingCoach} allowedRoles={['student', 'admin']} /></Route>
-      <Route path="/student/vocab-game"><LayoutWrapper component={VocabGame} allowedRoles={['student', 'admin']} /></Route>
-      <Route path="/student/grammar-coach"><LayoutWrapper component={GrammarCoach} allowedRoles={['student', 'admin']} /></Route>
-      <Route path="/student/simulation-mode"><LayoutWrapper component={SimulationMode} allowedRoles={['student', 'admin']} /></Route>
+      <Route path="/student/subscription"><LayoutWrapper component={Subscription} allowedRoles={['student', 'admin']} /></Route>
+      <Route path="/student/pronunciation-coach"><LayoutWrapper component={PronunciationCoachPro} allowedRoles={['student', 'admin']} /></Route>
+      <Route path="/student/writing-coach"><LayoutWrapper component={WritingCoachPro} allowedRoles={['student', 'admin']} /></Route>
+      <Route path="/student/vocab-game"><LayoutWrapper component={VocabGamePro} allowedRoles={['student', 'admin']} /></Route>
+      <Route path="/student/grammar-coach"><LayoutWrapper component={GrammarCoachPro} allowedRoles={['student', 'admin']} /></Route>
+      <Route path="/student/simulation-mode"><LayoutWrapper component={SimulationModePro} allowedRoles={['student', 'admin']} /></Route>
       <Route path="/student/settings"><LayoutWrapper component={StudentSettings} allowedRoles={['student']} /></Route>
-      <Route path="/student/interview-sim"><LayoutWrapper component={InterviewSimulator} allowedRoles={['student', 'admin']} /></Route>
-      <Route path="/student/presentation-sim"><LayoutWrapper component={PresentationSimulator} allowedRoles={['student', 'admin']} /></Route>
-      <Route path="/student/ai-quiz"><LayoutWrapper component={AIQuizGenerator} allowedRoles={['student', 'admin']} /></Route>
-      <Route path="/student/ai-tutor"><LayoutWrapper component={AITutor} allowedRoles={['student', 'admin']} /></Route>
-      <Route path="/student/learning-path"><LayoutWrapper component={LearningPath} allowedRoles={['student', 'admin']} /></Route>
+      <Route path="/student/interview-sim"><LayoutWrapper component={InterviewSimulatorPro} allowedRoles={['student', 'admin']} /></Route>
+      <Route path="/student/presentation-sim"><LayoutWrapper component={PresentationSimulatorPro} allowedRoles={['student', 'admin']} /></Route>
+      <Route path="/student/ai-quiz"><LayoutWrapper component={AIQuizGeneratorPro} allowedRoles={['student', 'admin']} /></Route>
+      <Route path="/student/ai-tutor"><LayoutWrapper component={AITutorPro} allowedRoles={['student', 'admin']} /></Route>
+      <Route path="/student/learning-path"><LayoutWrapper component={LearningPathPro} allowedRoles={['student', 'admin']} /></Route>
       <Route path="/student/level-exams"><LayoutWrapper component={LevelExams} allowedRoles={['student', 'admin']} /></Route>
       <Route path="/student/level-exams/:level"><LayoutWrapper component={LevelExamTaking} allowedRoles={['student', 'admin']} /></Route>
       <Route path="/forum"><LayoutWrapper component={Forum} /></Route>
@@ -199,6 +215,7 @@ function Router() {
       <Route path="/admin/meb-report"><LayoutWrapper component={MebReport} allowedRoles={['admin']} /></Route>
       <Route path="/admin/marketing"><LayoutWrapper component={AdminMarketing} allowedRoles={['admin']} /></Route>
       <Route path="/admin/modules"><LayoutWrapper component={AdminModules} allowedRoles={['admin']} /></Route>
+      <Route path="/admin/subscriptions"><LayoutWrapper component={AdminSubscriptions} allowedRoles={['admin']} /></Route>
 
       {/* Corporate Routes */}
       <Route path="/corporate/dashboard"><LayoutWrapper component={CorporateDashboard} allowedRoles={['corporate', 'admin']} /></Route>
@@ -246,9 +263,11 @@ function App() {
       <TooltipProvider>
         <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
           <AuthProvider>
-            <HeartbeatProvider>
-              <Router />
-            </HeartbeatProvider>
+            <SubscriptionProvider>
+              <HeartbeatProvider>
+                <Router />
+              </HeartbeatProvider>
+            </SubscriptionProvider>
           </AuthProvider>
         </WouterRouter>
         <Toaster />

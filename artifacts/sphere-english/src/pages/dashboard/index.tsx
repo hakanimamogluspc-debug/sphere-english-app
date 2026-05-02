@@ -7,6 +7,7 @@ import { Link } from "wouter";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useEffect, useState } from "react";
 import { API } from "@/lib/api-url";
+import TrialBanner from "@/components/subscription/TrialBanner";
 
 function useAnnouncements() {
   const [announcements, setAnnouncements] = useState<any[]>([]);
@@ -31,6 +32,7 @@ function StudentDashboard() {
 
   return (
     <div className="space-y-8">
+      <TrialBanner />
       {/* Öğrenci Kimlik Bandı */}
       {(user as any)?.studentNumber && (
         <div className="flex items-center justify-between bg-primary/5 border border-primary/20 rounded-xl px-5 py-3">

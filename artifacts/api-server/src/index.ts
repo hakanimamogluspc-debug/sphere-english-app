@@ -151,6 +151,44 @@ async function runStartupMigrations() {
     `INSERT INTO feature_settings (key, label, is_enabled, visible_to, category) VALUES
       ('student-level-exams', 'Seviye Geçme Sınavı', true, ARRAY['student','admin']::TEXT[], 'student')
     ON CONFLICT (key) DO UPDATE SET is_enabled = true, visible_to = EXCLUDED.visible_to, category = EXCLUDED.category`,
+    // Abonelik tablosu — provider-agnostic (Iyzico ileride plug-in)
+    `CREATE TABLE IF NOT EXISTS subscriptions (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      plan_key TEXT,
+      status TEXT NOT NULL DEFAULT 'none',
+      trial_started_at TIMESTAMPTZ,
+      trial_ends_at TIMESTAMPTZ,
+      current_period_start TIMESTAMPTZ,
+      current_period_end TIMESTAMPTZ,
+      cancel_at_period_end BOOLEAN NOT NULL DEFAULT false,
+      canceled_at TIMESTAMPTZ,
+      granted_by_admin_id INTEGER,
+      provider TEXT,
+      provider_subscription_id TEXT,
+      provider_customer_id TEXT,
+      notes TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`,
+    `CREATE UNIQUE INDEX IF NOT EXISTS subscriptions_user_id_unique ON subscriptions(user_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_subscriptions_status ON subscriptions(status)`,
+    // Veritabanı seviyesinde enum kısıtları (text + CHECK) — geçersiz state'leri ekleyemesin
+    `DO $$ BEGIN
+       IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname='subscriptions_status_check') THEN
+         ALTER TABLE subscriptions ADD CONSTRAINT subscriptions_status_check
+           CHECK (status IN ('none','trialing','active','past_due','canceled','expired'));
+       END IF;
+       IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname='subscriptions_plan_key_check') THEN
+         ALTER TABLE subscriptions ADD CONSTRAINT subscriptions_plan_key_check
+           CHECK (plan_key IS NULL OR plan_key IN ('pro_monthly','pro_yearly'));
+       END IF;
+     END $$`,
+    // Sidebar'da görünsün
+    `INSERT INTO feature_settings (key, label, is_enabled, visible_to, category) VALUES
+      ('student-subscription', 'Aboneliğim', true, ARRAY['student']::TEXT[], 'student'),
+      ('admin-subscriptions', 'Abonelikler', true, ARRAY['admin']::TEXT[], 'admin')
+    ON CONFLICT (key) DO UPDATE SET is_enabled = true, visible_to = EXCLUDED.visible_to, category = EXCLUDED.category`,
   ];
   for (const sql of migrations) {
     try {

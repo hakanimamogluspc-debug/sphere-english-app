@@ -4,7 +4,7 @@ import { Link, useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   BookOpen, LayoutDashboard, Video, FileQuestion, LineChart, 
-  Award, MessageSquare, Users, Megaphone, LogOut, Menu, Building2, BarChart3, GraduationCap, Mic, MessageCircle, FolderOpen, PenLine, TrendingUp, Settings2, Gamepad2,
+  Award, MessageSquare, Users, Megaphone, LogOut, Menu, Building2, BarChart3, GraduationCap, Mic, MessageCircle, FolderOpen, PenLine, TrendingUp, Settings2, Gamepad2, Crown, Lock,
   Sparkles, ChevronDown, Brain, Briefcase, Presentation, Wand2, Compass
 } from "lucide-react";
 import { Avatar } from "../ui/core";
@@ -71,6 +71,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       { name: 'Kişisel AI Öğretmen', href: '/student/ai-tutor',              icon: GraduationCap, moduleKey: 'student-ai-tutor',             group: 'ai-studio' },
       { name: 'Adaptif Öğrenme Yolu', href: '/student/learning-path',        icon: Compass,       moduleKey: 'student-learning-path',        group: 'ai-studio' },
       { name: 'Seviye Geçme Sınavı', href: '/student/level-exams',           icon: GraduationCap, moduleKey: 'student-level-exams' },
+      { name: 'Aboneliğim',          href: '/student/subscription',           icon: Crown,         moduleKey: 'student-subscription' },
       { name: 'Forum',               href: '/forum',                          icon: MessageCircle, moduleKey: 'student-forum' },
       { name: 'İlerleme Durumum',    href: '/progress',                       icon: LineChart,     moduleKey: 'student-progress' },
       { name: 'Sertifikalar',        href: '/certificates',                   icon: Award,         moduleKey: 'student-certificates' },
@@ -105,6 +106,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       { name: 'MEB Aktivite Raporu', href: '/admin/meb-report',               icon: BarChart3 },
       { name: 'Pazarlama & E-posta', href: '/admin/marketing',                icon: TrendingUp },
       { name: 'Modül Yönetimi',      href: '/admin/modules',                  icon: Settings2 },
+      { name: 'Abonelikler',         href: '/admin/subscriptions',            icon: Crown },
       { name: 'Kelime Oyunu 🎮',     href: '/student/vocab-game',             icon: Gamepad2 },
     ],
     corporate: [

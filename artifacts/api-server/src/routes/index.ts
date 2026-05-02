@@ -39,6 +39,12 @@ import tutorRouter from "./tutor";
 import learningPathRouter from "./learning-path";
 import corporateAiReportRouter from "./corporate-ai-report";
 import levelExamsRouter from "./level-exams";
+import subscriptionRouter from "./subscription";
+import adminSubscriptionsRouter from "./admin-subscriptions";
+import { requireSubscription } from "../middlewares/require-subscription";
+import { authMiddleware } from "../middlewares/auth";
+
+const proGuard = [authMiddleware, requireSubscription];
 
 const router: IRouter = Router();
 
@@ -64,22 +70,24 @@ router.use(messagesRouter);
 router.use(leaderboardRouter);
 router.use(dashboardRouter);
 router.use(materialsRouter);
-router.use(pronunciationRouter);
-router.use(writingRouter);
+router.use(subscriptionRouter);
+router.use(adminSubscriptionsRouter);
+router.use(proGuard, pronunciationRouter);
+router.use(proGuard, writingRouter);
 router.use(marketingRouter);
 router.use(activityRouter);
 router.use(featureSettingsRouter);
-router.use(vocabGameRouter);
-router.use(grammarCoachRouter);
+router.use(proGuard, vocabGameRouter);
+router.use(proGuard, grammarCoachRouter);
 router.use(placementTestRouter);
-router.use(simulationRouter);
+router.use(proGuard, simulationRouter);
 router.use(presenceRouter);
 router.use(notificationsRouter);
-router.use(interviewRouter);
-router.use(presentationRouter);
-router.use(aiQuizRouter);
-router.use(tutorRouter);
-router.use(learningPathRouter);
+router.use(proGuard, interviewRouter);
+router.use(proGuard, presentationRouter);
+router.use(proGuard, aiQuizRouter);
+router.use(proGuard, tutorRouter);
+router.use(proGuard, learningPathRouter);
 router.use(corporateAiReportRouter);
 router.use(levelExamsRouter);
 
