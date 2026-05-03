@@ -26,10 +26,6 @@ author = "agent"
 task = "workflow.run"
 args = "artifacts/vocab-game: Vocab Game"
 
-[[workflows.workflow.tasks]]
-task = "workflow.run"
-args = "artifacts/www: Marketing Site"
-
 [[workflows.workflow]]
 name = "artifacts/vocab-game: Vocab Game"
 author = "agent"
@@ -41,18 +37,6 @@ waitForPort = 8000
 
 [workflows.workflow.metadata]
 outputType = "webview"
-
-[[workflows.workflow]]
-name = "artifacts/www: Marketing Site"
-author = "agent"
-
-[workflows.workflow.metadata]
-outputType = "webview"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "cd artifacts/www && PORT=3000 BASE_PATH=/__www pnpm run dev"
-waitForPort = 3000
 
 [agent]
 stack = "PNPM_WORKSPACE"

@@ -19,6 +19,6 @@ PORT = "3000"
 BASE_PATH = "/__www"
 
 [services.development]
-run = "cd artifacts/www && PORT=3000 BASE_PATH=/__www pnpm run dev"
+run = "pnpm --filter @workspace/www run dev"
 
 [services.production]

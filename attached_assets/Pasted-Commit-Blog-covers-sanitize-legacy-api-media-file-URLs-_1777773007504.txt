@@ -1,0 +1,208 @@
+Commit: Blog covers: sanitize legacy /api/media/file/* URLs; fall back to default cover SVG 
+##########################################
+### Download Github Archive Started...
+### Sun, 03 May 2026 00:28:40 GMT
+##########################################
+
+#0 building with "default" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 3.05kB done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/node:20-bookworm-slim
+#2 DONE 0.7s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 149B done
+#3 DONE 0.0s
+
+#4 [deps 1/5] FROM docker.io/library/node:20-bookworm-slim@sha256:2cf067cfed83d5ea958367df9f966191a942351a2df77d6f0193e162b5febfc0
+#4 resolve docker.io/library/node:20-bookworm-slim@sha256:2cf067cfed83d5ea958367df9f966191a942351a2df77d6f0193e162b5febfc0 0.0s done
+#4 DONE 0.0s
+
+#5 [deps 2/5] WORKDIR /app
+#5 CACHED
+
+#6 [internal] load build context
+#6 transferring context: 12.96kB 0.0s done
+#6 DONE 0.0s
+
+#7 [deps 3/5] COPY package.json ./
+#7 DONE 0.1s
+
+#8 [deps 4/5] RUN npm install --legacy-peer-deps --include=optional
+#8 173.8 npm warn deprecated @humanwhocodes/object-schema@2.0.3: Use @eslint/object-schema instead
+#8 174.0 npm warn deprecated @humanwhocodes/config-array@0.13.0: Use @eslint/config-array instead
+#8 174.3 npm warn deprecated inflight@1.0.6: This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.
+#8 174.3 npm warn deprecated glob@7.2.3: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+#8 175.1 npm warn deprecated rimraf@3.0.2: Rimraf versions prior to v4 are no longer supported
+#8 175.8 npm warn deprecated @esbuild-kit/core-utils@3.3.2: Merged into tsx: https://tsx.is
+#8 175.9 npm warn deprecated @esbuild-kit/esm-loader@2.6.5: Merged into tsx: https://tsx.is
+#8 180.4 npm warn deprecated eslint@8.57.1: This version is no longer supported. Please see https://eslint.org/version-support for other options.
+#8 191.3 
+#8 191.3 added 777 packages, and audited 778 packages in 3m
+#8 191.3 
+#8 191.3 254 packages are looking for funding
+#8 191.3   run `npm fund` for details
+#8 191.4 
+#8 191.4 13 vulnerabilities (12 moderate, 1 critical)
+#8 191.4 
+#8 191.4 To address issues that do not require attention, run:
+#8 191.4   npm audit fix
+#8 191.4 
+#8 191.4 To address all issues possible (including breaking changes), run:
+#8 191.4   npm audit fix --force
+#8 191.4 
+#8 191.4 Some issues need review, and may require choosing
+#8 191.4 a different dependency.
+#8 191.4 
+#8 191.4 Run `npm audit` for details.
+#8 191.4 npm notice
+#8 191.4 npm notice New major version of npm available! 10.8.2 -> 11.13.0
+#8 191.4 npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.13.0
+#8 191.4 npm notice To update run: npm install -g npm@11.13.0
+#8 191.4 npm notice
+#8 DONE 191.6s
+
+#9 [deps 5/5] RUN if [ -f /app/node_modules/payload/dist/bin/loadEnv.js ]; then       sed -i "s|import nextEnvImport from '@next/env';|import * as nextEnvImport from '@next/env';|"         /app/node_modules/payload/dist/bin/loadEnv.js &&       echo '[patch] payload/dist/bin/loadEnv.js patched successfully' &&       head -3 /app/node_modules/payload/dist/bin/loadEnv.js;     else       echo '[patch] loadEnv.js not found — skipping';     fi
+#9 0.613 [patch] payload/dist/bin/loadEnv.js patched successfully
+#9 0.614 import * as nextEnvImport from '@next/env';
+#9 0.614 import { findUpSync } from '../utilities/findUp.js';
+#9 0.614 const { loadEnvConfig } = nextEnvImport;
+#9 DONE 0.7s
+
+#10 [builder 3/5] COPY --from=deps /app/node_modules ./node_modules
+#10 DONE 18.3s
+
+#11 [builder 4/5] COPY . .
+#11 DONE 0.7s
+
+#12 [builder 5/5] RUN npm run build
+#12 0.832 
+#12 0.832 > @workspace/www@0.1.0 build
+#12 0.832 > next build
+#12 0.832 
+#12 1.319 (node:18) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///app/image-hosts.config.js is not specified and it doesn't parse as CommonJS.
+#12 1.319 Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+#12 1.319 To eliminate this warning, add "type": "module" to /app/package.json.
+#12 1.319 (Use `node --trace-warnings ...` to show where the warning was created)
+#12 1.330  ⚠ Invalid next.config.mjs options detected: 
+#12 1.330  ⚠     Unrecognized key(s) in object: 'turbopack'
+#12 1.330 Payload: You can safely ignore the "Invalid next.config" warning above. This only occurs on Next.js 15.2.x or lower. We recommend upgrading to the latest supported Next.js version to resolve this warning.
+#12 1.330  ⚠ See more info here: https://nextjs.org/docs/messages/invalid-next-config
+#12 1.376    ▲ Next.js 15.1.11
+#12 1.376    - Experiments (use with caution):
+#12 1.376      · optimizeCss
+#12 1.376      · reactCompiler
+#12 1.376 
+#12 1.503    Creating an optimized production build ...
+#12 43.94  ✓ Compiled successfully
+#12 43.94    Skipping validation of types
+#12 43.94    Skipping linting
+#12 44.38    Collecting page data ...
+#12 51.73    Generating static pages (0/13) ...
+#12 111.9    Generating static pages (2/13) 
+#12 111.9    Generating static pages (3/13) 
+#12 111.9    Generating static pages (6/13) 
+#12 169.6    Generating static pages (9/13) 
+#12 169.6  ✓ Generating static pages (13/13)
+#12 170.0    Finalizing page optimization ...
+#12 170.0    Collecting build traces ...
+#12 176.3 
+#12 176.3 Route (app)                              Size     First Load JS
+#12 176.3 ┌ ○ /_not-found                          990 B           108 kB
+#12 176.3 ├ ƒ /admin/[[...segments]]               408 B           730 kB
+#12 176.3 ├ ○ /ai-studio                           9.99 kB         205 kB
+#12 176.3 ├ ƒ /api/[...slug]                       167 B           107 kB
+#12 176.3 ├ ƒ /api/contact                         167 B           107 kB
+#12 176.3 ├ ƒ /api/graphql                         167 B           107 kB
+#12 176.3 ├ ƒ /api/graphql-playground              167 B           107 kB
+#12 176.3 ├ ƒ /api/seed-cms                        167 B           107 kB
+#12 176.3 ├ ƒ /blog                                217 B           192 kB
+#12 176.3 ├ ƒ /blog/[slug]                         217 B           192 kB
+#12 176.3 ├ ○ /cozumler                            217 B           192 kB
+#12 176.3 ├ ƒ /cozumler/[slug]                     197 B           192 kB
+#12 176.3 ├ ○ /hakkimizda                          3.38 kB         199 kB
+#12 176.3 ├ ƒ /home                                16.4 kB         209 kB
+#12 176.3 ├ ○ /icon.png                            0 B                0 B
+#12 176.3 ├ ○ /iletisim                            3.63 kB         199 kB
+#12 176.3 ├ ○ /nasil-calisir                       1.96 kB         197 kB
+#12 176.3 ├ ○ /robots.txt                          0 B                0 B
+#12 176.3 └ ƒ /sitemap.xml                         0 B                0 B
+#12 176.3 + First Load JS shared by all            107 kB
+#12 176.3   ├ chunks/1517-ea7a1dd89d686119.js      50.8 kB
+#12 176.3   ├ chunks/4bd1b696-b7adcea43c1a71b8.js  53 kB
+#12 176.3   └ other shared chunks (total)          3.35 kB
+#12 176.3 
+#12 176.3 
+#12 176.3 ○  (Static)   prerendered as static content
+#12 176.3 ƒ  (Dynamic)  server-rendered on demand
+#12 176.3 
+#12 176.4 npm notice
+#12 176.4 npm notice New major version of npm available! 10.8.2 -> 11.13.0
+#12 176.4 npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.13.0
+#12 176.4 npm notice To update run: npm install -g npm@11.13.0
+#12 176.4 npm notice
+#12 DONE 176.5s
+
+#13 [runner  3/13] COPY --from=builder /app/.next ./.next
+#13 DONE 0.9s
+
+#14 [runner  4/13] COPY --from=builder /app/public ./public
+#14 DONE 0.1s
+
+#15 [runner  5/13] COPY --from=builder /app/node_modules ./node_modules
+#15 DONE 26.0s
+
+#16 [runner  6/13] COPY --from=builder /app/package.json ./package.json
+#16 DONE 0.6s
+
+#17 [runner  7/13] COPY --from=builder /app/next.config.mjs ./next.config.mjs
+#17 DONE 0.0s
+
+#18 [runner  8/13] COPY --from=builder /app/payload.config.ts ./payload.config.ts
+#18 DONE 0.0s
+
+#19 [runner  9/13] COPY --from=builder /app/tsconfig.json ./tsconfig.json
+#19 DONE 0.0s
+
+#20 [runner 10/13] COPY --from=builder /app/src ./src
+#20 DONE 0.2s
+
+#21 [runner 11/13] COPY --from=builder /app/scripts ./scripts
+#21 DONE 0.0s
+
+#22 [runner 12/13] COPY --from=builder /app/image-hosts.config.js ./image-hosts.config.js
+#22 DONE 0.0s
+
+#23 [runner 13/13] COPY --from=builder /app/image-hosts.config.mjs ./image-hosts.config.mjs
+#23 DONE 0.0s
+
+#24 exporting to image
+#24 exporting layers
+#24 exporting layers 43.3s done
+#24 exporting manifest sha256:409ef82908e55676d2a7b5b482e2a7483486c7f3febc96b987fac06b650db3f9 done
+#24 exporting config sha256:505fb23959e9364433f22d3c01213708a37ed046ac3b766b3ee10537e3302bd3 done
+#24 exporting attestation manifest sha256:eca46c14c2136e7b2767f03e64e799f5cd2180b895099cf0cc5d2d4766828fad 0.0s done
+#24 exporting manifest list sha256:aef0e2ce119d81905d3f6ed04f441b296d1fe346b0055ee852ddf42d7d1e5eb0 done
+#24 naming to docker.io/easypanel/sphere-english/sphere-www:latest done
+#24 unpacking to docker.io/easypanel/sphere-english/sphere-www:latest
+#24 unpacking to docker.io/easypanel/sphere-english/sphere-www:latest 13.2s done
+#24 DONE 56.6s
+
+ 10 warnings found (use docker --debug to expand):
+ - SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "BREVO_API_KEY") (line 21)
+ - SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "META_CONVERSIONS_API_TOKEN") (line 25)
+ - SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "SEED_TOKEN") (line 28)
+ - SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ENV "BREVO_API_KEY") (line 32)
+ - SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ENV "META_CONVERSIONS_API_TOKEN") (line 32)
+ - SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ENV "PAYLOAD_SECRET") (line 32)
+ - SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ENV "SEED_TOKEN") (line 32)
+ - SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "NOTION_API_KEY") (line 22)
+ - SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "PAYLOAD_SECRET") (line 26)
+ - SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ENV "NOTION_API_KEY") (line 32)
+##########################################
+### Success
+### Sun, 03 May 2026 00:37:16 GMT
+##########################################
