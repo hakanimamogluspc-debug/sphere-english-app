@@ -205,6 +205,158 @@ async function runStartupMigrations() {
       ('student-subscription', 'Aboneliğim', true, ARRAY['student']::TEXT[], 'student'),
       ('admin-subscriptions', 'Abonelikler', true, ARRAY['admin']::TEXT[], 'admin')
     ON CONFLICT (key) DO UPDATE SET is_enabled = true, visible_to = EXCLUDED.visible_to, category = EXCLUDED.category`,
+
+    // ─── AI Studio yeni özellikler için tablolar ────────────────────────────
+    // Pronunciation assessments (T001)
+    `CREATE TABLE IF NOT EXISTS pronunciation_assessments (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      teacher_id VARCHAR(64) NOT NULL,
+      teacher_name VARCHAR(64) NOT NULL,
+      duration_seconds INTEGER NOT NULL DEFAULT 0,
+      message_count INTEGER NOT NULL DEFAULT 0,
+      avg_score INTEGER NOT NULL DEFAULT 0,
+      estimated_cefr VARCHAR(8) NOT NULL,
+      cefr_confidence VARCHAR(16) NOT NULL DEFAULT 'medium',
+      strengths JSONB NOT NULL DEFAULT '[]'::JSONB,
+      weak_areas JSONB NOT NULL DEFAULT '{"phonemes":[],"grammar":[],"vocabulary":[],"fluency":[]}'::JSONB,
+      recommendations JSONB NOT NULL DEFAULT '[]'::JSONB,
+      ai_summary TEXT NOT NULL DEFAULT '',
+      transcript_summary JSONB NOT NULL DEFAULT '[]'::JSONB,
+      raw_metrics JSONB NOT NULL DEFAULT '{"totalGrammarErrors":0,"totalVocabSuggestions":0,"totalPronunciationTips":0,"lowConfidenceWords":[]}'::JSONB,
+      created_at TIMESTAMP NOT NULL DEFAULT NOW()
+    )`,
+    `CREATE INDEX IF NOT EXISTS pron_assess_user_created_idx ON pronunciation_assessments (user_id, created_at)`,
+
+    // Notifications (T002)
+    `CREATE TABLE IF NOT EXISTS notifications (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      kind VARCHAR(48) NOT NULL,
+      title VARCHAR(160) NOT NULL,
+      body TEXT NOT NULL,
+      action_url VARCHAR(256),
+      icon_kind VARCHAR(32) NOT NULL DEFAULT 'bell',
+      priority VARCHAR(16) NOT NULL DEFAULT 'normal',
+      metadata JSONB NOT NULL DEFAULT '{}'::JSONB,
+      read_at TIMESTAMP,
+      emailed_at TIMESTAMP,
+      dedupe_key VARCHAR(128),
+      created_at TIMESTAMP NOT NULL DEFAULT NOW()
+    )`,
+    `CREATE INDEX IF NOT EXISTS notif_user_created_idx ON notifications (user_id, created_at)`,
+    `CREATE INDEX IF NOT EXISTS notif_user_unread_idx ON notifications (user_id, read_at)`,
+    `CREATE INDEX IF NOT EXISTS notif_dedupe_idx ON notifications (user_id, dedupe_key)`,
+    `CREATE TABLE IF NOT EXISTS notification_preferences (
+      user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+      email_enabled BOOLEAN NOT NULL DEFAULT true,
+      in_app_enabled BOOLEAN NOT NULL DEFAULT true,
+      streak_risk_email BOOLEAN NOT NULL DEFAULT true,
+      inactivity_email BOOLEAN NOT NULL DEFAULT true,
+      new_assessment_email BOOLEAN NOT NULL DEFAULT true,
+      level_up_email BOOLEAN NOT NULL DEFAULT true,
+      new_quiz_email BOOLEAN NOT NULL DEFAULT false,
+      weekly_digest_email BOOLEAN NOT NULL DEFAULT true,
+      last_email_sent_at TIMESTAMP,
+      updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+    )`,
+
+    // Interview Simulator (T003)
+    `CREATE TABLE IF NOT EXISTS interview_sessions (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      status VARCHAR(16) NOT NULL DEFAULT 'active',
+      setup JSONB NOT NULL,
+      transcript JSONB NOT NULL DEFAULT '[]'::JSONB,
+      questions_asked INTEGER NOT NULL DEFAULT 0,
+      target_questions INTEGER NOT NULL DEFAULT 8,
+      current_phase VARCHAR(24) NOT NULL DEFAULT 'intro',
+      report JSONB,
+      duration_sec INTEGER NOT NULL DEFAULT 0,
+      started_at TIMESTAMP NOT NULL DEFAULT NOW(),
+      completed_at TIMESTAMP,
+      created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+    )`,
+    `CREATE INDEX IF NOT EXISTS interview_user_idx ON interview_sessions (user_id, created_at)`,
+    `CREATE INDEX IF NOT EXISTS interview_status_idx ON interview_sessions (user_id, status)`,
+
+    // Presentation Simulator (T004)
+    `CREATE TABLE IF NOT EXISTS presentation_sessions (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      status VARCHAR(16) NOT NULL DEFAULT 'recording',
+      setup JSONB NOT NULL,
+      presentation_transcript TEXT,
+      qa_turns JSONB NOT NULL DEFAULT '[]'::JSONB,
+      target_qa_turns INTEGER NOT NULL DEFAULT 2,
+      report JSONB,
+      duration_sec INTEGER NOT NULL DEFAULT 0,
+      started_at TIMESTAMP NOT NULL DEFAULT NOW(),
+      completed_at TIMESTAMP,
+      created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+    )`,
+    `CREATE INDEX IF NOT EXISTS presentation_user_idx ON presentation_sessions (user_id, created_at)`,
+    `CREATE INDEX IF NOT EXISTS presentation_status_idx ON presentation_sessions (user_id, status)`,
+
+    // AI Quiz (T005)
+    `CREATE TABLE IF NOT EXISTS ai_quiz_sessions (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      title VARCHAR(200) NOT NULL,
+      status VARCHAR(16) NOT NULL DEFAULT 'ready',
+      setup JSONB NOT NULL,
+      questions JSONB NOT NULL DEFAULT '[]'::JSONB,
+      answers JSONB NOT NULL DEFAULT '[]'::JSONB,
+      report JSONB,
+      time_taken_sec INTEGER,
+      created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+      submitted_at TIMESTAMP
+    )`,
+    `CREATE INDEX IF NOT EXISTS ai_quiz_user_idx ON ai_quiz_sessions (user_id, created_at)`,
+
+    // AI Tutor (T006)
+    `CREATE TABLE IF NOT EXISTS ai_tutor_conversations (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      title VARCHAR(200) NOT NULL DEFAULT 'Yeni Sohbet',
+      focus_area VARCHAR(60),
+      archived BOOLEAN NOT NULL DEFAULT false,
+      created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+      last_message_at TIMESTAMP NOT NULL DEFAULT NOW()
+    )`,
+    `CREATE INDEX IF NOT EXISTS ai_tutor_convo_user_idx ON ai_tutor_conversations (user_id, last_message_at)`,
+    `CREATE TABLE IF NOT EXISTS ai_tutor_messages (
+      id SERIAL PRIMARY KEY,
+      conversation_id INTEGER NOT NULL REFERENCES ai_tutor_conversations(id) ON DELETE CASCADE,
+      role VARCHAR(16) NOT NULL,
+      content TEXT NOT NULL,
+      meta JSONB,
+      created_at TIMESTAMP NOT NULL DEFAULT NOW()
+    )`,
+    `CREATE INDEX IF NOT EXISTS ai_tutor_msg_convo_idx ON ai_tutor_messages (conversation_id, created_at)`,
+    `CREATE TABLE IF NOT EXISTS ai_tutor_memory (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      facts JSONB NOT NULL DEFAULT '[]'::JSONB,
+      updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+    )`,
+    `CREATE INDEX IF NOT EXISTS ai_tutor_memory_user_idx ON ai_tutor_memory (user_id)`,
+
+    // Learning Paths (T007)
+    `CREATE TABLE IF NOT EXISTS learning_paths (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      title VARCHAR(200) NOT NULL DEFAULT 'Kişisel Öğrenme Yolun',
+      cefr_at_generation VARCHAR(8),
+      is_active BOOLEAN NOT NULL DEFAULT true,
+      plan JSONB NOT NULL,
+      progress JSONB NOT NULL DEFAULT '{}'::JSONB,
+      created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+    )`,
+    `CREATE INDEX IF NOT EXISTS learning_paths_user_idx ON learning_paths (user_id, is_active)`,
   ];
   for (const sql of migrations) {
     try {
