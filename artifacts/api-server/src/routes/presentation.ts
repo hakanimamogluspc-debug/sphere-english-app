@@ -13,7 +13,7 @@ import {
   type PresentationQATurn,
   type PresentationReport,
 } from "@workspace/db/schema";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 import { authMiddleware } from "../middlewares/auth.js";
 
 const execFileAsync = promisify(execFile);
@@ -608,6 +608,55 @@ router.get("/presentation/audiences", authMiddleware, async (_req: Request, res:
       bio: p.persona.split(".")[0] + ".",
     })),
   });
+});
+
+// GET /presentation/active — currently in-progress session (recording or qa)
+router.get("/presentation/active", authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).userId as number;
+    const rows = await db
+      .select()
+      .from(presentationSessionsTable)
+      .where(eq(presentationSessionsTable.userId, userId))
+      .orderBy(desc(presentationSessionsTable.createdAt))
+      .limit(5);
+    const active = rows.find((r) => r.status === "recording" || r.status === "qa") || null;
+    if (!active) return res.json({ session: null });
+    const profile = AUDIENCE_PROFILES[active.setup.audienceType] || AUDIENCE_PROFILES.team;
+    return res.json({
+      session: active,
+      questionerName: profile.questionerName,
+      questionerRole: profile.questionerRole,
+    });
+  } catch (err: any) {
+    console.error("Get active presentation error:", err?.message || err);
+    return res.status(500).json({ error: "Aktif sunum alınamadı." });
+  }
+});
+
+// POST /presentation/:id/abandon — abandon a running session
+router.post("/presentation/:id/abandon", authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).userId as number;
+    const id = parseInt(req.params.id, 10);
+    if (!Number.isFinite(id)) return res.status(400).json({ error: "Geçersiz id." });
+    const result = await db
+      .update(presentationSessionsTable)
+      .set({ status: "abandoned", updatedAt: new Date() })
+      .where(and(
+        eq(presentationSessionsTable.id, id),
+        eq(presentationSessionsTable.userId, userId),
+        inArray(presentationSessionsTable.status, ["recording", "qa"]),
+      ))
+      .returning({ id: presentationSessionsTable.id });
+    if (result.length === 0) {
+      return res.status(404).json({ error: "İptal edilecek aktif sunum bulunamadı." });
+    }
+    return res.json({ ok: true });
+  } catch (err: any) {
+    console.error("Abandon presentation error:", err?.message || err);
+    return res.status(500).json({ error: "Sunum iptal edilemedi." });
+  }
 });
 
 export default router;

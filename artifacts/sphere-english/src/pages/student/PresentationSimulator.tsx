@@ -174,6 +174,16 @@ export default function PresentationSimulator() {
   const [aiSpeaking, setAiSpeaking] = useState(false);
   const [ending, setEnding] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pendingResume, setPendingResume] = useState<{
+    sessionId: number;
+    topic: string;
+    status: string;
+    completedTurns: number;
+    targetQaTurns: number;
+    questionerName: string;
+    session: SessionRow;
+  } | null>(null);
+  const [resuming, setResuming] = useState(false);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -185,7 +195,78 @@ export default function PresentationSimulator() {
       .then((d) => setAudiences(d.audiences || []))
       .catch(() => {});
     refreshHistory();
+    // Resume support: check for an in-progress presentation
+    fetchAuth("/presentation/active")
+      .then((r) => (r.ok ? r.json() : { session: null }))
+      .then((d) => {
+        if (d?.session) {
+          const completed = (d.session.qaTurns || []).filter((t: QATurn) => t.candidateAnswer).length;
+          setPendingResume({
+            sessionId: d.session.id,
+            topic: d.session.setup?.topic || "",
+            status: d.session.status,
+            completedTurns: completed,
+            targetQaTurns: d.session.targetQaTurns,
+            questionerName: d.questionerName || "",
+            session: d.session,
+          });
+        }
+      })
+      .catch(() => {});
   }, []);
+
+  const handleResume = () => {
+    if (!pendingResume) return;
+    const s = pendingResume.session;
+    setSessionId(s.id);
+    setSetup({
+      topic: s.setup?.topic || "",
+      audienceType: s.setup?.audienceType || "team",
+      audienceTypeLabel: s.setup?.audienceTypeLabel || "",
+      goal: s.setup?.goal || "inform",
+      goalLabel: s.setup?.goalLabel || "Bilgilendirme",
+      toneStyle: s.setup?.toneStyle || "neutral",
+      durationTargetMin: s.setup?.durationTargetMin || 5,
+      contextNotes: s.setup?.contextNotes || "",
+      targetQaTurns: s.targetQaTurns,
+    });
+    setTargetQaTurns(s.targetQaTurns);
+    setQuestionerName(pendingResume.questionerName);
+    setQaTurns(s.qaTurns || []);
+    if (s.status === "recording") {
+      setStage("recording");
+    } else if (s.status === "qa") {
+      setPresentationTranscript(s.presentationTranscript || "");
+      const turns = s.qaTurns || [];
+      const lastUnanswered = turns.find((t) => !t.candidateAnswer);
+      const completed = turns.filter((t) => t.candidateAnswer).length;
+      if (lastUnanswered) {
+        setCurrentQuestion(lastUnanswered.question);
+        setQuestionerName(lastUnanswered.questionerName);
+        setQuestionerRole(lastUnanswered.questionerRole);
+      }
+      setCompletedTurns(completed);
+      setStage("qa");
+    }
+    setPendingResume(null);
+  };
+
+  const handleDiscardResume = async () => {
+    if (!pendingResume) return;
+    setResuming(true);
+    try {
+      const r = await fetchAuth(`/presentation/${pendingResume.sessionId}/abandon`, { method: "POST" });
+      if (!r.ok) {
+        const j = await r.json().catch(() => ({}));
+        throw new Error(j.error || "Sunum iptal edilemedi.");
+      }
+      setPendingResume(null);
+    } catch (e: any) {
+      setError(e?.message || "İptal edilemedi. Tekrar deneyin.");
+    } finally {
+      setResuming(false);
+    }
+  };
 
   const refreshHistory = () => {
     fetchAuth("/presentation/sessions")
@@ -441,6 +522,40 @@ export default function PresentationSimulator() {
         <div className="mb-4 bg-rose-50 border border-rose-200 rounded-xl p-3 text-sm text-rose-700 flex items-start gap-2">
           <XCircle size={16} className="shrink-0 mt-0.5" />
           {error}
+        </div>
+      )}
+
+      {pendingResume && (
+        <div className="mb-4 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
+          <div className="flex items-start gap-3">
+            <PlayCircle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold text-amber-900 text-sm">Yarım kalmış bir sunum var</p>
+              <p className="text-xs text-amber-800 mt-0.5">
+                {pendingResume.topic || "(başlıksız)"} —{" "}
+                {pendingResume.status === "recording"
+                  ? "henüz sunum yapılmadı"
+                  : `Q&A ${pendingResume.completedTurns}/${pendingResume.targetQaTurns}`}
+                {pendingResume.questionerName ? ` (${pendingResume.questionerName})` : ""}
+              </p>
+            </div>
+          </div>
+          <div className="flex gap-2 shrink-0">
+            <button
+              onClick={handleResume}
+              disabled={resuming}
+              className="px-3 py-2 rounded-lg bg-amber-600 text-white text-xs font-semibold hover:bg-amber-700 disabled:opacity-50"
+            >
+              Devam Et
+            </button>
+            <button
+              onClick={handleDiscardResume}
+              disabled={resuming}
+              className="px-3 py-2 rounded-lg bg-white border border-amber-300 text-amber-800 text-xs font-semibold hover:bg-amber-50 disabled:opacity-50"
+            >
+              {resuming ? "..." : "Yeni Başlat"}
+            </button>
+          </div>
         </div>
       )}
 

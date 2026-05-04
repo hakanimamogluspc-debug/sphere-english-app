@@ -19,6 +19,7 @@ import {
   FileText,
   Award,
   Target,
+  PlayCircle,
 } from "lucide-react";
 
 const TOKEN_KEY = "sphere_token";
@@ -115,13 +116,99 @@ export default function AIQuizGenerator() {
 
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [pendingResume, setPendingResume] = useState<{
+    sessionId: number;
+    title: string;
+    numQuestions: number;
+    level: string;
+    questions: AIQuestion[];
+    setup: AIQuizSetup;
+  } | null>(null);
+  const [resuming, setResuming] = useState(false);
   const startedAtRef = useRef<number | null>(null);
   const [elapsedSec, setElapsedSec] = useState(0);
   const tickRef = useRef<number | null>(null);
 
   useEffect(() => {
     refreshHistory();
+    // Resume support: check for an unsubmitted quiz
+    fetchAuth("/ai-quiz/active")
+      .then((r) => (r.ok ? r.json() : { session: null }))
+      .then((d) => {
+        if (d?.session) {
+          setPendingResume({
+            sessionId: d.session.id,
+            title: d.session.title,
+            numQuestions: d.session.questions?.length || 0,
+            level: d.session.setup?.level || "B1",
+            questions: d.session.questions || [],
+            setup: d.session.setup,
+          });
+        }
+      })
+      .catch(() => {});
   }, []);
+
+  const draftKey = (id: number) => `sphere_quiz_draft_${id}`;
+
+  const handleResume = () => {
+    if (!pendingResume) return;
+    setSessionId(pendingResume.sessionId);
+    setQuizTitle(pendingResume.title);
+    setQuestions(pendingResume.questions);
+    setLevel(pendingResume.setup.level);
+    setNumQuestions(pendingResume.setup.numQuestions);
+    setCategories(pendingResume.setup.categories);
+    setSourceMode(pendingResume.setup.sourceMode);
+    if (pendingResume.setup.topic) setTopic(pendingResume.setup.topic);
+    if (pendingResume.setup.sourceText) setSourceText(pendingResume.setup.sourceText);
+    // Restore draft answers/index from localStorage if present
+    let restoredAnswers: Record<string, string> = {};
+    let restoredIdx = 0;
+    try {
+      const raw = localStorage.getItem(draftKey(pendingResume.sessionId));
+      if (raw) {
+        const draft = JSON.parse(raw);
+        if (draft && typeof draft === "object") {
+          if (draft.answers && typeof draft.answers === "object") restoredAnswers = draft.answers;
+          if (typeof draft.currentIdx === "number") restoredIdx = draft.currentIdx;
+        }
+      }
+    } catch {}
+    setAnswers(restoredAnswers);
+    setCurrentIdx(restoredIdx);
+    setStage("taking");
+    setPendingResume(null);
+  };
+
+  const handleDiscardResume = async () => {
+    if (!pendingResume) return;
+    setResuming(true);
+    try {
+      const r = await fetchAuth(`/ai-quiz/${pendingResume.sessionId}/abandon`, { method: "POST" });
+      if (!r.ok) {
+        const j = await r.json().catch(() => ({}));
+        throw new Error(j.error || "Quiz iptal edilemedi.");
+      }
+      try { localStorage.removeItem(draftKey(pendingResume.sessionId)); } catch {}
+      setPendingResume(null);
+    } catch (e: any) {
+      setError(e?.message || "İptal edilemedi. Tekrar deneyin.");
+    } finally {
+      setResuming(false);
+    }
+  };
+
+  // Autosave draft (answers + currentIdx) while taking the quiz
+  useEffect(() => {
+    if (stage !== "taking" || !sessionId) return;
+    try {
+      localStorage.setItem(
+        draftKey(sessionId),
+        JSON.stringify({ answers, currentIdx, savedAt: Date.now() }),
+      );
+    } catch {}
+  }, [stage, sessionId, answers, currentIdx]);
 
   useEffect(() => {
     if (stage === "taking") {
@@ -220,6 +307,7 @@ export default function AIQuizGenerator() {
         throw new Error(j.error || "Quiz gönderilemedi.");
       }
       const data = await res.json();
+      try { localStorage.removeItem(draftKey(sessionId)); } catch {}
       setReport(data.report);
       setReportQuestions(data.questions);
       setReportAnswers(data.answers);
@@ -293,6 +381,36 @@ export default function AIQuizGenerator() {
           Geçmiş ({history.length})
         </button>
       </div>
+
+      {pendingResume && (
+        <div className="mb-4 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
+          <div className="flex items-start gap-3">
+            <PlayCircle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold text-amber-900 text-sm">Cevaplanmamış bir quiz var</p>
+              <p className="text-xs text-amber-800 mt-0.5">
+                "{pendingResume.title}" — {pendingResume.numQuestions} soru, seviye {pendingResume.level}
+              </p>
+            </div>
+          </div>
+          <div className="flex gap-2 shrink-0">
+            <button
+              onClick={handleResume}
+              disabled={resuming}
+              className="px-3 py-2 rounded-lg bg-amber-600 text-white text-xs font-semibold hover:bg-amber-700 disabled:opacity-50"
+            >
+              Quiz'e Devam Et
+            </button>
+            <button
+              onClick={handleDiscardResume}
+              disabled={resuming}
+              className="px-3 py-2 rounded-lg bg-white border border-amber-300 text-amber-800 text-xs font-semibold hover:bg-amber-50 disabled:opacity-50"
+            >
+              {resuming ? "..." : "Sil ve Yeni Yap"}
+            </button>
+          </div>
+        </div>
+      )}
 
       {error && (
         <div className="mb-4 bg-rose-50 border border-rose-200 rounded-xl p-3 text-sm text-rose-700 flex items-start gap-2">

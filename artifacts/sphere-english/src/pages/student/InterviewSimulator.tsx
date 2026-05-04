@@ -108,6 +108,46 @@ const HIRE_BADGE: Record<string, { label: string; color: string; bg: string }> =
   no_hire: { label: "İşe Alım Önerilmez", color: "#b91c1c", bg: "#fee2e2" },
 };
 
+// ── Resume banner (shared pattern) ──────────────────────────────────────────
+
+function ResumeBanner({
+  title, subtitle, loading, onResume, onDiscard,
+}: {
+  title: string;
+  subtitle: string;
+  loading: boolean;
+  onResume: () => void;
+  onDiscard: () => void;
+}) {
+  return (
+    <div className="mb-4 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
+      <div className="flex items-start gap-3">
+        <PlayCircle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+        <div>
+          <p className="font-semibold text-amber-900 text-sm">{title}</p>
+          <p className="text-xs text-amber-800 mt-0.5">{subtitle}</p>
+        </div>
+      </div>
+      <div className="flex gap-2 shrink-0">
+        <button
+          onClick={onResume}
+          disabled={loading}
+          className="px-3 py-2 rounded-lg bg-amber-600 text-white text-xs font-semibold hover:bg-amber-700 disabled:opacity-50"
+        >
+          Kaldığım Yerden Devam Et
+        </button>
+        <button
+          onClick={onDiscard}
+          disabled={loading}
+          className="px-3 py-2 rounded-lg bg-white border border-amber-300 text-amber-800 text-xs font-semibold hover:bg-amber-50 disabled:opacity-50"
+        >
+          {loading ? "..." : "Yeni Başlat"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 const fetchAuth = (path: string, init?: RequestInit) => {
@@ -158,6 +198,16 @@ export default function InterviewSimulator() {
   const [ending, setEnding] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [aiSpeaking, setAiSpeaking] = useState(false);
+  const [pendingResume, setPendingResume] = useState<{
+    sessionId: number;
+    targetRole: string;
+    questionsAsked: number;
+    targetQuestions: number;
+    interviewerName: string;
+    startedAt: string;
+    session: SessionRow & { transcript: Turn[]; currentPhase: string };
+  } | null>(null);
+  const [resuming, setResuming] = useState(false);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -174,7 +224,63 @@ export default function InterviewSimulator() {
       .then((r) => (r.ok ? r.json() : { sessions: [] }))
       .then((d) => setHistory(d.sessions || []))
       .catch(() => {});
+    // Resume support: check for an active interview server-side
+    fetchAuth("/interview/active")
+      .then((r) => (r.ok ? r.json() : { session: null }))
+      .then((d) => {
+        if (d?.session) {
+          setPendingResume({
+            sessionId: d.session.id,
+            targetRole: d.session.setup?.targetRole || "",
+            questionsAsked: d.session.questionsAsked,
+            targetQuestions: d.session.targetQuestions,
+            interviewerName: d.interviewerName || "",
+            startedAt: d.session.startedAt,
+            session: d.session,
+          });
+        }
+      })
+      .catch(() => {});
   }, []);
+
+  const handleResume = () => {
+    if (!pendingResume) return;
+    const s = pendingResume.session;
+    setSessionId(s.id);
+    setSetup({
+      targetRole: s.setup?.targetRole || "",
+      seniority: (s.setup?.seniority || "mid") as InterviewSetup["seniority"],
+      industry: s.setup?.industry || "Teknoloji",
+      interviewerStyle: s.setup?.interviewerStyle || "emma",
+      jobDescription: s.setup?.jobDescription || "",
+      resumeText: s.setup?.resumeText || "",
+      targetQuestions: s.targetQuestions,
+    });
+    setTranscript(s.transcript || []);
+    setQuestionsAsked(s.questionsAsked);
+    setTargetQuestions(s.targetQuestions);
+    setPhase(s.currentPhase || "intro");
+    setInterviewerName(pendingResume.interviewerName);
+    setStage("live");
+    setPendingResume(null);
+  };
+
+  const handleDiscardResume = async () => {
+    if (!pendingResume) return;
+    setResuming(true);
+    try {
+      const r = await fetchAuth(`/interview/${pendingResume.sessionId}/abandon`, { method: "POST" });
+      if (!r.ok) {
+        const j = await r.json().catch(() => ({}));
+        throw new Error(j.error || "Mülakat iptal edilemedi.");
+      }
+      setPendingResume(null);
+    } catch (e: any) {
+      setError(e?.message || "İptal edilemedi. Tekrar deneyin.");
+    } finally {
+      setResuming(false);
+    }
+  };
 
   useEffect(() => {
     if (transcriptScrollRef.current) {
@@ -397,6 +503,16 @@ export default function InterviewSimulator() {
           <XCircle size={16} className="shrink-0 mt-0.5" />
           {error}
         </div>
+      )}
+
+      {pendingResume && (
+        <ResumeBanner
+          title="Yarım kalmış bir mülakat var"
+          subtitle={`${pendingResume.targetRole || "Pozisyon"} — ${pendingResume.questionsAsked}/${pendingResume.targetQuestions} soru tamamlandı${pendingResume.interviewerName ? ` (${pendingResume.interviewerName} ile)` : ""}.`}
+          loading={resuming}
+          onResume={handleResume}
+          onDiscard={handleDiscardResume}
+        />
       )}
 
       {/* SETUP */}

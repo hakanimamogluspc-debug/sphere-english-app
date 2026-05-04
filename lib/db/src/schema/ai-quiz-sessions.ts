@@ -57,7 +57,7 @@ export const aiQuizSessionsTable = pgTable(
       .notNull()
       .references(() => usersTable.id, { onDelete: "cascade" }),
     title: varchar("title", { length: 200 }).notNull(),
-    status: varchar("status", { length: 16 }).notNull().default("ready"), // ready | submitted
+    status: varchar("status", { length: 16 }).notNull().default("ready"), // ready | submitted | abandoned
     setup: jsonb("setup").$type<AIQuizSetup>().notNull(),
     questions: jsonb("questions").$type<AIQuizQuestion[]>().notNull().default([]),
     answers: jsonb("answers").$type<AIQuizAnswer[]>().notNull().default([]),

@@ -534,6 +534,53 @@ router.get("/interview/sessions/:id", authMiddleware, async (req: Request, res: 
   }
 });
 
+// GET /interview/active — get the user's currently-active interview (resume support)
+router.get("/interview/active", authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).userId as number;
+    const [row] = await db
+      .select()
+      .from(interviewSessionsTable)
+      .where(and(eq(interviewSessionsTable.userId, userId), eq(interviewSessionsTable.status, "active")))
+      .orderBy(desc(interviewSessionsTable.createdAt))
+      .limit(1);
+    if (!row) return res.json({ session: null });
+    const styleKey = INTERVIEWER_STYLES[row.setup.interviewerStyle] ? row.setup.interviewerStyle : "emma";
+    return res.json({
+      session: row,
+      interviewerName: INTERVIEWER_STYLES[styleKey].name,
+    });
+  } catch (err: any) {
+    console.error("Get active interview error:", err?.message || err);
+    return res.status(500).json({ error: "Aktif mülakat alınamadı." });
+  }
+});
+
+// POST /interview/:id/abandon — mark active session as abandoned (user chose to start new)
+router.post("/interview/:id/abandon", authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).userId as number;
+    const id = parseInt(req.params.id, 10);
+    if (!Number.isFinite(id)) return res.status(400).json({ error: "Geçersiz id." });
+    const result = await db
+      .update(interviewSessionsTable)
+      .set({ status: "abandoned", updatedAt: new Date() })
+      .where(and(
+        eq(interviewSessionsTable.id, id),
+        eq(interviewSessionsTable.userId, userId),
+        eq(interviewSessionsTable.status, "active"),
+      ))
+      .returning({ id: interviewSessionsTable.id });
+    if (result.length === 0) {
+      return res.status(404).json({ error: "İptal edilecek aktif mülakat bulunamadı." });
+    }
+    return res.json({ ok: true });
+  } catch (err: any) {
+    console.error("Abandon interview error:", err?.message || err);
+    return res.status(500).json({ error: "Mülakat iptal edilemedi." });
+  }
+});
+
 // GET /interview/coaches — list available interviewer styles
 router.get("/interview/coaches", authMiddleware, async (_req: Request, res: Response) => {
   return res.json({

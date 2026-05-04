@@ -441,4 +441,60 @@ router.get("/ai-quiz/sessions/:id", authMiddleware, async (req: Request, res: Re
   }
 });
 
+// GET /ai-quiz/active — last unsubmitted ("ready") quiz the user can resume
+router.get("/ai-quiz/active", authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).userId as number;
+    const [row] = await db
+      .select()
+      .from(aiQuizSessionsTable)
+      .where(and(eq(aiQuizSessionsTable.userId, userId), eq(aiQuizSessionsTable.status, "ready")))
+      .orderBy(desc(aiQuizSessionsTable.createdAt))
+      .limit(1);
+    if (!row) return res.json({ session: null });
+    // Strip correct answers — same shape as generate response
+    const safeQuestions = row.questions.map((q) => ({
+      id: q.id, type: q.type, category: q.category,
+      prompt: q.prompt, context: q.context, options: q.options,
+    }));
+    return res.json({
+      session: {
+        id: row.id,
+        title: row.title,
+        setup: row.setup,
+        questions: safeQuestions,
+        createdAt: row.createdAt,
+      },
+    });
+  } catch (err: any) {
+    console.error("Get active ai-quiz error:", err?.message || err);
+    return res.status(500).json({ error: "Aktif quiz alınamadı." });
+  }
+});
+
+// POST /ai-quiz/:id/abandon — discard an unfinished quiz
+router.post("/ai-quiz/:id/abandon", authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).userId as number;
+    const id = parseInt(req.params.id, 10);
+    if (!Number.isFinite(id)) return res.status(400).json({ error: "Geçersiz id." });
+    const result = await db
+      .update(aiQuizSessionsTable)
+      .set({ status: "abandoned" })
+      .where(and(
+        eq(aiQuizSessionsTable.id, id),
+        eq(aiQuizSessionsTable.userId, userId),
+        eq(aiQuizSessionsTable.status, "ready"),
+      ))
+      .returning({ id: aiQuizSessionsTable.id });
+    if (result.length === 0) {
+      return res.status(404).json({ error: "İptal edilecek bekleyen quiz bulunamadı." });
+    }
+    return res.json({ ok: true });
+  } catch (err: any) {
+    console.error("Abandon ai-quiz error:", err?.message || err);
+    return res.status(500).json({ error: "Quiz iptal edilemedi." });
+  }
+});
+
 export default router;
