@@ -231,33 +231,91 @@ export default function AITutor() {
     setInput("");
     setSending(true);
 
+    // Streaming icin placeholder assistant mesaji ekle
+    const streamingId = -(Date.now() + 1);
+    const streamingMsg: ChatMessage = {
+      id: streamingId,
+      conversationId: convoId!,
+      role: "assistant",
+      content: "",
+      createdAt: new Date().toISOString(),
+    };
+    setMessages((prev) => [...prev, streamingMsg]);
+
     try {
-      const res = await fetchAuth(`/tutor/conversations/${convoId}/message`, {
+      const res = await fetchAuth(`/tutor/conversations/${convoId}/message-stream`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Accept: "text/event-stream" },
         body: JSON.stringify({ message: text }),
       });
-      if (!res.ok) {
+      if (!res.ok || !res.body) {
         const j = await res.json().catch(() => ({}));
-        throw new Error(j.error || "Cevap alınamadı.");
+        throw new Error(j.error || "Cevap alinamadi.");
       }
-      const data = await res.json();
-      setMessages((prev) =>
-        [...prev.filter((m) => m.id !== optimistic.id), data.userMessage, data.assistantMessage]
-      );
-      // Update sidebar title + last message
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let accumulated = "";
+      let doneData: any = null;
+      let streamErr: string | null = null;
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+
+        let sepIdx;
+        while ((sepIdx = buffer.indexOf("\n\n")) !== -1) {
+          const rawEvent = buffer.slice(0, sepIdx);
+          buffer = buffer.slice(sepIdx + 2);
+          if (!rawEvent.trim() || rawEvent.startsWith(":")) continue;
+
+          let evtName = "message";
+          let evtData = "";
+          for (const line of rawEvent.split(/\r?\n/)) {
+            if (line.startsWith("event: ")) evtName = line.slice(7).trim();
+            else if (line.startsWith("data: ")) evtData += line.slice(6);
+          }
+          if (!evtData) continue;
+
+          let parsed: any;
+          try { parsed = JSON.parse(evtData); } catch { continue; }
+
+          if (evtName === "chunk" && typeof parsed.text === "string") {
+            accumulated += parsed.text;
+            setMessages((prev) => prev.map((m) =>
+              m.id === streamingId ? { ...m, content: accumulated } : m
+            ));
+          } else if (evtName === "done") {
+            doneData = parsed;
+          } else if (evtName === "error") {
+            streamErr = parsed.message || "Akis hatasi";
+          }
+        }
+      }
+
+      if (streamErr) throw new Error(streamErr);
+      if (!doneData) throw new Error("Akis tamamlanmadan kesildi.");
+
+      setMessages((prev) => [
+        ...prev.filter((m) => m.id !== optimistic.id && m.id !== streamingId),
+        doneData.userMessage,
+        doneData.assistantMessage,
+      ]);
+
       setConversations((prev) =>
         prev.map((c) =>
           c.id === convoId
-            ? { ...c, title: data.conversationTitle || c.title, lastMessageAt: new Date().toISOString() }
+            ? { ...c, title: doneData.conversationTitle || c.title, lastMessageAt: new Date().toISOString() }
             : c,
         ),
       );
-      // Refresh memory after a short delay (background facts may be added)
+
       setTimeout(() => refreshMemory(), 1500);
     } catch (e: any) {
       setError(e?.message || "Hata");
-      setMessages((prev) => prev.filter((m) => m.id !== optimistic.id));
+      setMessages((prev) => prev.filter((m) => m.id !== optimistic.id && m.id !== streamingId));
       setInput(text);
     } finally {
       setSending(false);

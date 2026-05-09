@@ -287,6 +287,125 @@ router.post("/tutor/conversations/:id/message", authMiddleware, async (req: Requ
   }
 });
 
+
+// POST /tutor/conversations/:id/message-stream — streaming SSE version
+// Avantaj: kullanici cevabi kelime kelime gorur, algilanan hiz cok artar.
+router.post("/tutor/conversations/:id/message-stream", authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).userId as number;
+    const convoId = parseInt(req.params.id, 10);
+    if (!Number.isFinite(convoId)) return res.status(400).json({ error: "Gecersiz id." });
+    const userMessage = String(req.body?.message || "").slice(0, 4000).trim();
+    if (!userMessage) return res.status(400).json({ error: "Mesaj bos olamaz." });
+
+    const [convo] = await db
+      .select()
+      .from(aiTutorConversationsTable)
+      .where(and(eq(aiTutorConversationsTable.id, convoId), eq(aiTutorConversationsTable.userId, userId)))
+      .limit(1);
+    if (!convo) return res.status(404).json({ error: "Sohbet bulunamadi." });
+
+    const [savedUserMsg] = await db
+      .insert(aiTutorMessagesTable)
+      .values({ conversationId: convoId, role: "user", content: userMessage })
+      .returning();
+
+    const memory = await getOrCreateMemory(userId);
+    const userContext = await getUserContext(userId);
+    const sysPrompt = buildSystemPrompt({ focusArea: convo.focusArea || "free", facts: memory.facts, userContext });
+
+    const recentDesc = await db
+      .select()
+      .from(aiTutorMessagesTable)
+      .where(eq(aiTutorMessagesTable.conversationId, convoId))
+      .orderBy(desc(aiTutorMessagesTable.createdAt))
+      .limit(20);
+    const trimmed = recentDesc.slice().reverse();
+    const messages: any[] = [
+      { role: "system", content: sysPrompt },
+      ...trimmed.map((m) => ({ role: m.role, content: m.content })),
+    ];
+
+    // SSE headers
+    res.setHeader("Content-Type", "text/event-stream");
+    res.setHeader("Cache-Control", "no-cache, no-transform");
+    res.setHeader("Connection", "keep-alive");
+    res.setHeader("X-Accel-Buffering", "no");
+    res.flushHeaders?.();
+
+    const send = (event: string, data: any) => {
+      res.write(`event: ${event}\n`);
+      res.write(`data: ${JSON.stringify(data)}\n\n`);
+    };
+
+    // Heartbeat every 15s to keep connection alive through proxies
+    const heartbeat = setInterval(() => {
+      try { res.write(": ping\n\n"); } catch { /* ignore */ }
+    }, 15000);
+
+    let fullText = "";
+    try {
+      const stream = await getOpenAI().chat.completions.create({
+        model: "gpt-4o-mini",
+        messages,
+        temperature: 0.7,
+        max_tokens: 700,
+        stream: true,
+      });
+
+      for await (const chunk of stream as any) {
+        const delta = chunk?.choices?.[0]?.delta?.content;
+        if (typeof delta === "string" && delta.length > 0) {
+          fullText += delta;
+          send("chunk", { text: delta });
+        }
+      }
+    } catch (streamErr: any) {
+      send("error", { message: streamErr?.message || "Akis hatasi" });
+      clearInterval(heartbeat);
+      res.end();
+      return;
+    }
+
+    const replyText = fullText.trim() || "(cevap uretilemedi)";
+
+    const [savedAssistantMsg] = await db
+      .insert(aiTutorMessagesTable)
+      .values({ conversationId: convoId, role: "assistant", content: replyText, meta: null })
+      .returning();
+
+    let newTitle = convo.title;
+    if (convo.title === "Yeni Sohbet") {
+      const words = userMessage.split(/\s+/).slice(0, 7).join(" ");
+      newTitle = words.length > 0 ? words.slice(0, 60) : "Yeni Sohbet";
+    }
+    await db
+      .update(aiTutorConversationsTable)
+      .set({ lastMessageAt: new Date(), title: newTitle })
+      .where(eq(aiTutorConversationsTable.id, convoId));
+
+    extractAndStoreFacts(userId, userMessage, replyText).catch((err) => {
+      console.warn("memory extraction failed:", err?.message || err);
+    });
+
+    send("done", {
+      userMessage: savedUserMsg,
+      assistantMessage: savedAssistantMsg,
+      conversationTitle: newTitle,
+    });
+
+    clearInterval(heartbeat);
+    res.end();
+  } catch (err: any) {
+    console.error("Tutor stream error:", err?.message || err);
+    if (!res.headersSent) {
+      res.status(500).json({ error: "Mesaj gonderilemedi." });
+    } else {
+      try { res.end(); } catch { /* ignore */ }
+    }
+  }
+});
+
 // GET /tutor/memory
 router.get("/tutor/memory", authMiddleware, async (req: Request, res: Response) => {
   try {
