@@ -1018,10 +1018,15 @@ export default function PronunciationCoach() {
         const matchTeacher = TEACHERS.find((t) => t.name === data.assessment.teacherName) || TEACHERS[0];
         setTeacher(matchTeacher);
         setAssessment(data.assessment as Assessment);
+        // Bildirimden gelen viewde detayli hata listesi DBde tutulmuyor (raw_metrics'te sayilar var).
+        // SessionReport icin minimum gerekli alanlari dolduruyoruz, detay listeleri bos.
         setSessionReport({
-          durationSec: data.assessment.durationSeconds || 0,
+          duration: data.assessment.durationSeconds || 0,
           messageCount: data.assessment.messageCount || 0,
-          avgWordScore: data.assessment.avgScore || 0,
+          avgScore: data.assessment.avgScore || 0,
+          grammarErrors: [],
+          vocabSuggestions: [],
+          pronunciationTips: [],
         });
         setScreen("report");
       } catch (e: any) {
