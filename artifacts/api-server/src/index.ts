@@ -17,7 +17,10 @@ async function runStartupMigrations() {
   const migrations = [
     `ALTER TABLE users ADD COLUMN IF NOT EXISTS student_number VARCHAR(20)`,
     `ALTER TABLE quizzes ADD COLUMN IF NOT EXISTS level VARCHAR(10)`,
-    `UPDATE users SET role = 'admin' WHERE email = 'hakanimamogluspc@gmail.com' AND role != 'admin'`,
+    // GÜVENLİK: Hardcoded e-posta ile otomatik admin yükseltme kaldırıldı.
+    // Eski davranış: belirli bir e-postayla kayıt olan kullanıcı otomatik admin oluyordu —
+    // saldırgan o e-postayla kayıt olarak yetki yükseltebilirdi.
+    // Admin'leri SEED_ADMIN_EMAIL ortam değişkeniyle ata (aşağıda promoteAdminFromEnv).
     // Modül yönetimi tablosu
     `CREATE TABLE IF NOT EXISTS feature_settings (
       id SERIAL PRIMARY KEY,
@@ -368,6 +371,26 @@ async function runStartupMigrations() {
   }
 }
 
+// ── Admin promotion (env-controlled, opt-in) ─────────────────────────────────
+// Belirli bir kullanıcıyı admin yapmak için SEED_ADMIN_EMAIL'i ayarla.
+// Hardcoded fallback yok — env yoksa bu fonksiyon hiçbir şey yapmaz.
+// Yalnızca daha önce kayıt olmuş bir kullanıcıyı yükseltir; kayıt etmez.
+async function promoteAdminFromEnv() {
+  const email = process.env.SEED_ADMIN_EMAIL?.trim().toLowerCase();
+  if (!email) return;
+  try {
+    const result = await pool.query(
+      `UPDATE users SET role = 'admin' WHERE email = $1 AND role != 'admin' RETURNING id`,
+      [email]
+    );
+    if (result.rowCount && result.rowCount > 0) {
+      logger.info({ email }, "Admin role assigned from SEED_ADMIN_EMAIL");
+    }
+  } catch (err: any) {
+    logger.warn({ err: err.message, email }, "Admin promotion skipped");
+  }
+}
+
 async function seedVocabWords() {
   try {
     const { rows } = await pool.query("SELECT COUNT(*) as count FROM vocab_words");
@@ -400,6 +423,7 @@ if (cluster.isPrimary) {
   runStartupMigrations()
     .then(() => seedDatabase())
     .then(() => seedVocabWords())
+    .then(() => promoteAdminFromEnv())
     .then(() => {
       const numWorkers = Math.max(1, Math.min(os.cpus().length, 8));
       logger.info({ workers: numWorkers, cpus: os.cpus().length }, "Cluster başlatılıyor");

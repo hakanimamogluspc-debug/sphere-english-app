@@ -1,18 +1,33 @@
 import { Router } from "express";
 import bcrypt from "bcryptjs";
+import { z } from "zod";
 import { db, usersTable, companiesTable } from "@workspace/db";
 import { eq, and, count, sql } from "drizzle-orm";
 import { authMiddleware, generateToken, type AuthRequest } from "../middlewares/auth.js";
 import { sendMetaEvent } from "../services/metaConversions.js";
+import { validateBody, schemas } from "../middlewares/validate.js";
 
 const router = Router();
 
-router.post("/auth/login", async (req, res) => {
+// ─── Zod şemaları ────────────────────────────────────────────────────────────
+const loginSchema = z.object({
+  email: schemas.email,
+  password: z.string().min(1, "Parola gerekli"),
+});
+
+const registerSchema = z.object({
+  email: schemas.email,
+  password: schemas.password,
+  firstName: z.string().trim().min(1, "Ad gerekli").max(100),
+  lastName: z.string().trim().min(1, "Soyad gerekli").max(100),
+  role: z.enum(["student", "corporate"]).optional(),
+  phone: z.string().trim().max(40).optional().or(z.literal("")),
+  companyCode: z.string().trim().max(50).optional().or(z.literal("")),
+  accountType: z.enum(["bireysel", "kurumsal"]).optional(),
+});
+
+router.post("/auth/login", validateBody(loginSchema), async (req, res) => {
   const { email, password } = req.body;
-  if (!email || !password) {
-    res.status(400).json({ error: "Email and password are required" });
-    return;
-  }
 
   const [user] = await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase())).limit(1);
   if (!user) {
@@ -55,12 +70,8 @@ router.post("/auth/login", async (req, res) => {
   res.json({ user: { ...userWithoutPassword, company: companyInfo }, token });
 });
 
-router.post("/auth/register", async (req, res) => {
+router.post("/auth/register", validateBody(registerSchema), async (req, res) => {
   const { email, password, firstName, lastName, role, phone, companyCode, accountType } = req.body;
-  if (!email || !password || !firstName || !lastName) {
-    res.status(400).json({ error: "Zorunlu alanlar eksik" });
-    return;
-  }
 
   const isBireysel = accountType === "bireysel";
   const assignedRole = role === "corporate" ? "corporate" : "student";

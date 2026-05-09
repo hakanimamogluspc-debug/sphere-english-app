@@ -10,6 +10,7 @@ import rateLimit from "express-rate-limit";
 import router from "./routes";
 import webhooksRouter from "./routes/webhooks";
 import { logger } from "./lib/logger";
+import { errorHandler, notFoundHandler } from "./middlewares/error-handler.js";
 
 const app: Express = express();
 
@@ -210,5 +211,11 @@ if (fs.existsSync(staticDir)) {
   });
   logger.info({ staticDir }, "Serving static frontend files");
 }
+
+// ─── Hata yönetimi — diğer tüm middleware'lerden SONRA gelmeli ───────────────
+// /api/* eşleşmeyenler için 404
+app.use("/api", notFoundHandler);
+// Her türlü async/sync hata bu noktada yakalanır
+app.use(errorHandler);
 
 export default app;

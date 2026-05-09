@@ -1,7 +1,19 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 
-const JWT_SECRET = process.env.JWT_SECRET || "sphere-english-secret-key-2024";
+// JWT_SECRET zorunludur. Geliştirme veya üretim için ortam değişkeni olarak ayarlanmalı.
+// Hardcoded fallback yok — eksikse uygulama başlamasın (saldırı yüzeyini önlemek için).
+function loadJwtSecret(): string {
+  const s = process.env.JWT_SECRET;
+  if (!s || s.length < 32) {
+    throw new Error(
+      "JWT_SECRET ortam değişkeni gerekli (en az 32 karakter). " +
+      "Yeni bir secret üretmek için: `openssl rand -base64 48` veya `node -e \"console.log(require('crypto').randomBytes(48).toString('base64'))\"`"
+    );
+  }
+  return s;
+}
+const JWT_SECRET: string = loadJwtSecret();
 
 export interface AuthRequest extends Request {
   userId?: number;
