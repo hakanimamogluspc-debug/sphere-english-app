@@ -992,6 +992,48 @@ export default function PronunciationCoach() {
   // F5 / sekme kapatma uyarisi: aktif sohbet sirasinda veriyi koruyalim
   useBeforeUnload(screen === "chat" && messages.length > 0);
 
+  // Bildirimden gelen ?assessment=ID varsa direkt o raporu ac
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const assessmentId = params.get("assessment");
+    if (!assessmentId) return;
+
+    let cancelled = false;
+    (async () => {
+      try {
+        setAssessmentLoading(true);
+        setAssessmentError(null);
+        const token = localStorage.getItem(TOKEN_KEY);
+        const base = import.meta.env.BASE_URL.replace(/\/$/, "").replace("/sphere-english", "/api-server");
+        const res = await fetch(`${base}/api/pronunciation/assessments/${assessmentId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) {
+          const j = await res.json().catch(() => ({}));
+          throw new Error(j.error || "Rapor alinamadi");
+        }
+        const data = await res.json();
+        if (cancelled) return;
+        // Try to find matching teacher by name; fallback to first
+        const matchTeacher = TEACHERS.find((t) => t.name === data.assessment.teacherName) || TEACHERS[0];
+        setTeacher(matchTeacher);
+        setAssessment(data.assessment as Assessment);
+        setSessionReport({
+          durationSec: data.assessment.durationSeconds || 0,
+          messageCount: data.assessment.messageCount || 0,
+          avgWordScore: data.assessment.avgScore || 0,
+        });
+        setScreen("report");
+      } catch (e: any) {
+        if (!cancelled) setAssessmentError(e?.message || "Rapor yuklenemedi");
+      } finally {
+        if (!cancelled) setAssessmentLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const streamRef = useRef<MediaStream | null>(null);

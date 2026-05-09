@@ -225,7 +225,7 @@ export async function notifyNewAssessment(
       payload.aiSummary && payload.aiSummary.length > 0
         ? `${payload.teacherName} ile yaptığın seansın değerlendirmesi hazır. ${payload.aiSummary}`
         : `${payload.teacherName} ile yaptığın seansın detaylı CEFR raporu hazır. Güçlü yönlerini ve geliştirmen gereken alanları görmek için raporu aç.`,
-    actionUrl: "https://app.sphereenglish.com/student/pronunciation-coach",
+    actionUrl: `https://app.sphereenglish.com/student/pronunciation-coach?assessment=${payload.assessmentId}`,
     iconKind: "award",
     priority: "normal",
     metadata: { assessmentId: payload.assessmentId, cefr: payload.cefr },
