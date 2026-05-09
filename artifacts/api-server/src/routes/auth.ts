@@ -53,7 +53,7 @@ router.post("/auth/login", validateBody(loginSchema), async (req, res) => {
   res.cookie("sphere_token", token, {
     httpOnly: true,
     sameSite: "lax",
-    maxAge: 7 * 24 * 60 * 60 * 1000,
+    maxAge: 30 * 24 * 60 * 60 * 1000,
     secure: process.env.NODE_ENV === "production",
   });
 
@@ -109,7 +109,7 @@ router.post("/auth/register", validateBody(registerSchema), async (req, res) => 
     res.cookie("sphere_token", token, {
       httpOnly: true,
       sameSite: "lax",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
+      maxAge: 30 * 24 * 60 * 60 * 1000,
       secure: process.env.NODE_ENV === "production",
     });
 
@@ -200,7 +200,7 @@ router.post("/auth/register", validateBody(registerSchema), async (req, res) => 
   res.cookie("sphere_token", token, {
     httpOnly: true,
     sameSite: "lax",
-    maxAge: 7 * 24 * 60 * 60 * 1000,
+    maxAge: 30 * 24 * 60 * 60 * 1000,
     secure: process.env.NODE_ENV === "production",
   });
 
