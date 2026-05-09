@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Mic, MicOff, Volume2, ChevronLeft, ChevronDown, ChevronUp, AlertCircle, BookOpen, Mic2, RotateCcw, Languages, PhoneOff, Award, Clock, MessageSquare, TrendingUp, CheckCircle2, Sparkles, Target, Zap, Loader2, History } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useBeforeUnload } from "@/hooks/use-before-unload";
 
 const TOKEN_KEY = "sphere_token";
 
@@ -987,6 +988,9 @@ export default function PronunciationCoach() {
   const [assessmentLoading, setAssessmentLoading] = useState(false);
   const [assessmentError, setAssessmentError] = useState<string | null>(null);
   const lastSessionMessagesRef = useRef<Message[]>([]);
+
+  // F5 / sekme kapatma uyarisi: aktif sohbet sirasinda veriyi koruyalim
+  useBeforeUnload(screen === "chat" && messages.length > 0);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
