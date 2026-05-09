@@ -129,7 +129,7 @@ Rules:
         { role: "user", content: `Generate the quiz now.` },
       ],
       temperature: 0.5,
-      max_tokens: 4000,
+      max_tokens: 2500,
       response_format: { type: "json_object" },
     });
 

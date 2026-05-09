@@ -206,7 +206,7 @@ Return STRICT JSON (no markdown):
         { role: "user", content: "Generate the personalized 4-week plan now." },
       ],
       temperature: 0.5,
-      max_tokens: 3500,
+      max_tokens: 2500,
       response_format: { type: "json_object" },
     });
 

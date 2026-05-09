@@ -419,7 +419,7 @@ Respond in valid JSON:
       model: "gpt-4o-mini",
       messages: [{ role: "user", content: prompt }],
       response_format: { type: "json_object" },
-      max_tokens: 1800,
+      max_tokens: 1200,
     });
 
     const data = JSON.parse(completion.choices[0].message.content || "{}");
