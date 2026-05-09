@@ -47,3 +47,17 @@ Thumbs.db
 # Replit
 .cache/
 .local/
+
+# Environment variables — secrets, NEVER commit
+.env
+.env.local
+.env.*.local
+.env.development
+.env.production
+.env.test
+
+# Build/test artefacts
+test-results/
+playwright-report/
+.turbo/
+*.log

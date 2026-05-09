@@ -34,7 +34,8 @@
     "pdfmake": "^0.3.7",
     "pino": "^9",
     "pino-http": "^10",
-    "resend": "^6.10.0"
+    "resend": "^6.10.0",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@types/bcrypt": "^6.0.0",
