@@ -9,6 +9,7 @@ import { API } from "@/lib/api-url";
 import { DashboardLayout } from "./components/layout/DashboardLayout";
 import { SubscriptionProvider } from "./lib/subscription-context";
 import { withProGate } from "./components/subscription/ProGate";
+import ErrorBoundary from "./components/ErrorBoundary";
 
 // ─── Lazy-loaded pages — bundle başına bir chunk, ilk yüklemeyi hızlandırır ──
 const NotFound        = lazy(() => import("@/pages/not-found"));
@@ -273,20 +274,22 @@ function HeartbeatProvider({ children }: { children: ReactNode }) {
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-          <AuthProvider>
-            <SubscriptionProvider>
-              <HeartbeatProvider>
-                <Router />
-              </HeartbeatProvider>
-            </SubscriptionProvider>
-          </AuthProvider>
-        </WouterRouter>
-        <Toaster />
-      </TooltipProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+            <AuthProvider>
+              <SubscriptionProvider>
+                <HeartbeatProvider>
+                  <Router />
+                </HeartbeatProvider>
+              </SubscriptionProvider>
+            </AuthProvider>
+          </WouterRouter>
+          <Toaster />
+        </TooltipProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
 

@@ -81,5 +81,6 @@ export function requireRole(...roles: string[]) {
 }
 
 export function generateToken(userId: number, role: string, accountType?: string | null): string {
-  return jwt.sign({ userId, role, ...(accountType ? { accountType } : {}) }, JWT_SECRET, { expiresIn: "7d" });
+  // 30 gün: kullanıcılar uzun süre tekrar login olmak zorunda kalmasın.
+  return jwt.sign({ userId, role, ...(accountType ? { accountType } : {}) }, JWT_SECRET, { expiresIn: "30d" });
 }
