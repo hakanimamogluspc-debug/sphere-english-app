@@ -32,6 +32,7 @@ const AdminLiveClasses    = lazy(() => import("./pages/admin/AdminLiveClasses"))
 const AdminMaterials      = lazy(() => import("./pages/admin/AdminMaterials"));
 const AdminSpeakingClub   = lazy(() => import("./pages/admin/SpeakingClub"));
 const AdminMarketing      = lazy(() => import("./pages/admin/Marketing"));
+const AdminOutreach       = lazy(() => import("./pages/admin/Outreach"));
 const MebReport           = lazy(() => import("./pages/admin/MebReport"));
 const AdminModules        = lazy(() => import("./pages/admin/AdminModules"));
 const AdminSubscriptions  = lazy(() => import("./pages/admin/AdminSubscriptions"));
@@ -228,6 +229,7 @@ function Router() {
         <Route path="/admin/reports"><LayoutWrapper component={ProgressPage} allowedRoles={['admin']} /></Route>
         <Route path="/admin/meb-report"><LayoutWrapper component={MebReport} allowedRoles={['admin']} /></Route>
         <Route path="/admin/marketing"><LayoutWrapper component={AdminMarketing} allowedRoles={['admin']} /></Route>
+        <Route path="/admin/outreach"><LayoutWrapper component={AdminOutreach} allowedRoles={['admin']} /></Route>
         <Route path="/admin/modules"><LayoutWrapper component={AdminModules} allowedRoles={['admin']} /></Route>
         <Route path="/admin/subscriptions"><LayoutWrapper component={AdminSubscriptions} allowedRoles={['admin']} /></Route>
 

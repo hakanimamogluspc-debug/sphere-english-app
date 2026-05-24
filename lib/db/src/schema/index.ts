@@ -10,6 +10,7 @@ export * from "./speaking-clubs";
 export * from "./forum";
 export * from "./materials";
 export * from "./marketing";
+export * from "./outreach";
 export * from "./activity-logs";
 export * from "./feature-settings";
 export * from "./vocab-game";
