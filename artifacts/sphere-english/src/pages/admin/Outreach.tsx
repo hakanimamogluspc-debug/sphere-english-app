@@ -4,17 +4,13 @@ import {
   Filter, AlertCircle, TrendingUp, Mail, MailCheck, MailX, Play, ShieldCheck,
   Trash2, Tag, Building2, MapPin, ChevronLeft, ChevronRight, Sparkles,
 } from "lucide-react";
+import { API } from "@/lib/api-url";
 
 const TOKEN_KEY = "sphere_token";
 
-function getApiBase() {
-  const base = import.meta.env.BASE_URL.replace(/\/$/, "");
-  return base.replace("/sphere-english", "/api-server");
-}
-
 async function apiFetch(path: string, opts?: RequestInit) {
   const token = localStorage.getItem(TOKEN_KEY);
-  const res = await fetch(`${getApiBase()}${path}`, {
+  const res = await fetch(`${API}${path}`, {
     ...opts,
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}`, ...(opts?.headers || {}) },
   });
@@ -270,7 +266,7 @@ export default function Outreach() {
     if (status) params.set("status", status);
     if (emailStatus) params.set("emailStatus", emailStatus);
     // Token query string'de güvensiz — header'la indirme için bir blob fetch yap
-    fetch(`${getApiBase()}/admin/outreach/export.csv?${params.toString()}`, {
+    fetch(`${API}/admin/outreach/export.csv?${params.toString()}`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((r) => r.blob())
