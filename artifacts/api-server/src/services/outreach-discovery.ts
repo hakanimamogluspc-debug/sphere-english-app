@@ -161,16 +161,38 @@ function extractDomain(url: string | undefined): string | undefined {
   }
 }
 
-function pickEmail(emails: string[] | undefined, fallback?: string): string | undefined {
-  const candidates = [...(emails ?? [])];
-  if (fallback) candidates.push(fallback);
+/**
+ * Email değeri string veya {value: "..."} / {email: "..."} / {address: "..."} object olabilir.
+ * Apify aktörlerine göre format değişir.
+ */
+function coerceToEmailString(v: unknown): string | undefined {
+  if (typeof v === "string") return v;
+  if (v && typeof v === "object") {
+    const obj = v as Record<string, unknown>;
+    const candidates = [obj.value, obj.email, obj.address, obj.emailAddress];
+    for (const c of candidates) {
+      if (typeof c === "string") return c;
+    }
+  }
+  return undefined;
+}
+
+function pickEmail(emails: unknown, fallback?: unknown): string | undefined {
+  const arr = Array.isArray(emails) ? emails : [];
+  const fallbackStr = coerceToEmailString(fallback);
+
+  const stringEmails = arr
+    .map((e) => coerceToEmailString(e))
+    .filter((e): e is string => !!e);
+  if (fallbackStr) stringEmails.push(fallbackStr);
+
   // Generic mailbox'ları tercih etme — kişisel olanları öne al
-  const sorted = candidates
-    .map((e) => e?.trim().toLowerCase())
-    .filter((e): e is string => !!e && EMAIL_REGEX.test(e))
+  const sorted = stringEmails
+    .map((e) => e.trim().toLowerCase())
+    .filter((e) => EMAIL_REGEX.test(e))
     .sort((a, b) => {
-      const aGeneric = /^(info|contact|hello|support|admin|sales)@/.test(a) ? 1 : 0;
-      const bGeneric = /^(info|contact|hello|support|admin|sales)@/.test(b) ? 1 : 0;
+      const aGeneric = /^(info|contact|hello|support|admin|sales|hr|kariyer)@/.test(a) ? 1 : 0;
+      const bGeneric = /^(info|contact|hello|support|admin|sales|hr|kariyer)@/.test(b) ? 1 : 0;
       return aGeneric - bGeneric;
     });
   return sorted[0];
