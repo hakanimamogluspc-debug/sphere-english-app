@@ -23,23 +23,43 @@ import { ApifyClient, getApifyClient } from "./apify-client.js";
 
 // ─── Tipler ───────────────────────────────────────────────────────────────
 type LinkedInPersonRaw = {
+  // İsim (farklı aktörler farklı alan adları kullanır)
   fullName?: string;
   firstName?: string;
   lastName?: string;
+  name?: string | { first?: string; last?: string; full?: string };
+
+  // Pozisyon
   headline?: string;
   jobTitle?: string;
   position?: string;
+  title?: string;
+  currentPosition?: { title?: string; company?: string; companyUrl?: string };
+
+  // LinkedIn URL
   publicIdentifier?: string;
   profileUrl?: string;
   url?: string;
   linkedinUrl?: string;
+
+  // Email (harvestapi 'Full + email search' modunda)
   email?: string;
   emails?: string[];
-  location?: string;
+  emailAddress?: string;
+
+  // Lokasyon
+  location?: string | { name?: string; country?: string };
   geoLocationName?: string;
+  locationName?: string;
+
+  // Şirket
   companyName?: string;
-  currentCompany?: { name?: string; industry?: string; website?: string };
+  company?: string | { name?: string; industry?: string; website?: string; url?: string };
+  currentCompany?: { name?: string; industry?: string; website?: string; url?: string };
   companyUrl?: string;
+  companyWebsite?: string;
+
+  // Diğer
   industry?: string;
   seniority?: string;
 };
@@ -75,37 +95,42 @@ export const SEGMENT_CONFIGS: Record<
   }
 > = {
   b2b_hr: {
-    actorId: "apimaestro/linkedin-profile-search",
+    actorId: "harvestapi/linkedin-profile-search",
     parser: "linkedin_people",
     description: "Türkiye'deki İK / Eğitim / L&D müdürleri",
     buildInput: (limit) => ({
-      keyword: '"İnsan Kaynakları" OR "Human Resources" OR "L&D" OR "Eğitim Müdürü"',
-      location: "Turkey",
-      currentJobTitles: ["HR Manager", "İK Müdürü", "Training Manager", "L&D Manager", "Eğitim Müdürü"],
-      maxResults: limit,
+      profileScraperMode: "Full + email search",
+      search: "HR Manager OR İK Müdürü OR Training Manager OR L&D",
+      currentJobTitles: ["HR Manager", "İK Müdürü", "Training Manager", "Learning and Development Manager", "Eğitim Müdürü"],
+      locations: ["Turkey"],
+      takePages: Math.max(1, Math.ceil(limit / 25)), // 25 sonuç/sayfa
+      startPage: 1,
     }),
   },
   b2b_sme: {
-    actorId: "apimaestro/linkedin-profile-search",
+    actorId: "harvestapi/linkedin-profile-search",
     parser: "linkedin_people",
     description: "Türkiye'deki KOBİ kurucu / CEO / Genel Müdür",
     buildInput: (limit) => ({
-      keyword: '"CEO" OR "Founder" OR "Kurucu" OR "Genel Müdür"',
-      location: "Turkey",
-      currentJobTitles: ["Founder", "CEO", "Co-Founder", "Genel Müdür", "Yönetici Ortak"],
-      companySizes: ["B", "C", "D"], // 11-50, 51-200, 201-500
-      maxResults: limit,
+      profileScraperMode: "Full + email search",
+      search: "Founder OR CEO OR Kurucu OR Genel Müdür",
+      currentJobTitles: ["Founder", "CEO", "Co-Founder", "Genel Müdür", "Yönetici Ortak", "Managing Director"],
+      locations: ["Turkey"],
+      takePages: Math.max(1, Math.ceil(limit / 25)),
+      startPage: 1,
     }),
   },
   b2c_pro: {
-    actorId: "apimaestro/linkedin-profile-search",
+    actorId: "harvestapi/linkedin-profile-search",
     parser: "linkedin_people",
     description: "Senior bireysel profesyoneller (mühendis, yönetici, avukat, doktor)",
     buildInput: (limit) => ({
-      keyword: '"Senior" OR "Lead" OR "Director" OR "Müdür"',
-      location: "Turkey",
-      currentJobTitles: ["Senior Engineer", "Engineering Manager", "Director", "Lead", "Yönetici", "Müdür"],
-      maxResults: limit,
+      profileScraperMode: "Full + email search",
+      search: "Senior OR Lead OR Director OR Müdür",
+      currentJobTitles: ["Senior Engineer", "Engineering Manager", "Director", "Senior Manager", "Müdür"],
+      locations: ["Turkey"],
+      takePages: Math.max(1, Math.ceil(limit / 25)),
+      startPage: 1,
     }),
   },
   partner: {
@@ -162,28 +187,82 @@ function inferSeniority(title: string | undefined): string | undefined {
 }
 
 function parseLinkedInPerson(raw: LinkedInPersonRaw, segment: OutreachSegment): InsertOutreachLead | null {
-  const email = pickEmail(raw.emails, raw.email);
+  const email = pickEmail(raw.emails, raw.email ?? raw.emailAddress);
   if (!email) return null; // email yoksa atla — değerli değil
 
-  const fullName = raw.fullName ?? `${raw.firstName ?? ""} ${raw.lastName ?? ""}`.trim();
-  const jobTitle = raw.headline ?? raw.jobTitle ?? raw.position;
-  const linkedinUrl = raw.linkedinUrl ?? raw.profileUrl ?? raw.url ?? (raw.publicIdentifier ? `https://linkedin.com/in/${raw.publicIdentifier}` : undefined);
-  const company = raw.companyName ?? raw.currentCompany?.name;
-  const companyDomain = extractDomain(raw.currentCompany?.website ?? raw.companyUrl);
-  const industry = raw.industry ?? raw.currentCompany?.industry;
+  // İsim: birkaç olası format
+  let firstName = raw.firstName;
+  let lastName = raw.lastName;
+  let fullName: string | undefined = raw.fullName;
+  if (typeof raw.name === "string") {
+    fullName = fullName ?? raw.name;
+  } else if (raw.name && typeof raw.name === "object") {
+    firstName = firstName ?? raw.name.first;
+    lastName = lastName ?? raw.name.last;
+    fullName = fullName ?? raw.name.full;
+  }
+  if (!fullName && (firstName || lastName)) {
+    fullName = `${firstName ?? ""} ${lastName ?? ""}`.trim();
+  }
+
+  // Pozisyon
+  const jobTitle =
+    raw.headline ??
+    raw.jobTitle ??
+    raw.position ??
+    raw.title ??
+    raw.currentPosition?.title;
+
+  // LinkedIn URL
+  const linkedinUrl =
+    raw.linkedinUrl ??
+    raw.profileUrl ??
+    raw.url ??
+    (raw.publicIdentifier ? `https://linkedin.com/in/${raw.publicIdentifier}` : undefined);
+
+  // Şirket
+  let company: string | undefined;
+  let companyWebsite: string | undefined;
+  let industry: string | undefined = raw.industry;
+  if (typeof raw.company === "string") {
+    company = raw.company;
+  } else if (raw.company && typeof raw.company === "object") {
+    company = raw.company.name;
+    companyWebsite = raw.company.website ?? raw.company.url;
+    industry = industry ?? raw.company.industry;
+  }
+  company = company ?? raw.companyName ?? raw.currentCompany?.name ?? raw.currentPosition?.company;
+  companyWebsite =
+    companyWebsite ??
+    raw.companyWebsite ??
+    raw.currentCompany?.website ??
+    raw.currentCompany?.url ??
+    raw.companyUrl ??
+    raw.currentPosition?.companyUrl;
+  industry = industry ?? raw.currentCompany?.industry;
+  const companyDomain = extractDomain(companyWebsite);
+
+  // Lokasyon
+  let location: string | undefined;
+  if (typeof raw.location === "string") {
+    location = raw.location;
+  } else if (raw.location && typeof raw.location === "object") {
+    location = raw.location.name ?? raw.location.country;
+  }
+  location = location ?? raw.locationName ?? raw.geoLocationName;
 
   return {
     email,
-    firstName: raw.firstName,
-    lastName: raw.lastName,
+    firstName,
+    lastName,
     fullName: fullName || undefined,
     linkedinUrl,
     jobTitle,
     seniority: inferSeniority(jobTitle),
-    location: raw.location ?? raw.geoLocationName,
+    location,
     company,
     companyDomain,
-    companyWebsite: raw.currentCompany?.website ?? raw.companyUrl,
+    companyWebsite,
     industry,
     segment,
     source: "apify_linkedin_people",
