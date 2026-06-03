@@ -22,6 +22,9 @@ export interface AuthRequest extends Request {
 }
 
 export function authMiddleware(req: AuthRequest, res: Response, next: NextFunction) {
+  // DEBUG: Hangi route bizi çağırdı?
+  console.log("[AUTH-DEBUG]", req.method, req.originalUrl, "from stack:", new Error().stack?.split("\n").slice(1, 4).join(" | "));
+
   let token: string | undefined;
 
   const authHeader = req.headers.authorization;
