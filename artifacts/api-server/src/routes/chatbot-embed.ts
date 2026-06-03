@@ -357,12 +357,17 @@ router.get("/widget.js", (_req: Request, res: Response) => {
   res.setHeader("Content-Type", "application/javascript; charset=utf-8");
   res.setHeader("Cache-Control", "public, max-age=300"); // 5dk cache
   res.setHeader("Access-Control-Allow-Origin", "*");
+  // Cross-origin embed için CORP/COEP override - helmet'in default same-origin'ini ezer
+  res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+  res.setHeader("Cross-Origin-Embedder-Policy", "unsafe-none");
+  res.removeHeader("X-Frame-Options");
   res.send(WIDGET_JS);
 });
 
 // İsteğe bağlı kolaylık: HTML preview için bir test sayfası
 router.get("/widget.html", (_req: Request, res: Response) => {
   res.setHeader("Content-Type", "text/html; charset=utf-8");
+  res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
   res.send(`<!DOCTYPE html>
 <html lang="tr"><head><meta charset="utf-8"><title>Sphere Asistan Test</title></head>
 <body style="font-family:system-ui;padding:40px;">
