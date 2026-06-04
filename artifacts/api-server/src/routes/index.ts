@@ -1,5 +1,6 @@
 import { Router, type IRouter } from "express";
 import healthRouter from "./health";
+import apiSpecRouter from "./api-spec";
 import authRouter from "./auth";
 import usersRouter from "./users";
 import coursesRouter from "./courses";
@@ -52,6 +53,7 @@ const proGuard = [authMiddleware, requireSubscription];
 const router: IRouter = Router();
 
 router.use(healthRouter);
+router.use(apiSpecRouter);
 router.use(authRouter);
 router.use(corporateRouter);
 router.use(adminCompaniesRouter);
