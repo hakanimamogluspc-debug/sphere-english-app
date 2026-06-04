@@ -56,8 +56,6 @@ router.options("/chat", (req, res) => {
 });
 
 router.post("/chat", async (req: Request, res: Response) => {
-  // DEBUG: /chat handler'ına ulaştık mı?
-  console.log("[CHAT-DEBUG] POST /chat handler entered, body:", typeof req.body, Object.keys(req.body ?? {}));
   setChatbotCors(res, req);
 
   try {
@@ -206,22 +204,9 @@ router.post("/chat", async (req: Request, res: Response) => {
       capturedLead: capturedLead?.email ? { email: capturedLead.email } : null,
     });
   } catch (err: any) {
-    console.error("[chatbot] error:", err);
-    console.error("[chatbot] error stack:", err?.stack);
-    console.error("[chatbot] OPENAI_API_KEY exists:", !!process.env.OPENAI_API_KEY, "length:", process.env.OPENAI_API_KEY?.length);
+    console.error("[chatbot] error:", err?.message ?? err);
     setChatbotCors(res, req);
-    return res.status(500).json({
-      error: "Asistan şu an cevap veremiyor. Lütfen birazdan tekrar deneyin.",
-      // GEÇİCİ DEBUG: gerçek hata mesajını ortaya çıkar
-      _debug: {
-        message: err?.message,
-        name: err?.name,
-        code: err?.code,
-        status: err?.status,
-        openai_key_present: !!process.env.OPENAI_API_KEY,
-        openai_key_length: process.env.OPENAI_API_KEY?.length ?? 0,
-      },
-    });
+    return res.status(500).json({ error: "Asistan şu an cevap veremiyor. Lütfen birazdan tekrar deneyin." });
   }
 });
 

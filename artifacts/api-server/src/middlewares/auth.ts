@@ -22,11 +22,12 @@ export interface AuthRequest extends Request {
 }
 
 export function authMiddleware(req: AuthRequest, res: Response, next: NextFunction) {
-  // DEBUG: Hangi route bizi çağırdı?
-  console.log("[AUTH-DEBUG]", req.method, req.originalUrl, "FULL STACK:\n", new Error().stack);
-  // Geçici by-pass — debug için /chat'i geçirelim ki içeride ne olduğunu görelim
-  if (req.path === "/chat" || req.originalUrl === "/api/chat") {
-    console.log("[AUTH-DEBUG] BYPASSING /chat for diagnostic — letting through without auth");
+  // Public chatbot endpoint'leri (marketing widget) — auth zorunlu değil
+  // NOT: Bu /chat ve /chat/lead route'ları chatbot.ts'te tanımlı; nedeni
+  // açıklanamayan bir Express middleware ordering ile authMiddleware
+  // bunlara da uygulanıyor. Bu erken-çıkış güvenli, çünkü chatbot endpoint'leri
+  // zaten public olarak tasarlandı.
+  if (req.path === "/chat" || req.path === "/chat/lead") {
     return next();
   }
 

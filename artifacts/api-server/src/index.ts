@@ -360,6 +360,40 @@ async function runStartupMigrations() {
       updated_at TIMESTAMP NOT NULL DEFAULT NOW()
     )`,
     `CREATE INDEX IF NOT EXISTS learning_paths_user_idx ON learning_paths (user_id, is_active)`,
+    // Chatbot FAQ tablosu
+    `CREATE TABLE IF NOT EXISTS chatbot_faqs (
+      id SERIAL PRIMARY KEY,
+      category TEXT,
+      question TEXT NOT NULL,
+      answer TEXT NOT NULL,
+      keywords TEXT,
+      is_active BOOLEAN NOT NULL DEFAULT true,
+      sort_order INTEGER NOT NULL DEFAULT 0,
+      created_by INTEGER,
+      created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+    )`,
+    `CREATE INDEX IF NOT EXISTS chatbot_faqs_active_idx ON chatbot_faqs (is_active)`,
+    `CREATE INDEX IF NOT EXISTS chatbot_faqs_sort_idx ON chatbot_faqs (sort_order)`,
+    // Chatbot konuşmaları (lead capture + analytics)
+    `CREATE TABLE IF NOT EXISTS chatbot_conversations (
+      id SERIAL PRIMARY KEY,
+      session_id TEXT NOT NULL,
+      messages JSONB NOT NULL DEFAULT '[]'::JSONB,
+      lead_email TEXT,
+      lead_name TEXT,
+      lead_company TEXT,
+      lead_captured_at TIMESTAMP,
+      message_count INTEGER NOT NULL DEFAULT 0,
+      user_agent TEXT,
+      ip TEXT,
+      referrer TEXT,
+      page_url TEXT,
+      last_message_at TIMESTAMP NOT NULL DEFAULT NOW(),
+      created_at TIMESTAMP NOT NULL DEFAULT NOW()
+    )`,
+    `CREATE UNIQUE INDEX IF NOT EXISTS chatbot_conversations_session_idx ON chatbot_conversations (session_id)`,
+    `CREATE INDEX IF NOT EXISTS chatbot_conversations_last_msg_idx ON chatbot_conversations (last_message_at DESC)`,
   ];
   for (const sql of migrations) {
     try {
