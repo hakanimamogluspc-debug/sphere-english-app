@@ -2,7 +2,8 @@ import { useState, useEffect, useRef } from "react";
 import {
   Users, Mail, TrendingUp, Eye, Send, Clock, CheckCircle, AlertCircle,
   RefreshCw, Filter, ChevronDown, BarChart3, Megaphone, Search, Tag, X,
-  FileUp, Download, Trash2, FileText, FileCode, LayoutTemplate
+  FileUp, Download, Trash2, FileText, FileCode, LayoutTemplate,
+  MessageCircle, Bot, User
 } from "lucide-react";
 
 const TOKEN_KEY = "sphere_token";
@@ -64,7 +65,31 @@ interface EmailTemplate {
   createdAt: string;
 }
 
-type Tab = "overview" | "leads" | "email" | "templates";
+type Tab = "overview" | "leads" | "email" | "templates" | "chats";
+
+interface ChatMessage {
+  role: "user" | "assistant" | "system";
+  content: string;
+  timestamp?: string;
+}
+
+interface ChatbotConversation {
+  id: number;
+  sessionId: string;
+  messages: ChatMessage[];
+  leadEmail: string | null;
+  leadName: string | null;
+  leadCompany: string | null;
+  leadCapturedAt: string | null;
+  pageUrl: string | null;
+  userAgent: string | null;
+  ip: string | null;
+  referrer: string | null;
+  messageCount: number;
+  isResolved: boolean;
+  startedAt: string;
+  lastMessageAt: string;
+}
 
 const RECIPIENT_OPTIONS = [
   { value: "all", label: "Tüm Kullanıcılar" },
@@ -193,6 +218,41 @@ export default function AdminMarketing() {
   const [tplUploading, setTplUploading] = useState(false);
   const [tplResult, setTplResult] = useState<{ ok: boolean; msg: string } | null>(null);
   const [previewTemplate, setPreviewTemplate] = useState<EmailTemplate | null>(null);
+
+  // Chatbot konuşmaları
+  const [conversations, setConversations] = useState<ChatbotConversation[]>([]);
+  const [chatsLoading, setChatsLoading] = useState(false);
+  const [chatsLoaded, setChatsLoaded] = useState(false);
+  const [chatFilter, setChatFilter] = useState<"all" | "leads">("leads");
+  const [selectedChat, setSelectedChat] = useState<ChatbotConversation | null>(null);
+
+  const loadConversations = async (filter: "all" | "leads" = chatFilter) => {
+    setChatsLoading(true);
+    try {
+      const q = filter === "leads" ? "?hasLead=true" : "";
+      const data = await apiFetch(`/api/admin/chatbot/conversations${q}`);
+      setConversations(Array.isArray(data?.items) ? data.items : []);
+      setChatsLoaded(true);
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setChatsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (tab === "chats" && !chatsLoaded) {
+      loadConversations();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab]);
+
+  useEffect(() => {
+    if (tab === "chats" && chatsLoaded) {
+      loadConversations(chatFilter);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chatFilter]);
 
   const loadAll = async () => {
     setLoading(true); setError("");
@@ -406,6 +466,7 @@ export default function AdminMarketing() {
           { id: "leads", label: `Leads (${leads.length})`, icon: Users },
           { id: "email", label: "E-posta Gönder", icon: Mail },
           { id: "templates", label: `Şablonlar (${templates.length})`, icon: LayoutTemplate },
+          { id: "chats", label: "Sohbet Geçmişi", icon: MessageCircle },
         ] as const).map(t => (
           <button
             key={t.id}
@@ -1074,6 +1135,144 @@ export default function AdminMarketing() {
                 ))}
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* ── CHATS (Chatbot konuşma geçmişi) ── */}
+      {tab === "chats" && (
+        <div className="space-y-6">
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <div className="flex items-center gap-2">
+              <div className="flex gap-1 bg-gray-100 p-1 rounded-lg">
+                <button
+                  onClick={() => setChatFilter("leads")}
+                  className={`px-3 py-1.5 text-sm rounded-md transition ${chatFilter === "leads" ? "bg-white shadow text-gray-900" : "text-gray-500 hover:text-gray-700"}`}
+                >
+                  Lead Veren ({conversations.filter(c => c.leadEmail).length})
+                </button>
+                <button
+                  onClick={() => setChatFilter("all")}
+                  className={`px-3 py-1.5 text-sm rounded-md transition ${chatFilter === "all" ? "bg-white shadow text-gray-900" : "text-gray-500 hover:text-gray-700"}`}
+                >
+                  Tümü ({conversations.length})
+                </button>
+              </div>
+              <button
+                onClick={() => loadConversations(chatFilter)}
+                className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition"
+                disabled={chatsLoading}
+              >
+                <RefreshCw size={14} className={chatsLoading ? "animate-spin" : ""} /> Yenile
+              </button>
+            </div>
+            <p className="text-xs text-gray-400">Widget üzerinden gelen sohbetler · En son üstte</p>
+          </div>
+
+          {chatsLoading ? (
+            <div className="text-center py-12 text-gray-400 text-sm">Yükleniyor…</div>
+          ) : conversations.length === 0 ? (
+            <div className="text-center py-12 text-gray-400 text-sm">Henüz sohbet kaydı yok.</div>
+          ) : (
+            <div className="bg-white rounded-xl border border-gray-100 divide-y divide-gray-100">
+              {conversations.map(c => (
+                <button
+                  key={c.id}
+                  onClick={() => setSelectedChat(c)}
+                  className="w-full text-left px-4 py-3 hover:bg-gray-50 transition flex items-start gap-3"
+                >
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${c.leadEmail ? "bg-green-50 text-green-600" : "bg-gray-100 text-gray-400"}`}>
+                    {c.leadEmail ? <CheckCircle size={18} /> : <MessageCircle size={18} />}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="font-medium text-gray-900 text-sm truncate">
+                        {c.leadEmail || `Anonim (${c.sessionId.slice(0, 16)}…)`}
+                      </p>
+                      {c.leadName && <span className="text-xs text-gray-500">· {c.leadName}</span>}
+                      {c.leadCompany && <span className="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded">{c.leadCompany}</span>}
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1 truncate">
+                      {(c.messages || []).filter(m => m.role === "user").slice(-1)[0]?.content || "—"}
+                    </p>
+                    <div className="flex items-center gap-3 mt-1 text-[11px] text-gray-400">
+                      <span>{c.messageCount} mesaj</span>
+                      <span>{new Date(c.lastMessageAt).toLocaleString("tr-TR")}</span>
+                      {c.pageUrl && <span className="truncate max-w-[200px]">📄 {c.pageUrl.replace(/^https?:\/\//, "")}</span>}
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── CHAT DETAIL MODAL ── */}
+      {selectedChat && (
+        <div
+          className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4"
+          onClick={() => setSelectedChat(null)}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl flex flex-col"
+            style={{ maxHeight: "90vh" }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 flex-shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 bg-blue-50 rounded-lg flex items-center justify-center">
+                  <MessageCircle size={18} className="text-blue-600" />
+                </div>
+                <div>
+                  <p className="font-semibold text-gray-900 text-sm">
+                    {selectedChat.leadEmail || `Anonim sohbet`}
+                  </p>
+                  <p className="text-xs text-gray-400">
+                    {selectedChat.leadName && `${selectedChat.leadName} · `}
+                    {selectedChat.leadCompany && `${selectedChat.leadCompany} · `}
+                    {new Date(selectedChat.startedAt).toLocaleString("tr-TR")}
+                  </p>
+                </div>
+              </div>
+              <button onClick={() => setSelectedChat(null)} className="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100">
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Meta info */}
+            <div className="px-5 py-3 bg-gray-50 border-b border-gray-100 text-xs text-gray-500 flex flex-wrap gap-x-4 gap-y-1">
+              <span><strong>Session:</strong> {selectedChat.sessionId}</span>
+              <span><strong>Mesaj:</strong> {selectedChat.messageCount}</span>
+              {selectedChat.pageUrl && <span><strong>Sayfa:</strong> {selectedChat.pageUrl}</span>}
+              {selectedChat.referrer && <span><strong>Referrer:</strong> {selectedChat.referrer}</span>}
+              {selectedChat.ip && <span><strong>IP:</strong> {selectedChat.ip}</span>}
+            </div>
+
+            {/* Mesaj listesi */}
+            <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3 bg-gray-50/30">
+              {(selectedChat.messages || []).map((m, i) => (
+                <div key={i} className={`flex gap-2 ${m.role === "user" ? "flex-row-reverse" : ""}`}>
+                  <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ${m.role === "user" ? "bg-blue-100 text-blue-600" : "bg-gray-200 text-gray-600"}`}>
+                    {m.role === "user" ? <User size={14} /> : <Bot size={14} />}
+                  </div>
+                  <div
+                    className={`max-w-[75%] px-3 py-2 rounded-2xl text-sm whitespace-pre-wrap break-words ${
+                      m.role === "user"
+                        ? "bg-blue-600 text-white rounded-tr-sm"
+                        : "bg-white border border-gray-100 text-gray-800 rounded-tl-sm"
+                    }`}
+                  >
+                    {m.content}
+                    {m.timestamp && (
+                      <div className={`text-[10px] mt-1 ${m.role === "user" ? "text-blue-100" : "text-gray-400"}`}>
+                        {new Date(m.timestamp).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}

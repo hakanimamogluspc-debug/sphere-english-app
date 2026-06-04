@@ -384,16 +384,22 @@ async function runStartupMigrations() {
       lead_name TEXT,
       lead_company TEXT,
       lead_captured_at TIMESTAMP,
-      message_count INTEGER NOT NULL DEFAULT 0,
       user_agent TEXT,
       ip TEXT,
       referrer TEXT,
       page_url TEXT,
-      last_message_at TIMESTAMP NOT NULL DEFAULT NOW(),
-      created_at TIMESTAMP NOT NULL DEFAULT NOW()
+      message_count INTEGER NOT NULL DEFAULT 0,
+      is_resolved BOOLEAN NOT NULL DEFAULT false,
+      started_at TIMESTAMP NOT NULL DEFAULT NOW(),
+      last_message_at TIMESTAMP NOT NULL DEFAULT NOW()
     )`,
-    `CREATE UNIQUE INDEX IF NOT EXISTS chatbot_conversations_session_idx ON chatbot_conversations (session_id)`,
-    `CREATE INDEX IF NOT EXISTS chatbot_conversations_last_msg_idx ON chatbot_conversations (last_message_at DESC)`,
+    `CREATE UNIQUE INDEX IF NOT EXISTS chatbot_conversations_session_unique ON chatbot_conversations (session_id)`,
+    `CREATE INDEX IF NOT EXISTS chatbot_conversations_lead_idx ON chatbot_conversations (lead_email)`,
+    `CREATE INDEX IF NOT EXISTS chatbot_conversations_started_idx ON chatbot_conversations (started_at DESC)`,
+    // Eski deploy'lardan kalmış olabilecek versiyonlar için kolon eklemeleri
+    `ALTER TABLE chatbot_conversations ADD COLUMN IF NOT EXISTS started_at TIMESTAMP NOT NULL DEFAULT NOW()`,
+    `ALTER TABLE chatbot_conversations ADD COLUMN IF NOT EXISTS is_resolved BOOLEAN NOT NULL DEFAULT false`,
+    `ALTER TABLE chatbot_conversations ADD COLUMN IF NOT EXISTS message_count INTEGER NOT NULL DEFAULT 0`,
   ];
   for (const sql of migrations) {
     try {
