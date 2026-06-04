@@ -138,6 +138,21 @@ router.post("/chat", async (req: Request, res: Response) => {
       }
     }
 
+    // Fallback — AI etiketi atmadıysa, kullanıcı mesajında email arayıp yakala
+    if (!capturedLead?.email) {
+      const emailRegex = /\b([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})\b/;
+      // Tüm user mesajlarını dolaş (son mesaj genelde email içerir ama emin olmak için hepsini tara)
+      for (const m of messages) {
+        if (m.role !== "user") continue;
+        const match = String(m.content || "").match(emailRegex);
+        if (match) {
+          capturedLead = { email: match[1] };
+          // İsim/firma bilgisi de aynı mesajda varsa basit heuristik (isteğe bağlı)
+          break;
+        }
+      }
+    }
+
     // Konuşmayı kaydet (upsert by sessionId)
     const fullMessages: ChatMessage[] = [
       ...messages,
