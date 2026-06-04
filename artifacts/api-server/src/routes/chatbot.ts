@@ -207,8 +207,21 @@ router.post("/chat", async (req: Request, res: Response) => {
     });
   } catch (err: any) {
     console.error("[chatbot] error:", err);
+    console.error("[chatbot] error stack:", err?.stack);
+    console.error("[chatbot] OPENAI_API_KEY exists:", !!process.env.OPENAI_API_KEY, "length:", process.env.OPENAI_API_KEY?.length);
     setChatbotCors(res, req);
-    return res.status(500).json({ error: "Asistan şu an cevap veremiyor. Lütfen birazdan tekrar deneyin." });
+    return res.status(500).json({
+      error: "Asistan şu an cevap veremiyor. Lütfen birazdan tekrar deneyin.",
+      // GEÇİCİ DEBUG: gerçek hata mesajını ortaya çıkar
+      _debug: {
+        message: err?.message,
+        name: err?.name,
+        code: err?.code,
+        status: err?.status,
+        openai_key_present: !!process.env.OPENAI_API_KEY,
+        openai_key_length: process.env.OPENAI_API_KEY?.length ?? 0,
+      },
+    });
   }
 });
 
