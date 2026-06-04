@@ -75,14 +75,14 @@ export default function HeroSection({ data }: HeroProps = {}) {
 
           <div ref={ctaRef} className="flex flex-col gap-3 mb-6 lg:mb-12 w-full max-w-sm">
             <Link
-              href="#iletisim"
+              href="/iletisim"
               className="bg-[#1B365D] text-white font-bold text-[13px] tracking-widest px-7 py-4 rounded-2xl flex items-center justify-center gap-2 text-center w-full hover:bg-[#0ea5e9] transition-colors duration-300 shadow-md"
             >
               <Icon name="EnvelopeIcon" size={16} />
               {heroCta1Text}
             </Link>
             <Link
-              href="#iletisim"
+              href="/iletisim"
               className="bg-white border-2 border-[#1B365D] text-[#1B365D] font-bold text-[13px] tracking-widest px-7 py-4 rounded-2xl flex items-center justify-center gap-2 text-center w-full hover:border-[#0ea5e9] hover:text-[#0ea5e9] transition-colors duration-300 shadow-sm"
             >
               <Icon name="CalendarDaysIcon" size={16} />

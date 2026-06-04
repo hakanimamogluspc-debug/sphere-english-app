@@ -175,8 +175,41 @@ export default async function BlogPostPage({ params }: PageProps) {
   const post = await loadPost(slug);
   if (!post) notFound();
 
+  const articleJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BlogPosting',
+    headline: post.title,
+    description: post.summary || post.title,
+    image: post.cover || 'https://www.sphereenglish.com/assets/images/hero_online_english_lesson.png',
+    datePublished: post.date,
+    dateModified: post.date,
+    author: {
+      '@type': 'Organization',
+      name: post.author || 'Sphere English',
+      url: 'https://www.sphereenglish.com',
+    },
+    publisher: {
+      '@type': 'Organization',
+      name: 'Sphere English',
+      logo: {
+        '@type': 'ImageObject',
+        url: 'https://www.sphereenglish.com/assets/images/logo-1774019980261.png',
+      },
+    },
+    mainEntityOfPage: {
+      '@type': 'WebPage',
+      '@id': `https://www.sphereenglish.com/blog/${slug}`,
+    },
+    articleSection: post.category || 'Eğitim',
+    inLanguage: 'tr-TR',
+  };
+
   return (
     <div className="min-h-screen bg-white font-sans">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }}
+      />
       <Header />
 
       <main className="pt-28 pb-20">

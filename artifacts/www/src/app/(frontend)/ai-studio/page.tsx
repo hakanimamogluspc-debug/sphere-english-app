@@ -14,8 +14,8 @@ const AI_FEATURES = [
     title: 'Telaffuz Koçu',
     subtitle: 'PRONUNCIATION COACH',
     description:
-      '11 farklı aksan ve uzmanlık alanına sahip yapay zeka koçuyla gerçek zamanlı konuşma pratiği yapın. OpenAI Whisper teknolojisiyle söylediğiniz her kelime fonem düzeyinde analiz edilir; telaffuz skoru, vurgu hatası ve akış önerileri anında ekrana gelir.',
-    highlights: ['11 farklı koç & aksan', 'Fonem bazlı ses analizi', 'Kelime bazlı telaffuz skoru', 'GPT-4o konuşma motoru'],
+      '12 farklı aksan ve uzmanlık alanına sahip yapay zeka koçuyla gerçek zamanlı konuşma pratiği yapın. OpenAI Whisper teknolojisiyle söylediğiniz her kelime fonem düzeyinde analiz edilir; telaffuz skoru, vurgu hatası ve akış önerileri anında ekrana gelir.',
+    highlights: ['12 farklı koç & aksan', 'Fonem bazlı ses analizi', 'Kelime bazlı telaffuz skoru', 'GPT-4o konuşma motoru'],
     detail: 'Her ders sonrası ilerleme grafiği ve hata dağılım raporu oluşturulur. İngiliz RP, Amerikan, Avustralya, Hint-İngiliz ve daha fazla aksan seçeneği sunar.',
     color: TURQUOISE,
     bg: 'from-sky-50 to-cyan-50',
@@ -168,7 +168,7 @@ const COACHES = [
 ];
 
 const STATS = [
-  { value: '11', label: 'Yapay Zeka Koçu' },
+  { value: '12', label: 'Yapay Zeka Koçu' },
   { value: '10', label: 'AI Özelliği' },
   { value: '4000+', label: 'Kelime & Kural' },
   { value: 'A1–C2', label: 'CEFR Seviyeleri' },
@@ -176,7 +176,7 @@ const STATS = [
 
 const HOW_IT_WORKS = [
   { step: '01', icon: '🔐', title: 'Üye Ol', desc: 'Ücretsiz hesap oluşturun. Kredi kartı gerekmez. 30 saniyede kayıt tamamlanır.' },
-  { step: '02', icon: '🎯', title: 'Koç Seç', desc: '11 yapay zeka koçu arasından kendi sektörünüze ve öğrenme hedefinize en uygun olanı seçin.' },
+  { step: '02', icon: '🎯', title: 'Koç Seç', desc: '12 yapay zeka koçu arasından kendi sektörünüze ve öğrenme hedefinize en uygun olanı seçin.' },
   { step: '03', icon: '🗣️', title: 'Konuş, Yaz & Simüle Et', desc: 'Telaffuz koçuyla sesli konuşun, iş senaryolarını simüle edin, yazma koçuna metin gönderin, dilbilgisi sorularını çözün veya kelime oyunu oynayın.' },
   { step: '04', icon: '📊', title: 'Gelişimini Takip Et', desc: 'Her oturum sonrası otomatik oluşturulan raporlar, hata dağılımı ve CEFR seviyenizi güncel tutar.' },
 ];

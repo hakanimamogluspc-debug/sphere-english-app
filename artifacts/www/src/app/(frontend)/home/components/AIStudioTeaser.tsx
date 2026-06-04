@@ -116,7 +116,7 @@ export default function AIStudioTeaser() {
             {[
               { value: '10', label: 'Yapay Zeka Aracı' },
               { value: '7/24', label: 'Erişim' },
-              { value: '11', label: 'AI Koç & Aksan' },
+              { value: '12', label: 'AI Koç & Aksan' },
             ].map((s) => (
               <div key={s.label} className="text-center">
                 <div

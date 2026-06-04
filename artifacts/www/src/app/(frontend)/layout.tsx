@@ -106,11 +106,21 @@ const organizationJsonLd = {
   address: {
     '@type': 'PostalAddress',
     addressCountry: 'TR',
-    addressLocality: 'İstanbul',
+    addressRegion: 'Ankara',
+    addressLocality: 'Çankaya',
+    streetAddress: 'Kızılırmak Mah. Dumlupınar Blv. YDA Center 9A No:158',
   },
+  telephone: '+90 312 870 10 58',
+  email: 'info@sphereenglish.com',
+  founder: [
+    { '@type': 'Person', name: 'Didem İmamoğlu', jobTitle: 'Kurucu' },
+    { '@type': 'Person', name: 'Merve Eş', jobTitle: 'Kurucu' },
+  ],
   contactPoint: {
     '@type': 'ContactPoint',
     contactType: 'customer service',
+    telephone: '+90 312 870 10 58',
+    email: 'info@sphereenglish.com',
     url: `${BASE_URL}/iletisim`,
     availableLanguage: ['Turkish', 'English'],
   },
@@ -275,7 +285,9 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         />
         <meta name="geo.region" content="TR" />
         <meta name="geo.country" content="Turkey" />
-        <meta name="geo.placename" content="İstanbul, Türkiye" />
+        <meta name="geo.placename" content="Ankara, Türkiye" />
+        <meta name="geo.position" content="39.9078;32.7689" />
+        <meta name="ICBM" content="39.9078, 32.7689" />
         <meta httpEquiv="content-language" content="tr-TR" />
         {/* AI / LLM discovery */}
         <link rel="alternate" type="text/plain" href="/llms.txt" title="AI Content Summary" />

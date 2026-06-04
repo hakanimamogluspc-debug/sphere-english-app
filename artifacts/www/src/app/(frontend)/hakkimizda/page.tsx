@@ -259,7 +259,7 @@ export default function HakkimizdaPage() {
               Ekibinizin global potansiyelini açığa çıkarmak için ücretsiz demo randevusu alın.
             </p>
             <Link
-              href="#iletisim"
+              href="/iletisim"
               className="inline-block px-8 py-3.5 rounded-full bg-[#0ea5e9] text-white text-[13px] font-bold tracking-[0.16em] hover:bg-[#0284c7] transition-colors duration-200 shadow-lg"
             >
               ÜCRETSİZ DEMO AL

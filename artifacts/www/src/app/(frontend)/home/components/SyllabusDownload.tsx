@@ -174,7 +174,7 @@ export default function PaketlerSection() {
               {/* CTA */}
               <div className={`px-7 pb-7 border-t pt-5 ${pkg.featured ? 'border-white/10' : 'border-gray-100'}`}>
                 <Link
-                  href="#iletisim"
+                  href="/iletisim"
                   className={`w-full py-3.5 text-[12px] font-bold tracking-widest rounded-2xl flex items-center justify-center gap-2 transition-all duration-200 ${
                     pkg.featured
                       ? 'bg-white text-[#1B365D] hover:bg-[#0ea5e9] hover:text-white'

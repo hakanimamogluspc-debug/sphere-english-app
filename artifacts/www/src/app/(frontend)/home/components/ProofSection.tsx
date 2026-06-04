@@ -86,7 +86,7 @@ export default function RaporlamaSection() {
                 bars?.forEach((bar) => {
                   const el = bar as HTMLElement;
                   const fill = parseFloat(el.dataset.fill || '0');
-                  gsap.to(el, {
+                  gsap.fromTo(el, { width: '0%' }, {
                     width: `${fill}%`,
                     duration: 1.4,
                     ease: 'power2.out',
@@ -174,7 +174,7 @@ export default function RaporlamaSection() {
                   data-target={m.numericValue}
                   data-prefix={m.prefix}
                 >
-                  {m.prefix}0
+                  {m.prefix}{m.numericValue % 1 !== 0 ? m.numericValue.toFixed(1) : m.numericValue}
                 </span>
               </p>
               <p className="text-[13px] font-bold text-[#1B365D] mb-1">{m.label}</p>
@@ -183,7 +183,7 @@ export default function RaporlamaSection() {
                 <div
                   className="progress-bar-inner h-full rounded-full bg-[#0ea5e9]"
                   data-fill={m.fill}
-                  style={{ width: '0%' }}
+                  style={{ width: `${m.fill}%` }}
                 />
               </div>
             </div>

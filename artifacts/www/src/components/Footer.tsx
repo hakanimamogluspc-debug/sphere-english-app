@@ -29,8 +29,8 @@ export default function Footer() {
             </p>
             <div className="flex items-center gap-3">
               <a
-                href="#"
-                aria-label="Web"
+                href="https://www.sphereenglish.com"
+                aria-label="Web sitesi"
                 className="w-9 h-9 rounded border border-white/25 flex items-center justify-center text-white/55 hover:text-white hover:border-white/60 transition-colors"
               >
                 <Icon name="GlobeAltIcon" size={15} />
@@ -95,7 +95,7 @@ export default function Footer() {
                 <span>Kızılırmak mah. Dumlupınar Blv. YDA Center 9A No:158 Çankaya/ANKARA</span>
               </div>
               <Link
-                href="#iletisim"
+                href="/iletisim"
                 className="mt-2 inline-flex items-center gap-2 text-[12px] font-bold tracking-[0.18em] px-5 py-3 rounded transition-all duration-200 hover:bg-white/20"
                 style={{ background: 'rgba(255,255,255,0.13)', color: 'white', border: '1px solid rgba(255,255,255,0.15)' }}
               >
@@ -112,9 +112,9 @@ export default function Footer() {
             © 2026 Sphere English. Tüm hakları saklıdır.
           </p>
           <div className="flex flex-wrap items-center justify-center gap-4 text-[12px] text-white/40">
-            <Link href="#" className="hover:text-white/70 transition-colors">Gizlilik Politikası</Link>
-            <Link href="#" className="hover:text-white/70 transition-colors">Kullanım Koşulları</Link>
-            <Link href="#" className="hover:text-white/70 transition-colors">KVKK</Link>
+            <Link href="/gizlilik-politikasi" className="hover:text-white/70 transition-colors">Gizlilik Politikası</Link>
+            <Link href="/kullanim-kosullari" className="hover:text-white/70 transition-colors">Kullanım Koşulları</Link>
+            <Link href="/kvkk" className="hover:text-white/70 transition-colors">KVKK</Link>
             <a href="https://www.linkedin.com/company/sphere-english/" target="_blank" rel="noopener noreferrer" className="hover:text-white/70 transition-colors" aria-label="LinkedIn">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>

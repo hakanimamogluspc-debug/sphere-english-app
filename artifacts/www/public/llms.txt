@@ -12,7 +12,10 @@
 - Tam Ad: Sphere English — Kurumsal İş İngilizcesi Eğitim Platformu
 - Tür: SaaS + Canlı Eğitim Hibrid Platformu
 - İş Modeli: B2B (kurumsal — şirketten şirkete)
-- Kuruluş: İstanbul, Türkiye
+- Kuruluş: Ankara, Türkiye (Çankaya/YDA Center)
+- Adres: Kızılırmak Mah. Dumlupınar Blv. YDA Center 9A No:158 Çankaya/ANKARA
+- Telefon: +90 312 870 10 58
+- E-posta: info@sphereenglish.com
 - Hizmet Kapsamı: Türkiye geneli (online / 7/24 erişim)
 - Ana Web Sitesi: https://www.sphereenglish.com
 - LMS Uygulaması: https://app.sphereenglish.com
@@ -22,6 +25,7 @@
 - Çözümler: https://www.sphereenglish.com/cozumler
 - Nasıl Çalışır: https://www.sphereenglish.com/nasil-calisir
 - Hakkımızda: https://www.sphereenglish.com/hakkimizda
+- Fiyatlandırma (makine okunabilir): https://www.sphereenglish.com/pricing.md
 
 ---
 

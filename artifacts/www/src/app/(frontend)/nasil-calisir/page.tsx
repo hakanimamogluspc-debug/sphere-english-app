@@ -131,7 +131,7 @@ export default function NasilCalisirPage() {
               Ücretsiz demo randevunuzu alın, farkı kendiniz görün.
             </p>
             <Link
-              href="#iletisim"
+              href="/iletisim"
               className="inline-block px-8 py-4 rounded-full bg-[#0ea5e9] text-white text-[13px] font-bold tracking-[0.18em] hover:bg-[#0284c7] transition-all duration-200 shadow-lg hover:shadow-xl"
             >
               ÜCRETSİZ DEMO RANDEVUSU AL
