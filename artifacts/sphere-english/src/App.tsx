@@ -10,6 +10,7 @@ import { DashboardLayout } from "./components/layout/DashboardLayout";
 import { SubscriptionProvider } from "./lib/subscription-context";
 import { withProGate } from "./components/subscription/ProGate";
 import ErrorBoundary from "./components/ErrorBoundary";
+import { useRouteTitle } from "./hooks/useRouteTitle";
 
 // ─── Lazy-loaded pages — bundle başına bir chunk, ilk yüklemeyi hızlandırır ──
 const NotFound        = lazy(() => import("@/pages/not-found"));
@@ -158,10 +159,28 @@ function Router() {
   const { isAuthenticated, user } = useAuth();
   const [location] = useLocation();
 
+  // Browser sekme başlığını route'a göre güncel tut
+  useRouteTitle();
+
   if (isAuthenticated && location === "/") {
     if (user?.role === "corporate") return <Redirect to="/corporate/dashboard" />;
     if (user?.role === "student" && !user?.company && user?.placementTestCompleted === false) return <Redirect to="/placement-test" />;
     return <Redirect to="/dashboard" />;
+  }
+
+  // Direct URL session-loss fix: placement test tamamlanmamış öğrenci
+  // farklı sayfaya gitmeye çalışırsa /placement-test'e yönlendir (login'e değil)
+  if (
+    isAuthenticated &&
+    user?.role === "student" &&
+    !user?.company &&
+    user?.placementTestCompleted === false &&
+    location !== "/placement-test" &&
+    !location.startsWith("/student/level-exams") &&
+    !location.startsWith("/profile") &&
+    !location.startsWith("/logout")
+  ) {
+    return <Redirect to="/placement-test" />;
   }
 
   return (

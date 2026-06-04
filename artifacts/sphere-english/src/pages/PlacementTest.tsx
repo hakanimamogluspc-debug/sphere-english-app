@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -205,14 +205,68 @@ const LEVEL_DETAILS: Record<string, {
 
 const QUESTIONS_PER_PAGE = 10;
 
+// localStorage key — refresh sonrası progress restore için
+const PROGRESS_KEY = "sphere_placement_test_progress_v1";
+
+interface SavedProgress {
+  answers: Record<number, string>;
+  currentPage: number;
+  savedAt: string;
+  // 24 saatten eski progress'ler silinir (eski test denemesi olabilir)
+}
+
+function loadProgress(): SavedProgress | null {
+  try {
+    const raw = localStorage.getItem(PROGRESS_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as SavedProgress;
+    if (!parsed.answers || typeof parsed.currentPage !== "number") return null;
+    // 24 saat süresinden eskiyse temizle
+    const ageMs = Date.now() - new Date(parsed.savedAt).getTime();
+    if (ageMs > 24 * 60 * 60 * 1000) {
+      localStorage.removeItem(PROGRESS_KEY);
+      return null;
+    }
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function clearProgress() {
+  try {
+    localStorage.removeItem(PROGRESS_KEY);
+  } catch {
+    // ignore
+  }
+}
+
 export default function PlacementTest() {
-  const [answers, setAnswers] = useState<Record<number, string>>({});
-  const [currentPage, setCurrentPage] = useState(0);
+  // İlk render'da localStorage'tan restore — yoksa boş state
+  const initial = typeof window !== "undefined" ? loadProgress() : null;
+  const [answers, setAnswers] = useState<Record<number, string>>(initial?.answers ?? {});
+  const [currentPage, setCurrentPage] = useState(initial?.currentPage ?? 0);
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<{ score: number; level: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
+
+  // Her cevap veya sayfa değişiminde localStorage'a yaz (autosave)
+  useEffect(() => {
+    if (result) return; // Test bittiyse kaydetme
+    if (Object.keys(answers).length === 0 && currentPage === 0) return; // Hiç başlanmadıysa atla
+    try {
+      const payload: SavedProgress = {
+        answers,
+        currentPage,
+        savedAt: new Date().toISOString(),
+      };
+      localStorage.setItem(PROGRESS_KEY, JSON.stringify(payload));
+    } catch {
+      // localStorage dolmuş olabilir, sessizce yut
+    }
+  }, [answers, currentPage, result]);
 
   const totalPages = Math.ceil(QUESTIONS.length / QUESTIONS_PER_PAGE);
   const pageQuestions = QUESTIONS.slice(currentPage * QUESTIONS_PER_PAGE, (currentPage + 1) * QUESTIONS_PER_PAGE);
@@ -260,6 +314,8 @@ export default function PlacementTest() {
       }
       const data = await res.json();
       setResult({ score: data.score, level: data.level });
+      // Başarılı submit sonrası kaydedilmiş progress'i temizle
+      clearProgress();
     } catch (e: any) {
       setError(e.message);
     } finally {
@@ -405,10 +461,21 @@ export default function PlacementTest() {
 
       {/* Content */}
       <div className="max-w-3xl mx-auto px-4 py-8">
+        {/* Restored progress notice — sadece localStorage'tan yüklenmişse */}
+        {initial && totalAnswered > 0 && !result && (
+          <div className="mb-4 bg-emerald-500/10 border border-emerald-400/30 rounded-xl p-3 text-emerald-200 text-xs flex items-center gap-2">
+            <span>✓</span>
+            <span>
+              Kaldığın yerden devam ediyorsun — <strong>{totalAnswered}</strong> soru daha önce yanıtlanmıştı.
+            </span>
+          </div>
+        )}
+
         {/* Info box — top */}
         <div className="mb-6 bg-white/5 border border-white/10 rounded-xl p-5 text-white/60 text-xs leading-relaxed">
           <p className="font-semibold text-white/80 mb-1">ℹ️ Bu test hakkında</p>
           <p>Bu test, Oxford University Press tarafından hazırlanmış Oxford Business Result Seviye Belirleme Testidir. 60 çoktan seçmeli sorudan oluşmaktadır. Sonuçlarınıza göre A1, A2, B1, B2 veya C1 seviyesine atanacaksınız. Test tamamlandıktan sonra seviyeniz değiştirilemez.</p>
+          <p className="mt-2 text-white/50">İlerlemen otomatik kaydedilir; sayfayı yenilesen bile kaldığın yerden devam edebilirsin.</p>
         </div>
 
         {/* Page indicator */}
