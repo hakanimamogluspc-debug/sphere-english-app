@@ -360,6 +360,18 @@ async function runStartupMigrations() {
       updated_at TIMESTAMP NOT NULL DEFAULT NOW()
     )`,
     `CREATE INDEX IF NOT EXISTS learning_paths_user_idx ON learning_paths (user_id, is_active)`,
+    // Günlük kullanıcı aktivite tablosu — admin analytics dashboard için
+    `CREATE TABLE IF NOT EXISTS user_daily_activity (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      date DATE NOT NULL,
+      module VARCHAR(50) NOT NULL DEFAULT 'general',
+      minutes INTEGER NOT NULL DEFAULT 0,
+      last_updated TIMESTAMP NOT NULL DEFAULT NOW()
+    )`,
+    `CREATE UNIQUE INDEX IF NOT EXISTS user_daily_activity_unique ON user_daily_activity (user_id, date, module)`,
+    `CREATE INDEX IF NOT EXISTS user_daily_activity_date_idx ON user_daily_activity (date DESC)`,
+    `CREATE INDEX IF NOT EXISTS user_daily_activity_user_idx ON user_daily_activity (user_id, date DESC)`,
     // Chatbot FAQ tablosu
     `CREATE TABLE IF NOT EXISTS chatbot_faqs (
       id SERIAL PRIMARY KEY,

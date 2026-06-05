@@ -2,10 +2,10 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { Link, useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  BookOpen, LayoutDashboard, Video, FileQuestion, LineChart, 
+import {
+  BookOpen, LayoutDashboard, Video, FileQuestion, LineChart,
   Award, MessageSquare, Users, Megaphone, LogOut, Menu, Building2, BarChart3, GraduationCap, Mic, MessageCircle, FolderOpen, PenLine, TrendingUp, Settings2, Gamepad2, Crown, Lock,
-  Sparkles, ChevronDown, Brain, Briefcase, Presentation, Wand2, Compass, Bot
+  Sparkles, ChevronDown, Brain, Briefcase, Presentation, Wand2, Compass, Bot, Activity
 } from "lucide-react";
 import { Avatar } from "../ui/core";
 import { NotificationBell } from "../NotificationBell";
@@ -103,6 +103,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       { name: 'Speaking Club',       href: '/admin/speaking-club',            icon: Mic },
       { name: 'Duyurular',           href: '/admin/announcements',            icon: Megaphone },
       { name: 'Sistem Raporları',    href: '/admin/reports',                  icon: LineChart },
+      { name: 'Aktivite Analizi',    href: '/admin/analytics',                icon: Activity },
       { name: 'MEB Aktivite Raporu', href: '/admin/meb-report',               icon: BarChart3 },
       { name: 'Pazarlama & E-posta', href: '/admin/marketing',                icon: TrendingUp },
       { name: 'Lead Keşfi',          href: '/admin/outreach',                 icon: Sparkles },

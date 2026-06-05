@@ -83,6 +83,7 @@ const ROUTE_TITLES: RouteTitleEntry[] = [
   { prefix: '/admin/chatbot', title: 'Chatbot (Sphere Asistan) — Admin' },
   { prefix: '/admin/outreach', title: 'Lead Keşfi — Admin' },
   { prefix: '/admin/reports', title: 'Sistem Raporları — Admin' },
+  { prefix: '/admin/analytics', title: 'Aktivite Analizi — Admin' },
   { prefix: '/admin/meb-report', title: 'MEB Aktivite Raporu — Admin' },
   { prefix: '/admin', title: 'Yönetici Paneli' },
 

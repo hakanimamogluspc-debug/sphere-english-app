@@ -12,6 +12,7 @@ export * from "./materials";
 export * from "./marketing";
 export * from "./outreach";
 export * from "./chatbot";
+export * from "./user-daily-activity";
 export * from "./activity-logs";
 export * from "./feature-settings";
 export * from "./vocab-game";
