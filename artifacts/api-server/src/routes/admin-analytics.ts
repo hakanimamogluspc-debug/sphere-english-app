@@ -135,7 +135,7 @@ router.get(
                u.last_name     AS last_name,
                u.email         AS email,
                u.role          AS role,
-               u.level         AS level,
+               u.current_level AS level,
                u.student_number AS student_number,
                COALESCE(SUM(uda.minutes), 0)::int AS total_minutes,
                COUNT(DISTINCT uda.date)::int     AS active_days,
@@ -209,7 +209,7 @@ router.get(
           student_number: string | null;
           created_at: Date;
         }>(
-          `SELECT id, first_name, last_name, email, role, level, student_number, created_at
+          `SELECT id, first_name, last_name, email, role, current_level AS level, student_number, created_at
            FROM users WHERE id = $1`,
           [userId],
         ),
