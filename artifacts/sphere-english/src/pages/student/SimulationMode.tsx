@@ -597,7 +597,15 @@ function CoachCard({ coach, featured, onSelect }: { coach: Coach; featured?: boo
   );
 }
 
-function MicButton({ phase, recordSecs }: { phase: string; recordSecs: number }) {
+function MicButton({
+  phase, recordSecs, processingSecs, processingStep, onCancel,
+}: {
+  phase: string;
+  recordSecs: number;
+  processingSecs: number;
+  processingStep: string;
+  onCancel?: () => void;
+}) {
   const isRecording = phase === 'recording';
   const isSpeaking = phase === 'speaking';
   const isProcessing = phase === 'processing';
@@ -605,7 +613,7 @@ function MicButton({ phase, recordSecs }: { phase: string; recordSecs: number })
   const label = isRecording
     ? `${recordSecs}sn — Durdurmak için tıkla`
     : isSpeaking ? 'Koç konuşuyor — Durdurmak için tıkla'
-    : isProcessing ? 'İşleniyor...'
+    : isProcessing ? `${processingStep} (${processingSecs}sn)`
     : 'Konuşmak için tıkla';
   return (
     <div className="flex flex-col items-center gap-3">
@@ -645,6 +653,15 @@ function MicButton({ phase, recordSecs }: { phase: string; recordSecs: number })
         </button>
       </div>
       <span className="text-xs text-slate-500 font-medium text-center">{label}</span>
+      {isProcessing && onCancel && processingSecs >= 5 && (
+        <button
+          type="button"
+          onClick={onCancel}
+          className="text-[11px] font-medium text-red-600 hover:text-red-700 hover:underline transition"
+        >
+          İptal et
+        </button>
+      )}
     </div>
   );
 }
@@ -659,6 +676,10 @@ export default function SimulationMode() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [sessionStarted, setSessionStarted] = useState(false);
   const [phase, setPhase] = useState<'idle' | 'recording' | 'processing' | 'speaking'>('idle');
+  const [processingSecs, setProcessingSecs] = useState(0);
+  const [processingStep, setProcessingStep] = useState('İşleniyor');
+  const processingTimerRef = useRef<number | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
   const [recordSecs, setRecordSecs] = useState(0);
   const [error, setError] = useState('');
   const [sessionReport, setSessionReport] = useState<SimReport | null>(null);
@@ -676,6 +697,20 @@ export default function SimulationMode() {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // Unmount sırasında: ongoing fetch'i iptal et + timer'ı temizle
+  useEffect(() => {
+    return () => {
+      if (processingTimerRef.current != null) {
+        window.clearInterval(processingTimerRef.current);
+        processingTimerRef.current = null;
+      }
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+        abortControllerRef.current = null;
+      }
+    };
+  }, []);
+
   const playAudio = (base64: string) => {
     if (audioRef.current) { audioRef.current.pause(); audioRef.current.src = ''; }
     const bytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
@@ -684,8 +719,10 @@ export default function SimulationMode() {
     const audio = new Audio(url);
     audioRef.current = audio;
     setPhase('speaking');
-    audio.play().catch(() => {});
+    // play() reddedilirse veya audio yüklenmezse phase'de takılmasın
+    audio.play().catch(() => { setPhase('idle'); });
     audio.onended = () => { URL.revokeObjectURL(url); setPhase('idle'); };
+    audio.onerror = () => { URL.revokeObjectURL(url); setPhase('idle'); };
   };
 
   const stopStream = () => {
@@ -709,7 +746,36 @@ export default function SimulationMode() {
   const sendAudio = async (blob: Blob) => {
     if (!coach || !sector) return;
     setPhase('processing');
+    setProcessingSecs(0);
+    setProcessingStep('Sesin işleniyor');
     setError('');
+
+    // ── İlerleme sayacı ve aşama göstergesi ──
+    const startedAt = Date.now();
+    if (processingTimerRef.current != null) window.clearInterval(processingTimerRef.current);
+    processingTimerRef.current = window.setInterval(() => {
+      const secs = Math.floor((Date.now() - startedAt) / 1000);
+      setProcessingSecs(secs);
+      // Yaklaşık zamanlama: 0-6sn ses → 6-12sn yanıt → 12-22sn ses üretimi
+      if (secs >= 12) setProcessingStep('Sesli yanıt hazırlanıyor');
+      else if (secs >= 6) setProcessingStep('AI cevap üretiyor');
+      else setProcessingStep('Sesin işleniyor');
+    }, 500);
+
+    // ── 90 saniye timeout + manuel iptal için AbortController ──
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+    const timeoutId = window.setTimeout(() => controller.abort(new Error('timeout')), 90_000);
+
+    const cleanup = () => {
+      if (processingTimerRef.current != null) {
+        window.clearInterval(processingTimerRef.current);
+        processingTimerRef.current = null;
+      }
+      window.clearTimeout(timeoutId);
+      abortControllerRef.current = null;
+    };
+
     const history = messages.map(m => ({ role: m.role === 'user' ? 'user' : 'assistant' as const, content: m.text }));
     try {
       const formData = new FormData();
@@ -718,7 +784,11 @@ export default function SimulationMode() {
       formData.append('systemPrompt', coach.systemPrompt);
       formData.append('sector', sector.id);
       formData.append('history', JSON.stringify(history));
-      const res = await fetch(`${getApiBase()}/api/simulation/chat`, { method: 'POST', body: formData });
+      const res = await fetch(`${getApiBase()}/api/simulation/chat`, {
+        method: 'POST',
+        body: formData,
+        signal: controller.signal,
+      });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new Error((err as any).error || 'Bir hata oluştu.');
@@ -727,12 +797,30 @@ export default function SimulationMode() {
       const userMsg: Message = { role: 'user', text: data.userText, ts: now(), turnAnalysis: data.turnAnalysis };
       const coachMsg: Message = { role: 'coach', text: data.reply, ts: now() };
       setMessages(prev => [...prev, userMsg, coachMsg]);
+      cleanup();
       if (data.audioBase64) playAudio(data.audioBase64);
       else setPhase('idle');
     } catch (e: any) {
-      setError(e?.message || 'Bir hata oluştu.');
+      cleanup();
+      // AbortController'dan gelen iptal mi yoksa gerçek hata mı?
+      if (e?.name === 'AbortError' || /timeout/i.test(String(e?.message))) {
+        setError('İşlem 90 saniyeyi aştı. Lütfen tekrar deneyin. Sunucu yoğun olabilir.');
+      } else if (e?.name === 'AbortError') {
+        setError('İptal edildi.');
+      } else {
+        setError(e?.message || 'Bir hata oluştu.');
+      }
       setPhase('idle');
     }
+  };
+
+  // Kullanıcı "İptal et"e basarsa
+  const cancelProcessing = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    setPhase('idle');
+    setError('İptal edildi.');
   };
 
   const handleMicPress = async () => {
@@ -895,7 +983,13 @@ export default function SimulationMode() {
             </div>
           ) : (
             <div className="flex flex-col items-center py-4 gap-1" onClick={handleMicPress}>
-              <MicButton phase={phase} recordSecs={recordSecs} />
+              <MicButton
+                phase={phase}
+                recordSecs={recordSecs}
+                processingSecs={processingSecs}
+                processingStep={processingStep}
+                onCancel={cancelProcessing}
+              />
             </div>
           )}
         </div>

@@ -15,9 +15,22 @@ function getOpenAI(): OpenAI {
   if (!_openai) {
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) throw new Error("OPENAI_API_KEY ortam değişkeni ayarlanmamış");
-    _openai = new OpenAI({ apiKey });
+    // Default 45 saniye timeout — biri takılırsa sonsuza kadar beklemesin
+    _openai = new OpenAI({ apiKey, timeout: 45_000, maxRetries: 1 });
   }
   return _openai;
+}
+
+/**
+ * Promise'i belirtilen ms içinde bitmezse reddet.
+ * Whisper / GPT / TTS sırayla / paralel çağrılırken her birine ayrı timeout koymak için.
+ */
+function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(`${label} zaman aşımı (${ms}ms)`)), ms);
+    p.then((v) => { clearTimeout(timer); resolve(v); })
+     .catch((e) => { clearTimeout(timer); reject(e); });
+  });
 }
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
@@ -137,7 +150,7 @@ router.post(
       console.info(`[SIM] audio received: ${req.file.buffer.length} bytes, voice: ${safeVoice}, sector: ${sector}`);
 
       const t0 = Date.now();
-      const userText = await transcribe(req.file.buffer);
+      const userText = await withTimeout(transcribe(req.file.buffer), 35_000, "Whisper");
       console.info(`[SIM] transcribe done: "${userText.slice(0, 60)}" (${Date.now() - t0}ms)`);
 
       if (!userText) {
@@ -164,28 +177,49 @@ SIMULATION RULES:
 
       // ── Fire GPT and Analysis in parallel immediately ──
       const t1 = Date.now();
-      const gptPromise = getOpenAI().chat.completions.create({
-        model: "gpt-4o-mini",
-        messages: gptMessages,
-        temperature: 0.75,
-        max_tokens: 120,
+      const gptPromise = withTimeout(
+        getOpenAI().chat.completions.create({
+          model: "gpt-4o-mini",
+          messages: gptMessages,
+          temperature: 0.75,
+          max_tokens: 120,
+        }),
+        25_000,
+        "GPT",
+      );
+      // Analiz takılırsa fallback: boş analiz dön, ana akışı bloke etme
+      const analysisPromise = withTimeout(
+        analyzeForSimulation(userText, sector),
+        20_000,
+        "Analysis",
+      ).catch((err) => {
+        console.warn("[SIM] analiz başarısız, atlanıyor:", err?.message);
+        return {
+          grammarErrors: [],
+          vocabSuggestions: [],
+          score: 0,
+          correctedText: userText,
+        } as SimTurnAnalysis;
       });
-      const analysisPromise = analyzeForSimulation(userText, sector);
 
       // ── Wait for GPT reply first, then immediately fire TTS ──
       const completion = await gptPromise;
       const reply = completion.choices[0].message.content?.trim() || "I see. Please continue.";
       console.info(`[SIM] GPT done: "${reply.slice(0, 60)}" (${Date.now() - t1}ms)`);
 
-      // ── TTS and analysis run in parallel — no more waiting! ──
+      // ── TTS and analysis run in parallel ──
       const t2 = Date.now();
       const [ttsResponse, turnAnalysis] = await Promise.all([
-        getOpenAI().audio.speech.create({
-          model: "tts-1",
-          voice: safeVoice,
-          input: reply,
-          speed: 0.95,
-        }),
+        withTimeout(
+          getOpenAI().audio.speech.create({
+            model: "tts-1",
+            voice: safeVoice,
+            input: reply,
+            speed: 0.95,
+          }),
+          25_000,
+          "TTS",
+        ),
         analysisPromise,
       ]);
       console.info(`[SIM] TTS+analysis done (${Date.now() - t2}ms), total: ${Date.now() - t0}ms`);
@@ -195,7 +229,13 @@ SIMULATION RULES:
       return res.json({ userText, reply, audioBase64, turnAnalysis });
     } catch (err: any) {
       console.error("[SIM] HATA:", err?.message || err, err?.status, err?.code);
-      return res.status(500).json({ error: "Bir hata oluştu. Lütfen tekrar deneyin." });
+      // Timeout hatasını ayrı mesajla bildir — kullanıcı tekrar denesin
+      const isTimeout = /zaman aşımı|timeout/i.test(String(err?.message ?? ""));
+      const status = isTimeout ? 504 : 500;
+      const msg = isTimeout
+        ? "AI yanıt çok uzun sürdü, lütfen tekrar deneyin. (Sunucu yoğun olabilir)"
+        : "Bir hata oluştu. Lütfen tekrar deneyin.";
+      return res.status(status).json({ error: msg });
     }
   }
 );
