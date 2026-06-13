@@ -240,4 +240,48 @@ SIMULATION RULES:
   }
 );
 
+// ─── POST /api/simulation/translate ────────────────────────────────────────
+// Koç mesajını Türkçeye çevirir. Hızlı + ucuz (gpt-4o-mini).
+router.post("/simulation/translate", async (req: Request, res: Response) => {
+  try {
+    const { text } = (req.body ?? {}) as { text?: string };
+    if (!text || typeof text !== "string" || text.trim().length < 1) {
+      return res.status(400).json({ error: "Çevrilecek metin gerekli." });
+    }
+    if (text.length > 2000) {
+      return res.status(400).json({ error: "Metin çok uzun (max 2000 karakter)." });
+    }
+
+    const completion = await withTimeout(
+      getOpenAI().chat.completions.create({
+        model: "gpt-4o-mini",
+        temperature: 0.2,
+        max_tokens: 300,
+        messages: [
+          {
+            role: "system",
+            content:
+              "Sen profesyonel bir İngilizce → Türkçe çevirmensin. Verilen iş İngilizcesi cümlesini doğal, akıcı Türkçeye çevir. Sadece çeviriyi dön; açıklama, not, tırnak işareti yok.",
+          },
+          { role: "user", content: text.trim() },
+        ],
+      }),
+      15_000,
+      "Translate",
+    );
+
+    const translation = completion.choices[0].message.content?.trim() ?? "";
+    if (!translation) {
+      return res.status(502).json({ error: "Çeviri üretilemedi, tekrar deneyin." });
+    }
+    return res.json({ translation });
+  } catch (err: any) {
+    console.error("[SIM:translate] HATA:", err?.message ?? err);
+    const isTimeout = /zaman aşımı|timeout/i.test(String(err?.message ?? ""));
+    return res.status(isTimeout ? 504 : 500).json({
+      error: isTimeout ? "Çeviri zaman aşımına uğradı." : "Çeviri başarısız oldu.",
+    });
+  }
+});
+
 export default router;

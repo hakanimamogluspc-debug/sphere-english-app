@@ -512,7 +512,18 @@ interface TurnAnalysis {
   score: number;
   correctedText: string;
 }
-interface Message { role: 'user' | 'coach'; text: string; ts: string; turnAnalysis?: TurnAnalysis }
+interface Message {
+  role: 'user' | 'coach';
+  text: string;
+  ts: string;
+  turnAnalysis?: TurnAnalysis;
+  /** Koç mesajı için: backend'den gelen TTS base64 — tekrar dinleme için saklanır */
+  audioBase64?: string;
+  /** Koç mesajı için: Türkçe çevirisi (lazy load — ilk "Çevir" tıklamasında üretilir) */
+  translation?: string;
+  /** Çeviri istek halinde */
+  translationLoading?: boolean;
+}
 interface SimReport {
   duration: number;
   turnCount: number;
@@ -725,6 +736,48 @@ export default function SimulationMode() {
     audio.onerror = () => { URL.revokeObjectURL(url); setPhase('idle'); };
   };
 
+  // Coach mesajının ses kaydını tekrar dinlet
+  const replayCoachMessage = (audioBase64?: string) => {
+    if (!audioBase64) return;
+    if (phase === 'speaking' || phase === 'processing') return;
+    playAudio(audioBase64);
+  };
+
+  // Coach mesajını Türkçeye çevir (lazy — ilk tıklamada üretilir, sonra cache'lenir)
+  const translateCoachMessage = async (messageIndex: number) => {
+    const msg = messages[messageIndex];
+    if (!msg || msg.role !== 'coach') return;
+    // Zaten yüklü veya yükleniyor ise sadece toggle (tekrar gösterilmesi React state ile)
+    if (msg.translation) {
+      // İkinci tıklamada çeviriyi gizle — toggle
+      setMessages(prev => prev.map((m, i) => i === messageIndex ? { ...m, translation: undefined } : m));
+      return;
+    }
+    if (msg.translationLoading) return;
+
+    setMessages(prev => prev.map((m, i) => i === messageIndex ? { ...m, translationLoading: true } : m));
+    try {
+      const res = await fetch(`${getApiBase()}/api/simulation/translate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: msg.text }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error((err as any).error || 'Çeviri başarısız.');
+      }
+      const data = await res.json() as { translation: string };
+      setMessages(prev => prev.map((m, i) => i === messageIndex
+        ? { ...m, translation: data.translation, translationLoading: false }
+        : m));
+    } catch (e: any) {
+      setMessages(prev => prev.map((m, i) => i === messageIndex
+        ? { ...m, translationLoading: false }
+        : m));
+      setError(e?.message || 'Çeviri başarısız.');
+    }
+  };
+
   const stopStream = () => {
     streamRef.current?.getTracks().forEach(t => t.stop());
     streamRef.current = null;
@@ -795,7 +848,8 @@ export default function SimulationMode() {
       }
       const data = await res.json() as { userText: string; reply: string; audioBase64: string; turnAnalysis?: TurnAnalysis };
       const userMsg: Message = { role: 'user', text: data.userText, ts: now(), turnAnalysis: data.turnAnalysis };
-      const coachMsg: Message = { role: 'coach', text: data.reply, ts: now() };
+      // Koç mesajına audioBase64'ü iliştir — "Tekrar dinle" butonu için saklanır
+      const coachMsg: Message = { role: 'coach', text: data.reply, ts: now(), audioBase64: data.audioBase64 };
       setMessages(prev => [...prev, userMsg, coachMsg]);
       cleanup();
       if (data.audioBase64) playAudio(data.audioBase64);
@@ -943,6 +997,44 @@ export default function SimulationMode() {
                   style={{ background: m.role === 'user' ? NAVY : '#fff', border: m.role === 'coach' ? `1px solid ${SILVER_MID}` : 'none' }}>
                   {m.text}
                 </div>
+                {/* Koç mesajı için: Tekrar dinle + Çevir butonları */}
+                {m.role === 'coach' && (
+                  <div className="flex items-center gap-2 px-1">
+                    {m.audioBase64 && (
+                      <button
+                        type="button"
+                        onClick={() => replayCoachMessage(m.audioBase64)}
+                        disabled={phase === 'speaking' || phase === 'processing'}
+                        className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-md text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition"
+                        title="Bu cevabı tekrar dinle"
+                      >
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                          <path d="M15.54 8.46a5 5 0 0 1 0 7.07M19.07 4.93a10 10 0 0 1 0 14.14" />
+                        </svg>
+                        Tekrar dinle
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => translateCoachMessage(i)}
+                      disabled={m.translationLoading}
+                      className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-md text-slate-600 hover:bg-slate-100 disabled:opacity-40 transition"
+                      title="Türkçeye çevir"
+                    >
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M5 8h14M5 8L9 4M5 8l4 4M19 16H5M19 16l-4-4M19 16l-4 4" />
+                      </svg>
+                      {m.translationLoading ? 'Çevriliyor…' : m.translation ? 'Çeviriyi gizle' : 'Çevir'}
+                    </button>
+                  </div>
+                )}
+                {/* Çeviri sonucu */}
+                {m.role === 'coach' && m.translation && (
+                  <div className="w-full text-xs px-3 py-2 rounded-xl leading-relaxed" style={{ background: '#eff6ff', border: '1px solid #bfdbfe', color: '#1e40af' }}>
+                    <span className="font-semibold opacity-70">TR · </span>{m.translation}
+                  </div>
+                )}
                 {m.turnAnalysis && m.turnAnalysis.grammarErrors.length > 0 && (
                   <div className="w-full text-xs px-3 py-2 rounded-xl space-y-1" style={{ background: '#fef9c3', border: '1px solid #fde68a' }}>
                     {m.turnAnalysis.grammarErrors.slice(0, 2).map((e, gi) => (
