@@ -137,7 +137,10 @@
   }
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-display);
-    @apply font-bold tracking-tight text-foreground;
+    @apply font-bold tracking-tight;
+    /* color: inherit — parent context'ten miras alır.
+       Eskiden 'text-foreground' zorlanıyordu; bu lacivert/karanlık
+       zeminli kartlarda yazıları okunmaz hale getiriyordu. */
   }
 }
 

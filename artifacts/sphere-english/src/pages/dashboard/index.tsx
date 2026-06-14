@@ -61,7 +61,7 @@ function StudentDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-white/80 font-medium mb-1">Toplam Puan</p>
-                <h3 className="text-4xl font-bold font-display">{stats?.totalPoints || 0}</h3>
+                <h3 className="text-4xl font-bold font-display text-white">{stats?.totalPoints || 0}</h3>
               </div>
               <div className="h-12 w-12 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-md">
                 <Trophy className="h-6 w-6 text-yellow-300" />
@@ -168,9 +168,9 @@ function StudentDashboard() {
           <Card className="overflow-hidden">
             <div className="bg-primary p-6 text-center text-white">
               <div className="w-20 h-20 mx-auto bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center mb-4 border-4 border-white/30">
-                <span className="text-3xl font-bold font-display">{stats?.level || 'A1'}</span>
+                <span className="text-3xl font-bold font-display text-white">{stats?.level || 'A1'}</span>
               </div>
-              <h3 className="text-xl font-bold">Mevcut Seviye</h3>
+              <h3 className="text-xl font-bold text-white">Mevcut Seviye</h3>
             </div>
             <CardContent className="p-0">
               <Link href="/courses">
