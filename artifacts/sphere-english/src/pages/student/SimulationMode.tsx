@@ -534,6 +534,25 @@ interface SimReport {
 
 const MIN_RECORD_MS = 2000;
 
+// ── Defansif kalıcılık: sohbet kaybı yaşanırsa son state otomatik geri yüklenir ──
+// Sebep ne olursa olsun (re-mount, JS exception, browser back, refresh, network
+// timeout sonrası state karışıklığı), mesajlar localStorage'da olduğu sürece
+// kullanıcı kaldığı yerden devam edebilir.
+const SIM_STORAGE_KEY = 'sphere:sim:state-v1';
+const SIM_MAX_AGE_MS = 24 * 60 * 60 * 1000; // 24 saat
+
+interface SimPersistedState {
+  v: 1;
+  sectorId: string;
+  coachId: string;
+  mode: 'free' | 'scenario' | null;
+  scenario: string | null;
+  // audioBase64 ve translation alanları çıkarılır — quota dostu
+  messages: Array<Pick<Message, 'role' | 'text' | 'ts' | 'turnAnalysis'>>;
+  sessionStarted: boolean;
+  savedAt: number;
+}
+
 function getApiBase(): string {
   const base = (import.meta.env.BASE_URL as string).replace(/\/$/, "");
   return base.replace("/sphere-english", "/api-server");
@@ -721,6 +740,71 @@ export default function SimulationMode() {
       }
     };
   }, []);
+
+  // ── Mount: localStorage'dan önceki sohbeti restore et ──
+  // Sebep ne olursa olsun mesajları kaybetmemek için: re-mount, refresh,
+  // beklenmedik JS exception, browser back, vs. Sohbet >24 saat eskiyse atılır.
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(SIM_STORAGE_KEY);
+      if (!raw) return;
+      const saved = JSON.parse(raw) as SimPersistedState;
+      if (!saved || saved.v !== 1) return;
+      if (!saved.messages || saved.messages.length < 2) return; // sadece greeting varsa kayda değmez
+      if (Date.now() - (saved.savedAt ?? 0) > SIM_MAX_AGE_MS) {
+        localStorage.removeItem(SIM_STORAGE_KEY);
+        return;
+      }
+      const restoredSector = SECTORS.find(s => s.id === saved.sectorId);
+      const restoredCoach = COACHES.find(c => c.id === saved.coachId);
+      if (!restoredSector || !restoredCoach) return;
+
+      setSector(restoredSector);
+      setCoach(restoredCoach);
+      setMode(saved.mode ?? null);
+      setScenario(saved.scenario ?? null);
+      setMessages(saved.messages as Message[]);
+      setSessionStarted(saved.sessionStarted ?? true);
+      // chatStartTime'ı yaklaşık olarak savedAt + 30sn ortalama set et;
+      // tam doğru değil ama rapor için "ne kadar konuştun" hesabı yine de çalışır.
+      chatStartTimeRef.current = saved.savedAt - 60_000;
+      setStep('chat');
+      // Sessiz restore — kullanıcı sohbeti olduğu yerden devam ettiğini görür,
+      // ek bir banner gerekmez. Error state kırmızı kutu olduğu için kullanılmaz.
+    } catch {
+      // Sessiz başarısızlık — restore'un patlaması user'ı engellemesin
+    }
+    // Sadece mount'ta — dependency yok
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ── Autosave: messages/sector/coach/mode/scenario değişince localStorage'a yaz ──
+  // audioBase64 (TTS) ve translation alanları çıkarılır — quota dostu.
+  useEffect(() => {
+    if (step !== 'chat') return;
+    if (!sector || !coach) return;
+    if (messages.length === 0) return;
+    try {
+      const payload: SimPersistedState = {
+        v: 1,
+        sectorId: sector.id,
+        coachId: coach.id,
+        mode,
+        scenario,
+        messages: messages.map(m => ({
+          role: m.role,
+          text: m.text,
+          ts: m.ts,
+          ...(m.turnAnalysis ? { turnAnalysis: m.turnAnalysis } : {}),
+        })),
+        sessionStarted,
+        savedAt: Date.now(),
+      };
+      localStorage.setItem(SIM_STORAGE_KEY, JSON.stringify(payload));
+    } catch {
+      // QuotaExceeded vb. — sessiz devam, uygulamayı bozmasın
+    }
+  }, [messages, step, sector, coach, mode, scenario, sessionStarted]);
 
   const playAudio = (base64: string) => {
     if (audioRef.current) { audioRef.current.pause(); audioRef.current.src = ''; }
@@ -937,6 +1021,8 @@ export default function SimulationMode() {
     setPhase('idle');
     setSessionReport(computeReport(messages));
     setStep('report');
+    // Oturum biti — otosave'i temizle ki kullanıcı yeni session başlatınca eski sohbet restore olmasın
+    try { localStorage.removeItem(SIM_STORAGE_KEY); } catch {}
   };
 
   const startChat = (sc: string | null) => {
@@ -955,6 +1041,8 @@ export default function SimulationMode() {
   const reset = () => {
     stopStream(); stopTimer();
     if (audioRef.current) { audioRef.current.pause(); }
+    // Yeni baştan başlama — otosave'i de temizle
+    try { localStorage.removeItem(SIM_STORAGE_KEY); } catch {}
     setStep('sector'); setSector(null); setCoach(null); setMode(null);
     setScenario(null); setCustomScenario(''); setMessages([]);
     setSessionStarted(false); setPhase('idle'); setError(''); setSessionReport(null);
