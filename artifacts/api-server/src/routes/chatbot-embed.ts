@@ -32,7 +32,12 @@ const WIDGET_JS = String.raw`(function(){
   var CHAT_URL = API_BASE.replace(/\/$/, '') + '/api/chat';
   var BRAND_COLOR = (currentScript && currentScript.getAttribute('data-color')) || '#082567';
   var SESSION_KEY = 'sphere_chat_session';
+  var SESSION_TS_KEY = 'sphere_chat_session_ts';
   var MESSAGES_KEY = 'sphere_chat_messages';
+  // 6 saat inaktivite sonrası yeni oturum başlat — admin geçmişinde her sohbet ayrı görünür.
+  // Aksi takdirde aynı tarayıcıdan yapılan tüm sohbetler aynı sessionId ile DB'de tek satıra
+  // override ediyor ve admin "Konuşmalar"da sadece son sohbeti görüyordu.
+  var SESSION_TTL_MS = 6 * 60 * 60 * 1000;
 
   // ─── State ───────────────────────────────────────────────────────────
   var INITIAL_MSG = {
@@ -52,12 +57,26 @@ const WIDGET_JS = String.raw`(function(){
   function getSessionId() {
     try {
       var id = localStorage.getItem(SESSION_KEY);
-      if (!id) {
-        id = 'sphere_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+      var ts = parseInt(localStorage.getItem(SESSION_TS_KEY) || '0', 10);
+      var now = Date.now();
+      // Yeni id üret: id yoksa veya TTL dolmuşsa
+      if (!id || !ts || (now - ts) > SESSION_TTL_MS) {
+        id = 'sphere_' + Math.random().toString(36).slice(2, 10) + now.toString(36);
         localStorage.setItem(SESSION_KEY, id);
+        // Yeni oturum açıldı — eski mesajlar başka bir oturuma ait, sil
+        try { localStorage.removeItem(MESSAGES_KEY); } catch(e) {}
       }
+      localStorage.setItem(SESSION_TS_KEY, String(now));
       return id;
     } catch(e) { return 'sphere_' + Date.now(); }
+  }
+  // Lead capture'tan sonra çağrılır. Bir sonraki mesaj yeni session ile başlasın
+  // diye SESSION_KEY'i silmek yeterli (getSessionId yeniden üretecek).
+  function resetSessionAfterLead() {
+    try {
+      localStorage.removeItem(SESSION_KEY);
+      localStorage.removeItem(SESSION_TS_KEY);
+    } catch(e) {}
   }
   function loadMessages() {
     try {
@@ -304,7 +323,13 @@ const WIDGET_JS = String.raw`(function(){
           content: data.message,
           timestamp: new Date().toISOString()
         });
-        if (data.capturedLead) state.leadCaptured = true;
+        if (data.capturedLead) {
+          state.leadCaptured = true;
+          // Lead alındı — bu konuşma DB'de kapanmış sayılır. Bir sonraki
+          // mesaj yeni sessionId ile yeni bir kayıt oluşturur ki admin
+          // panelinde her lead ayrı satır olarak görünsün.
+          resetSessionAfterLead();
+        }
         if (!state.isOpen) {
           state.hasUnread = true;
           badgeEl.style.display = 'block';
