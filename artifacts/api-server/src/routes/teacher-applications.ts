@@ -89,6 +89,11 @@ router.post(
       const ip = (req.headers["x-forwarded-for"] as string)?.split(",")[0]?.trim() || req.ip || null;
       const userAgent = (req.headers["user-agent"] as string) || null;
 
+      // CV'yi base64'e çevir — drizzle template literal Buffer'ı bytea olarak
+      // doğru cast edemiyor. PostgreSQL decode(base64, 'base64') ile binary'e
+      // geri çevirir. Null güvenli: CV yoksa NULL gönderilir.
+      const cvBase64: string | null = cv?.buffer ? cv.buffer.toString("base64") : null;
+
       const inserted = await db.execute(sql`
         INSERT INTO teacher_applications (
           full_name, email, phone, birth_date, nationality, location,
@@ -100,7 +105,8 @@ router.post(
           ${body.birthDate}, ${body.nationality.trim()}, ${body.location.trim()},
           ${body.experience}, ${body.education}, ${body.englishLevel},
           ${certificationsJson}, ${body.references || null},
-          ${cv?.originalname ?? null}, ${cv?.mimetype ?? null}, ${cv?.size ?? null}, ${cv?.buffer ?? null},
+          ${cv?.originalname ?? null}, ${cv?.mimetype ?? null}, ${cv?.size ?? null},
+          ${cvBase64 ? sql`decode(${cvBase64}, 'base64')` : sql`NULL`},
           'pending', NOW(), ${ip}, ${userAgent}
         )
         RETURNING id
@@ -110,15 +116,25 @@ router.post(
       console.info(`[TEACHER-APP] Yeni başvuru: ${body.email} (id=${newId})`);
       return res.status(201).json({ ok: true, id: newId, message: "Başvurunuz alındı. En kısa sürede dönüş yapacağız." });
     } catch (e: any) {
-      console.error("[TEACHER-APP] submit HATA:", e?.message ?? e, e?.code, e?.stack);
+      // Tüm detay sunucu log'unda; kullanıcıya kısa mesaj döner
+      console.error("[TEACHER-APP] submit HATA:", {
+        message: e?.message,
+        code: e?.code,
+        causeCode: e?.cause?.code,
+        causeMsg: e?.cause?.message,
+      });
       if (e?.code === "LIMIT_FILE_SIZE") {
         return res.status(413).json({ error: "CV dosyası 5MB sınırını aşıyor" });
       }
-      // Sebebi de döndür ki frontend gerçek problemi gösterebilsin
-      const detail = e?.message ?? "bilinmeyen hata";
+      // Drizzle "Failed query: ... params: ..." gibi çok uzun mesajlar üretir;
+      // sadece anlamlı kısmı al. cause varsa pg hata kodu + mesajı tercih edilir.
+      const pgCode = e?.cause?.code ?? e?.code;
+      const pgMessage = e?.cause?.message ?? "";
+      const rawMessage = e?.message ?? "bilinmeyen hata";
+      const short = pgMessage || rawMessage.split("\n")[0].slice(0, 200);
       return res.status(500).json({
-        error: `Başvuru gönderilemedi: ${detail}`,
-        code: e?.code,
+        error: `Başvuru gönderilemedi: ${short}`,
+        code: pgCode,
       });
     }
   },
