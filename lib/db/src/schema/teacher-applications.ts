@@ -5,8 +5,18 @@ import {
   varchar,
   integer,
   timestamp,
+  customType,
   index,
 } from "drizzle-orm/pg-core";
+
+// Postgres BYTEA — CV PDF binary olarak saklanır.
+// Şema'da TANIMLI OLMASI ZORUNLU: aksi halde `drizzle-kit push --force`
+// kolonu DB'den siler (önce yaşadığımız sorun).
+const bytea = customType<{ data: Buffer }>({
+  dataType() {
+    return "bytea";
+  },
+});
 
 /**
  * Pazarlama sitesindeki "Eğitmen Ol" formundan gelen başvurular.
@@ -43,13 +53,10 @@ export const teacherApplicationsTable = pgTable(
     referencesText: text("references_text"),
 
     // ── CV (bytea — max 5MB validation backend'de) ──
-    // cvContent kolonu DB seviyesinde BYTEA — drizzle ORM ile select/insert
-    // YAPMIYORUZ (raw SQL kullanıyoruz `db.execute(sql\`...\`)`), bu yüzden
-    // schema tarafında tip tanımına ihtiyaç yok. customType'tan kaçınarak
-    // sürüm uyumluluğu artırılır.
     cvFilename: varchar("cv_filename", { length: 300 }),
     cvMimeType: varchar("cv_mime_type", { length: 100 }),
     cvSizeBytes: integer("cv_size_bytes"),
+    cvContent: bytea("cv_content"),
 
     // ── Admin tarafı ──
     // pending | reviewing | accepted | rejected | archived

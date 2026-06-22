@@ -274,6 +274,12 @@ async function runStartupMigrations() {
     `ALTER TABLE teacher_applications ADD COLUMN IF NOT EXISTS references_text TEXT`,
     `CREATE INDEX IF NOT EXISTS teacher_apps_status_idx ON teacher_applications(status, created_at DESC)`,
     `CREATE INDEX IF NOT EXISTS teacher_apps_email_idx ON teacher_applications(email)`,
+    // Defansif: drizzle-kit push schema'da kolon yoksa BYTEA'yı silebilir.
+    // ALTER IF NOT EXISTS ile her startup'ta kolon varlığını garantile.
+    `ALTER TABLE teacher_applications ADD COLUMN IF NOT EXISTS cv_content BYTEA`,
+    `ALTER TABLE teacher_applications ADD COLUMN IF NOT EXISTS cv_filename VARCHAR(300)`,
+    `ALTER TABLE teacher_applications ADD COLUMN IF NOT EXISTS cv_mime_type VARCHAR(100)`,
+    `ALTER TABLE teacher_applications ADD COLUMN IF NOT EXISTS cv_size_bytes INTEGER`,
     // Sidebar entry + admin role
     `INSERT INTO feature_settings (key, label, is_enabled, visible_to, category) VALUES
       ('admin-teacher-applications', 'Eğitmen Başvuruları', true, ARRAY['admin']::TEXT[], 'admin')
