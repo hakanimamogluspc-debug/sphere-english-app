@@ -253,7 +253,7 @@ async function runStartupMigrations() {
       education VARCHAR(50) NOT NULL,
       english_level VARCHAR(30) NOT NULL,
       certifications TEXT,
-      references TEXT,
+      references_text TEXT,
       cv_filename VARCHAR(300),
       cv_mime_type VARCHAR(100),
       cv_size_bytes INTEGER,
@@ -268,6 +268,10 @@ async function runStartupMigrations() {
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )`,
+    // Eğer eski deploy "references" kolonu ile yarattıysa rename et — yoksa NO-OP
+    `ALTER TABLE teacher_applications RENAME COLUMN "references" TO references_text`,
+    // references_text yoksa ekle (eski tabloya migrate edenler için ek güvenlik)
+    `ALTER TABLE teacher_applications ADD COLUMN IF NOT EXISTS references_text TEXT`,
     `CREATE INDEX IF NOT EXISTS teacher_apps_status_idx ON teacher_applications(status, created_at DESC)`,
     `CREATE INDEX IF NOT EXISTS teacher_apps_email_idx ON teacher_applications(email)`,
     // Sidebar entry + admin role

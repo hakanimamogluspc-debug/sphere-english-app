@@ -46,7 +46,7 @@ interface Application {
   education: string;
   english_level: string;
   certifications: string | null;
-  references: string | null;
+  references_text: string | null;
   cv_filename: string | null;
   cv_mime_type: string | null;
   cv_size_bytes: number | null;
@@ -373,9 +373,9 @@ function DetailModal({
             <Field icon={<Award size={14} />} label="Sertifikalar" value={certs.length > 0 ? certs.join(", ") : "—"} />
           </Section>
 
-          {application.references && (
+          {application.references_text && (
             <Section title="Referans">
-              <p className="text-sm text-slate-700 whitespace-pre-wrap">{application.references}</p>
+              <p className="text-sm text-slate-700 whitespace-pre-wrap">{application.references_text}</p>
             </Section>
           )}
 

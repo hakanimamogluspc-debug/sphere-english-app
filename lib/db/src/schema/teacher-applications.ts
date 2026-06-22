@@ -46,7 +46,9 @@ export const teacherApplicationsTable = pgTable(
     englishLevel: varchar("english_level", { length: 30 }).notNull(),// "beginner", "elementary", "intermediate", "advanced"
     certifications: text("certifications"),                          // JSON array string: ["IELTS","CELTA"]
 
-    references: text("references"),
+    // PostgreSQL'de "references" reserved keyword (foreign key syntax). Kolon
+    // adını references_text yapıyoruz; CREATE/INSERT/SELECT'de syntax hatası olmasın.
+    referencesText: text("references_text"),
 
     // ── CV (bytea — max 5MB validation backend'de) ──
     cvFilename: varchar("cv_filename", { length: 300 }),

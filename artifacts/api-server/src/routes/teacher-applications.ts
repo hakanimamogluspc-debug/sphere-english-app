@@ -92,7 +92,7 @@ router.post(
       const inserted = await db.execute(sql`
         INSERT INTO teacher_applications (
           full_name, email, phone, birth_date, nationality, location,
-          experience, education, english_level, certifications, references,
+          experience, education, english_level, certifications, references_text,
           cv_filename, cv_mime_type, cv_size_bytes, cv_content,
           status, kvkk_accepted_at, submitter_ip, user_agent
         ) VALUES (
@@ -110,12 +110,16 @@ router.post(
       console.info(`[TEACHER-APP] Yeni başvuru: ${body.email} (id=${newId})`);
       return res.status(201).json({ ok: true, id: newId, message: "Başvurunuz alındı. En kısa sürede dönüş yapacağız." });
     } catch (e: any) {
-      console.error("[TEACHER-APP] submit HATA:", e?.message ?? e);
-      // multer file-size hatası
+      console.error("[TEACHER-APP] submit HATA:", e?.message ?? e, e?.code, e?.stack);
       if (e?.code === "LIMIT_FILE_SIZE") {
         return res.status(413).json({ error: "CV dosyası 5MB sınırını aşıyor" });
       }
-      return res.status(500).json({ error: "Başvuru gönderilemedi. Lütfen tekrar deneyin." });
+      // Sebebi de döndür ki frontend gerçek problemi gösterebilsin
+      const detail = e?.message ?? "bilinmeyen hata";
+      return res.status(500).json({
+        error: `Başvuru gönderilemedi: ${detail}`,
+        code: e?.code,
+      });
     }
   },
 );
@@ -134,7 +138,7 @@ router.get(
 
       const rows = await db.execute(sql`
         SELECT id, full_name, email, phone, birth_date, nationality, location,
-               experience, education, english_level, certifications, references,
+               experience, education, english_level, certifications, references_text,
                cv_filename, cv_mime_type, cv_size_bytes,
                status, admin_notes, reviewed_at,
                created_at, updated_at
@@ -172,7 +176,7 @@ router.get(
     try {
       const rows = await db.execute(sql`
         SELECT id, full_name, email, phone, birth_date, nationality, location,
-               experience, education, english_level, certifications, references,
+               experience, education, english_level, certifications, references_text,
                cv_filename, cv_mime_type, cv_size_bytes,
                status, admin_notes, reviewed_at, reviewed_by,
                submitter_ip, user_agent, created_at, updated_at
