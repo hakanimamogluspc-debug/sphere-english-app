@@ -26,3 +26,5 @@ export * from "./ai-tutor";
 export * from "./learning-paths";
 export * from "./level-exams";
 export * from "./subscriptions";
+export * from "./payments";
+export * from "./teacher-applications";

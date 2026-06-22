@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   BookOpen, LayoutDashboard, Video, FileQuestion, LineChart,
   Award, MessageSquare, Users, Megaphone, LogOut, Menu, Building2, BarChart3, GraduationCap, Mic, MessageCircle, FolderOpen, PenLine, TrendingUp, Settings2, Gamepad2, Crown, Lock,
-  Sparkles, ChevronDown, Brain, Briefcase, Presentation, Wand2, Compass, Bot, Activity
+  Sparkles, ChevronDown, Brain, Briefcase, Presentation, Wand2, Compass, Bot, Activity, UserPlus
 } from "lucide-react";
 import { Avatar } from "../ui/core";
 import { NotificationBell } from "../NotificationBell";
@@ -105,6 +105,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       { name: 'Sistem Raporları',    href: '/admin/reports',                  icon: LineChart },
       { name: 'Aktivite Analizi',    href: '/admin/analytics',                icon: Activity },
       { name: 'İçerik Motoru',       href: '/admin/content-engine',           icon: Wand2 },
+      { name: 'Eğitmen Başvuruları', href: '/admin/teacher-applications',     icon: UserPlus },
       { name: 'MEB Aktivite Raporu', href: '/admin/meb-report',               icon: BarChart3 },
       { name: 'Pazarlama & E-posta', href: '/admin/marketing',                icon: TrendingUp },
       { name: 'Lead Keşfi',          href: '/admin/outreach',                 icon: Sparkles },

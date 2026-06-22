@@ -49,6 +49,7 @@ import subscriptionRouter from "./subscription";
 import adminSubscriptionsRouter from "./admin-subscriptions";
 import paymentRouter from "./payment";
 import internalPaymentRouter from "./internal-payment";
+import teacherApplicationsRouter from "./teacher-applications";
 import { requireSubscription } from "../middlewares/require-subscription";
 import { authMiddleware } from "../middlewares/auth";
 
@@ -85,6 +86,7 @@ router.use(subscriptionRouter);
 router.use(adminSubscriptionsRouter);
 router.use("/payment", paymentRouter);
 router.use(internalPaymentRouter);
+router.use(teacherApplicationsRouter);
 router.use(proGuard, pronunciationRouter);
 router.use(proGuard, writingRouter);
 router.use(marketingRouter);

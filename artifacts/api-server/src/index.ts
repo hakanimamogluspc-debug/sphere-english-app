@@ -191,6 +191,89 @@ async function runStartupMigrations() {
     `INSERT INTO feature_settings (key, label, is_enabled, visible_to, category) VALUES
       ('subscription-enforcement', 'Abonelik Kilitleri (Pro paywall)', false, ARRAY['admin']::TEXT[], 'system')
       ON CONFLICT (key) DO NOTHING`,
+    // ─── Iyzico için subscriptions tablosunu genişlet ────────────────────────
+    // Yeni kolonlar: plan etiketi, tutar, faturalama tipi, süre, dönem bilgileri
+    `ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS plan_label VARCHAR(200)`,
+    `ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS amount DECIMAL(12,2)`,
+    `ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS currency VARCHAR(3) DEFAULT 'TRY'`,
+    `ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS billing_type VARCHAR(30)`,
+    `ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS duration_months INTEGER`,
+    `ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS started_at TIMESTAMPTZ`,
+    `ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS expires_at TIMESTAMPTZ`,
+    `ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS provider_conversation_id TEXT`,
+    `CREATE INDEX IF NOT EXISTS idx_subscriptions_expires_at ON subscriptions(status, expires_at)`,
+    // Eski CHECK constraint'leri kaldır — yeni status ve plan_key değerleri için yer aç
+    `DO $$ BEGIN
+       IF EXISTS (SELECT 1 FROM pg_constraint WHERE conname='subscriptions_status_check') THEN
+         ALTER TABLE subscriptions DROP CONSTRAINT subscriptions_status_check;
+       END IF;
+       IF EXISTS (SELECT 1 FROM pg_constraint WHERE conname='subscriptions_plan_key_check') THEN
+         ALTER TABLE subscriptions DROP CONSTRAINT subscriptions_plan_key_check;
+       END IF;
+     END $$`,
+    // Yeni geniş status set'i
+    `DO $$ BEGIN
+       IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname='subscriptions_status_check_v2') THEN
+         ALTER TABLE subscriptions ADD CONSTRAINT subscriptions_status_check_v2
+           CHECK (status IN ('none','pending','trialing','active','past_due','canceled','expired','failed'));
+       END IF;
+     END $$`,
+    // ─── Iyzico ödeme olay geçmişi (audit trail) ─────────────────────────────
+    `CREATE TABLE IF NOT EXISTS payments (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+      subscription_id INTEGER,
+      event_type VARCHAR(50) NOT NULL,
+      status VARCHAR(30) NOT NULL,
+      amount DECIMAL(12,2),
+      currency VARCHAR(3) DEFAULT 'TRY',
+      provider VARCHAR(30) DEFAULT 'iyzico',
+      provider_payment_id VARCHAR(200),
+      provider_conversation_id VARCHAR(200),
+      iyzico_token VARCHAR(400),
+      error_code VARCHAR(100),
+      error_message TEXT,
+      raw_payload JSONB,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`,
+    `CREATE INDEX IF NOT EXISTS payments_user_idx ON payments(user_id, created_at)`,
+    `CREATE INDEX IF NOT EXISTS payments_subscription_idx ON payments(subscription_id)`,
+    `CREATE INDEX IF NOT EXISTS payments_conversation_idx ON payments(provider_conversation_id)`,
+    `CREATE INDEX IF NOT EXISTS payments_event_type_idx ON payments(event_type, created_at)`,
+    // ─── Eğitmen başvuruları (pazarlama sitesi /egitmen-ol formu) ───────────
+    `CREATE TABLE IF NOT EXISTS teacher_applications (
+      id SERIAL PRIMARY KEY,
+      full_name VARCHAR(200) NOT NULL,
+      email VARCHAR(200) NOT NULL,
+      phone VARCHAR(30) NOT NULL,
+      birth_date VARCHAR(12) NOT NULL,
+      nationality VARCHAR(100) NOT NULL,
+      location VARCHAR(200) NOT NULL,
+      experience VARCHAR(50) NOT NULL,
+      education VARCHAR(50) NOT NULL,
+      english_level VARCHAR(30) NOT NULL,
+      certifications TEXT,
+      references TEXT,
+      cv_filename VARCHAR(300),
+      cv_mime_type VARCHAR(100),
+      cv_size_bytes INTEGER,
+      cv_content BYTEA,
+      status VARCHAR(20) NOT NULL DEFAULT 'pending',
+      admin_notes TEXT,
+      reviewed_by INTEGER,
+      reviewed_at TIMESTAMPTZ,
+      kvkk_accepted_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      submitter_ip VARCHAR(64),
+      user_agent TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`,
+    `CREATE INDEX IF NOT EXISTS teacher_apps_status_idx ON teacher_applications(status, created_at DESC)`,
+    `CREATE INDEX IF NOT EXISTS teacher_apps_email_idx ON teacher_applications(email)`,
+    // Sidebar entry + admin role
+    `INSERT INTO feature_settings (key, label, is_enabled, visible_to, category) VALUES
+      ('admin-teacher-applications', 'Eğitmen Başvuruları', true, ARRAY['admin']::TEXT[], 'admin')
+      ON CONFLICT (key) DO NOTHING`,
     // Yeni AI Studio modülleri — interview-sim, presentation-sim, ai-quiz, ai-tutor, learning-path
     `INSERT INTO feature_settings (key, label, is_enabled, visible_to, category) VALUES
       ('student-interview-sim',     'Mülakat Simülatörü',     true, ARRAY['student','bireysel_ogrenci','kurumsal_ogrenci','admin']::TEXT[], 'ai-studio'),
