@@ -47,6 +47,8 @@ import corporateAiReportRouter from "./corporate-ai-report";
 import levelExamsRouter from "./level-exams";
 import subscriptionRouter from "./subscription";
 import adminSubscriptionsRouter from "./admin-subscriptions";
+import paymentRouter from "./payment";
+import internalPaymentRouter from "./internal-payment";
 import { requireSubscription } from "../middlewares/require-subscription";
 import { authMiddleware } from "../middlewares/auth";
 
@@ -81,6 +83,8 @@ router.use(dashboardRouter);
 router.use(materialsRouter);
 router.use(subscriptionRouter);
 router.use(adminSubscriptionsRouter);
+router.use("/payment", paymentRouter);
+router.use(internalPaymentRouter);
 router.use(proGuard, pronunciationRouter);
 router.use(proGuard, writingRouter);
 router.use(marketingRouter);
