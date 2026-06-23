@@ -53,7 +53,7 @@ export const PLAN_CATALOG: PlanDefinition[] = [
       "Temel seviye tespiti",
       "Temel ilerleme paneli",
       "E-posta destek",
-      "2 ay bedava",
+      "Aylığa göre %17 indirim",
     ],
   },
   {
@@ -88,7 +88,7 @@ export const PLAN_CATALOG: PlanDefinition[] = [
       "Adaptif kişisel öğrenme planı",
       "Haftalık hedef + detaylı rapor",
       "Öncelikli destek",
-      "2 ay bedava",
+      "Aylığa göre %17 indirim",
     ],
   },
   {
@@ -121,7 +121,7 @@ export const PLAN_CATALOG: PlanDefinition[] = [
       "Tam kişiselleştirilmiş plan + hedef takibi",
       "Derin analiz + öneri raporu",
       "Öncelikli destek + aylık canlı koçluk",
-      "2 ay bedava",
+      "Aylığa göre %17 indirim",
     ],
   },
 ];
