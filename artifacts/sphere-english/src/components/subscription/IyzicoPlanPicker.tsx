@@ -21,8 +21,8 @@ const API = import.meta.env.BASE_URL.replace(/\/$/, "") + "/api";
 export interface PaymentPlan {
   code: string;
   label: string;
-  tier: "basic" | "standard" | "premium" | "executive";
-  billingType: "recurring" | "one-time";
+  tier: "core" | "pro" | "premium";
+  billingType: "monthly" | "yearly";
   amount: number;
   durationMonths?: number;
   features: string[];
@@ -47,10 +47,9 @@ interface CurrentUser {
 const MARKETING_BASE = "https://www.sphereenglish.com";
 
 const TIER_STYLE: Record<PaymentPlan["tier"], { color: string; bg: string; ring: string; chip: string }> = {
-  basic:     { color: "#475569", bg: "#f1f5f9", ring: "#cbd5e1", chip: "#64748b" },
-  standard:  { color: "#0284c7", bg: "#e0f2fe", ring: "#7dd3fc", chip: "#0ea5e9" },
-  premium:   { color: "#4f46e5", bg: "#eef2ff", ring: "#818cf8", chip: "#6366f1" },
-  executive: { color: "#7c3aed", bg: "#faf5ff", ring: "#c4b5fd", chip: "#a855f7" },
+  core:    { color: "#475569", bg: "#f8fafc", ring: "#cbd5e1", chip: "#64748b" },
+  pro:     { color: "#4f46e5", bg: "#eef2ff", ring: "#818cf8", chip: "#6366f1" },
+  premium: { color: "#7c3aed", bg: "#faf5ff", ring: "#c4b5fd", chip: "#a855f7" },
 };
 
 function formatTRY(amount: number) {
@@ -63,7 +62,7 @@ function formatTRY(amount: number) {
 
 export default function IyzicoPlanPicker() {
   const [plans, setPlans] = useState<PaymentPlan[]>([]);
-  const [tab, setTab] = useState<"recurring" | "one-time">("recurring");
+  const [tab, setTab] = useState<"monthly" | "yearly">("monthly");
   const [current, setCurrent] = useState<CurrentSubscription | null>(null);
   const [user, setUser] = useState<CurrentUser | null>(null);
 
@@ -131,20 +130,20 @@ export default function IyzicoPlanPicker() {
       {/* Tab */}
       <div className="flex gap-2 mb-6 p-1 rounded-xl bg-slate-100 w-fit">
         <button
-          onClick={() => setTab("recurring")}
+          onClick={() => setTab("monthly")}
           className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
-            tab === "recurring" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500"
+            tab === "monthly" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500"
           }`}
         >
-          Aylık (Otomatik Yenilenir)
+          Aylık
         </button>
         <button
-          onClick={() => setTab("one-time")}
+          onClick={() => setTab("yearly")}
           className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
-            tab === "one-time" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500"
+            tab === "yearly" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500"
           }`}
         >
-          Peşin Paket (Tek Seferlik)
+          Yıllık (2 ay bedava)
         </button>
       </div>
 
@@ -177,7 +176,7 @@ export default function IyzicoPlanPicker() {
                 {formatTRY(p.amount)}
               </div>
               <div className="text-xs text-slate-500 mb-4">
-                {p.billingType === "recurring" ? "her ay" : `${p.durationMonths} ay süreyle`}
+                {p.billingType === "monthly" ? "aylık" : "yıllık"}
               </div>
               <ul className="space-y-2 mb-5 text-xs text-slate-700 flex-1">
                 {p.features.map((f, i) => (
