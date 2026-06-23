@@ -354,6 +354,11 @@ router.get("/ebooks/asset/:assetId", async (req: Request, res: Response) => {
     res.setHeader("Content-Type", asset.mime_type || "application/octet-stream");
     res.setHeader("Content-Length", String(asset.size_bytes));
     res.setHeader("Cache-Control", "public, max-age=3600, immutable");
+    // Cross-origin <img> tag'lerinin yükleyebilmesi için CORP override
+    // (Helmet default 'same-origin' set ediyor — www.sphereenglish.com'dan
+    // app.sphereenglish.com asset'i yüklenince engellenmesini önler)
+    res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+    res.setHeader("Access-Control-Allow-Origin", "*");
     // Inline göster — download zorla değil
     res.setHeader("Content-Disposition", `inline; filename="${asset.filename.replace(/[^a-zA-Z0-9._-]/g, "_")}"`);
     const buf = Buffer.from(asset.data_base64, "base64");
