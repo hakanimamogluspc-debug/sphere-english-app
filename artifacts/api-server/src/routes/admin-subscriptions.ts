@@ -4,6 +4,7 @@ import { subscriptionsTable, usersTable } from "@workspace/db/schema";
 import { desc, eq, sql } from "drizzle-orm";
 import { authMiddleware } from "../middlewares/auth.js";
 import { getPlan } from "../lib/subscription.js";
+import { getPlan as getNewPlan, PLAN_CATALOG } from "../lib/plans.js";
 
 const router = Router();
 
@@ -51,6 +52,20 @@ router.get("/admin/subscriptions", authMiddleware, async (req, res, next) => req
   }
 );
 
+/**
+ * Admin: kullanıcıya abonelik ata / güncelle.
+ *
+ * Body:
+ *   { planCode, startedAt?, expiresAt?, status?, notes? }
+ *
+ * - planCode: yeni 6 planın biri (sphere-core-aylik, sphere-pro-yillik vs.)
+ * - startedAt: opsiyonel başlangıç tarihi (ISO date). Boşsa şimdi.
+ * - expiresAt: opsiyonel bitiş tarihi. Boşsa planın durationMonths'ına göre hesaplanır.
+ * - status: opsiyonel ("active", "trialing", "canceled" vb.). Boşsa "active".
+ * - notes: admin notu (max 500 chr).
+ *
+ * Geriye uyumluluk: planKey gönderilirse eski "pro_monthly" / "pro_yearly" da kabul edilir.
+ */
 router.post(
   "/admin/subscriptions/:userId/grant",
   authMiddleware,
@@ -61,16 +76,43 @@ router.post(
       const resolved = await resolveStudent(req.params.userId);
       if (!resolved.ok) return res.status(resolved.status).json({ error: resolved.error });
       const userId = resolved.userId;
-      const planKey = req.body?.planKey === "pro_yearly" ? "pro_yearly" : "pro_monthly";
+
+      // Yeni planCode öncelikli, eski planKey fallback
+      const rawCode = String(req.body?.planCode ?? req.body?.planKey ?? "").trim();
       const note = req.body?.notes ? String(req.body.notes).slice(0, 500) : null;
+      const requestedStatus = req.body?.status ? String(req.body.status) : "active";
+      const allowedStatuses = ["active", "trialing", "pending", "past_due", "canceled", "expired", "failed", "none"];
+      const status = allowedStatuses.includes(requestedStatus) ? requestedStatus : "active";
 
-      const plan = getPlan(planKey);
-      if (!plan) return res.status(400).json({ error: "Geçersiz plan." });
+      // Yeni katalogtan plan bul
+      let newPlan = getNewPlan(rawCode);
+      // Eski plan key fallback (pro_monthly → sphere-pro-aylik)
+      if (!newPlan) {
+        const legacyMap: Record<string, string> = {
+          pro_monthly: "sphere-pro-aylik",
+          pro_yearly: "sphere-pro-yillik",
+        };
+        newPlan = getNewPlan(legacyMap[rawCode] ?? "");
+      }
+      if (!newPlan) {
+        return res.status(400).json({
+          error: "Geçersiz plan kodu. Geçerli kodlar: " + PLAN_CATALOG.map((p) => p.code).join(", "),
+        });
+      }
 
+      // Tarih hesapla
       const now = new Date();
-      const periodEnd = new Date(now);
-      if (plan.interval === "year") periodEnd.setFullYear(periodEnd.getFullYear() + plan.intervalCount);
-      else periodEnd.setMonth(periodEnd.getMonth() + plan.intervalCount);
+      const startedAt = req.body?.startedAt ? new Date(String(req.body.startedAt)) : now;
+      let expiresAt: Date;
+      if (req.body?.expiresAt) {
+        expiresAt = new Date(String(req.body.expiresAt));
+      } else {
+        expiresAt = new Date(startedAt);
+        expiresAt.setMonth(expiresAt.getMonth() + (newPlan.durationMonths ?? 1));
+      }
+      if (Number.isNaN(startedAt.getTime()) || Number.isNaN(expiresAt.getTime())) {
+        return res.status(400).json({ error: "Geçersiz tarih formatı (ISO bekleniyor)" });
+      }
 
       const [existing] = await db
         .select()
@@ -83,13 +125,21 @@ router.post(
         const updated = await db
           .update(subscriptionsTable)
           .set({
-            planKey,
-            status: "active",
-            currentPeriodStart: now,
-            currentPeriodEnd: periodEnd,
+            planKey: newPlan.code,
+            planLabel: newPlan.label,
+            amount: String(newPlan.amount),
+            currency: "TRY",
+            billingType: newPlan.billingType,
+            durationMonths: newPlan.durationMonths,
+            status,
+            startedAt,
+            expiresAt,
+            currentPeriodStart: startedAt,
+            currentPeriodEnd: expiresAt,
             cancelAtPeriodEnd: false,
-            canceledAt: null,
+            canceledAt: status === "canceled" ? now : null,
             grantedByAdminId: adminId,
+            provider: "manual",
             notes: note,
             updatedAt: now,
           })
@@ -101,11 +151,19 @@ router.post(
           .insert(subscriptionsTable)
           .values({
             userId,
-            planKey,
-            status: "active",
-            currentPeriodStart: now,
-            currentPeriodEnd: periodEnd,
+            planKey: newPlan.code,
+            planLabel: newPlan.label,
+            amount: String(newPlan.amount),
+            currency: "TRY",
+            billingType: newPlan.billingType,
+            durationMonths: newPlan.durationMonths,
+            status,
+            startedAt,
+            expiresAt,
+            currentPeriodStart: startedAt,
+            currentPeriodEnd: expiresAt,
             grantedByAdminId: adminId,
+            provider: "manual",
             notes: note,
           })
           .returning();
@@ -115,9 +173,21 @@ router.post(
       res.json({ ok: true, subscription: row });
     } catch (err: any) {
       console.error("grant error:", err?.message || err);
-      res.status(500).json({ error: "Abonelik atanamadı." });
+      res.status(500).json({ error: "Abonelik atanamadı: " + (err?.message || "bilinmeyen hata") });
     }
   }
+);
+
+/**
+ * Admin: plan kataloğunu döndür — frontend dropdown için.
+ */
+router.get(
+  "/admin/subscriptions/plans",
+  authMiddleware,
+  async (req, res, next) => requireAdmin(req, res, () => next()),
+  async (_req: Request, res: Response) => {
+    res.json({ plans: PLAN_CATALOG });
+  },
 );
 
 router.post(

@@ -53,8 +53,16 @@ export default function AdminSubscriptions() {
   const [filter, setFilter] = useState<string>("all");
   const [busy, setBusy] = useState<number | null>(null);
   const [grantFor, setGrantFor] = useState<Row | null>(null);
-  const [grantPlan, setGrantPlan] = useState<"pro_monthly" | "pro_yearly">("pro_monthly");
+  const [grantPlanCode, setGrantPlanCode] = useState<string>("sphere-pro-aylik");
+  const [grantStartDate, setGrantStartDate] = useState<string>("");  // YYYY-MM-DD
+  const [grantEndDate, setGrantEndDate] = useState<string>("");      // YYYY-MM-DD, opsiyonel override
+  const [grantStatus, setGrantStatus] = useState<string>("active");
   const [grantNotes, setGrantNotes] = useState("");
+  // Plan kataloğu (API'den çekilir)
+  const [plansCatalog, setPlansCatalog] = useState<Array<{
+    code: string; label: string; tier: string; billingType: string;
+    amount: number; durationMonths: number;
+  }>>([]);
   const [msg, setMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
   const [enforcement, setEnforcement] = useState<boolean | null>(null);
   const [enforcementBusy, setEnforcementBusy] = useState(false);
@@ -117,6 +125,8 @@ export default function AdminSubscriptions() {
   useEffect(() => {
     load();
     loadEnforcement();
+    loadPlans();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const filtered = useMemo(() => {
@@ -133,21 +143,43 @@ export default function AdminSubscriptions() {
     });
   }, [rows, q, filter]);
 
+  async function loadPlans() {
+    try {
+      const r = await fetch(`${API}/admin/subscriptions/plans`, { headers }).then((x) => x.json());
+      setPlansCatalog(r.plans ?? []);
+    } catch { /* sessiz geç */ }
+  }
+
   async function grant() {
     if (!grantFor) return;
     setBusy(grantFor.userId);
     setMsg(null);
     try {
+      const body: Record<string, any> = {
+        planCode: grantPlanCode,
+        status: grantStatus,
+        notes: grantNotes || null,
+      };
+      if (grantStartDate) body.startedAt = new Date(grantStartDate + "T00:00:00").toISOString();
+      if (grantEndDate) body.expiresAt = new Date(grantEndDate + "T23:59:59").toISOString();
+
       const res = await fetch(`${API}/admin/subscriptions/${grantFor.userId}/grant`, {
         method: "POST",
         headers: { ...headers, "Content-Type": "application/json" },
-        body: JSON.stringify({ planKey: grantPlan, notes: grantNotes || null }),
+        body: JSON.stringify(body),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
-      setMsg({ type: "ok", text: `${grantFor.email} kullanıcısına ${grantPlan === "pro_yearly" ? "yıllık" : "aylık"} abonelik atandı.` });
+      const plan = plansCatalog.find((p) => p.code === grantPlanCode);
+      setMsg({
+        type: "ok",
+        text: `${grantFor.email} → ${plan?.label ?? grantPlanCode} (${plan?.billingType === "monthly" ? "aylık" : "yıllık"}) atandı.`,
+      });
       setGrantFor(null);
       setGrantNotes("");
+      setGrantStartDate("");
+      setGrantEndDate("");
+      setGrantStatus("active");
       await load();
     } catch (e: any) {
       setMsg({ type: "err", text: e.message || "Atama başarısız." });
@@ -367,7 +399,19 @@ export default function AdminSubscriptions() {
                       </td>
                       <td style={{ padding: "12px 14px", color: "#4b5563" }}>{r.currentLevel || "—"}</td>
                       <td style={{ padding: "12px 14px", color: "#4b5563" }}>
-                        {r.subscription?.planKey === "pro_yearly" ? "Pro Yıllık" : r.subscription?.planKey === "pro_monthly" ? "Pro Aylık" : "—"}
+                        {(() => {
+                          const k = r.subscription?.planKey;
+                          if (!k) return "—";
+                          // Yeni katalogtaki etiket
+                          const cataloged = plansCatalog.find((p) => p.code === k);
+                          if (cataloged) {
+                            return `${cataloged.label} (${cataloged.billingType === "monthly" ? "Aylık" : "Yıllık"})`;
+                          }
+                          // Eski enum fallback
+                          if (k === "pro_monthly") return "Pro Aylık (eski)";
+                          if (k === "pro_yearly") return "Pro Yıllık (eski)";
+                          return k;
+                        })()}
                       </td>
                       <td style={{ padding: "12px 14px" }}>
                         <span
@@ -391,7 +435,11 @@ export default function AdminSubscriptions() {
                         <button
                           onClick={() => {
                             setGrantFor(r);
-                            setGrantPlan("pro_monthly");
+                            // Mevcut plan varsa onu prefill et, yoksa Pro Aylık
+                            setGrantPlanCode(r.subscription?.planKey ?? "sphere-pro-aylik");
+                            setGrantStatus("active");
+                            setGrantStartDate("");
+                            setGrantEndDate("");
                             setGrantNotes("");
                           }}
                           disabled={busy === r.userId}
@@ -407,7 +455,7 @@ export default function AdminSubscriptions() {
                             marginRight: 6,
                           }}
                         >
-                          {status === "active" || status === "trialing" ? "Yenile" : "Pro Ver"}
+                          {status === "active" || status === "trialing" ? "Plan Değiştir" : "Plan Ata"}
                         </button>
                         {(status === "active" || status === "trialing") && (
                           <button
@@ -465,7 +513,7 @@ export default function AdminSubscriptions() {
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
               <h3 style={{ fontSize: 18, fontWeight: 700, color: "#1f2937", display: "flex", alignItems: "center", gap: 8 }}>
-                <Plus size={18} /> Pro Abonelik Ata
+                <Plus size={18} /> Abonelik Yönet
               </h3>
               <button onClick={() => setGrantFor(null)} style={{ background: "transparent", border: "none", cursor: "pointer", color: "#9ca3af" }}>
                 <X size={20} />
@@ -477,20 +525,71 @@ export default function AdminSubscriptions() {
               </div>
               <div style={{ fontSize: 13, color: "#6b7280" }}>{grantFor.email}</div>
             </div>
+
+            {/* Plan dropdown */}
             <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 6 }}>Plan</label>
             <select
-              value={grantPlan}
-              onChange={(e) => setGrantPlan(e.target.value as any)}
+              value={grantPlanCode}
+              onChange={(e) => setGrantPlanCode(e.target.value)}
               style={{ width: "100%", padding: "10px 12px", border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 14, marginBottom: 14 }}
             >
-              <option value="pro_monthly">Pro Aylık (1 ay)</option>
-              <option value="pro_yearly">Pro Yıllık (12 ay)</option>
+              {plansCatalog.length === 0 && <option value="sphere-pro-aylik">Plan yükleniyor…</option>}
+              {plansCatalog.map((p) => (
+                <option key={p.code} value={p.code}>
+                  {p.label} — {p.billingType === "monthly" ? "Aylık" : "Yıllık"} ({new Intl.NumberFormat("tr-TR", { style: "currency", currency: "TRY", maximumFractionDigits: 0 }).format(p.amount)})
+                </option>
+              ))}
             </select>
+
+            {/* Status */}
+            <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 6 }}>Durum</label>
+            <select
+              value={grantStatus}
+              onChange={(e) => setGrantStatus(e.target.value)}
+              style={{ width: "100%", padding: "10px 12px", border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 14, marginBottom: 14 }}
+            >
+              <option value="active">Aktif</option>
+              <option value="trialing">Deneme</option>
+              <option value="pending">Beklemede</option>
+              <option value="past_due">Ödeme Gecikti</option>
+              <option value="canceled">İptal Edildi</option>
+              <option value="expired">Süresi Doldu</option>
+            </select>
+
+            {/* Tarih alanları (opsiyonel — boş bırakılırsa şimdi başlar, plan süresine göre biter) */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 14 }}>
+              <div>
+                <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 6 }}>
+                  Başlangıç <span style={{ color: "#9ca3af", fontWeight: 400 }}>(opsiyonel)</span>
+                </label>
+                <input
+                  type="date"
+                  value={grantStartDate}
+                  onChange={(e) => setGrantStartDate(e.target.value)}
+                  style={{ width: "100%", padding: "10px 12px", border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 14 }}
+                />
+              </div>
+              <div>
+                <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 6 }}>
+                  Bitiş <span style={{ color: "#9ca3af", fontWeight: 400 }}>(opsiyonel)</span>
+                </label>
+                <input
+                  type="date"
+                  value={grantEndDate}
+                  onChange={(e) => setGrantEndDate(e.target.value)}
+                  style={{ width: "100%", padding: "10px 12px", border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 14 }}
+                />
+              </div>
+            </div>
+            <p style={{ fontSize: 11, color: "#9ca3af", marginTop: -6, marginBottom: 14 }}>
+              Tarihleri boş bırakırsan başlangıç bugün, bitiş plan süresine göre otomatik hesaplanır.
+            </p>
+
             <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 6 }}>Not (opsiyonel)</label>
             <textarea
               value={grantNotes}
               onChange={(e) => setGrantNotes(e.target.value)}
-              placeholder="Örn: Havale ile ödeme alındı (#1234)"
+              placeholder="Örn: Havale ile ödeme alındı (#1234) / Promo kod kullanıldı"
               rows={2}
               style={{ width: "100%", padding: 10, border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 14, marginBottom: 18, resize: "vertical" }}
             />
@@ -506,7 +605,7 @@ export default function AdminSubscriptions() {
                 disabled={busy === grantFor.userId}
                 style={{ background: "#4f46e5", color: "#fff", border: "none", padding: "10px 18px", borderRadius: 8, fontWeight: 600, cursor: "pointer" }}
               >
-                {busy === grantFor.userId ? "..." : "Aboneliği Ata"}
+                {busy === grantFor.userId ? "..." : "Kaydet"}
               </button>
             </div>
           </div>
