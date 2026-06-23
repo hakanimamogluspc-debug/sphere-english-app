@@ -329,6 +329,23 @@ async function runStartupMigrations() {
     `ALTER TABLE ebooks ALTER COLUMN content_language TYPE VARCHAR(50)`,
     // Ürün galerisi (mockup, tablet, sayfa içi) — JSONB array
     `ALTER TABLE ebooks ADD COLUMN IF NOT EXISTS gallery_urls JSONB DEFAULT '[]'::JSONB`,
+    // E-kitap dosya/görsel asset tablosu (admin upload → bytea → stream)
+    `CREATE TABLE IF NOT EXISTS ebook_assets (
+      id SERIAL PRIMARY KEY,
+      ebook_id INTEGER NOT NULL REFERENCES ebooks(id) ON DELETE CASCADE,
+      asset_type VARCHAR(20) NOT NULL,
+      position INTEGER NOT NULL DEFAULT 0,
+      filename VARCHAR(300) NOT NULL,
+      mime_type VARCHAR(100) NOT NULL,
+      size_bytes INTEGER NOT NULL,
+      data_base64 TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`,
+    `CREATE INDEX IF NOT EXISTS ebook_assets_ebook_idx ON ebook_assets(ebook_id, asset_type, position)`,
+    // Admin sidebar entry
+    `INSERT INTO feature_settings (key, label, is_enabled, visible_to, category) VALUES
+      ('admin-ebooks', 'E-Kitap Yönetimi', true, ARRAY['admin']::TEXT[], 'admin')
+      ON CONFLICT (key) DO NOTHING`,
     `CREATE TABLE IF NOT EXISTS ebook_purchases (
       id SERIAL PRIMARY KEY,
       ebook_id INTEGER NOT NULL REFERENCES ebooks(id) ON DELETE CASCADE,

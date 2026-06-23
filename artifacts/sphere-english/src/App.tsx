@@ -26,6 +26,8 @@ const AdminUsers          = lazy(() => import("./pages/admin/Users"));
 const AdminAnalytics      = lazy(() => import("./pages/admin/Analytics"));
 const AdminContentEngine  = lazy(() => import("./pages/admin/ContentEngine"));
 const AdminTeacherApps    = lazy(() => import("./pages/admin/TeacherApplications"));
+const AdminEbooks         = lazy(() => import("./pages/admin/AdminEbooks"));
+const AdminEbookForm      = lazy(() => import("./pages/admin/AdminEbookForm"));
 const AdminCourses        = lazy(() => import("./pages/admin/Courses"));
 const Announcements       = lazy(() => import("./pages/admin/Announcements"));
 const AdminCompanies      = lazy(() => import("./pages/admin/Companies"));
@@ -244,6 +246,9 @@ function Router() {
         <Route path="/admin/analytics"><LayoutWrapper component={AdminAnalytics} allowedRoles={['admin']} /></Route>
         <Route path="/admin/content-engine"><LayoutWrapper component={AdminContentEngine} allowedRoles={['admin']} /></Route>
         <Route path="/admin/teacher-applications"><LayoutWrapper component={AdminTeacherApps} allowedRoles={['admin']} /></Route>
+        <Route path="/admin/ebooks"><LayoutWrapper component={AdminEbooks} allowedRoles={['admin']} /></Route>
+        <Route path="/admin/ebooks/yeni"><LayoutWrapper component={AdminEbookForm} allowedRoles={['admin']} /></Route>
+        <Route path="/admin/ebooks/:id"><LayoutWrapper component={AdminEbookForm} allowedRoles={['admin']} /></Route>
         <Route path="/admin/teachers"><LayoutWrapper component={AdminTeachers} allowedRoles={['admin']} /></Route>
         <Route path="/admin/students"><LayoutWrapper component={AdminStudents} allowedRoles={['admin']} /></Route>
         <Route path="/admin/groups"><LayoutWrapper component={AdminGroups} allowedRoles={['admin']} /></Route>

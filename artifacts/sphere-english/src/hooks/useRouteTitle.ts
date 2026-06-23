@@ -86,6 +86,9 @@ const ROUTE_TITLES: RouteTitleEntry[] = [
   { prefix: '/admin/analytics', title: 'Aktivite Analizi — Admin' },
   { prefix: '/admin/content-engine', title: 'İçerik Motoru — Admin' },
   { prefix: '/admin/teacher-applications', title: 'Eğitmen Başvuruları — Admin' },
+  { prefix: '/admin/ebooks/yeni', title: 'Yeni E-Kitap — Admin' },
+  { prefix: '/admin/ebooks/', title: 'E-Kitap Düzenle — Admin' },
+  { prefix: '/admin/ebooks', title: 'E-Kitap Yönetimi — Admin' },
   { prefix: '/admin/meb-report', title: 'MEB Aktivite Raporu — Admin' },
   { prefix: '/admin', title: 'Yönetici Paneli' },
 

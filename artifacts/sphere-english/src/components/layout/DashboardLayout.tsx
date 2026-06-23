@@ -106,6 +106,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       { name: 'Aktivite Analizi',    href: '/admin/analytics',                icon: Activity },
       { name: 'İçerik Motoru',       href: '/admin/content-engine',           icon: Wand2 },
       { name: 'Eğitmen Başvuruları', href: '/admin/teacher-applications',     icon: UserPlus },
+      { name: 'E-Kitap Yönetimi',    href: '/admin/ebooks',                   icon: BookOpen },
       { name: 'MEB Aktivite Raporu', href: '/admin/meb-report',               icon: BarChart3 },
       { name: 'Pazarlama & E-posta', href: '/admin/marketing',                icon: TrendingUp },
       { name: 'Lead Keşfi',          href: '/admin/outreach',                 icon: Sparkles },

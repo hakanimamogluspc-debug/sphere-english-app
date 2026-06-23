@@ -14,6 +14,40 @@ import {
 import { usersTable } from "./users";
 
 /**
+ * E-kitap dosya/görsel varlıkları (cover, gallery, preview PDF, full PDF).
+ *
+ * Sphere'in pazarlama sitesinde public klasör Easypanel deploy'larında
+ * ephemeral — admin yüklemeleri restart sonrası kayboluyor. Çözüm: tüm
+ * dosyaları DB'de bytea olarak tut, api-server'dan stream et.
+ *
+ * Public URL şablonu: `/api-server/api/ebooks/<slug>/asset/<id>`
+ * Bu URL frontend'de doğrudan <img src="..."> veya <a href="..."> ile kullanılır.
+ */
+export const ebookAssetsTable = pgTable(
+  "ebook_assets",
+  {
+    id: serial("id").primaryKey(),
+    ebookId: integer("ebook_id").notNull(),
+    /** 'cover' | 'gallery' | 'preview' | 'full' */
+    assetType: varchar("asset_type", { length: 20 }).notNull(),
+    /** Galeri sıralaması (cover/preview/full için 0) */
+    position: integer("position").notNull().default(0),
+    filename: varchar("filename", { length: 300 }).notNull(),
+    mimeType: varchar("mime_type", { length: 100 }).notNull(),
+    sizeBytes: integer("size_bytes").notNull(),
+    /** Binary içerik — PostgreSQL BYTEA olarak saklanır */
+    dataBase64: text("data_base64").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    ebookIdx: index("ebook_assets_ebook_idx").on(t.ebookId, t.assetType, t.position),
+  }),
+);
+
+export type EbookAsset = typeof ebookAssetsTable.$inferSelect;
+export type NewEbookAsset = typeof ebookAssetsTable.$inferInsert;
+
+/**
  * Sphere English dijital ürün kataloğu (e-kitaplar).
  *
  * Pazarlama sitesinde /e-kitaplar sayfasında listelenir, /e-kitaplar/[slug]

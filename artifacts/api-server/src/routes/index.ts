@@ -51,6 +51,7 @@ import paymentRouter from "./payment";
 import internalPaymentRouter from "./internal-payment";
 import teacherApplicationsRouter from "./teacher-applications";
 import ebooksRouter from "./ebooks";
+import adminEbooksRouter from "./admin-ebooks";
 import { requireSubscription } from "../middlewares/require-subscription";
 import { authMiddleware } from "../middlewares/auth";
 
@@ -89,6 +90,7 @@ router.use("/payment", paymentRouter);
 router.use(internalPaymentRouter);
 router.use(teacherApplicationsRouter);
 router.use(ebooksRouter);
+router.use(adminEbooksRouter);
 router.use(proGuard, pronunciationRouter);
 router.use(proGuard, writingRouter);
 router.use(marketingRouter);
