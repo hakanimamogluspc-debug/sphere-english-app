@@ -18,7 +18,7 @@ const PUBLIC_COLUMNS = sql`
   id, slug, title, subtitle, description, long_description, table_of_contents,
   author, publisher, isbn, language, content_language,
   series_slug, series_order, series_title,
-  cover_image_url, preview_pdf_url,
+  cover_image_url, gallery_urls, preview_pdf_url,
   page_count, reading_time_min, category, tags,
   price_try, list_price_try, currency,
   is_active, is_featured, published_at,

@@ -46,7 +46,7 @@ export const ebooksTable = pgTable(
     isbn: varchar("isbn", { length: 30 }),
     language: varchar("language", { length: 5 }).notNull().default("tr"),
     /** İçerik dili — iş İngilizcesi kitabıdır ama açıklama Türkçedir */
-    contentLanguage: varchar("content_language", { length: 20 }),
+    contentLanguage: varchar("content_language", { length: 50 }),
 
     // ── Seri ──
     seriesSlug: varchar("series_slug", { length: 100 }),
@@ -54,8 +54,10 @@ export const ebooksTable = pgTable(
     seriesTitle: varchar("series_title", { length: 300 }),
 
     // ── Görsel + dosya yolları (sphere-www public altında) ──
-    /** Kapak görseli URL — örn. /assets/ebooks/kurumsal-iletisim-cover.svg */
+    /** Ana kapak görseli URL — örn. /assets/ebooks/kurumsal-iletisim-mockup-book.jpg */
     coverImageUrl: varchar("cover_image_url", { length: 500 }),
+    /** Ek ürün görselleri (mockup, tablet, sayfa içi vb.) — sıralı JSON array */
+    galleryUrls: jsonb("gallery_urls").$type<string[]>().default([]),
     /** 5 sayfalık önizleme PDF — public erişim */
     previewPdfUrl: varchar("preview_pdf_url", { length: 500 }),
     /** Tam PDF yolu — sadece backend bilir, indirme token ile servis */

@@ -297,7 +297,7 @@ async function runStartupMigrations() {
       publisher VARCHAR(200) NOT NULL DEFAULT 'Sphere English',
       isbn VARCHAR(30),
       language VARCHAR(5) NOT NULL DEFAULT 'tr',
-      content_language VARCHAR(20),
+      content_language VARCHAR(50),
       series_slug VARCHAR(100),
       series_order INTEGER,
       series_title VARCHAR(300),
@@ -324,6 +324,11 @@ async function runStartupMigrations() {
     `CREATE INDEX IF NOT EXISTS ebooks_active_idx ON ebooks(is_active, published_at DESC)`,
     `CREATE INDEX IF NOT EXISTS ebooks_series_idx ON ebooks(series_slug, series_order)`,
     `CREATE INDEX IF NOT EXISTS ebooks_featured_idx ON ebooks(is_featured)`,
+    // Eski deploy'ta VARCHAR(20) ile yaratılan ebooks tablosunda content_language çok kısa idi.
+    // ALTER ile güvenli genişletme (var olan veriyi koruyarak).
+    `ALTER TABLE ebooks ALTER COLUMN content_language TYPE VARCHAR(50)`,
+    // Ürün galerisi (mockup, tablet, sayfa içi) — JSONB array
+    `ALTER TABLE ebooks ADD COLUMN IF NOT EXISTS gallery_urls JSONB DEFAULT '[]'::JSONB`,
     `CREATE TABLE IF NOT EXISTS ebook_purchases (
       id SERIAL PRIMARY KEY,
       ebook_id INTEGER NOT NULL REFERENCES ebooks(id) ON DELETE CASCADE,
@@ -361,7 +366,7 @@ async function runStartupMigrations() {
       'Bu kitap, kurumsal hayatta İngilizceyi güvenle kullanmak isteyen profesyoneller için hazırlanmıştır. Toplantı yönetiminden günlük ofis diline, en sık kullanılan 50 kalıbı ve 150 temel terimi; anlamları, kullanım tüyoları ve gerçek iş hayatından örneklerle bir araya getirir.',
       'Didem İmamoğlu',
       'Sphere English',
-      'tr', 'İş İngilizcesi (TR açıklamalı)',
+      'tr', 'TR-EN',
       'is-ingilizcesinde-1000-kelime', 1, 'İş İngilizcesinde Kullanılan 1000 Kelime',
       '/assets/ebooks/kurumsal-iletisim-toplantilar-cover.svg',
       '/assets/ebooks/kurumsal-iletisim-toplantilar-preview.pdf',
