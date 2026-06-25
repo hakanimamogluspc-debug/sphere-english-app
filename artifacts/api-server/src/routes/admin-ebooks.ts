@@ -24,6 +24,7 @@ import multer from "multer";
 import { sql } from "drizzle-orm";
 import { db, pool } from "@workspace/db";
 import { authMiddleware, requireRole, type AuthRequest } from "../middlewares/auth.js";
+import { generatePreviewPdf } from "../lib/pdf-preview.js";
 
 const router = Router();
 
@@ -235,6 +236,7 @@ router.post(
         RETURNING id, asset_type, position, filename, mime_type, size_bytes, created_at
       `);
       const newAsset = (inserted.rows ?? inserted)[0] as any;
+      let autoPreview: { pageCount: number; sourcePageCount: number; byteSize: number } | null = null;
 
       // ebooks tablosundaki ilgili URL alanını otomatik güncelle
       const ASSET_BASE = process.env["PUBLIC_ASSET_BASE_URL"] ?? "https://app.sphereenglish.com/api-server";
@@ -245,6 +247,51 @@ router.post(
         await db.execute(sql`UPDATE ebooks SET preview_pdf_url = ${assetUrl}, updated_at = NOW() WHERE id = ${id}`);
       } else if (assetType === "full") {
         await db.execute(sql`UPDATE ebooks SET full_pdf_path = ${assetUrl}, updated_at = NOW() WHERE id = ${id}`);
+
+        // ── Otomatik 5 sayfa preview üretimi ──
+        // Tam PDF yüklendi → ilk 5 sayfayı pdf-lib ile kesip preview olarak kaydet
+        // Hata olursa loglar, yine de full upload başarılı kabul edilir
+        try {
+          const preview = await generatePreviewPdf(file.buffer, 5);
+          const previewBase64 = preview.buffer.toString("base64");
+          const previewFilename = file.originalname.replace(/(\.[^.]+)?$/, "-preview.pdf");
+
+          // Eski preview varsa sil
+          await db.execute(sql`
+            DELETE FROM ebook_assets
+            WHERE ebook_id = ${id} AND asset_type = 'preview'
+          `);
+
+          const insertedPreview = await db.execute(sql`
+            INSERT INTO ebook_assets (
+              ebook_id, asset_type, position, filename, mime_type, size_bytes, data_base64
+            ) VALUES (
+              ${id}, 'preview', 0, ${previewFilename}, 'application/pdf', ${preview.byteSize}, ${previewBase64}
+            )
+            RETURNING id
+          `);
+          const previewAssetId = ((insertedPreview.rows ?? insertedPreview)[0] as any)?.id;
+          const previewUrl = `${ASSET_BASE.replace(/\/$/, "")}/api/ebooks/asset/${previewAssetId}`;
+
+          await db.execute(sql`
+            UPDATE ebooks SET preview_pdf_url = ${previewUrl}, updated_at = NOW() WHERE id = ${id}
+          `);
+
+          console.info(
+            `[ADMIN-EBOOKS] Auto-preview üretildi: ebookId=${id} ` +
+              `sayfa=${preview.pageCount}/${preview.sourcePageCount} boyut=${preview.byteSize}B`,
+          );
+          autoPreview = {
+            pageCount: preview.pageCount,
+            sourcePageCount: preview.sourcePageCount,
+            byteSize: preview.byteSize,
+          };
+        } catch (previewErr: any) {
+          console.error(
+            `[ADMIN-EBOOKS] Auto-preview HATA (full upload yine de başarılı): ebookId=${id}`,
+            previewErr?.message,
+          );
+        }
       } else if (assetType === "gallery") {
         // gallery_urls JSONB array — rebuild from ebook_assets
         const galleryRows = await db.execute(sql`
@@ -261,7 +308,7 @@ router.post(
         `);
       }
 
-      return res.status(201).json({ ok: true, asset: newAsset, url: assetUrl });
+      return res.status(201).json({ ok: true, asset: newAsset, url: assetUrl, autoPreview });
     } catch (e: any) {
       console.error("[ADMIN-EBOOKS] asset upload HATA:", e?.message);
       if (e?.code === "LIMIT_FILE_SIZE") {

@@ -214,11 +214,20 @@ export default function AdminEbookForm() {
     }
     setUploadingType(assetType);
     try {
-      await uploadFile(savedId, file, assetType);
+      const uploadResult = await uploadFile(savedId, file, assetType);
       // Asset listesini yenile
       const data = await apiFetch(`/admin/ebooks/${savedId}`);
       setAssets(data.assets ?? []);
-      setMsg({ type: "ok", text: `${assetType} yüklendi.` });
+
+      // Full PDF yüklendiyse otomatik preview üretildi mi kontrol et
+      let okText = `${assetType} yüklendi.`;
+      if (assetType === "full" && uploadResult?.autoPreview) {
+        const ap = uploadResult.autoPreview;
+        okText = `Tam PDF yüklendi (${ap.sourcePageCount} sayfa). İlk ${ap.pageCount} sayfa otomatik olarak önizleme olarak ayarlandı.`;
+      } else if (assetType === "full") {
+        okText = "Tam PDF yüklendi. (Önizleme otomatik üretilemedi — PDF bozuk olabilir, manuel yükleyin.)";
+      }
+      setMsg({ type: "ok", text: okText });
     } catch (e: any) {
       setMsg({ type: "err", text: e.message });
     } finally {
