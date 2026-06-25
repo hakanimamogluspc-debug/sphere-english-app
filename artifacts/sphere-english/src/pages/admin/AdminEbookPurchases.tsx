@@ -219,15 +219,18 @@ export default function AdminEbookPurchases() {
           <ShoppingBag className="w-7 h-7 text-emerald-600" />
           <h1 className="text-2xl font-bold text-slate-900">E-Kitap Satışları</h1>
         </div>
-        <button
-          onClick={() => {
-            loadList();
-            loadStats();
-          }}
-          className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-slate-700"
-        >
-          <RefreshCw size={14} /> Yenile
-        </button>
+        <div className="flex items-center gap-2">
+          <TestMailButton />
+          <button
+            onClick={() => {
+              loadList();
+              loadStats();
+            }}
+            className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-slate-700"
+          >
+            <RefreshCw size={14} /> Yenile
+          </button>
+        </div>
       </div>
       <p className="text-sm text-slate-500 mb-6">
         Dijital kitap satın almaları, fatura bilgileri ve fatura kesim durumu.
@@ -446,6 +449,119 @@ export default function AdminEbookPurchases() {
           }}
         />
       )}
+    </div>
+  );
+}
+
+function TestMailButton() {
+  const [open, setOpen] = useState(false);
+  const [email, setEmail] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
+
+  async function send() {
+    if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+      setMsg({ kind: "err", text: "Geçerli bir e-posta girin." });
+      return;
+    }
+    setBusy(true);
+    setMsg(null);
+    try {
+      const data = await apiFetch("/admin/ebook-purchases/test-email", {
+        method: "POST",
+        body: JSON.stringify({ email: email.trim().toLowerCase() }),
+      });
+      setMsg({ kind: "ok", text: data.message ?? "Test mail gönderildi" });
+    } catch (e: any) {
+      setMsg({ kind: "err", text: e.message });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (!open) {
+    return (
+      <button
+        onClick={() => setOpen(true)}
+        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-sky-50 hover:bg-sky-100 text-sky-700 text-xs font-bold border border-sky-200"
+        title="Mail altyapısını test et"
+      >
+        <Mail size={14} /> Test Mail Gönder
+      </button>
+    );
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: "rgba(0,0,0,0.5)" }}
+      onClick={() => setOpen(false)}
+    >
+      <div
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-bold text-lg text-slate-900">Test Mail Gönder</h3>
+          <button
+            onClick={() => setOpen(false)}
+            className="p-1 hover:bg-slate-100 rounded-lg text-slate-500"
+          >
+            <X size={16} />
+          </button>
+        </div>
+        <p className="text-[13px] text-slate-600 mb-4">
+          E-kitap teslimat mail'inin gerçek görünümünü kendi mail kutuna gönder. SMTP / Resend
+          yapılandırmasını ve template'i doğrulamak için.
+        </p>
+
+        <label className="block text-[11px] font-bold uppercase text-slate-500 mb-1">
+          Alıcı E-posta
+        </label>
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="kendi@maildresin.com"
+          className="w-full px-3 py-2.5 rounded-lg border border-slate-200 text-sm focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 outline-none"
+          onKeyDown={(e) => {
+            if (e.key === "Enter") send();
+          }}
+        />
+
+        {msg && (
+          <div
+            className={`mt-3 p-2 rounded text-[12px] ${
+              msg.kind === "ok"
+                ? "bg-emerald-50 border border-emerald-200 text-emerald-900"
+                : "bg-red-50 border border-red-200 text-red-900"
+            }`}
+          >
+            {msg.text}
+          </div>
+        )}
+
+        <button
+          onClick={send}
+          disabled={busy}
+          className="mt-4 w-full py-2.5 rounded-lg bg-sky-600 hover:bg-sky-700 disabled:opacity-50 text-white text-sm font-bold inline-flex items-center justify-center gap-2"
+        >
+          {busy ? (
+            <>
+              <Loader2 size={14} className="animate-spin" /> Gönderiliyor…
+            </>
+          ) : (
+            <>
+              <Send size={14} /> Test Mail'i Gönder
+            </>
+          )}
+        </button>
+
+        <p className="text-[10px] text-slate-400 mt-3 leading-relaxed">
+          Mail içinde örnek bir kitap (kataloğun ilk aktif kitabı) ve dummy bir indirme bağlantısı
+          var. Linke tıklarsan "geçersiz token" hatası alırsın — bu normal.
+        </p>
+      </div>
     </div>
   );
 }

@@ -13,6 +13,7 @@ import { sql } from "drizzle-orm";
 import { db } from "@workspace/db";
 import { authMiddleware, requireRole, type AuthRequest } from "../middlewares/auth.js";
 import { sendPurchaseEmailFireForget } from "./ebook-purchase.js";
+import { sendEbookDownloadMail } from "../lib/ebook-mail.js";
 
 const router = Router();
 
@@ -199,6 +200,64 @@ router.patch(
     } catch (e: any) {
       console.error("[admin-ebook-purchases PATCH] HATA:", e?.message);
       return res.status(500).json({ error: "Güncelleme başarısız: " + e?.message });
+    }
+  },
+);
+
+// ─── TEST MAİL GÖNDER ───────────────────────────────────────────────────
+// Admin'in mail adresine örnek bir e-kitap teslimat mail'i gönderir.
+// SMTP/Resend yapılandırmasını ve template'i hızlıca doğrulamak için.
+router.post(
+  "/admin/ebook-purchases/test-email",
+  authMiddleware,
+  requireRole("admin"),
+  async (req: AuthRequest, res: Response) => {
+    const toEmail = String((req.body as any)?.email ?? "").trim().toLowerCase()
+      || (req.user as any)?.email
+      || "";
+    if (!toEmail || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(toEmail)) {
+      return res.status(400).json({ error: "Geçerli alıcı e-postası gerekli" });
+    }
+
+    try {
+      // Veritabanından gerçek bir kitap çekelim (varsa) — template'i gerçekçi göstermek için
+      const ebookRows = await db.execute(sql`
+        SELECT title, author, price_try FROM ebooks WHERE is_active = TRUE
+        ORDER BY is_featured DESC, published_at DESC LIMIT 1
+      `);
+      const e = (ebookRows.rows ?? ebookRows)[0] as any;
+
+      // Sahte ama görsel olarak gerçekçi token (kullanılmayacak — sadece görüntü)
+      const fakeToken = "TEST_" + Math.random().toString(36).slice(2, 18);
+      const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+      const result = await sendEbookDownloadMail({
+        buyerEmail: toEmail,
+        buyerName: "Test Admin",
+        ebookTitle: e?.title ?? "Kurumsal İletişim & Toplantılar",
+        ebookAuthor: e?.author ?? "Didem İmamoğlu",
+        amountPaid: e?.price_try ?? 199,
+        currency: "TRY",
+        downloadToken: fakeToken,
+        downloadExpiresAt: expiresAt,
+        invoiceType: "individual",
+      });
+
+      if (result.ok) {
+        console.info(`[admin/test-email] Test mail gönderildi: ${toEmail}`);
+        return res.json({
+          ok: true,
+          to: toEmail,
+          message: `Test mail gönderildi. Mail kutunu kontrol et: ${toEmail}`,
+        });
+      }
+      return res.status(502).json({
+        error: result.error ?? "Mail gönderilemedi",
+        hint: "RESEND_API_KEY veya SMTP_HOST/USER/PASS env'lerini kontrol et",
+      });
+    } catch (e: any) {
+      console.error("[admin/test-email] HATA:", e?.message);
+      return res.status(500).json({ error: "Test mail başarısız: " + e?.message });
     }
   },
 );
