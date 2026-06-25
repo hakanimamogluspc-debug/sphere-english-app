@@ -191,6 +191,14 @@ export const ebookPurchasesTable = pgTable(
     downloadCount: integer("download_count").notNull().default(0),
     downloadExpiresAt: timestamp("download_expires_at", { withTimezone: true }),
 
+    // ── Mail gönderim takibi ──
+    /** İlk başarılı mail gönderim zamanı */
+    mailSentAt: timestamp("mail_sent_at", { withTimezone: true }),
+    /** 'pending' | 'sent' | 'failed' — yeniden deneme için */
+    mailStatus: varchar("mail_status", { length: 20 }).default("pending"),
+    mailError: text("mail_error"),
+    mailAttempts: integer("mail_attempts").notNull().default(0),
+
     paidAt: timestamp("paid_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),

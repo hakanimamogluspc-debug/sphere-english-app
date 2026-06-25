@@ -388,6 +388,11 @@ async function runStartupMigrations() {
     `ALTER TABLE ebook_purchases ADD COLUMN IF NOT EXISTS invoice_issued_at TIMESTAMPTZ`,
     `ALTER TABLE ebook_purchases ADD COLUMN IF NOT EXISTS invoice_notes TEXT`,
     `ALTER TABLE ebook_purchases ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()`,
+    // Mail gönderim takibi
+    `ALTER TABLE ebook_purchases ADD COLUMN IF NOT EXISTS mail_sent_at TIMESTAMPTZ`,
+    `ALTER TABLE ebook_purchases ADD COLUMN IF NOT EXISTS mail_status VARCHAR(20) DEFAULT 'pending'`,
+    `ALTER TABLE ebook_purchases ADD COLUMN IF NOT EXISTS mail_error TEXT`,
+    `ALTER TABLE ebook_purchases ADD COLUMN IF NOT EXISTS mail_attempts INTEGER NOT NULL DEFAULT 0`,
     // download_token + download_expires_at + paid_at NOT NULL idi — pending kayıtlar için NULL'a izin verelim
     `ALTER TABLE ebook_purchases ALTER COLUMN download_token DROP NOT NULL`,
     `ALTER TABLE ebook_purchases ALTER COLUMN download_expires_at DROP NOT NULL`,

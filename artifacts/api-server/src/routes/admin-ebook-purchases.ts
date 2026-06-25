@@ -12,6 +12,7 @@ import { Router, Response } from "express";
 import { sql } from "drizzle-orm";
 import { db } from "@workspace/db";
 import { authMiddleware, requireRole, type AuthRequest } from "../middlewares/auth.js";
+import { sendPurchaseEmailFireForget } from "./ebook-purchase.js";
 
 const router = Router();
 
@@ -198,6 +199,62 @@ router.patch(
     } catch (e: any) {
       console.error("[admin-ebook-purchases PATCH] HATA:", e?.message);
       return res.status(500).json({ error: "Güncelleme başarısız: " + e?.message });
+    }
+  },
+);
+
+// ─── MAİL YENİDEN GÖNDER ─────────────────────────────────────────────────
+router.post(
+  "/admin/ebook-purchases/:id/resend-email",
+  authMiddleware,
+  requireRole("admin"),
+  async (req: AuthRequest, res: Response) => {
+    const id = parseInt(req.params.id ?? "", 10);
+    if (!id) return res.status(400).json({ error: "id geçersiz" });
+
+    try {
+      // Önce satın almayı doğrula
+      const rows = await db.execute(sql`
+        SELECT id, payment_status, download_token, buyer_email
+        FROM ebook_purchases WHERE id = ${id} LIMIT 1
+      `);
+      const purchase = (rows.rows ?? rows)[0] as any;
+      if (!purchase) return res.status(404).json({ error: "Satın alma bulunamadı" });
+      if (purchase.payment_status !== "success") {
+        return res
+          .status(400)
+          .json({ error: `Mail gönderilemez — ödeme durumu '${purchase.payment_status}'` });
+      }
+      if (!purchase.download_token) {
+        return res.status(400).json({ error: "İndirme token'ı yok" });
+      }
+
+      // Mail'i bekleyerek gönder (admin manuel tetikledi, sonucu görsün)
+      // sendPurchaseEmailFireForget kendi içinde mail_status'u günceller
+      await sendPurchaseEmailFireForget(id);
+
+      // Güncel durumu döndür
+      const updatedRows = await db.execute(sql`
+        SELECT mail_status, mail_sent_at, mail_error, mail_attempts
+        FROM ebook_purchases WHERE id = ${id} LIMIT 1
+      `);
+      const status = (updatedRows.rows ?? updatedRows)[0] as any;
+
+      if (status?.mail_status === "sent") {
+        return res.json({
+          ok: true,
+          mailSentAt: status.mail_sent_at,
+          mailAttempts: status.mail_attempts,
+          to: purchase.buyer_email,
+        });
+      }
+      return res.status(502).json({
+        error: status?.mail_error ?? "Mail gönderilemedi (detay log'da)",
+        mailAttempts: status?.mail_attempts,
+      });
+    } catch (e: any) {
+      console.error("[admin-ebook-purchases/resend-email] HATA:", e?.message);
+      return res.status(500).json({ error: "Mail gönderilemedi: " + e?.message });
     }
   },
 );

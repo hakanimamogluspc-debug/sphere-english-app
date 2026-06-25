@@ -14,6 +14,7 @@ import { Router, Request, Response } from "express";
 import crypto from "node:crypto";
 import { sql } from "drizzle-orm";
 import { db } from "@workspace/db";
+import { sendEbookDownloadMail } from "../lib/ebook-mail.js";
 
 const router = Router();
 
@@ -184,6 +185,10 @@ router.post("/internal/ebook-purchase/activate", async (req: Request, res: Respo
       const updatedRow = (upd.rows ?? upd)[0] as any;
       if (updatedRow) {
         console.info(`[EBOOK-PURCHASE] Activate: purchaseId=${updatedRow.id} buyer=${buyerEmail}`);
+        // Mail gönder (fire-and-forget — response'u bloklamasın)
+        sendPurchaseEmailFireForget(updatedRow.id).catch((e) => {
+          console.error("[EBOOK-PURCHASE] mail fire-forget HATA:", e?.message);
+        });
         return res.json({ ok: true, purchaseId: updatedRow.id, action: "updated" });
       }
     }
@@ -212,6 +217,11 @@ router.post("/internal/ebook-purchase/activate", async (req: Request, res: Respo
     `);
     const newId = ((inserted.rows ?? inserted)[0] as any)?.id;
     console.info(`[EBOOK-PURCHASE] Activate (fallback INSERT): purchaseId=${newId} buyer=${buyerEmail}`);
+    if (newId) {
+      sendPurchaseEmailFireForget(newId).catch((e) => {
+        console.error("[EBOOK-PURCHASE] mail fire-forget HATA:", e?.message);
+      });
+    }
     return res.json({ ok: true, purchaseId: newId, action: "inserted" });
   } catch (e: any) {
     console.error("[EBOOK-PURCHASE] activate HATA:", e?.message);
@@ -314,5 +324,90 @@ router.get("/ebooks/download", async (req: Request, res: Response) => {
     return res.status(500).send("İndirme hatası");
   }
 });
+
+/**
+ * Verilen purchaseId için satın alma mailini gönder.
+ * Mail durumu (sent/failed/error) ebook_purchases tablosuna kaydedilir.
+ * Fire-and-forget kullanıldığında ödeme akışını bloklamaz.
+ */
+async function sendPurchaseEmailFireForget(purchaseId: number): Promise<void> {
+  try {
+    const rows = await db.execute(sql`
+      SELECT p.id, p.buyer_email, p.buyer_name, p.invoice_type,
+             p.amount_paid, p.currency,
+             p.download_token, p.download_expires_at,
+             p.payment_status,
+             e.title AS ebook_title, e.author AS ebook_author
+      FROM ebook_purchases p
+      LEFT JOIN ebooks e ON e.id = p.ebook_id
+      WHERE p.id = ${purchaseId}
+      LIMIT 1
+    `);
+    const p = (rows.rows ?? rows)[0] as any;
+    if (!p) {
+      console.error(`[EBOOK-PURCHASE/mail] purchase bulunamadı: id=${purchaseId}`);
+      return;
+    }
+    if (p.payment_status !== "success" || !p.download_token) {
+      console.warn(`[EBOOK-PURCHASE/mail] mail atlandı (status=${p.payment_status}, token=${!!p.download_token})`);
+      return;
+    }
+
+    // Attempt counter artır
+    await db.execute(sql`
+      UPDATE ebook_purchases SET mail_attempts = mail_attempts + 1, updated_at = NOW()
+      WHERE id = ${purchaseId}
+    `);
+
+    const result = await sendEbookDownloadMail({
+      buyerEmail: p.buyer_email,
+      buyerName: p.buyer_name ?? null,
+      ebookTitle: p.ebook_title ?? "Sphere English E-Kitap",
+      ebookAuthor: p.ebook_author ?? "Sphere English",
+      amountPaid: p.amount_paid,
+      currency: p.currency ?? "TRY",
+      downloadToken: p.download_token,
+      downloadExpiresAt: new Date(p.download_expires_at),
+      invoiceType: p.invoice_type === "corporate" ? "corporate" : "individual",
+    });
+
+    if (result.ok) {
+      await db.execute(sql`
+        UPDATE ebook_purchases SET
+          mail_status = 'sent',
+          mail_sent_at = NOW(),
+          mail_error = NULL,
+          updated_at = NOW()
+        WHERE id = ${purchaseId}
+      `);
+      console.info(`[EBOOK-PURCHASE/mail] Gönderildi: id=${purchaseId} to=${p.buyer_email}`);
+    } else {
+      await db.execute(sql`
+        UPDATE ebook_purchases SET
+          mail_status = 'failed',
+          mail_error = ${result.error ?? "bilinmeyen hata"},
+          updated_at = NOW()
+        WHERE id = ${purchaseId}
+      `);
+      console.error(`[EBOOK-PURCHASE/mail] Başarısız: id=${purchaseId} err=${result.error}`);
+    }
+  } catch (e: any) {
+    console.error("[EBOOK-PURCHASE/mail] HATA:", e?.message);
+    try {
+      await db.execute(sql`
+        UPDATE ebook_purchases SET
+          mail_status = 'failed',
+          mail_error = ${e?.message ?? "exception"},
+          updated_at = NOW()
+        WHERE id = ${purchaseId}
+      `);
+    } catch {
+      // ignore
+    }
+  }
+}
+
+// Export — admin endpoint'inden de çağrılabilsin
+export { sendPurchaseEmailFireForget };
 
 export default router;

@@ -14,6 +14,8 @@ import {
   TrendingUp,
   Building2,
   User as UserIcon,
+  Mail,
+  Send,
 } from "lucide-react";
 import { API } from "@/lib/api-url";
 
@@ -65,6 +67,10 @@ interface Purchase {
   download_token: string | null;
   download_count: number;
   download_expires_at: string | null;
+  mail_sent_at: string | null;
+  mail_status: "pending" | "sent" | "failed" | null;
+  mail_error: string | null;
+  mail_attempts: number;
   paid_at: string | null;
   created_at: string;
   updated_at: string;
@@ -624,6 +630,11 @@ function PurchaseDetail({
             </Section>
           )}
 
+          {/* Mail durumu + yeniden gönder */}
+          {purchase.payment_status === "success" && (
+            <MailSection purchase={purchase} onUpdated={onUpdated} />
+          )}
+
           {/* Fatura yönetimi */}
           {purchase.payment_status === "success" && (
             <Section title="Fatura Yönetimi" tone="amber">
@@ -731,6 +742,113 @@ function Section({
         {title}
       </h3>
       <div className="space-y-1.5">{children}</div>
+    </div>
+  );
+}
+
+function MailSection({
+  purchase,
+  onUpdated,
+}: {
+  purchase: Purchase;
+  onUpdated: (p: Purchase) => void;
+}) {
+  const [sending, setSending] = useState(false);
+  const [msg, setMsg] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
+
+  const mailBadge = () => {
+    if (purchase.mail_status === "sent") {
+      return (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-emerald-100 text-emerald-800">
+          <CheckCircle2 size={11} /> Gönderildi
+        </span>
+      );
+    }
+    if (purchase.mail_status === "failed") {
+      return (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-red-100 text-red-800">
+          <XCircle size={11} /> Başarısız
+        </span>
+      );
+    }
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-amber-100 text-amber-800">
+        <Clock size={11} /> Bekliyor
+      </span>
+    );
+  };
+
+  async function resend() {
+    setSending(true);
+    setMsg(null);
+    try {
+      const data = await apiFetch(`/admin/ebook-purchases/${purchase.id}/resend-email`, {
+        method: "POST",
+      });
+      setMsg({
+        kind: "ok",
+        text: `Mail gönderildi: ${data.to} (deneme #${data.mailAttempts ?? "?"})`,
+      });
+      // Detayı yenile
+      const fresh = await apiFetch(`/admin/ebook-purchases/${purchase.id}`);
+      if (fresh.purchase) onUpdated(fresh.purchase as Purchase);
+    } catch (e: any) {
+      setMsg({ kind: "err", text: e.message });
+    } finally {
+      setSending(false);
+    }
+  }
+
+  return (
+    <div className="rounded-xl border border-sky-200 bg-sky-50/40 p-4">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2">
+          <Mail size={14} /> Bilgilendirme Maili
+        </h3>
+        {mailBadge()}
+      </div>
+
+      <div className="space-y-1.5">
+        <Row label="Alıcı" value={purchase.buyer_email} mono />
+        <Row
+          label="İlk Gönderim"
+          value={purchase.mail_sent_at ? formatDateTime(purchase.mail_sent_at) : "Henüz yok"}
+        />
+        <Row label="Toplam Deneme" value={String(purchase.mail_attempts ?? 0)} />
+        {purchase.mail_error && (
+          <div className="mt-2 p-2 rounded bg-red-50 border border-red-200 text-[11px] text-red-900">
+            <strong>Son hata:</strong> {purchase.mail_error}
+          </div>
+        )}
+      </div>
+
+      {msg && (
+        <div
+          className={`mt-3 p-2 rounded text-[12px] ${
+            msg.kind === "ok"
+              ? "bg-emerald-50 border border-emerald-200 text-emerald-900"
+              : "bg-red-50 border border-red-200 text-red-900"
+          }`}
+        >
+          {msg.text}
+        </div>
+      )}
+
+      <button
+        onClick={resend}
+        disabled={sending}
+        className="mt-3 w-full py-2.5 rounded-lg bg-sky-600 hover:bg-sky-700 disabled:opacity-50 text-white text-sm font-bold inline-flex items-center justify-center gap-2"
+      >
+        {sending ? (
+          <>
+            <Loader2 size={14} className="animate-spin" /> Gönderiliyor…
+          </>
+        ) : (
+          <>
+            <Send size={14} /> {purchase.mail_status === "sent" ? "Linki Yeniden Gönder" : "Mail Gönder"}
+          </>
+        )}
+      </button>
     </div>
   );
 }
