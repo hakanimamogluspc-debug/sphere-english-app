@@ -2,6 +2,7 @@ import React from 'react';
 import type { Metadata, Viewport } from 'next';
 import '../../styles/tailwind.css';
 import ChatWidget from '../../components/ChatWidget/ChatWidget';
+import WebMCPProvider from '../../components/WebMCPProvider';
 
 const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || 'G-ELDF1FF5S1';
 const BASE_URL = 'https://www.sphereenglish.com';
@@ -291,6 +292,14 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         <meta httpEquiv="content-language" content="tr-TR" />
         {/* AI / LLM discovery */}
         <link rel="alternate" type="text/plain" href="/llms.txt" title="AI Content Summary" />
+        <link rel="alternate" type="text/markdown" href="/pricing.md" title="Pricing (machine-readable)" />
+        <link rel="api-catalog" href="/.well-known/api-catalog" type="application/linkset+json" />
+        <link
+          rel="https://agentskills.io/rel/skill-index"
+          href="/.well-known/agent-skills/index.json"
+          type="application/json"
+          title="Sphere AI skill catalog"
+        />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
@@ -346,6 +355,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         </noscript>
         {children}
         <ChatWidget />
+        <WebMCPProvider />
       </body>
     </html>
   );

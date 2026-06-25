@@ -58,7 +58,7 @@ nihai teklif satış ekibi tarafından özel olarak hazırlanır.
   - 12 yapay zeka koçu ile 7/24 konuşma pratiği
   - Telaffuz Koçu (Whisper AI fonem analizi)
   - Yazma Koçu (7 iş yazısı türü)
-  - Dilbilgisi Koçu (60+ ders birimi)
+  - Dilbilgisi Koçu (A1-C2 CEFR, çoklu ders birimi)
   - İş Senaryoları (14 sektörde 50+ simülasyon)
   - Kelime Oyunu (4000+ iş İngilizcesi kelimesi)
 - CEFR bazlı seviye tespit sınavı

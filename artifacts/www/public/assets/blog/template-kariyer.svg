@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 580 400" width="580" height="400">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffffff"/>
+      <stop offset="100%" style="stop-color:#e8f0fe"/>
+    </linearGradient>
+    <linearGradient id="azure" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#0ea5e9"/>
+      <stop offset="100%" style="stop-color:#38bdf8"/>
+    </linearGradient>
+    <linearGradient id="amber" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f59e0b"/>
+      <stop offset="100%" style="stop-color:#fcd34d"/>
+    </linearGradient>
+    <linearGradient id="stepBlue" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#0ea5e9;stop-opacity:0.85"/>
+      <stop offset="100%" style="stop-color:#0ea5e9;stop-opacity:0.5"/>
+    </linearGradient>
+    <linearGradient id="stepGold" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#f59e0b;stop-opacity:0.95"/>
+      <stop offset="100%" style="stop-color:#fcd34d;stop-opacity:0.65"/>
+    </linearGradient>
+  </defs>
+  <rect width="580" height="400" fill="url(#bg)"/>
+  <rect x="0" y="0" width="580" height="4" fill="url(#azure)"/>
+  <circle cx="100" cy="60" r="2.5" fill="#0ea5e9" opacity="0.22"/>
+  <circle cx="480" cy="50" r="1.5" fill="#0ea5e9" opacity="0.28"/>
+  <circle cx="540" cy="100" r="1.5" fill="#1B365D" opacity="0.18"/>
+  <circle cx="60" cy="120" r="2" fill="#1B365D" opacity="0.15"/>
+  <g transform="translate(70 285)">
+    <rect x="0" y="0" width="80" height="22" fill="url(#stepBlue)" stroke="#0ea5e9" stroke-width="1" rx="3"/>
+    <text x="40" y="15" text-anchor="middle" font-family="-apple-system,Segoe UI,Roboto,sans-serif" font-size="11" font-weight="700" fill="#ffffff">A1</text>
+  </g>
+  <g transform="translate(140 250)">
+    <rect x="0" y="0" width="80" height="57" fill="url(#stepBlue)" stroke="#0ea5e9" stroke-width="1" rx="3"/>
+    <text x="40" y="50" text-anchor="middle" font-family="-apple-system,Segoe UI,Roboto,sans-serif" font-size="11" font-weight="700" fill="#ffffff">A2</text>
+  </g>
+  <g transform="translate(210 210)">
+    <rect x="0" y="0" width="80" height="97" fill="url(#stepBlue)" stroke="#0ea5e9" stroke-width="1" rx="3"/>
+    <text x="40" y="90" text-anchor="middle" font-family="-apple-system,Segoe UI,Roboto,sans-serif" font-size="11" font-weight="700" fill="#ffffff">B1</text>
+  </g>
+  <g transform="translate(280 165)">
+    <rect x="0" y="0" width="80" height="142" fill="url(#stepBlue)" stroke="#0ea5e9" stroke-width="1.5" rx="3"/>
+    <text x="40" y="135" text-anchor="middle" font-family="-apple-system,Segoe UI,Roboto,sans-serif" font-size="11" font-weight="700" fill="#ffffff">B2</text>
+  </g>
+  <g transform="translate(350 115)">
+    <rect x="0" y="0" width="80" height="192" fill="url(#stepGold)" stroke="#f59e0b" stroke-width="1.5" rx="3"/>
+    <text x="40" y="185" text-anchor="middle" font-family="-apple-system,Segoe UI,Roboto,sans-serif" font-size="11" font-weight="700" fill="#ffffff">C1</text>
+  </g>
+  <g transform="translate(420 60)">
+    <rect x="0" y="0" width="80" height="247" fill="url(#stepGold)" stroke="#f59e0b" stroke-width="2" rx="3"/>
+    <text x="40" y="240" text-anchor="middle" font-family="-apple-system,Segoe UI,Roboto,sans-serif" font-size="11" font-weight="700" fill="#ffffff">C2</text>
+  </g>
+  <polyline points="110,285 180,250 250,210 320,165 390,115 460,60" fill="none" stroke="#1B365D" stroke-width="2.2" stroke-dasharray="5,4" opacity="0.8"/>
+  <circle cx="110" cy="285" r="5" fill="#ffffff" stroke="#0ea5e9" stroke-width="2.5"/>
+  <circle cx="180" cy="250" r="5" fill="#ffffff" stroke="#0ea5e9" stroke-width="2.5"/>
+  <circle cx="250" cy="210" r="5" fill="#ffffff" stroke="#0ea5e9" stroke-width="2.5"/>
+  <circle cx="320" cy="165" r="5" fill="#ffffff" stroke="#0ea5e9" stroke-width="2.5"/>
+  <circle cx="390" cy="115" r="5" fill="#ffffff" stroke="#f59e0b" stroke-width="2.5"/>
+  <circle cx="460" cy="60" r="6" fill="#f59e0b" stroke="#ffffff" stroke-width="2.5"/>
+  <g transform="translate(478 38)">
+    <rect x="-2" y="-15" width="4" height="15" fill="#f59e0b"/>
+    <polygon points="2,-15 22,-12 2,-9" fill="url(#amber)"/>
+  </g>
+  <g transform="translate(120 132)">
+    <rect x="-1.5" y="0" width="3" height="20" fill="#1B365D"/>
+    <polygon points="1.5,0 18,3 1.5,6" fill="#1B365D"/>
+    <text x="22" y="6" font-family="-apple-system,Segoe UI,Roboto,sans-serif" font-size="9" font-weight="700" fill="#1B365D" letter-spacing="1">+2 SEVİYE / 6 AY</text>
+  </g>
+  <text x="290" y="345" text-anchor="middle" font-family="-apple-system,Segoe UI,Roboto,sans-serif" font-size="13" font-weight="700" fill="#1B365D" letter-spacing="3">KARİYER GELİŞİMİ</text>
+  <text x="290" y="367" text-anchor="middle" font-family="-apple-system,Segoe UI,Roboto,sans-serif" font-size="10" fill="#64748b" letter-spacing="2">CEFR ROADMAP · A1 → C2</text>
+  <rect x="0" y="396" width="580" height="4" fill="url(#amber)"/>
+</svg>

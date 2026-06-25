@@ -150,6 +150,22 @@ export const ebookPurchasesTable = pgTable(
     // Misafir satın alma için email zorunlu (kullanıcı varsa email de tutulur)
     buyerEmail: varchar("buyer_email", { length: 200 }).notNull(),
     buyerName: varchar("buyer_name", { length: 200 }),
+    buyerPhone: varchar("buyer_phone", { length: 30 }),
+
+    // ── Fatura bilgileri ──
+    /** 'individual' (bireysel) | 'corporate' (kurumsal) */
+    invoiceType: varchar("invoice_type", { length: 20 }).default("individual"),
+    /** Bireysel: TC kimlik no (11 hane) / Kurumsal: VKN (10 hane) */
+    taxId: varchar("tax_id", { length: 20 }),
+    /** Sadece kurumsal */
+    taxOffice: varchar("tax_office", { length: 150 }),
+    /** Sadece kurumsal — şirket unvanı */
+    companyName: varchar("company_name", { length: 300 }),
+    /** Açık adres (cadde/sokak/no/daire) */
+    billingAddress: text("billing_address"),
+    billingCity: varchar("billing_city", { length: 100 }),
+    billingDistrict: varchar("billing_district", { length: 100 }),
+    billingPostalCode: varchar("billing_postal_code", { length: 10 }),
 
     // Ödeme detayları
     amountPaid: decimal("amount_paid", { precision: 10, scale: 2 }).notNull(),
@@ -157,18 +173,35 @@ export const ebookPurchasesTable = pgTable(
     iyzicoPaymentId: varchar("iyzico_payment_id", { length: 200 }),
     iyzicoConversationId: varchar("iyzico_conversation_id", { length: 200 }),
 
-    // İndirme erişimi
-    downloadToken: varchar("download_token", { length: 100 }).notNull(),
-    downloadCount: integer("download_count").notNull().default(0),
-    downloadExpiresAt: timestamp("download_expires_at", { withTimezone: true }).notNull(),
+    /** 'pending' (form gönderildi, ödeme bekliyor) | 'success' | 'failed' | 'expired' */
+    paymentStatus: varchar("payment_status", { length: 20 }).notNull().default("pending"),
+    /** Iyzico hata mesajı / errorCode (başarısız ödemelerde) */
+    paymentError: text("payment_error"),
 
-    paidAt: timestamp("paid_at", { withTimezone: true }).notNull().defaultNow(),
+    // ── Fatura kesim takibi ──
+    /** 'pending' (kesilmedi) | 'issued' (kesildi) | 'sent' (gönderildi) | 'cancelled' */
+    invoiceStatus: varchar("invoice_status", { length: 20 }).notNull().default("pending"),
+    invoiceNumber: varchar("invoice_number", { length: 100 }),
+    invoiceIssuedAt: timestamp("invoice_issued_at", { withTimezone: true }),
+    /** Admin notu (örn. "e-Arşiv portalından kesildi") */
+    invoiceNotes: text("invoice_notes"),
+
+    // İndirme erişimi — başarılı ödemede doldurulur
+    downloadToken: varchar("download_token", { length: 100 }),
+    downloadCount: integer("download_count").notNull().default(0),
+    downloadExpiresAt: timestamp("download_expires_at", { withTimezone: true }),
+
+    paidAt: timestamp("paid_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => ({
     tokenIdx: uniqueIndex("ebook_purchases_token_unique").on(t.downloadToken),
     emailIdx: index("ebook_purchases_email_idx").on(t.buyerEmail, t.paidAt),
     ebookIdx: index("ebook_purchases_ebook_idx").on(t.ebookId, t.paidAt),
+    statusIdx: index("ebook_purchases_status_idx").on(t.paymentStatus, t.createdAt),
+    invoiceStatusIdx: index("ebook_purchases_invoice_status_idx").on(t.invoiceStatus, t.paidAt),
+    convIdx: index("ebook_purchases_conv_idx").on(t.iyzicoConversationId),
   }),
 );
 

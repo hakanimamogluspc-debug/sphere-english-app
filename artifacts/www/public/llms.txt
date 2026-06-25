@@ -89,7 +89,7 @@ Ortalama 6 aylık bir programda çalışanlar 2 CEFR seviyesi ilerler (örn. A2 
 - URL: https://app.sphereenglish.com/student/writing-coach
 
 ### 4.4 Dilbilgisi Koçu (Grammar Coach)
-- A1–C1 arası yapılandırılmış müfredat (toplam 60+ ders birimi)
+- A1–C2 arası yapılandırılmış müfredat (her CEFR seviyesinde çoklu ders birimi, içerik sürekli genişliyor)
 - Türk İngilizce öğrencilerinin en sık yaptığı gramer hatalarına odaklanır
 - Her kural için bağlamlı iş İngilizcesi örnekleri
 - URL: https://app.sphereenglish.com/student/grammar-coach

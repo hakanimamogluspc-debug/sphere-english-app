@@ -22,6 +22,20 @@ const nextConfig = {
     remotePatterns: imageHosts,
   },
   async headers() {
+    // RFC 8288 — AI agent keşfi için Link header'ları
+    // Tek bir Link header'ı içine comma-separated multiple relations koyuyoruz
+    const agentDiscoveryLink = [
+      '</.well-known/api-catalog>; rel="api-catalog"; type="application/linkset+json"',
+      '</.well-known/agent-skills/index.json>; rel="https://agentskills.io/rel/skill-index"; type="application/json"',
+      '</llms.txt>; rel="https://llmstxt.org/rel/llms"; type="text/plain"',
+      '</pricing.md>; rel="https://schema.org/PriceSpecification"; type="text/markdown"',
+      '</sitemap.xml>; rel="sitemap"; type="application/xml"',
+      '</gizlilik-politikasi>; rel="privacy-policy"; type="text/html"',
+      '</kullanim-kosullari>; rel="terms-of-service"; type="text/html"',
+      '</iletisim>; rel="contact"; type="text/html"',
+      '<https://app.sphereenglish.com/api/healthz>; rel="status"; type="application/json"',
+    ].join(', ');
+
     return [
       {
         // Public site headers (admin paneli muaf)
@@ -32,6 +46,10 @@ const nextConfig = {
           { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
           { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(), payment=(), usb=()' },
+          // AI agent discovery (RFC 8288 + RFC 9727 §3)
+          { key: 'Link', value: agentDiscoveryLink },
+          // Content negotiation hint — bu kaynak markdown alternatif olarak da sunulabilir
+          { key: 'Vary', value: 'Accept' },
           {
             key: 'Content-Security-Policy',
             value: [

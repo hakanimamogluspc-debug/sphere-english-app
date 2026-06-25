@@ -346,6 +346,9 @@ async function runStartupMigrations() {
     `INSERT INTO feature_settings (key, label, is_enabled, visible_to, category) VALUES
       ('admin-ebooks', 'E-Kitap Yönetimi', true, ARRAY['admin']::TEXT[], 'admin')
       ON CONFLICT (key) DO NOTHING`,
+    `INSERT INTO feature_settings (key, label, is_enabled, visible_to, category) VALUES
+      ('admin-ebook-purchases', 'E-Kitap Satışları', true, ARRAY['admin']::TEXT[], 'admin')
+      ON CONFLICT (key) DO NOTHING`,
     `CREATE TABLE IF NOT EXISTS ebook_purchases (
       id SERIAL PRIMARY KEY,
       ebook_id INTEGER NOT NULL REFERENCES ebooks(id) ON DELETE CASCADE,
@@ -365,6 +368,34 @@ async function runStartupMigrations() {
     `CREATE UNIQUE INDEX IF NOT EXISTS ebook_purchases_token_unique ON ebook_purchases(download_token)`,
     `CREATE INDEX IF NOT EXISTS ebook_purchases_email_idx ON ebook_purchases(buyer_email, paid_at)`,
     `CREATE INDEX IF NOT EXISTS ebook_purchases_ebook_idx ON ebook_purchases(ebook_id, paid_at)`,
+    // ── Fatura alanları (Q2 2026 — Faz 1) — defansif ALTER ADD COLUMN IF NOT EXISTS
+    // Mevcut satırlarda NULL kalır, yeni satın almalarda dolu gelecek
+    `ALTER TABLE ebook_purchases ADD COLUMN IF NOT EXISTS buyer_phone VARCHAR(30)`,
+    `ALTER TABLE ebook_purchases ADD COLUMN IF NOT EXISTS invoice_type VARCHAR(20) DEFAULT 'individual'`,
+    `ALTER TABLE ebook_purchases ADD COLUMN IF NOT EXISTS tax_id VARCHAR(20)`,
+    `ALTER TABLE ebook_purchases ADD COLUMN IF NOT EXISTS tax_office VARCHAR(150)`,
+    `ALTER TABLE ebook_purchases ADD COLUMN IF NOT EXISTS company_name VARCHAR(300)`,
+    `ALTER TABLE ebook_purchases ADD COLUMN IF NOT EXISTS billing_address TEXT`,
+    `ALTER TABLE ebook_purchases ADD COLUMN IF NOT EXISTS billing_city VARCHAR(100)`,
+    `ALTER TABLE ebook_purchases ADD COLUMN IF NOT EXISTS billing_district VARCHAR(100)`,
+    `ALTER TABLE ebook_purchases ADD COLUMN IF NOT EXISTS billing_postal_code VARCHAR(10)`,
+    // Ödeme durumu — pending/success/failed/expired
+    `ALTER TABLE ebook_purchases ADD COLUMN IF NOT EXISTS payment_status VARCHAR(20) NOT NULL DEFAULT 'success'`,
+    `ALTER TABLE ebook_purchases ADD COLUMN IF NOT EXISTS payment_error TEXT`,
+    // Fatura takibi
+    `ALTER TABLE ebook_purchases ADD COLUMN IF NOT EXISTS invoice_status VARCHAR(20) NOT NULL DEFAULT 'pending'`,
+    `ALTER TABLE ebook_purchases ADD COLUMN IF NOT EXISTS invoice_number VARCHAR(100)`,
+    `ALTER TABLE ebook_purchases ADD COLUMN IF NOT EXISTS invoice_issued_at TIMESTAMPTZ`,
+    `ALTER TABLE ebook_purchases ADD COLUMN IF NOT EXISTS invoice_notes TEXT`,
+    `ALTER TABLE ebook_purchases ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()`,
+    // download_token + download_expires_at + paid_at NOT NULL idi — pending kayıtlar için NULL'a izin verelim
+    `ALTER TABLE ebook_purchases ALTER COLUMN download_token DROP NOT NULL`,
+    `ALTER TABLE ebook_purchases ALTER COLUMN download_expires_at DROP NOT NULL`,
+    `ALTER TABLE ebook_purchases ALTER COLUMN paid_at DROP NOT NULL`,
+    // Yeni index'ler
+    `CREATE INDEX IF NOT EXISTS ebook_purchases_status_idx ON ebook_purchases(payment_status, created_at)`,
+    `CREATE INDEX IF NOT EXISTS ebook_purchases_invoice_status_idx ON ebook_purchases(invoice_status, paid_at)`,
+    `CREATE INDEX IF NOT EXISTS ebook_purchases_conv_idx ON ebook_purchases(iyzico_conversation_id)`,
     // İlk kitap seed — sadece yoksa ekle
     `INSERT INTO ebooks (
       slug, title, subtitle, description, long_description,

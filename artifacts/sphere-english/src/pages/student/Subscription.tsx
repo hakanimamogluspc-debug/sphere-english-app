@@ -12,6 +12,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { useSubscription } from "../../lib/subscription-context";
+import IyzicoPlanPicker from "../../components/subscription/IyzicoPlanPicker";
 
 const TOKEN_KEY = "sphere_token";
 const API = import.meta.env.BASE_URL.replace(/\/$/, "") + "/api";
@@ -371,6 +372,11 @@ export default function Subscription() {
           </div>
         </>
       )}
+
+      {/* Iyzico Premium Planlar — onaylı 4 plan + peşin paketler */}
+      <div style={{ marginTop: 32 }}>
+        <IyzicoPlanPicker />
+      </div>
 
       {/* Always-shown trust footer */}
       <div

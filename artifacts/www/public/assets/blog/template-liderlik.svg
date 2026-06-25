@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 580 400" width="580" height="400">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffffff"/>
+      <stop offset="100%" style="stop-color:#e8f0fe"/>
+    </linearGradient>
+    <linearGradient id="azure" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#0ea5e9"/>
+      <stop offset="100%" style="stop-color:#38bdf8"/>
+    </linearGradient>
+    <linearGradient id="amber" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f59e0b"/>
+      <stop offset="100%" style="stop-color:#fcd34d"/>
+    </linearGradient>
+    <linearGradient id="peak1" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#1B365D;stop-opacity:0.95"/>
+      <stop offset="100%" style="stop-color:#1B365D;stop-opacity:0.65"/>
+    </linearGradient>
+    <linearGradient id="peak2" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#0ea5e9;stop-opacity:0.85"/>
+      <stop offset="100%" style="stop-color:#0ea5e9;stop-opacity:0.45"/>
+    </linearGradient>
+    <linearGradient id="peakSnow" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffffff"/>
+      <stop offset="100%" style="stop-color:#e8f0fe"/>
+    </linearGradient>
+  </defs>
+  <rect width="580" height="400" fill="url(#bg)"/>
+  <rect x="0" y="0" width="580" height="4" fill="url(#azure)"/>
+  <circle cx="100" cy="60" r="2.5" fill="#0ea5e9" opacity="0.22"/>
+  <circle cx="480" cy="50" r="1.5" fill="#0ea5e9" opacity="0.28"/>
+  <circle cx="500" cy="90" r="1.5" fill="#1B365D" opacity="0.18"/>
+  <circle cx="60" cy="110" r="2" fill="#1B365D" opacity="0.15"/>
+  <circle cx="540" cy="160" r="2" fill="#f59e0b" opacity="0.5"/>
+  <line x1="60" y1="290" x2="520" y2="290" stroke="#0ea5e9" stroke-width="0.5" opacity="0.3" stroke-dasharray="3,4"/>
+  <polygon points="60,290 130,260 170,275 200,250 230,265 270,235 310,250 350,225 390,240 430,210 480,225 520,200 540,210 540,290" fill="#0ea5e9" opacity="0.1"/>
+  <polyline points="60,290 130,260 170,275 200,250 230,265 270,235 310,250 350,225 390,240 430,210 480,225 520,200" fill="none" stroke="url(#azure)" stroke-width="1.8"/>
+  <circle cx="130" cy="260" r="3.5" fill="#0ea5e9"/>
+  <circle cx="200" cy="250" r="3.5" fill="#0ea5e9"/>
+  <circle cx="270" cy="235" r="3.5" fill="#0ea5e9"/>
+  <circle cx="350" cy="225" r="3.5" fill="#0ea5e9"/>
+  <circle cx="430" cy="210" r="3.5" fill="#f59e0b"/>
+  <circle cx="520" cy="200" r="4" fill="#f59e0b"/>
+  <g transform="translate(290 110)">
+    <polygon points="-50,30 -10,-10 30,30" fill="url(#peak2)" stroke="#0ea5e9" stroke-width="1.5"/>
+    <polygon points="-10,-10 -22,8 -4,4 4,12" fill="#ffffff" opacity="0.85"/>
+    <polygon points="20,30 50,-5 80,30" fill="url(#peak2)" opacity="0.85" stroke="#0ea5e9" stroke-width="1.5"/>
+    <polygon points="50,-5 38,12 58,8" fill="#ffffff" opacity="0.85"/>
+    <polygon points="0,-50 -36,30 36,30" fill="url(#peak1)" stroke="#1B365D" stroke-width="1.5"/>
+    <polygon points="0,-50 -16,-10 0,-22 14,-12" fill="url(#peakSnow)"/>
+    <line x1="0" y1="-50" x2="0" y2="-75" stroke="#f59e0b" stroke-width="2.5"/>
+    <rect x="-2" y="-75" width="22" height="13" fill="url(#amber)" rx="1"/>
+    <polygon points="20,-75 20,-62 14,-68" fill="#ffffff"/>
+  </g>
+  <g transform="translate(290 215)">
+    <circle r="15" fill="#ffffff" stroke="#f59e0b" stroke-width="2"/>
+    <circle cy="-2" r="4.5" fill="#f59e0b"/>
+    <path d="M -7 9 Q 0 2 7 9 L 7 13 L -7 13 Z" fill="#f59e0b"/>
+  </g>
+  <text x="290" y="332" text-anchor="middle" font-family="-apple-system,Segoe UI,Roboto,sans-serif" font-size="13" font-weight="700" fill="#1B365D" letter-spacing="3">LİDERLİK &amp; YÖNETİM</text>
+  <text x="290" y="354" text-anchor="middle" font-family="-apple-system,Segoe UI,Roboto,sans-serif" font-size="10" fill="#64748b" letter-spacing="2">EXECUTIVE ENGLISH · STRATEJİK İLETİŞİM</text>
+  <rect x="0" y="396" width="580" height="4" fill="url(#amber)"/>
+</svg>

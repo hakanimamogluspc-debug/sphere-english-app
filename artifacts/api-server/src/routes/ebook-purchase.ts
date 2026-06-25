@@ -2,9 +2,12 @@
  * E-kitap satın alma + indirme.
  *
  * Endpoint'ler:
- *   POST /api/internal/ebook-purchase/activate  → Iyzico callback'inden gelen başarılı ödemeyi kaydet
- *                                                  HMAC X-Internal-Signature ile authenticate
- *   GET  /api/ebooks/download?token=X           → Token ile tam PDF'i stream et (max 10 indirme, 7 gün geçerli)
+ *   POST /api/internal/ebook-purchase/pre-create  → Initialize aşamasında pending purchase yaz (billing info ile)
+ *   POST /api/internal/ebook-purchase/activate    → Callback başarılıysa pending'i success'e çevir, downloadToken üret
+ *   POST /api/internal/ebook-purchase/mark-failed → Callback başarısızsa pending'i failed olarak işaretle
+ *   GET  /api/ebooks/download?token=X             → Token ile tam PDF'i stream et (max 10 indirme, 7 gün geçerli)
+ *
+ * Internal endpoint'ler HMAC X-Internal-Signature ile authenticate.
  */
 
 import { Router, Request, Response } from "express";
@@ -29,7 +32,112 @@ function verifySignature(rawBody: string, signature: string | undefined): boolea
   }
 }
 
-// ─── INTERNAL: Aktivasyon ────────────────────────────────────────────────
+// ─── INTERNAL: Pre-create (initialize aşaması) ──────────────────────────
+// sphere-www payment/ebook/initialize bunu çağırır → DB'ye pending purchase yazar
+// callback'te conversationId ile bulunup activate edilir
+router.post("/internal/ebook-purchase/pre-create", async (req: Request, res: Response) => {
+  const rawBody = JSON.stringify(req.body);
+  const signature = req.headers["x-internal-signature"];
+
+  if (!verifySignature(rawBody, typeof signature === "string" ? signature : undefined)) {
+    return res.status(401).json({ error: "Geçersiz imza" });
+  }
+
+  const {
+    ebookId,
+    buyerEmail,
+    buyerName,
+    buyerPhone,
+    amountPaid,
+    currency,
+    iyzicoConversationId,
+    invoiceType,
+    taxId,
+    taxOffice,
+    companyName,
+    billingAddress,
+    billingCity,
+    billingDistrict,
+    billingPostalCode,
+  } = (req.body ?? {}) as any;
+
+  if (!ebookId || !buyerEmail || !iyzicoConversationId) {
+    return res.status(400).json({
+      error: "Eksik alan: ebookId, buyerEmail, iyzicoConversationId",
+    });
+  }
+
+  try {
+    // Kitabın varlığını doğrula
+    const eb = await db.execute(sql`SELECT id FROM ebooks WHERE id = ${ebookId} LIMIT 1`);
+    if (!(eb.rows ?? eb)[0]) return res.status(404).json({ error: "Kitap bulunamadı" });
+
+    // Aynı conversationId'li satır varsa idempotent — update et
+    const existing = await db.execute(sql`
+      SELECT id FROM ebook_purchases
+      WHERE iyzico_conversation_id = ${iyzicoConversationId}
+      LIMIT 1
+    `);
+    const existingRow = (existing.rows ?? existing)[0] as any;
+
+    // Email ile mevcut kullanıcı varsa user_id'yi yakala
+    const userRows = await db.execute(sql`
+      SELECT id FROM users WHERE LOWER(email) = LOWER(${buyerEmail}) LIMIT 1
+    `);
+    const userId = (userRows.rows ?? userRows)[0]?.id ?? null;
+
+    if (existingRow) {
+      await db.execute(sql`
+        UPDATE ebook_purchases SET
+          buyer_name = ${buyerName ?? null},
+          buyer_phone = ${buyerPhone ?? null},
+          invoice_type = ${invoiceType ?? "individual"},
+          tax_id = ${taxId ?? null},
+          tax_office = ${taxOffice ?? null},
+          company_name = ${companyName ?? null},
+          billing_address = ${billingAddress ?? null},
+          billing_city = ${billingCity ?? null},
+          billing_district = ${billingDistrict ?? null},
+          billing_postal_code = ${billingPostalCode ?? null},
+          updated_at = NOW()
+        WHERE id = ${existingRow.id}
+      `);
+      return res.json({ ok: true, purchaseId: existingRow.id, updated: true });
+    }
+
+    // Yeni pending kayıt
+    const inserted = await db.execute(sql`
+      INSERT INTO ebook_purchases (
+        ebook_id, user_id, buyer_email, buyer_name, buyer_phone,
+        invoice_type, tax_id, tax_office, company_name,
+        billing_address, billing_city, billing_district, billing_postal_code,
+        amount_paid, currency,
+        iyzico_conversation_id,
+        payment_status, invoice_status,
+        download_count
+      ) VALUES (
+        ${ebookId}, ${userId}, ${buyerEmail.toLowerCase()}, ${buyerName ?? null}, ${buyerPhone ?? null},
+        ${invoiceType ?? "individual"}, ${taxId ?? null}, ${taxOffice ?? null}, ${companyName ?? null},
+        ${billingAddress ?? null}, ${billingCity ?? null}, ${billingDistrict ?? null}, ${billingPostalCode ?? null},
+        ${amountPaid ?? 0}, ${currency ?? "TRY"},
+        ${iyzicoConversationId},
+        'pending', 'pending',
+        0
+      )
+      RETURNING id
+    `);
+    const purchaseId = ((inserted.rows ?? inserted)[0] as any)?.id;
+    console.info(`[EBOOK-PURCHASE] Pre-create: purchaseId=${purchaseId} buyer=${buyerEmail} conv=${iyzicoConversationId}`);
+    return res.json({ ok: true, purchaseId });
+  } catch (e: any) {
+    console.error("[EBOOK-PURCHASE] pre-create HATA:", e?.message);
+    return res.status(500).json({ error: "Pre-create başarısız: " + e?.message });
+  }
+});
+
+// ─── INTERNAL: Activate (callback başarılı) ──────────────────────────────
+// Iyzico callback başarılı paymentStatus döndürürse çağrılır
+// Pending kaydı bulup success'e çevirir + download token üretir
 router.post("/internal/ebook-purchase/activate", async (req: Request, res: Response) => {
   const rawBody = JSON.stringify(req.body);
   const signature = req.headers["x-internal-signature"];
@@ -39,8 +147,15 @@ router.post("/internal/ebook-purchase/activate", async (req: Request, res: Respo
   }
 
   const {
-    ebookId, buyerEmail, buyerName, amountPaid, currency,
-    iyzicoPaymentId, iyzicoConversationId, downloadToken, paidAt,
+    ebookId,
+    buyerEmail,
+    buyerName,
+    amountPaid,
+    currency,
+    iyzicoPaymentId,
+    iyzicoConversationId,
+    downloadToken,
+    paidAt,
   } = (req.body ?? {}) as any;
 
   if (!ebookId || !buyerEmail || !downloadToken) {
@@ -48,38 +163,91 @@ router.post("/internal/ebook-purchase/activate", async (req: Request, res: Respo
   }
 
   try {
-    // Kitabın varlığını doğrula
-    const eb = await db.execute(sql`SELECT id FROM ebooks WHERE id = ${ebookId} LIMIT 1`);
-    if (!(eb.rows ?? eb)[0]) return res.status(404).json({ error: "Kitap bulunamadı" });
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+    const paidAtIso = paidAt ?? new Date().toISOString();
 
-    // Email ile mevcut kullanıcı varsa user_id'yi yakalа
+    // Önce pending satırı conversationId ile bul ve güncelle
+    if (iyzicoConversationId) {
+      const upd = await db.execute(sql`
+        UPDATE ebook_purchases SET
+          payment_status = 'success',
+          amount_paid = ${amountPaid ?? 0},
+          iyzico_payment_id = ${iyzicoPaymentId ?? null},
+          download_token = ${downloadToken},
+          download_expires_at = ${expiresAt},
+          paid_at = ${paidAtIso},
+          updated_at = NOW()
+        WHERE iyzico_conversation_id = ${iyzicoConversationId}
+          AND payment_status IN ('pending', 'failed')
+        RETURNING id
+      `);
+      const updatedRow = (upd.rows ?? upd)[0] as any;
+      if (updatedRow) {
+        console.info(`[EBOOK-PURCHASE] Activate: purchaseId=${updatedRow.id} buyer=${buyerEmail}`);
+        return res.json({ ok: true, purchaseId: updatedRow.id, action: "updated" });
+      }
+    }
+
+    // Pre-create kaydı yoksa fallback: yeni kayıt oluştur (eski akış uyumu için)
     const userRows = await db.execute(sql`
       SELECT id FROM users WHERE LOWER(email) = LOWER(${buyerEmail}) LIMIT 1
     `);
     const userId = (userRows.rows ?? userRows)[0]?.id ?? null;
 
-    // Download token süresi: 7 gün
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
-
-    await db.execute(sql`
+    const inserted = await db.execute(sql`
       INSERT INTO ebook_purchases (
         ebook_id, user_id, buyer_email, buyer_name,
         amount_paid, currency,
         iyzico_payment_id, iyzico_conversation_id,
-        download_token, download_expires_at, paid_at
+        download_token, download_expires_at, paid_at,
+        payment_status, invoice_status, download_count
       ) VALUES (
         ${ebookId}, ${userId}, ${buyerEmail.toLowerCase()}, ${buyerName ?? null},
         ${amountPaid ?? 0}, ${currency ?? "TRY"},
         ${iyzicoPaymentId ?? null}, ${iyzicoConversationId ?? null},
-        ${downloadToken}, ${expiresAt}, ${paidAt ?? new Date().toISOString()}
+        ${downloadToken}, ${expiresAt}, ${paidAtIso},
+        'success', 'pending', 0
       )
+      RETURNING id
     `);
-
-    console.info(`[EBOOK-PURCHASE] Yeni satış: ebookId=${ebookId} buyer=${buyerEmail}`);
-    return res.json({ ok: true });
+    const newId = ((inserted.rows ?? inserted)[0] as any)?.id;
+    console.info(`[EBOOK-PURCHASE] Activate (fallback INSERT): purchaseId=${newId} buyer=${buyerEmail}`);
+    return res.json({ ok: true, purchaseId: newId, action: "inserted" });
   } catch (e: any) {
     console.error("[EBOOK-PURCHASE] activate HATA:", e?.message);
     return res.status(500).json({ error: "Kayıt başarısız: " + e?.message });
+  }
+});
+
+// ─── INTERNAL: Mark failed (callback başarısız) ──────────────────────────
+// Iyzico callback failure döndürürse pending kaydı failed olarak işaretlenir
+router.post("/internal/ebook-purchase/mark-failed", async (req: Request, res: Response) => {
+  const rawBody = JSON.stringify(req.body);
+  const signature = req.headers["x-internal-signature"];
+
+  if (!verifySignature(rawBody, typeof signature === "string" ? signature : undefined)) {
+    return res.status(401).json({ error: "Geçersiz imza" });
+  }
+
+  const { iyzicoConversationId, iyzicoPaymentId, paymentError } = (req.body ?? {}) as any;
+  if (!iyzicoConversationId) {
+    return res.status(400).json({ error: "iyzicoConversationId gerekli" });
+  }
+
+  try {
+    await db.execute(sql`
+      UPDATE ebook_purchases SET
+        payment_status = 'failed',
+        iyzico_payment_id = COALESCE(${iyzicoPaymentId ?? null}, iyzico_payment_id),
+        payment_error = ${paymentError ?? null},
+        updated_at = NOW()
+      WHERE iyzico_conversation_id = ${iyzicoConversationId}
+        AND payment_status = 'pending'
+    `);
+    return res.json({ ok: true });
+  } catch (e: any) {
+    console.error("[EBOOK-PURCHASE] mark-failed HATA:", e?.message);
+    return res.status(500).json({ error: "Mark failed başarısız: " + e?.message });
   }
 });
 
@@ -92,7 +260,7 @@ router.get("/ebooks/download", async (req: Request, res: Response) => {
   try {
     // Token + süre + indirme sayısı kontrolü
     const rows = await db.execute(sql`
-      SELECT id, ebook_id, download_count, download_expires_at
+      SELECT id, ebook_id, download_count, download_expires_at, payment_status
       FROM ebook_purchases
       WHERE download_token = ${token}
       LIMIT 1
@@ -100,7 +268,10 @@ router.get("/ebooks/download", async (req: Request, res: Response) => {
     const purchase = (rows.rows ?? rows)[0] as any;
 
     if (!purchase) return res.status(404).send("Geçersiz indirme bağlantısı");
-    if (new Date(purchase.download_expires_at) < new Date()) {
+    if (purchase.payment_status !== "success") {
+      return res.status(403).send("Bu sipariş için ödeme tamamlanmamış");
+    }
+    if (!purchase.download_expires_at || new Date(purchase.download_expires_at) < new Date()) {
       return res.status(410).send("İndirme bağlantısının süresi dolmuş (7 gün)");
     }
     if (purchase.download_count >= 10) {
@@ -122,7 +293,7 @@ router.get("/ebooks/download", async (req: Request, res: Response) => {
 
     // Counter ++
     await db.execute(sql`
-      UPDATE ebook_purchases SET download_count = download_count + 1
+      UPDATE ebook_purchases SET download_count = download_count + 1, updated_at = NOW()
       WHERE id = ${purchase.id}
     `);
 
