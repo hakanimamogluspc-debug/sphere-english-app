@@ -1,6 +1,13 @@
 import { db } from "@workspace/db";
-import { subscriptionsTable, featureSettingsTable, type Subscription, type SubscriptionPlanKey } from "@workspace/db/schema";
+import { subscriptionsTable, featureSettingsTable, usersTable, type Subscription, type SubscriptionPlanKey } from "@workspace/db/schema";
 import { eq } from "drizzle-orm";
+
+/**
+ * Yeni hesaplara otomatik verilen ücretsiz deneme süresi (gün).
+ * users.createdAt + bu süre > NOW ise kullanıcı henüz subscription kaydı
+ * oluşturmamış olsa bile virtual 'trialing' entitlement döndürürüz.
+ */
+export const AUTO_TRIAL_DAYS = 7;
 
 // ── Enforcement flag (admin toggleable). Iyzico hazır olana kadar kapalı kalabilir.
 let enforcementCache: { value: boolean; expiresAt: number } | null = null;
@@ -118,6 +125,35 @@ function diffDays(target: Date | null | undefined): number | null {
 export async function getEntitlement(userId: number): Promise<{ entitlement: Entitlement; raw: Subscription | null }> {
   const [row] = await db.select().from(subscriptionsTable).where(eq(subscriptionsTable.userId, userId)).limit(1);
   if (!row) {
+    // Subscription kaydı yok — kullanıcının createdAt'ına göre otomatik 7 günlük trial uygula
+    const [user] = await db
+      .select({ createdAt: usersTable.createdAt })
+      .from(usersTable)
+      .where(eq(usersTable.id, userId))
+      .limit(1);
+
+    if (user?.createdAt) {
+      const trialEndsAt = new Date(user.createdAt.getTime() + AUTO_TRIAL_DAYS * 24 * 60 * 60 * 1000);
+      const now = Date.now();
+      if (trialEndsAt.getTime() > now) {
+        // Hâlâ otomatik trial süresi içinde
+        const daysLeft = Math.max(0, Math.ceil((trialEndsAt.getTime() - now) / (1000 * 60 * 60 * 24)));
+        return {
+          raw: null,
+          entitlement: {
+            active: true,
+            status: "trialing",
+            planKey: null,
+            daysLeft,
+            trialEndsAt,
+            currentPeriodEnd: null,
+            cancelAtPeriodEnd: false,
+            hasUsedTrial: false,
+          },
+        };
+      }
+    }
+
     return {
       raw: null,
       entitlement: {
