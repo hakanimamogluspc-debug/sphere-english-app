@@ -4,12 +4,43 @@ import { subscriptionsTable } from "@workspace/db/schema";
 import { eq, sql } from "drizzle-orm";
 import { authMiddleware } from "../middlewares/auth.js";
 import { PLANS, getPlan, getEntitlement, PRO_MODULE_KEYS, isEnforcementEnabled } from "../lib/subscription.js";
+import { PLAN_CATALOG } from "../lib/plans.js";
 
 const router = Router();
 
+// Tier başına kısa açıklamalar — frontend gösterimi için
+const TIER_DESCRIPTIONS: Record<string, string> = {
+  core: "Yeni başlayanlar için standart AI Coach + temel müfredat.",
+  pro: "Tüm AI Studio özellikleri + Oxford A1-C1 müfredatı. En popüler.",
+  premium: "Pro'nun her şeyi + sektörel modüller + aylık canlı koçluk.",
+};
+
 router.get("/subscription/plans", async (_req, res) => {
+  // PLAN_CATALOG'u (Sphere Core/Pro/Premium × Aylık/Yıllık) frontend Plan interface
+  // formatına dönüştür. Bu sayede admin'in yönettiği 6 plan kullanıcıya gösterilir.
+  const plans = PLAN_CATALOG.map((p) => {
+    const priceCents = Math.round(p.amount * 100);
+    const isYearly = p.billingType === "yearly";
+    return {
+      key: p.code,
+      name: `${p.label} ${isYearly ? "Yıllık" : "Aylık"}`,
+      tier: p.tier,
+      description: TIER_DESCRIPTIONS[p.tier] ?? "",
+      priceCents,
+      currency: "TRY" as const,
+      interval: isYearly ? ("year" as const) : ("month" as const),
+      intervalCount: 1,
+      trialDays: 7,
+      durationMonths: p.durationMonths,
+      features: p.features,
+      popular: p.popular ?? false,
+      monthlyEquivalentCents: isYearly ? Math.round((p.amount / 12) * 100) : undefined,
+      savingsPercent: isYearly ? 17 : undefined,
+    };
+  });
+
   res.json({
-    plans: PLANS,
+    plans,
     proModuleKeys: Array.from(PRO_MODULE_KEYS),
     trialDays: 7,
     enforcementEnabled: await isEnforcementEnabled(),

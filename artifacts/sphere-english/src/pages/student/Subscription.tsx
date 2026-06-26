@@ -18,13 +18,19 @@ const TOKEN_KEY = "sphere_token";
 const API = import.meta.env.BASE_URL.replace(/\/$/, "") + "/api";
 
 interface Plan {
-  key: "pro_monthly" | "pro_yearly";
+  key: string;
   name: string;
+  /** core | pro | premium */
+  tier?: "core" | "pro" | "premium";
   description: string;
   priceCents: number;
   currency: "TRY";
   interval: "month" | "year";
+  intervalCount?: number;
   trialDays: number;
+  durationMonths?: number;
+  /** Backend'den gelen tier'a özel özellik listesi (varsa FEATURES yerine bunu kullan) */
+  features?: string[];
   monthlyEquivalentCents?: number;
   savingsPercent?: number;
   popular?: boolean;
@@ -74,10 +80,10 @@ export default function Subscription() {
       .catch(() => {});
   }, []);
 
-  async function handleStart(planKey: "pro_monthly" | "pro_yearly") {
+  async function handleStart(planKey: string) {
     setBusy(planKey);
     setMsg(null);
-    const r = await startTrial(planKey);
+    const r = await startTrial(planKey as any);
     setBusy(null);
     setMsg(r.ok ? { type: "ok", text: "7 günlük denemen başladı! AI Studio'nun tamamı açıldı." } : { type: "err", text: r.error || "Hata" });
   }
@@ -262,7 +268,8 @@ export default function Subscription() {
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(280px,1fr))", gap: 16, marginBottom: 24 }}>
             {plans.map((p) => {
-              const isYearly = p.key === "pro_yearly";
+              const isYearly = p.interval === "year";
+              const planFeatures = p.features && p.features.length > 0 ? p.features : FEATURES;
               return (
                 <div
                   key={p.key}
@@ -337,7 +344,7 @@ export default function Subscription() {
                   </button>
 
                   <div style={{ borderTop: "1px solid #f3f4f6", paddingTop: 12 }}>
-                    {FEATURES.map((f) => (
+                    {planFeatures.map((f) => (
                       <div
                         key={f}
                         style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 0", fontSize: 13, color: "#374151" }}
