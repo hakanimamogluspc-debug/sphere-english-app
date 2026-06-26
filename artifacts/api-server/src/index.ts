@@ -442,6 +442,20 @@ async function runStartupMigrations() {
     `CREATE INDEX IF NOT EXISTS web_pageviews_session_idx ON web_page_views(session_id, viewed_at)`,
     `CREATE INDEX IF NOT EXISTS web_pageviews_path_idx ON web_page_views(path, viewed_at DESC)`,
     `CREATE INDEX IF NOT EXISTS web_pageviews_visitor_idx ON web_page_views(visitor_id, viewed_at DESC)`,
+    // ─── Magic link / şifre belirleme token'ları ─────────────────────────────
+    // Pazarlama sitesinden abone olunduğunda kullanıcı hesabı oluşur,
+    // bu token ile e-postadan şifre belirleyebilir
+    `CREATE TABLE IF NOT EXISTS account_setup_tokens (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      token VARCHAR(120) NOT NULL UNIQUE,
+      purpose VARCHAR(20) NOT NULL DEFAULT 'welcome',
+      expires_at TIMESTAMPTZ NOT NULL,
+      used_at TIMESTAMPTZ,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`,
+    `CREATE INDEX IF NOT EXISTS account_setup_tokens_user_idx ON account_setup_tokens(user_id, created_at DESC)`,
+    `CREATE INDEX IF NOT EXISTS account_setup_tokens_expires_idx ON account_setup_tokens(expires_at)`,
     // İlk kitap seed — sadece yoksa ekle
     `INSERT INTO ebooks (
       slug, title, subtitle, description, long_description,

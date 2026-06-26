@@ -28,6 +28,11 @@ import bcrypt from "bcryptjs";
 import { sql } from "drizzle-orm";
 import { db } from "@workspace/db";
 import { getPlan } from "../lib/plans.js";
+import { sendWelcomeMail } from "../lib/subscription-mail.js";
+
+const SETUP_TOKEN_TTL_HOURS = 24;
+const SETUP_TOKEN_TTL_MS = SETUP_TOKEN_TTL_HOURS * 60 * 60 * 1000;
+const LMS_BASE_URL = process.env["LMS_BASE_URL"] ?? "https://app.sphereenglish.com";
 
 const router = Router();
 
@@ -92,17 +97,22 @@ router.post("/internal/payment/activate", async (req: Request, res: Response) =>
     let user = (userRows.rows ?? userRows)[0] as any;
     let magicLinkSent = false;
 
+    const isNewAccount = !user;
+
     if (!user) {
       // Yeni kullanıcı — random parola, role=student, account_type=bireysel
       const randomPassword = crypto.randomBytes(16).toString("base64");
       const hashed = await bcrypt.hash(randomPassword, 10);
+      // Schema: first_name + last_name ayrı kolonlar; name'i parçala
+      const nameParts = (name || "Sphere Kullanıcı").trim().split(/\s+/);
+      const firstName = nameParts[0] || "Sphere";
+      const lastName = nameParts.slice(1).join(" ") || "Kullanıcı";
       const insertRows = await db.execute(sql`
-        INSERT INTO users (email, password, name, role, account_type)
-        VALUES (${email.toLowerCase()}, ${hashed}, ${name || "Sphere Kullanıcı"}, 'student', 'bireysel')
-        RETURNING id, email, name
+        INSERT INTO users (email, password, first_name, last_name, role, account_type)
+        VALUES (${email.toLowerCase()}, ${hashed}, ${firstName}, ${lastName}, 'student', 'bireysel')
+        RETURNING id, email, first_name, last_name
       `);
       user = (insertRows.rows ?? insertRows)[0] as any;
-      magicLinkSent = false; // TODO: nodemailer ile magic-link mail gönder
       console.info(`[INTERNAL] Yeni kullanıcı oluşturuldu: ${user.email} (id=${user.id})`);
     }
 
@@ -155,7 +165,53 @@ router.post("/internal/payment/activate", async (req: Request, res: Response) =>
     `);
 
     console.info(`[INTERNAL] Abonelik aktive: user=${user.id} plan=${planCode}`);
-    return res.json({ ok: true, userId: user.id, magicLinkSent });
+
+    // ── Magic link + hoşgeldin mail (fire-and-forget) ──
+    // Yeni kullanıcıya şifre belirleme linki, mevcut kullanıcıya sadece giriş bilgisi
+    let setupPasswordUrl = `${LMS_BASE_URL.replace(/\/$/, "")}/login`;
+    let mailSent = false;
+    try {
+      if (isNewAccount) {
+        // 32-byte rastgele token (base64url)
+        const setupToken = crypto.randomBytes(32).toString("base64url");
+        const expiresAt = new Date(Date.now() + SETUP_TOKEN_TTL_MS).toISOString();
+        await db.execute(sql`
+          INSERT INTO account_setup_tokens (user_id, token, purpose, expires_at)
+          VALUES (${user.id}, ${setupToken}, 'welcome', ${expiresAt})
+        `);
+        setupPasswordUrl = `${LMS_BASE_URL.replace(/\/$/, "")}/sifre-belirle?token=${encodeURIComponent(setupToken)}`;
+      }
+
+      // Plan bitiş tarihi (currentPeriodEnd) — DB'den çek
+      const subRows = await db.execute(sql`
+        SELECT current_period_end FROM subscriptions WHERE user_id = ${user.id} LIMIT 1
+      `);
+      const subRow = (subRows.rows ?? subRows)[0] as any;
+      const planExpiry = subRow?.current_period_end ? new Date(subRow.current_period_end) : null;
+
+      const buyerName = `${user.first_name ?? ""} ${user.last_name ?? ""}`.trim() || (name || null);
+      const mailResult = await sendWelcomeMail({
+        buyerEmail: user.email,
+        buyerName,
+        planLabel: plan.label,
+        planExpiry,
+        amount: Number(amount ?? plan.amount),
+        currency: currency ?? "TRY",
+        setupPasswordUrl,
+        setupTtlHours: SETUP_TOKEN_TTL_HOURS,
+        isNewAccount,
+      });
+      mailSent = mailResult.ok;
+      if (!mailResult.ok) {
+        console.error(`[INTERNAL] hoşgeldin mail başarısız: ${mailResult.error}`);
+      } else {
+        console.info(`[INTERNAL] Hoşgeldin mail gönderildi: ${user.email} (new=${isNewAccount})`);
+      }
+    } catch (mailErr: any) {
+      console.error("[INTERNAL] mail/magic-link HATA:", mailErr?.message);
+    }
+
+    return res.json({ ok: true, userId: user.id, magicLinkSent: mailSent, isNewAccount });
   } catch (e: any) {
     console.error("[INTERNAL] activate HATA:", e?.message ?? e);
     return res.status(500).json({ error: "Sunucu hatası: " + (e?.message ?? "bilinmeyen") });

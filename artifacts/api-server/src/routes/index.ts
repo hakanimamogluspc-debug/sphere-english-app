@@ -55,6 +55,7 @@ import adminEbooksRouter from "./admin-ebooks";
 import adminEbookPurchasesRouter from "./admin-ebook-purchases";
 import ebookPurchaseRouter from "./ebook-purchase";
 import webAnalyticsRouter from "./web-analytics";
+import accountSetupRouter from "./account-setup";
 import { requireSubscription } from "../middlewares/require-subscription";
 import { authMiddleware } from "../middlewares/auth";
 
@@ -97,6 +98,7 @@ router.use(adminEbooksRouter);
 router.use(adminEbookPurchasesRouter);
 router.use(ebookPurchaseRouter);
 router.use(webAnalyticsRouter);
+router.use(accountSetupRouter);
 router.use(proGuard, pronunciationRouter);
 router.use(proGuard, writingRouter);
 router.use(marketingRouter);

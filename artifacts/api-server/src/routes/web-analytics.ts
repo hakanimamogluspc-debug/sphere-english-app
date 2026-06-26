@@ -19,10 +19,32 @@
 
 import { Router, Request, Response } from "express";
 import crypto from "node:crypto";
+import { createRequire } from "node:module";
 import { sql } from "drizzle-orm";
 import { db } from "@workspace/db";
-import geoip from "geoip-lite";
 import { authMiddleware, requireRole, type AuthRequest } from "../middlewares/auth.js";
+
+/**
+ * geoip-lite ile IP geolocation.
+ *
+ * Bu paket GeoLite2 DB (.dat) binary dosyalarına bağımlı. esbuild bundle'ında
+ * bu data klasörünü kopyalamadığı için /app/.../data/geoip-country.dat
+ * bulunamıyor — `external` listesine eklenmiş olmalı (build.mjs).
+ *
+ * Yine de runtime'da yükleme başarısız olabilir (Docker volume eksikliği,
+ * pnpm hoist davranışı, vb.). Bu yüzden defensive lazy load uyguluyoruz:
+ * yüklenemezse uygulama crash olmuyor, sadece IP-tabanlı geo lookup devre dışı
+ * kalıyor. Cloudflare arkasındaysa CF-IPCountry header'ı yine çalışır.
+ */
+let geoip: { lookup: (ip: string) => { country: string; city: string } | null } | null = null;
+try {
+  const req = (globalThis as any).require ?? createRequire(import.meta.url);
+  geoip = req("geoip-lite");
+  console.info("[analytics/geo] geoip-lite yüklendi");
+} catch (e: any) {
+  console.warn("[analytics/geo] geoip-lite yüklenemedi — IP lookup devre dışı:", e?.message);
+  geoip = null;
+}
 
 // ─── Ülke kodu → Türkçe isim ──────────────────────────────────────────
 // En sık karşılaşacaklarımız; bilinmeyenler iki harfli ISO kodu olarak gösterilir
@@ -105,7 +127,9 @@ function lookupGeo(ip: string, req: Request): GeoResult {
     };
   }
 
-  // geoip-lite ile offline lookup
+  // geoip-lite ile offline lookup — paket yüklenmediyse skip
+  if (!geoip) return { country: null, city: null };
+
   try {
     if (!ip || ip === "0.0.0.0" || ip.startsWith("127.") || ip.startsWith("10.") || ip.startsWith("192.168.")) {
       return { country: null, city: null };
