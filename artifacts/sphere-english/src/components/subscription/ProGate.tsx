@@ -1,4 +1,5 @@
-import { Link } from "wouter";
+import { useState } from "react";
+import { Link, useLocation } from "wouter";
 import { Lock, Sparkles, Crown, Loader2 } from "lucide-react";
 import { useSubscription } from "../../lib/subscription-context";
 import type { ComponentType } from "react";
@@ -10,7 +11,10 @@ interface Props {
 }
 
 export default function ProGate({ moduleKey, featureName, children }: Props) {
-  const { loading, isLockedForMe, entitlement } = useSubscription();
+  const { loading, isLockedForMe, entitlement, startTrial, refresh } = useSubscription();
+  const [, setLocation] = useLocation();
+  const [starting, setStarting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   if (loading) {
     return (
@@ -28,6 +32,32 @@ export default function ProGate({ moduleKey, featureName, children }: Props) {
     entitlement?.status === "expired" ||
     entitlement?.status === "past_due" ||
     entitlement?.status === "canceled";
+
+  // Yeni kullanıcı (hiç trial kullanmadıysa) → butona basınca direkt trial başlat
+  async function handleTryFree() {
+    setStarting(true);
+    setError(null);
+    try {
+      const r = await startTrial("pro_monthly");
+      if (r.ok) {
+        // Trial başladı, entitlement güncellendi → kilit açıldı, sayfa otomatik render
+        await refresh();
+      } else {
+        // Eğer otomatik başlatamadıysak abonelik sayfasına yönlendir
+        if (r.error?.includes("zaten") || r.error?.includes("kullandın")) {
+          setLocation("/student/subscription");
+          return;
+        }
+        setError(r.error ?? "Deneme başlatılamadı");
+      }
+    } catch (e: any) {
+      setError(e?.message ?? "Beklenmeyen hata");
+    } finally {
+      setStarting(false);
+    }
+  }
+
+  const isFirstTimeUser = !entitlement?.hasUsedTrial && !expired;
 
   return (
     <div style={{ maxWidth: 720, margin: "40px auto", padding: 24 }}>
@@ -54,7 +84,7 @@ export default function ProGate({ moduleKey, featureName, children }: Props) {
             boxShadow: "0 8px 24px rgba(79,70,229,0.3)",
           }}
         >
-          <Lock size={32} color="#fff" />
+          {starting ? <Loader2 size={32} color="#fff" className="animate-spin" /> : <Lock size={32} color="#fff" />}
         </div>
         <h1 style={{ fontSize: 26, fontWeight: 700, marginBottom: 10, color: "#1f2937" }}>
           {featureName} — Pro Üyelere Özel
@@ -100,25 +130,83 @@ export default function ProGate({ moduleKey, featureName, children }: Props) {
           </div>
         </div>
 
-        <Link
-          href="/student/subscription"
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 8,
-            background: "linear-gradient(135deg,#4f46e5,#7c3aed)",
-            color: "#fff",
-            padding: "12px 28px",
-            borderRadius: 10,
-            textDecoration: "none",
-            fontWeight: 700,
-            fontSize: 15,
-            boxShadow: "0 8px 24px rgba(79,70,229,0.3)",
-          }}
-        >
-          <Crown size={18} />
-          {expired ? "Aboneliği Yenile" : entitlement?.hasUsedTrial ? "Planları Gör" : "7 Gün Ücretsiz Dene"}
-        </Link>
+        {error && (
+          <div
+            style={{
+              background: "#fee2e2",
+              border: "1px solid #fecaca",
+              color: "#991b1b",
+              padding: "10px 14px",
+              borderRadius: 10,
+              marginBottom: 16,
+              fontSize: 13,
+              textAlign: "left",
+            }}
+          >
+            {error}
+          </div>
+        )}
+
+        {/* Yeni kullanıcı → butona basınca direkt trial başlat */}
+        {isFirstTimeUser ? (
+          <button
+            onClick={handleTryFree}
+            disabled={starting}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+              background: starting
+                ? "#a5b4fc"
+                : "linear-gradient(135deg,#4f46e5,#7c3aed)",
+              color: "#fff",
+              padding: "12px 28px",
+              borderRadius: 10,
+              border: "none",
+              fontWeight: 700,
+              fontSize: 15,
+              cursor: starting ? "not-allowed" : "pointer",
+              boxShadow: starting ? "none" : "0 8px 24px rgba(79,70,229,0.3)",
+            }}
+          >
+            {starting ? (
+              <>
+                <Loader2 size={18} className="animate-spin" /> Hazırlanıyor…
+              </>
+            ) : (
+              <>
+                <Crown size={18} />
+                7 Gün Ücretsiz Dene
+              </>
+            )}
+          </button>
+        ) : (
+          <Link
+            href="/student/subscription"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+              background: "linear-gradient(135deg,#4f46e5,#7c3aed)",
+              color: "#fff",
+              padding: "12px 28px",
+              borderRadius: 10,
+              textDecoration: "none",
+              fontWeight: 700,
+              fontSize: 15,
+              boxShadow: "0 8px 24px rgba(79,70,229,0.3)",
+            }}
+          >
+            <Crown size={18} />
+            {expired ? "Aboneliği Yenile" : "Planları Gör"}
+          </Link>
+        )}
+
+        {isFirstTimeUser && (
+          <p style={{ marginTop: 14, fontSize: 11, color: "#9ca3af" }}>
+            Kart bilgisi gerekmez · 7 gün sonunda otomatik kesinti olmaz
+          </p>
+        )}
       </div>
     </div>
   );
