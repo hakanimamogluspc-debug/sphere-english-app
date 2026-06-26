@@ -16,6 +16,8 @@ import {
   Minus,
   Bot,
   ExternalLink,
+  MapPin,
+  Flag,
 } from "lucide-react";
 import { API } from "@/lib/api-url";
 
@@ -71,6 +73,19 @@ interface DeviceRow {
   sessions: number;
 }
 
+interface CountryRow {
+  country: string;
+  sessions: number;
+  visitors: number;
+}
+
+interface CityRow {
+  city: string;
+  country: string;
+  sessions: number;
+  visitors: number;
+}
+
 interface RecentVisit {
   id: number;
   viewed_at: string;
@@ -80,6 +95,8 @@ interface RecentVisit {
   device_type: string;
   browser: string;
   os: string;
+  country: string | null;
+  city: string | null;
   referrer_domain: string | null;
   utm_source: string | null;
   utm_campaign: string | null;
@@ -150,6 +167,10 @@ export default function WebAnalytics() {
     browsers: DeviceRow[];
     oses: DeviceRow[];
   }>({ devices: [], browsers: [], oses: [] });
+  const [geo, setGeo] = useState<{ countries: CountryRow[]; cities: CityRow[] }>({
+    countries: [],
+    cities: [],
+  });
   const [recent, setRecent] = useState<RecentVisit[]>([]);
 
   const bots = includeBots ? "1" : "0";
@@ -157,17 +178,19 @@ export default function WebAnalytics() {
   async function loadAll() {
     setLoading(true);
     try {
-      const [o, t, r, d, rec] = await Promise.all([
+      const [o, t, r, d, g, rec] = await Promise.all([
         apiFetch(`/admin/analytics/web/overview?range=${range}&includeBots=${bots}`),
         apiFetch(`/admin/analytics/web/top-pages?range=${range}&includeBots=${bots}&limit=15`),
         apiFetch(`/admin/analytics/web/referrers?range=${range}&includeBots=${bots}`),
         apiFetch(`/admin/analytics/web/devices?range=${range}&includeBots=${bots}`),
+        apiFetch(`/admin/analytics/web/geo?range=${range}&includeBots=${bots}`),
         apiFetch(`/admin/analytics/web/recent?limit=50&includeBots=${bots}`),
       ]);
       setOverview(o as Overview);
       setTopPages(t.pages ?? []);
       setReferrers(r.domains ?? []);
       setDevices(d);
+      setGeo({ countries: g.countries ?? [], cities: g.cities ?? [] });
       setRecent(rec.visits ?? []);
     } catch (e: any) {
       console.error(e);
@@ -365,6 +388,66 @@ export default function WebAnalytics() {
             </Panel>
           </div>
 
+          {/* ─── Ülke ve Şehir ────────────────────────────── */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+            <Panel title="Ülke" icon={<Flag size={16} />} empty={geo.countries.length === 0}>
+              <div className="space-y-1.5">
+                {geo.countries.map((c) => {
+                  const max = geo.countries[0]?.sessions ?? 1;
+                  const pct = max ? (c.sessions / max) * 100 : 0;
+                  return (
+                    <div key={c.country}>
+                      <div className="flex items-center justify-between gap-2 text-sm">
+                        <span className="text-slate-700 font-medium truncate">{c.country}</span>
+                        <div className="text-right">
+                          <div className="font-bold text-slate-900 text-sm">
+                            {fmtNumber(c.sessions)}
+                          </div>
+                          <div className="text-[10px] text-slate-500">
+                            {fmtNumber(c.visitors)} ziyaretçi
+                          </div>
+                        </div>
+                      </div>
+                      <div className="mt-1 h-1 rounded-full bg-slate-100 overflow-hidden">
+                        <div className="h-full bg-rose-500" style={{ width: `${pct}%` }} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </Panel>
+
+            <Panel title="Şehir" icon={<MapPin size={16} />} empty={geo.cities.length === 0} subtitle="IP geolocation — tahmini">
+              <div className="space-y-1.5">
+                {geo.cities.map((c) => {
+                  const max = geo.cities[0]?.sessions ?? 1;
+                  const pct = max ? (c.sessions / max) * 100 : 0;
+                  return (
+                    <div key={`${c.city}-${c.country}`}>
+                      <div className="flex items-center justify-between gap-2 text-sm">
+                        <span className="text-slate-700 font-medium truncate">
+                          {c.city}
+                          <span className="ml-1 text-[11px] text-slate-400">{c.country}</span>
+                        </span>
+                        <div className="text-right">
+                          <div className="font-bold text-slate-900 text-sm">
+                            {fmtNumber(c.sessions)}
+                          </div>
+                          <div className="text-[10px] text-slate-500">
+                            {fmtNumber(c.visitors)} ziyaretçi
+                          </div>
+                        </div>
+                      </div>
+                      <div className="mt-1 h-1 rounded-full bg-slate-100 overflow-hidden">
+                        <div className="h-full bg-teal-500" style={{ width: `${pct}%` }} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </Panel>
+          </div>
+
           {/* ─── 3 sütun: Cihaz/Tarayıcı/OS ──────────────── */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
             <Panel title="Cihaz Tipi" icon={<Monitor size={16} />} empty={devices.devices.length === 0}>
@@ -412,19 +495,25 @@ export default function WebAnalytics() {
                     >
                       {v.page_title || v.path}
                     </a>
-                    <div className="text-[11px] text-slate-400 truncate">
+                    <div className="text-[11px] text-slate-400 truncate flex items-center gap-2 flex-wrap">
+                      {(v.country || v.city) && (
+                        <span className="inline-flex items-center gap-0.5 text-slate-500">
+                          <MapPin size={9} />
+                          {v.city ? `${v.city}, ${v.country ?? ""}` : v.country}
+                        </span>
+                      )}
                       {v.referrer_domain ? (
-                        <>
-                          <ExternalLink size={9} className="inline" /> {v.referrer_domain}
-                          {v.utm_source && (
-                            <span className="ml-2 text-violet-600">
-                              utm: {v.utm_source}
-                              {v.utm_campaign ? ` / ${v.utm_campaign}` : ""}
-                            </span>
-                          )}
-                        </>
+                        <span className="inline-flex items-center gap-0.5">
+                          <ExternalLink size={9} /> {v.referrer_domain}
+                        </span>
                       ) : (
                         <span className="text-slate-400">doğrudan</span>
+                      )}
+                      {v.utm_source && (
+                        <span className="text-violet-600">
+                          utm: {v.utm_source}
+                          {v.utm_campaign ? ` / ${v.utm_campaign}` : ""}
+                        </span>
                       )}
                     </div>
                   </div>

@@ -21,7 +21,106 @@ import { Router, Request, Response } from "express";
 import crypto from "node:crypto";
 import { sql } from "drizzle-orm";
 import { db } from "@workspace/db";
+import geoip from "geoip-lite";
 import { authMiddleware, requireRole, type AuthRequest } from "../middlewares/auth.js";
+
+// ─── Ülke kodu → Türkçe isim ──────────────────────────────────────────
+// En sık karşılaşacaklarımız; bilinmeyenler iki harfli ISO kodu olarak gösterilir
+const COUNTRY_TR: Record<string, string> = {
+  TR: "Türkiye",
+  US: "ABD",
+  GB: "Birleşik Krallık",
+  DE: "Almanya",
+  FR: "Fransa",
+  NL: "Hollanda",
+  RU: "Rusya",
+  IT: "İtalya",
+  ES: "İspanya",
+  CN: "Çin",
+  JP: "Japonya",
+  IN: "Hindistan",
+  KR: "Güney Kore",
+  AZ: "Azerbaycan",
+  UA: "Ukrayna",
+  PL: "Polonya",
+  CA: "Kanada",
+  AU: "Avustralya",
+  BR: "Brezilya",
+  AT: "Avusturya",
+  BE: "Belçika",
+  CH: "İsviçre",
+  SE: "İsveç",
+  NO: "Norveç",
+  FI: "Finlandiya",
+  DK: "Danimarka",
+  GR: "Yunanistan",
+  BG: "Bulgaristan",
+  RO: "Romanya",
+  CZ: "Çekya",
+  HU: "Macaristan",
+  IE: "İrlanda",
+  PT: "Portekiz",
+  IL: "İsrail",
+  SA: "Suudi Arabistan",
+  AE: "BAE",
+  EG: "Mısır",
+  MA: "Fas",
+  ZA: "Güney Afrika",
+  MX: "Meksika",
+  AR: "Arjantin",
+  CL: "Şili",
+  CO: "Kolombiya",
+  TH: "Tayland",
+  ID: "Endonezya",
+  VN: "Vietnam",
+  MY: "Malezya",
+  SG: "Singapur",
+  IR: "İran",
+  IQ: "Irak",
+  SY: "Suriye",
+  PK: "Pakistan",
+  BD: "Bangladeş",
+  PH: "Filipinler",
+  NZ: "Yeni Zelanda",
+};
+
+function countryName(iso: string | null | undefined): string {
+  if (!iso) return "Bilinmiyor";
+  return COUNTRY_TR[iso.toUpperCase()] ?? iso.toUpperCase();
+}
+
+interface GeoResult {
+  country: string | null;
+  city: string | null;
+}
+
+function lookupGeo(ip: string, req: Request): GeoResult {
+  // Cloudflare arkasındaysak header'ları öncelikli kullan (daha doğru)
+  const cfCountry = req.headers["cf-ipcountry"];
+  const cfCity = req.headers["cf-ipcity"];
+  if (typeof cfCountry === "string" && cfCountry !== "XX") {
+    return {
+      country: countryName(cfCountry),
+      city: typeof cfCity === "string" && cfCity ? cfCity : null,
+    };
+  }
+
+  // geoip-lite ile offline lookup
+  try {
+    if (!ip || ip === "0.0.0.0" || ip.startsWith("127.") || ip.startsWith("10.") || ip.startsWith("192.168.")) {
+      return { country: null, city: null };
+    }
+    const lookup = geoip.lookup(ip);
+    if (!lookup) return { country: null, city: null };
+    return {
+      country: countryName(lookup.country),
+      city: lookup.city || null,
+    };
+  } catch (e: any) {
+    console.error("[analytics/geo] lookup HATA:", e?.message);
+    return { country: null, city: null };
+  }
+}
 
 const router = Router();
 
@@ -125,6 +224,7 @@ router.post("/analytics/track", async (req: Request, res: Response) => {
     const ipHash = hashIp(ip);
     const { device, browser, os } = parseUA(ua);
     const referrerDomain = parseReferrerDomain(referrer);
+    const geo = lookupGeo(ip, req);
 
     // UTM
     const utm = (body.utm ?? {}) as any;
@@ -156,11 +256,13 @@ router.post("/analytics/track", async (req: Request, res: Response) => {
       const inserted = await db.execute(sql`
         INSERT INTO web_visitor_sessions (
           visitor_id, ip_hash, user_agent, device_type, browser, os,
+          country, city,
           referrer, referrer_domain,
           utm_source, utm_medium, utm_campaign, utm_term, utm_content,
           landing_path, is_bot, page_view_count
         ) VALUES (
           ${visitorId}, ${ipHash}, ${ua}, ${device}, ${browser}, ${os},
+          ${geo.country}, ${geo.city},
           ${referrer}, ${referrerDomain},
           ${utmSource}, ${utmMedium}, ${utmCampaign}, ${utmTerm}, ${utmContent},
           ${path}, ${isBot}, 1
@@ -444,6 +546,7 @@ router.get(
         SELECT
           pv.id, pv.viewed_at, pv.path, pv.page_title, pv.referrer,
           s.visitor_id, s.device_type, s.browser, s.os,
+          s.country, s.city,
           s.referrer_domain, s.utm_source, s.utm_campaign,
           s.is_bot
         FROM web_page_views pv
@@ -456,6 +559,56 @@ router.get(
       return res.json({ visits: rows.rows ?? rows });
     } catch (e: any) {
       console.error("[analytics/recent] HATA:", e?.message);
+      return res.status(500).json({ error: e?.message });
+    }
+  },
+);
+
+// ─── ADMIN: COĞRAFİ DAĞILIM (ülke + şehir) ─────────────────────────────
+router.get(
+  "/admin/analytics/web/geo",
+  authMiddleware,
+  requireRole("admin"),
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const interval = rangeToInterval(String(req.query?.range ?? "7d"));
+      const includeBots = String(req.query?.includeBots ?? "0") === "1";
+      const botFilter = includeBots ? sql`` : sql`AND is_bot = FALSE`;
+
+      const countries = await db.execute(sql`
+        SELECT
+          COALESCE(NULLIF(country, ''), 'Bilinmiyor') AS country,
+          COUNT(*)::INT AS sessions,
+          COUNT(DISTINCT visitor_id)::INT AS visitors
+        FROM web_visitor_sessions
+        WHERE last_seen_at >= NOW() - (${interval})::INTERVAL
+        ${botFilter}
+        GROUP BY country
+        ORDER BY sessions DESC
+        LIMIT 25
+      `);
+
+      const cities = await db.execute(sql`
+        SELECT
+          COALESCE(NULLIF(city, ''), 'Bilinmiyor') AS city,
+          COALESCE(NULLIF(country, ''), '—') AS country,
+          COUNT(*)::INT AS sessions,
+          COUNT(DISTINCT visitor_id)::INT AS visitors
+        FROM web_visitor_sessions
+        WHERE last_seen_at >= NOW() - (${interval})::INTERVAL
+          AND city IS NOT NULL AND city <> ''
+        ${botFilter}
+        GROUP BY city, country
+        ORDER BY sessions DESC
+        LIMIT 25
+      `);
+
+      return res.json({
+        countries: countries.rows ?? countries,
+        cities: cities.rows ?? cities,
+      });
+    } catch (e: any) {
+      console.error("[analytics/geo] HATA:", e?.message);
       return res.status(500).json({ error: e?.message });
     }
   },
