@@ -110,7 +110,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       { name: 'E-Kitap Satışları',   href: '/admin/ebook-purchases',          icon: ShoppingBag },
       { name: 'MEB Aktivite Raporu', href: '/admin/meb-report',               icon: BarChart3 },
       { name: 'Pazarlama & E-posta', href: '/admin/marketing',                icon: TrendingUp },
-      { name: 'Lead Keşfi',          href: '/admin/outreach',                 icon: Sparkles },
+      { name: 'Web Analiz',          href: '/admin/web-analytics',            icon: Activity },
       { name: 'Chatbot (Sphere Asistan)', href: '/admin/chatbot',             icon: Bot },
       { name: 'Modül Yönetimi',      href: '/admin/modules',                  icon: Settings2 },
       { name: 'Abonelikler',         href: '/admin/subscriptions',            icon: Crown },

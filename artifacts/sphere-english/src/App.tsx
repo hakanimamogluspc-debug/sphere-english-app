@@ -39,7 +39,7 @@ const AdminLiveClasses    = lazy(() => import("./pages/admin/AdminLiveClasses"))
 const AdminMaterials      = lazy(() => import("./pages/admin/AdminMaterials"));
 const AdminSpeakingClub   = lazy(() => import("./pages/admin/SpeakingClub"));
 const AdminMarketing      = lazy(() => import("./pages/admin/Marketing"));
-const AdminOutreach       = lazy(() => import("./pages/admin/Outreach"));
+const WebAnalytics        = lazy(() => import("./pages/admin/WebAnalytics"));
 const AdminChatbotFaqs    = lazy(() => import("./pages/admin/ChatbotFaqs"));
 const MebReport           = lazy(() => import("./pages/admin/MebReport"));
 const AdminModules        = lazy(() => import("./pages/admin/AdminModules"));
@@ -262,7 +262,7 @@ function Router() {
         <Route path="/admin/reports"><LayoutWrapper component={ProgressPage} allowedRoles={['admin']} /></Route>
         <Route path="/admin/meb-report"><LayoutWrapper component={MebReport} allowedRoles={['admin']} /></Route>
         <Route path="/admin/marketing"><LayoutWrapper component={AdminMarketing} allowedRoles={['admin']} /></Route>
-        <Route path="/admin/outreach"><LayoutWrapper component={AdminOutreach} allowedRoles={['admin']} /></Route>
+        <Route path="/admin/web-analytics"><LayoutWrapper component={WebAnalytics} allowedRoles={['admin']} /></Route>
         <Route path="/admin/chatbot"><LayoutWrapper component={AdminChatbotFaqs} allowedRoles={['admin']} /></Route>
         <Route path="/admin/modules"><LayoutWrapper component={AdminModules} allowedRoles={['admin']} /></Route>
         <Route path="/admin/subscriptions"><LayoutWrapper component={AdminSubscriptions} allowedRoles={['admin']} /></Route>

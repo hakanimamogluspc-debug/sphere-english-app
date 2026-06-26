@@ -81,7 +81,7 @@ const ROUTE_TITLES: RouteTitleEntry[] = [
   { prefix: '/admin/announcements', title: 'Duyurular — Admin' },
   { prefix: '/admin/subscriptions', title: 'Abonelikler — Admin' },
   { prefix: '/admin/chatbot', title: 'Chatbot (Sphere Asistan) — Admin' },
-  { prefix: '/admin/outreach', title: 'Lead Keşfi — Admin' },
+  { prefix: '/admin/web-analytics', title: 'Web Analiz — Admin' },
   { prefix: '/admin/reports', title: 'Sistem Raporları — Admin' },
   { prefix: '/admin/analytics', title: 'Aktivite Analizi — Admin' },
   { prefix: '/admin/content-engine', title: 'İçerik Motoru — Admin' },
