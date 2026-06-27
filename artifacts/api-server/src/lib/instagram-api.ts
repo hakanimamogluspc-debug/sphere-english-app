@@ -53,39 +53,60 @@ export async function sendInstagramMessage(
   recipientIgId: string,
   text: string,
 ): Promise<SendResult> {
-  const ourId = getBusinessAccountId();
   const token = getAccessToken();
-  const url = `${IG_API_BASE}/${getApiVersion()}/${ourId}/messages?access_token=${encodeURIComponent(token)}`;
+  // Yeni Instagram Login API: `me/messages` kullanılır (token'a bağlı, kestirme)
+  // Eski Page-based API: `<page-id>/messages`. Bizim yeni Instagram Login API var.
+  const url = `${IG_API_BASE}/${getApiVersion()}/me/messages?access_token=${encodeURIComponent(token)}`;
 
   // Instagram message text limit ~1000; yine de 950'de kesip cümle bitirelim
   const safeText = text.length > 950 ? text.slice(0, 950).replace(/\s+\S*$/, "") + "…" : text;
+
+  const requestBody = {
+    recipient: { id: recipientIgId },
+    message: { text: safeText },
+  };
 
   try {
     const res = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        recipient: { id: recipientIgId },
-        message: { text: safeText },
-      }),
+      body: JSON.stringify(requestBody),
     });
-    const data: any = await res.json().catch(() => ({}));
+    // Hatayı tam yakalamak için önce text olarak oku
+    const rawText = await res.text();
+    let data: any = {};
+    try {
+      data = JSON.parse(rawText);
+    } catch {
+      data = { raw: rawText };
+    }
+
     if (!res.ok) {
       const err = data?.error ?? {};
-      console.error("[ig-api] sendMessage başarısız:", res.status, err?.message);
+      // Detaylı log — recipient ID, status, body hepsi
+      console.error(
+        `[ig-api] sendMessage başarısız: status=${res.status} ` +
+          `recipient=${recipientIgId} ` +
+          `message="${err?.message ?? rawText.slice(0, 200)}" ` +
+          `code=${err?.code} subcode=${err?.error_subcode} ` +
+          `type=${err?.type} ` +
+          `fbtrace_id=${err?.fbtrace_id}`,
+      );
+      console.error("[ig-api] Full response body:", rawText.slice(0, 500));
       return {
         ok: false,
-        error: err?.message ?? `HTTP ${res.status}`,
+        error: err?.message ?? rawText.slice(0, 200) ?? `HTTP ${res.status}`,
         errorCode: err?.code,
         errorSubcode: err?.error_subcode,
       };
     }
+    console.info(`[ig-api] sendMessage OK: messageId=${data?.message_id}`);
     return {
       ok: true,
       igMessageId: data?.message_id,
     };
   } catch (e: any) {
-    console.error("[ig-api] sendMessage HATA:", e?.message);
+    console.error("[ig-api] sendMessage HATA (network):", e?.message);
     return { ok: false, error: e?.message ?? "Bağlantı hatası" };
   }
 }
