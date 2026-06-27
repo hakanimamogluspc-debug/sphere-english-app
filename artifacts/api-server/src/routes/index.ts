@@ -57,6 +57,7 @@ import ebookPurchaseRouter from "./ebook-purchase";
 import webAnalyticsRouter from "./web-analytics";
 import accountSetupRouter from "./account-setup";
 import instagramWebhookRouter from "./instagram-webhook";
+import adminInstagramBotRouter from "./admin-instagram-bot";
 import { requireSubscription } from "../middlewares/require-subscription";
 import { authMiddleware } from "../middlewares/auth";
 
@@ -101,6 +102,7 @@ router.use(ebookPurchaseRouter);
 router.use(webAnalyticsRouter);
 router.use(accountSetupRouter);
 router.use(instagramWebhookRouter);
+router.use(adminInstagramBotRouter);
 router.use(proGuard, pronunciationRouter);
 router.use(proGuard, writingRouter);
 router.use(marketingRouter);

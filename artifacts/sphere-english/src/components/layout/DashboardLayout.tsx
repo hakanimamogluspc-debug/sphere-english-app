@@ -112,6 +112,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       { name: 'Pazarlama & E-posta', href: '/admin/marketing',                icon: TrendingUp },
       { name: 'Web Analiz',          href: '/admin/web-analytics',            icon: Activity },
       { name: 'Chatbot (Sphere Asistan)', href: '/admin/chatbot',             icon: Bot },
+      { name: 'Instagram Bot',       href: '/admin/instagram-bot',            icon: MessageCircle },
       { name: 'Modül Yönetimi',      href: '/admin/modules',                  icon: Settings2 },
       { name: 'Abonelikler',         href: '/admin/subscriptions',            icon: Crown },
       { name: 'Kelime Oyunu 🎮',     href: '/student/vocab-game',             icon: Gamepad2 },
