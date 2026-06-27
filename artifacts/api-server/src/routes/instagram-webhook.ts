@@ -25,6 +25,8 @@ import { Router, Request, Response } from "express";
 import crypto from "node:crypto";
 import { sql } from "drizzle-orm";
 import { db } from "@workspace/db";
+import { sendInstagramMessage, replyToInstagramComment, fetchUserProfile } from "../lib/instagram-api.js";
+import { generateDmReply, generateCommentReply, shouldEscalate } from "../lib/instagram-ai.js";
 
 const router = Router();
 
@@ -247,16 +249,137 @@ async function getBotSetting(key: string): Promise<string | null> {
   }
 }
 
-// ─── AI cevap stub'ları — ai-reply.ts ile entegre edilecek ──────────────
-// Şu an placeholder — Faz 4'te implementasyon gelecek
+// ─── DM AI cevap akışı ──────────────────────────────────────────────────
 async function triggerAiReply(threadId: number, senderId: string, text: string): Promise<void> {
-  console.info(`[ig-webhook] (stub) triggerAiReply thread=${threadId} from=${senderId}`);
-  // TODO: Faz 4 — AI cevap üretip send-message-api.ts ile gönder
+  // Eskalasyon kontrolü
+  const esc = shouldEscalate(text);
+  if (esc.escalate) {
+    await db.execute(sql`
+      UPDATE instagram_threads SET
+        escalated_at = NOW(),
+        escalation_reason = ${esc.reason ?? "Otomatik"},
+        bot_enabled = FALSE,
+        updated_at = NOW()
+      WHERE id = ${threadId}
+    `);
+    console.info(`[ig-webhook] Thread ${threadId} ESCALATED: ${esc.reason}`);
+    return;
+  }
+
+  // Profil bilgisini fetch et + güncelle (ilk seferde isim/avatar boş)
+  fetchUserProfile(senderId)
+    .then((profile) => {
+      if (profile?.username) {
+        return db.execute(sql`
+          UPDATE instagram_threads SET
+            ig_username = COALESCE(${profile.username}, ig_username),
+            ig_full_name = COALESCE(${profile.name ?? null}, ig_full_name),
+            profile_pic_url = COALESCE(${profile.profilePicUrl ?? null}, profile_pic_url),
+            updated_at = NOW()
+          WHERE id = ${threadId}
+        `);
+      }
+    })
+    .catch(() => {});
+
+  // AI cevap üret
+  const reply = await generateDmReply(threadId, text);
+  if (!reply) {
+    console.warn(`[ig-webhook] AI cevap üretilemedi thread=${threadId}`);
+    return;
+  }
+
+  // Mesajı send öncesi DB'ye kaydet (pending), sonra gönder, durumu güncelle
+  const inserted = await db.execute(sql`
+    INSERT INTO instagram_messages (
+      thread_id, direction, sender_id, message_text,
+      ai_generated, ai_confidence, ai_model, ai_latency_ms, delivery_status
+    ) VALUES (
+      ${threadId}, 'outbound', ${process.env["IG_BUSINESS_ACCOUNT_ID"] ?? ""}, ${reply.text},
+      TRUE, ${reply.confidence}, ${reply.model}, ${reply.latencyMs}, 'pending'
+    )
+    RETURNING id
+  `);
+  const messageRowId = ((inserted.rows ?? inserted)[0] as any)?.id;
+
+  const send = await sendInstagramMessage(senderId, reply.text);
+  if (send.ok) {
+    await db.execute(sql`
+      UPDATE instagram_messages SET
+        ig_message_id = ${send.igMessageId ?? null},
+        delivery_status = 'sent',
+        sent_at = NOW()
+      WHERE id = ${messageRowId}
+    `);
+    // Thread'in last_message_at'i güncelle + unread sıfırla
+    await db.execute(sql`
+      UPDATE instagram_threads SET
+        last_message_text = ${reply.text},
+        last_message_at = NOW(),
+        unread_count = 0,
+        updated_at = NOW()
+      WHERE id = ${threadId}
+    `);
+    console.info(`[ig-webhook] DM gönderildi thread=${threadId} to=${senderId}`);
+  } else {
+    await db.execute(sql`
+      UPDATE instagram_messages SET
+        delivery_status = 'failed',
+        delivery_error = ${send.error ?? "bilinmeyen"}
+      WHERE id = ${messageRowId}
+    `);
+    console.error(`[ig-webhook] DM gönderim BAŞARISIZ thread=${threadId}: ${send.error}`);
+  }
 }
 
+// ─── Yorum AI cevap akışı ──────────────────────────────────────────────
 async function triggerAiCommentReply(commentId: string, text: string): Promise<void> {
-  console.info(`[ig-webhook] (stub) triggerAiCommentReply comment=${commentId}`);
-  // TODO: Faz 4 — AI cevap üretip reply-comment-api.ts ile gönder
+  // Eskalasyon kontrolü — şikayet yorumlarına cevap verme, admin'e bırak
+  const esc = shouldEscalate(text);
+  if (esc.escalate) {
+    await db.execute(sql`
+      UPDATE instagram_comments SET
+        reply_status = 'skipped',
+        skipped_reason = ${"Eskalasyon: " + (esc.reason ?? "")}
+      WHERE ig_comment_id = ${commentId}
+    `);
+    console.info(`[ig-webhook] Yorum ${commentId} skip (eskalasyon)`);
+    return;
+  }
+
+  const reply = await generateCommentReply(text);
+  if (!reply) {
+    await db.execute(sql`
+      UPDATE instagram_comments SET
+        reply_status = 'skipped',
+        skipped_reason = ${"AI SKIP (spam/troll/anlamsız)"}
+      WHERE ig_comment_id = ${commentId}
+    `);
+    return;
+  }
+
+  const send = await replyToInstagramComment(commentId, reply.text);
+  if (send.ok) {
+    await db.execute(sql`
+      UPDATE instagram_comments SET
+        reply_text = ${reply.text},
+        reply_ig_id = ${send.igMessageId ?? null},
+        ai_generated = TRUE,
+        ai_confidence = ${reply.confidence},
+        reply_status = 'sent',
+        replied_at = NOW()
+      WHERE ig_comment_id = ${commentId}
+    `);
+    console.info(`[ig-webhook] Yorum cevap gönderildi commentId=${commentId}`);
+  } else {
+    await db.execute(sql`
+      UPDATE instagram_comments SET
+        reply_status = 'failed',
+        reply_error = ${send.error ?? "bilinmeyen"}
+      WHERE ig_comment_id = ${commentId}
+    `);
+    console.error(`[ig-webhook] Yorum cevap BAŞARISIZ commentId=${commentId}: ${send.error}`);
+  }
 }
 
 export default router;
