@@ -34,6 +34,71 @@ const SETUP_TOKEN_TTL_HOURS = 24;
 const SETUP_TOKEN_TTL_MS = SETUP_TOKEN_TTL_HOURS * 60 * 60 * 1000;
 const LMS_BASE_URL = process.env["LMS_BASE_URL"] ?? "https://app.sphereenglish.com";
 
+// ─── PRE-CREATE: Fatura draft kaydı ─────────────────────────────────────
+// sphere-www initialize Iyzico'ya request atmadan önce bu endpoint'i çağırır
+// → conversationId ile birlikte fatura bilgilerini DB'ye yazar
+// → callback'te activate aynı conversationId ile fatura bilgilerini bulur
+router.post("/internal/subscription/pre-create", async (req: Request, res: Response) => {
+  const rawBody = JSON.stringify(req.body);
+  const signature = req.headers["x-internal-signature"];
+  if (!verifySignature(rawBody, typeof signature === "string" ? signature : undefined)) {
+    return res.status(401).json({ error: "Geçersiz imza" });
+  }
+
+  const {
+    conversationId,
+    planCode,
+    email,
+    name,
+    phone,
+    invoiceType,
+    taxId,
+    taxOffice,
+    companyName,
+    billingAddress,
+    billingCity,
+    billingDistrict,
+    billingPostalCode,
+  } = (req.body ?? {}) as any;
+
+  if (!conversationId || !planCode || !email) {
+    return res.status(400).json({ error: "conversationId, planCode ve email gerekli" });
+  }
+
+  try {
+    await db.execute(sql`
+      INSERT INTO pending_subscription_drafts (
+        conversation_id, plan_code, buyer_email, buyer_name, buyer_phone,
+        invoice_type, tax_id, tax_office, company_name,
+        billing_address, billing_city, billing_district, billing_postal_code
+      ) VALUES (
+        ${conversationId}, ${planCode}, ${String(email).toLowerCase()}, ${name ?? null}, ${phone ?? null},
+        ${invoiceType ?? "individual"}, ${taxId ?? null}, ${taxOffice ?? null}, ${companyName ?? null},
+        ${billingAddress ?? null}, ${billingCity ?? null}, ${billingDistrict ?? null}, ${billingPostalCode ?? null}
+      )
+      ON CONFLICT (conversation_id) DO UPDATE SET
+        plan_code = EXCLUDED.plan_code,
+        buyer_email = EXCLUDED.buyer_email,
+        buyer_name = EXCLUDED.buyer_name,
+        buyer_phone = EXCLUDED.buyer_phone,
+        invoice_type = EXCLUDED.invoice_type,
+        tax_id = EXCLUDED.tax_id,
+        tax_office = EXCLUDED.tax_office,
+        company_name = EXCLUDED.company_name,
+        billing_address = EXCLUDED.billing_address,
+        billing_city = EXCLUDED.billing_city,
+        billing_district = EXCLUDED.billing_district,
+        billing_postal_code = EXCLUDED.billing_postal_code,
+        used_at = NULL
+    `);
+    console.info(`[INTERNAL] Pre-create draft: conv=${conversationId} email=${email}`);
+    return res.json({ ok: true });
+  } catch (e: any) {
+    console.error("[INTERNAL] pre-create HATA:", e?.message);
+    return res.status(500).json({ error: "Pre-create başarısız: " + e?.message });
+  }
+});
+
 const router = Router();
 
 function verifySignature(rawBody: string, signature: string | undefined): boolean {
@@ -116,20 +181,49 @@ router.post("/internal/payment/activate", async (req: Request, res: Response) =>
       console.info(`[INTERNAL] Yeni kullanıcı oluşturuldu: ${user.email} (id=${user.id})`);
     }
 
-    // 2) Subscription'ı aktif yap (upsert)
+    // 2) Pending draft'tan fatura bilgilerini al (varsa)
+    let invoiceData: any = null;
+    if (iyzicoConversationId) {
+      const draftRows = await db.execute(sql`
+        SELECT invoice_type, tax_id, tax_office, company_name,
+               billing_address, billing_city, billing_district, billing_postal_code,
+               buyer_phone
+        FROM pending_subscription_drafts
+        WHERE conversation_id = ${iyzicoConversationId}
+        LIMIT 1
+      `);
+      invoiceData = (draftRows.rows ?? draftRows)[0] ?? null;
+      if (invoiceData) {
+        // Draft'ı kullanılmış işaretle
+        await db.execute(sql`
+          UPDATE pending_subscription_drafts SET used_at = NOW()
+          WHERE conversation_id = ${iyzicoConversationId}
+        `);
+      }
+    }
+
+    // 3) Subscription'ı aktif yap (upsert) — fatura bilgileriyle
     const months = plan.billingType === "recurring" ? 1 : (plan.durationMonths ?? 1);
     await db.execute(sql`
       INSERT INTO subscriptions (
         user_id, plan_key, plan_label, amount, currency,
         billing_type, duration_months,
         status, started_at, expires_at, current_period_start, current_period_end,
-        provider, provider_subscription_id, provider_conversation_id, updated_at
+        provider, provider_subscription_id, provider_conversation_id, updated_at,
+        invoice_type, tax_id, tax_office, company_name,
+        billing_address, billing_city, billing_district, billing_postal_code,
+        invoice_status
       ) VALUES (
         ${user.id}, ${plan.code}, ${plan.label}, ${plan.amount}, ${currency ?? "TRY"},
         ${plan.billingType}, ${plan.durationMonths ?? null},
         'active', NOW(), NOW() + (${months}::int * INTERVAL '1 month'),
         NOW(), NOW() + (${months}::int * INTERVAL '1 month'),
-        'iyzico', ${iyzicoPaymentId ?? null}, ${iyzicoConversationId ?? null}, NOW()
+        'iyzico', ${iyzicoPaymentId ?? null}, ${iyzicoConversationId ?? null}, NOW(),
+        ${invoiceData?.invoice_type ?? null}, ${invoiceData?.tax_id ?? null},
+        ${invoiceData?.tax_office ?? null}, ${invoiceData?.company_name ?? null},
+        ${invoiceData?.billing_address ?? null}, ${invoiceData?.billing_city ?? null},
+        ${invoiceData?.billing_district ?? null}, ${invoiceData?.billing_postal_code ?? null},
+        'pending'
       )
       ON CONFLICT (user_id) DO UPDATE SET
         plan_key = EXCLUDED.plan_key,
@@ -145,6 +239,15 @@ router.post("/internal/payment/activate", async (req: Request, res: Response) =>
         provider = 'iyzico',
         provider_subscription_id = EXCLUDED.provider_subscription_id,
         provider_conversation_id = EXCLUDED.provider_conversation_id,
+        invoice_type = COALESCE(EXCLUDED.invoice_type, subscriptions.invoice_type),
+        tax_id = COALESCE(EXCLUDED.tax_id, subscriptions.tax_id),
+        tax_office = COALESCE(EXCLUDED.tax_office, subscriptions.tax_office),
+        company_name = COALESCE(EXCLUDED.company_name, subscriptions.company_name),
+        billing_address = COALESCE(EXCLUDED.billing_address, subscriptions.billing_address),
+        billing_city = COALESCE(EXCLUDED.billing_city, subscriptions.billing_city),
+        billing_district = COALESCE(EXCLUDED.billing_district, subscriptions.billing_district),
+        billing_postal_code = COALESCE(EXCLUDED.billing_postal_code, subscriptions.billing_postal_code),
+        invoice_status = 'pending',
         cancel_at_period_end = false,
         canceled_at = NULL,
         updated_at = NOW()

@@ -456,6 +456,38 @@ async function runStartupMigrations() {
     )`,
     `CREATE INDEX IF NOT EXISTS account_setup_tokens_user_idx ON account_setup_tokens(user_id, created_at DESC)`,
     `CREATE INDEX IF NOT EXISTS account_setup_tokens_expires_idx ON account_setup_tokens(expires_at)`,
+    // ── Abonelik öncesi fatura draft'ları (pazarlama formu → callback eşlemesi) ──
+    `CREATE TABLE IF NOT EXISTS pending_subscription_drafts (
+      id SERIAL PRIMARY KEY,
+      conversation_id VARCHAR(200) NOT NULL UNIQUE,
+      plan_code VARCHAR(100) NOT NULL,
+      buyer_email VARCHAR(200) NOT NULL,
+      buyer_name VARCHAR(200),
+      buyer_phone VARCHAR(30),
+      invoice_type VARCHAR(20) NOT NULL DEFAULT 'individual',
+      tax_id VARCHAR(20),
+      tax_office VARCHAR(150),
+      company_name VARCHAR(300),
+      billing_address TEXT,
+      billing_city VARCHAR(100),
+      billing_district VARCHAR(100),
+      billing_postal_code VARCHAR(10),
+      used_at TIMESTAMPTZ,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`,
+    `CREATE INDEX IF NOT EXISTS pending_sub_drafts_email_idx ON pending_subscription_drafts(buyer_email, created_at DESC)`,
+    // subscriptions tablosuna fatura alanları (kalıcı kayıt)
+    `ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS invoice_type VARCHAR(20)`,
+    `ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS tax_id VARCHAR(20)`,
+    `ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS tax_office VARCHAR(150)`,
+    `ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS company_name VARCHAR(300)`,
+    `ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS billing_address TEXT`,
+    `ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS billing_city VARCHAR(100)`,
+    `ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS billing_district VARCHAR(100)`,
+    `ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS billing_postal_code VARCHAR(10)`,
+    `ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS invoice_status VARCHAR(20) NOT NULL DEFAULT 'pending'`,
+    `ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS invoice_number VARCHAR(100)`,
+    `ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS invoice_issued_at TIMESTAMPTZ`,
     // İlk kitap seed — sadece yoksa ekle
     `INSERT INTO ebooks (
       slug, title, subtitle, description, long_description,

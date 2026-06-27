@@ -21,6 +21,7 @@ const ROUTE_TITLES: RouteTitleEntry[] = [
   // Auth & public
   { prefix: '/login', title: 'Giriş Yap', exact: true },
   { prefix: '/sifre-belirle', title: 'Şifremi Belirle' },
+  { prefix: '/sifremi-unuttum', title: 'Şifremi Unuttum' },
   { prefix: '/register', title: 'Ücretsiz Hesap Oluştur', exact: true },
   { prefix: '/placement-test', title: 'Seviye Belirleme Testi' },
 

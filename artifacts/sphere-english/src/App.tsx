@@ -17,6 +17,7 @@ const NotFound        = lazy(() => import("@/pages/not-found"));
 const Login           = lazy(() => import("./pages/auth/Login"));
 const Register        = lazy(() => import("./pages/auth/Register"));
 const SetupPassword   = lazy(() => import("./pages/SetupPassword"));
+const ForgotPassword  = lazy(() => import("./pages/ForgotPassword"));
 const Dashboard       = lazy(() => import("./pages/dashboard"));
 const CourseList      = lazy(() => import("./pages/courses/CourseList"));
 const CourseDetail    = lazy(() => import("./pages/courses/CourseDetail"));
@@ -198,6 +199,7 @@ function Router() {
         <Route path="/login" component={Login} />
         <Route path="/register" component={Register} />
         <Route path="/sifre-belirle" component={SetupPassword} />
+        <Route path="/sifremi-unuttum" component={ForgotPassword} />
         <Route path="/ai-studio" component={AIStudio} />
         <Route path="/placement-test" component={PlacementTestRoute} />
 

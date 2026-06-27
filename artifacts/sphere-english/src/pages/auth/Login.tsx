@@ -62,7 +62,15 @@ export default function Login() {
             </div>
 
             <div>
-              <Label htmlFor="password">Şifre</Label>
+              <div className="flex items-center justify-between mb-1">
+                <Label htmlFor="password">Şifre</Label>
+                <Link
+                  href="/sifremi-unuttum"
+                  className="text-xs font-semibold text-primary hover:text-accent transition-colors"
+                >
+                  Şifremi unuttum?
+                </Link>
+              </div>
               <Input id="password" type="password" icon={<Lock size={18} />} placeholder="••••••••" error={errors.password?.message} {...register("password")} />
             </div>
 
