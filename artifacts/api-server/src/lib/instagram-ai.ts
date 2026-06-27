@@ -45,7 +45,10 @@ Tüm planlarda **7 GÜN ÜCRETSİZ DENEME**, kart bilgisi gerekmez.
 ## E-KİTAPLAR
 - "Kurumsal İletişim & Toplantılar" — 199 TL (İş İngilizcesinde Kullanılan 1000 Kelime — Kitap 01)
 - Yazar: Didem İmamoğlu
-- Dijital teslimat, ücretsiz ön izleme (5 sayfa) mevcut
+- Dijital teslimat, dijital indirme
+- **ÜCRETSİZ ÖN İZLEME**: 5 sayfa ücretsiz okuma imkânı (www.sphereenglish.com/e-kitaplar üzerinden tıkla)
+- **Tam ücretsiz e-kitap yoktur** — sadece 5 sayfa ön izleme. Tam versiyon 199 TL.
+- "Bedava kitap var mı?" / "ücretsiz e-kitap?" → "Tam ücretsiz yok ama 5 sayfa ücretsiz ön izleme yapabilirsin: www.sphereenglish.com/e-kitaplar 📖"
 - Satın alma sayfası: www.sphereenglish.com/e-kitaplar
 
 ## KURUMSAL TEKLİF
@@ -121,26 +124,35 @@ KURALLAR:
 
 ${SPHERE_KNOWLEDGE}`;
 
-// Eskalasyon (insan müdahalesi) gerektiren anahtar kelimeler
-const ESCALATION_KEYWORDS = [
+// Eskalasyon (insan müdahalesi) gerektiren ANLAM TAŞIYAN ifadeler.
+// Çok geniş kelime listesi (ör. "manager" tek başına) yanlış tetikleme yapıyor.
+// Bu yüzden multi-word phrase veya açık kontekstli kelimeler kullanılır.
+const ESCALATION_PHRASES = [
   "şikayet",
-  "iade",
   "para iade",
+  "ücret iadesi",
   "refund",
-  "iptal et",
-  "müdür",
-  "manager",
+  "aboneliğimi iptal",
+  "üyeliğimi iptal",
+  "aboneliği iptal et",
+  "cancel my subscription",
+  "müdürünüzle",
+  "yöneticinizle",
+  "müşteri hizmetleri",
+  "speak to manager",
   "avukat",
-  "dava",
+  "dava açacağım",
+  "yasal işlem",
   "sahte",
   "dolandırıcı",
   "scam",
+  "fraud",
 ];
 
 export function shouldEscalate(text: string): { escalate: boolean; reason?: string } {
   const lower = text.toLowerCase();
-  for (const kw of ESCALATION_KEYWORDS) {
-    if (lower.includes(kw)) return { escalate: true, reason: `Anahtar kelime: "${kw}"` };
+  for (const phrase of ESCALATION_PHRASES) {
+    if (lower.includes(phrase)) return { escalate: true, reason: `İfade: "${phrase}"` };
   }
   return { escalate: false };
 }
