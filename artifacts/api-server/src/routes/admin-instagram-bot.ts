@@ -84,7 +84,7 @@ router.get(
           first_seen_at, updated_at
         FROM instagram_threads
         ${whereClause}
-        ORDER BY last_message_at DESC NULLS LAST
+        ORDER BY COALESCE(last_message_at, first_seen_at) DESC
         LIMIT ${limit}
       `);
       return res.json({ threads: rows.rows ?? rows });

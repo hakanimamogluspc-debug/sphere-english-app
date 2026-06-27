@@ -488,6 +488,82 @@ async function runStartupMigrations() {
     `ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS invoice_status VARCHAR(20) NOT NULL DEFAULT 'pending'`,
     `ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS invoice_number VARCHAR(100)`,
     `ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS invoice_issued_at TIMESTAMPTZ`,
+    // ─── Instagram bot (DM + Yorum AI cevap) ──────────────────────────────
+    `CREATE TABLE IF NOT EXISTS instagram_threads (
+      id SERIAL PRIMARY KEY,
+      ig_user_id VARCHAR(60) NOT NULL UNIQUE,
+      ig_username VARCHAR(100),
+      ig_full_name VARCHAR(200),
+      profile_pic_url TEXT,
+      last_message_text TEXT,
+      last_message_at TIMESTAMPTZ,
+      last_inbound_at TIMESTAMPTZ,
+      unread_count INTEGER NOT NULL DEFAULT 0,
+      is_blocked BOOLEAN NOT NULL DEFAULT FALSE,
+      bot_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+      escalated_at TIMESTAMPTZ,
+      escalation_reason TEXT,
+      first_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`,
+    `CREATE INDEX IF NOT EXISTS ig_threads_last_msg_idx ON instagram_threads(last_message_at DESC)`,
+    `CREATE INDEX IF NOT EXISTS ig_threads_unread_idx ON instagram_threads(unread_count, last_message_at DESC) WHERE unread_count > 0`,
+    `CREATE TABLE IF NOT EXISTS instagram_messages (
+      id BIGSERIAL PRIMARY KEY,
+      thread_id INTEGER NOT NULL REFERENCES instagram_threads(id) ON DELETE CASCADE,
+      ig_message_id VARCHAR(120) UNIQUE,
+      direction VARCHAR(10) NOT NULL,
+      sender_id VARCHAR(60) NOT NULL,
+      message_text TEXT,
+      attachments JSONB DEFAULT '[]'::JSONB,
+      ai_generated BOOLEAN NOT NULL DEFAULT FALSE,
+      ai_confidence NUMERIC(4, 3),
+      ai_model VARCHAR(60),
+      ai_latency_ms INTEGER,
+      delivery_status VARCHAR(20) DEFAULT 'pending',
+      delivery_error TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      sent_at TIMESTAMPTZ
+    )`,
+    `CREATE INDEX IF NOT EXISTS ig_messages_thread_idx ON instagram_messages(thread_id, created_at DESC)`,
+    `CREATE INDEX IF NOT EXISTS ig_messages_direction_idx ON instagram_messages(direction, created_at DESC)`,
+    `CREATE TABLE IF NOT EXISTS instagram_comments (
+      id BIGSERIAL PRIMARY KEY,
+      ig_comment_id VARCHAR(120) NOT NULL UNIQUE,
+      ig_media_id VARCHAR(120),
+      ig_parent_comment_id VARCHAR(120),
+      sender_id VARCHAR(60) NOT NULL,
+      sender_username VARCHAR(100),
+      comment_text TEXT,
+      reply_text TEXT,
+      reply_ig_id VARCHAR(120),
+      ai_generated BOOLEAN NOT NULL DEFAULT FALSE,
+      ai_confidence NUMERIC(4, 3),
+      reply_status VARCHAR(20) DEFAULT 'pending',
+      reply_error TEXT,
+      skipped_reason TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      replied_at TIMESTAMPTZ
+    )`,
+    `CREATE INDEX IF NOT EXISTS ig_comments_created_idx ON instagram_comments(created_at DESC)`,
+    `CREATE INDEX IF NOT EXISTS ig_comments_status_idx ON instagram_comments(reply_status, created_at DESC)`,
+    `CREATE INDEX IF NOT EXISTS ig_comments_media_idx ON instagram_comments(ig_media_id, created_at DESC)`,
+    `CREATE TABLE IF NOT EXISTS instagram_bot_settings (
+      key VARCHAR(80) PRIMARY KEY,
+      value TEXT,
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`,
+    `INSERT INTO instagram_bot_settings (key, value) VALUES
+      ('bot_enabled', 'true'),
+      ('reply_to_dms', 'true'),
+      ('reply_to_comments', 'true'),
+      ('persona_name', 'Sphere Asistanı'),
+      ('persona_tone', 'samimi-profesyonel'),
+      ('escalation_keywords', 'şikayet,iade,refund,iptal,müdür,manager,problem')
+      ON CONFLICT (key) DO NOTHING`,
+    `INSERT INTO feature_settings (key, label, is_enabled, visible_to, category) VALUES
+      ('admin-instagram-bot', 'Instagram Bot', true, ARRAY['admin']::TEXT[], 'admin')
+      ON CONFLICT (key) DO NOTHING`,
     // İlk kitap seed — sadece yoksa ekle
     `INSERT INTO ebooks (
       slug, title, subtitle, description, long_description,
