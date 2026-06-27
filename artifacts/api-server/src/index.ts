@@ -564,6 +564,12 @@ async function runStartupMigrations() {
     `INSERT INTO feature_settings (key, label, is_enabled, visible_to, category) VALUES
       ('admin-instagram-bot', 'Instagram Bot', true, ARRAY['admin']::TEXT[], 'admin')
       ON CONFLICT (key) DO NOTHING`,
+    // Instagram message ID'leri çok uzun (200+ karakter base64) — VARCHAR(120) yetmedi
+    `ALTER TABLE instagram_messages ALTER COLUMN ig_message_id TYPE TEXT`,
+    `ALTER TABLE instagram_comments ALTER COLUMN ig_comment_id TYPE TEXT`,
+    `ALTER TABLE instagram_comments ALTER COLUMN ig_parent_comment_id TYPE TEXT`,
+    `ALTER TABLE instagram_comments ALTER COLUMN ig_media_id TYPE TEXT`,
+    `ALTER TABLE instagram_comments ALTER COLUMN reply_ig_id TYPE TEXT`,
     // İlk kitap seed — sadece yoksa ekle
     `INSERT INTO ebooks (
       slug, title, subtitle, description, long_description,
