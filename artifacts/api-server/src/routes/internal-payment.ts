@@ -34,6 +34,23 @@ const SETUP_TOKEN_TTL_HOURS = 24;
 const SETUP_TOKEN_TTL_MS = SETUP_TOKEN_TTL_HOURS * 60 * 60 * 1000;
 const LMS_BASE_URL = process.env["LMS_BASE_URL"] ?? "https://app.sphereenglish.com";
 
+const router = Router();
+
+function verifySignature(rawBody: string, signature: string | undefined): boolean {
+  if (!signature) return false;
+  const secret = process.env["INTERNAL_API_SHARED_SECRET"];
+  if (!secret) {
+    console.error("[INTERNAL] INTERNAL_API_SHARED_SECRET tanımlı değil");
+    return false;
+  }
+  const expected = crypto.createHmac("sha256", secret).update(rawBody).digest("hex");
+  try {
+    return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected));
+  } catch {
+    return false;
+  }
+}
+
 // ─── PRE-CREATE: Fatura draft kaydı ─────────────────────────────────────
 // sphere-www initialize Iyzico'ya request atmadan önce bu endpoint'i çağırır
 // → conversationId ile birlikte fatura bilgilerini DB'ye yazar
@@ -98,23 +115,6 @@ router.post("/internal/subscription/pre-create", async (req: Request, res: Respo
     return res.status(500).json({ error: "Pre-create başarısız: " + e?.message });
   }
 });
-
-const router = Router();
-
-function verifySignature(rawBody: string, signature: string | undefined): boolean {
-  if (!signature) return false;
-  const secret = process.env["INTERNAL_API_SHARED_SECRET"];
-  if (!secret) {
-    console.error("[INTERNAL] INTERNAL_API_SHARED_SECRET tanımlı değil");
-    return false;
-  }
-  const expected = crypto.createHmac("sha256", secret).update(rawBody).digest("hex");
-  try {
-    return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected));
-  } catch {
-    return false;
-  }
-}
 
 router.post("/internal/payment/activate", async (req: Request, res: Response) => {
   // İmza için raw body lazım. Express JSON parser'ı zaten geçti — bu yüzden
