@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   BookOpen, LayoutDashboard, Video, FileQuestion, LineChart,
   Award, MessageSquare, Users, Megaphone, LogOut, Menu, Building2, BarChart3, GraduationCap, Mic, MessageCircle, FolderOpen, PenLine, TrendingUp, Settings2, Gamepad2, Crown, Lock,
-  Sparkles, ChevronDown, Brain, Briefcase, Presentation, Wand2, Compass, Bot, Activity, UserPlus, ShoppingBag, Phone
+  Sparkles, ChevronDown, Brain, Briefcase, Presentation, Wand2, Compass, Bot, Activity, UserPlus, ShoppingBag, Phone, UserCircle
 } from "lucide-react";
 import { Avatar } from "../ui/core";
 import { NotificationBell } from "../NotificationBell";
@@ -125,6 +125,10 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       { name: 'Raporlar',            href: '/corporate/reports',              icon: BarChart3 },
       { name: 'AI Performans Raporu', href: '/corporate/ai-report',           icon: Sparkles },
     ],
+    partner: [
+      { name: 'Partner Paneli',      href: '/partner',                        icon: Award },
+      { name: 'Profilim',            href: '/student/profile',                icon: UserCircle },
+    ],
   };
 
   const roleLabel: Record<string, string> = {
@@ -132,6 +136,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     teacher: "Öğretmen",
     student: "Öğrenci",
     corporate: "Kurum Yetkilisi",
+    partner: "Sphere Partner",
   };
 
   function isVisible(item: NavItem): boolean {

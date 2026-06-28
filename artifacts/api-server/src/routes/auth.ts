@@ -74,7 +74,7 @@ router.post("/auth/register", validateBody(registerSchema), async (req, res) => 
   const { email, password, firstName, lastName, role, phone, companyCode, accountType } = req.body;
 
   const isBireysel = accountType === "bireysel";
-  const assignedRole = role === "corporate" ? "corporate" : "student";
+  const assignedRole = role === "corporate" ? "corporate" : role === "partner" ? "partner" : "student";
 
   const [existing] = await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase())).limit(1);
   if (existing) {
@@ -90,7 +90,7 @@ router.post("/auth/register", validateBody(registerSchema), async (req, res) => 
       password: hashedPassword,
       firstName,
       lastName,
-      role: "student",
+      role: assignedRole === "partner" ? "partner" : "student",
       phone: phone || null,
       companyId: null,
       accountType: "bireysel",

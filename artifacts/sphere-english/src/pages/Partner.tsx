@@ -107,14 +107,14 @@ export default function Partner() {
   }
 
   if (loading) {
-    return <div className="flex justify-center p-12"><Loader2 className="animate-spin text-emerald-600" size={32} /></div>;
+    return <div className="flex justify-center p-12"><Loader2 className="animate-spin text-blue-700" size={32} /></div>;
   }
 
   // Henüz başvurmamış → /partner/apply'a yönlendir
   if (!aff) {
     return (
       <div className="max-w-2xl mx-auto py-12 px-6 text-center">
-        <Award size={56} className="text-emerald-600 mx-auto mb-4" />
+        <Award size={56} className="text-blue-700 mx-auto mb-4" />
         <h1 className="text-3xl font-bold mb-3">Sphere Partner Programı</h1>
         <p className="text-slate-600 mb-6">
           Sphere'i sevdiğin kişilere öner, satışlardan komisyon kazan.
@@ -122,7 +122,7 @@ export default function Partner() {
         </p>
         <Link
           href="/partner/apply"
-          className="inline-flex items-center gap-2 bg-emerald-600 text-white px-6 py-3 rounded-lg hover:bg-emerald-700"
+          className="inline-flex items-center gap-2 bg-blue-700 text-white px-6 py-3 rounded-lg hover:bg-blue-800"
         >
           <Sparkles size={18} /> Hemen Başvur
         </Link>
@@ -164,7 +164,7 @@ export default function Partner() {
   return (
     <div className="p-6 max-w-7xl mx-auto">
       <header className="mb-6">
-        <h1 className="text-2xl font-bold text-emerald-700 flex items-center gap-2">
+        <h1 className="text-2xl font-bold text-blue-800 flex items-center gap-2">
           <Award size={26} /> Partner Programı
         </h1>
         <p className="text-sm text-slate-500 mt-1">
@@ -190,7 +190,7 @@ export default function Partner() {
             key={k}
             onClick={() => setTab(k)}
             className={`px-4 py-2 text-sm font-medium border-b-2 ${
-              tab === k ? "border-emerald-600 text-emerald-700" : "border-transparent text-slate-500 hover:text-slate-700"
+              tab === k ? "border-blue-700 text-blue-800" : "border-transparent text-slate-500 hover:text-slate-700"
             }`}
           >
             {label}
@@ -224,7 +224,7 @@ export default function Partner() {
               />
               <button
                 onClick={copyLink}
-                className="px-4 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 flex items-center gap-2"
+                className="px-4 bg-blue-700 text-white rounded-md hover:bg-blue-800 flex items-center gap-2"
               >
                 {copied ? <><Check size={16} /> Kopyalandı</> : <><Copy size={16} /> Kopyala</>}
               </button>
@@ -325,7 +325,7 @@ export default function Partner() {
 
       {tab === "bank" && (
         <div className="bg-white border border-slate-200 rounded-lg p-6 max-w-xl">
-          <div className="flex items-center gap-2 mb-4 text-emerald-700">
+          <div className="flex items-center gap-2 mb-4 text-blue-800">
             <CreditCard size={20} /> <h2 className="font-semibold">Ödeme Bilgileri</h2>
           </div>
           <p className="text-xs text-slate-500 mb-4">
@@ -342,7 +342,7 @@ export default function Partner() {
             <button
               onClick={saveBank}
               disabled={bankSaving}
-              className="w-full py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 disabled:opacity-50"
+              className="w-full py-2 bg-blue-700 text-white rounded-md hover:bg-blue-800 disabled:opacity-50"
             >
               {bankSaving ? "Kaydediliyor..." : "Kaydet"}
             </button>
@@ -377,7 +377,7 @@ export default function Partner() {
             ))}
           </div>
 
-          <div className="mt-6 p-4 bg-emerald-50 border border-emerald-200 rounded-md">
+          <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-md">
             <strong className="text-sm">Örnek Metin:</strong>
             <p className="text-sm text-slate-700 mt-2 italic">
               "Sphere English ile iş İngilizcesinde gerçekten ilerliyorum. AI destekli koçluk + 7 gün ücretsiz deneme.
@@ -392,7 +392,7 @@ export default function Partner() {
 
 function Stat({ label, value, icon, color }: { label: string; value: any; icon: React.ReactNode; color: string }) {
   const colorMap: Record<string, string> = {
-    emerald: "bg-emerald-50 text-emerald-700 border-emerald-200",
+    emerald: "bg-blue-50 text-blue-800 border-blue-200",
     blue: "bg-blue-50 text-blue-700 border-blue-200",
     amber: "bg-amber-50 text-amber-700 border-amber-200",
     rose: "bg-rose-50 text-rose-700 border-rose-200",
@@ -411,7 +411,7 @@ function StatusBadge({ status }: { status: string }) {
   const m: Record<string, { c: string; t: string }> = {
     pending: { c: "bg-amber-100 text-amber-700", t: "Bekliyor" },
     approved: { c: "bg-blue-100 text-blue-700", t: "Onaylı" },
-    paid: { c: "bg-emerald-100 text-emerald-700", t: "Ödendi" },
+    paid: { c: "bg-blue-100 text-blue-800", t: "Ödendi" },
     refunded: { c: "bg-red-100 text-red-700", t: "İade" },
     cancelled: { c: "bg-slate-100 text-slate-700", t: "İptal" },
   };
@@ -428,7 +428,7 @@ function Field({ label, value, onChange, placeholder, mono }: { label: string; v
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className={`w-full px-3 py-2 border border-slate-200 rounded-md text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent ${mono ? "font-mono" : ""}`}
+        className={`w-full px-3 py-2 border border-slate-200 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent ${mono ? "font-mono" : ""}`}
       />
     </div>
   );

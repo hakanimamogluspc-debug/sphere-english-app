@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button, Input, Label, Card } from "@/components/ui/core";
-import { Mail, Lock, User, AlertCircle, Phone, Hash, GraduationCap, Briefcase, Building2, UserCircle } from "lucide-react";
+import { Mail, Lock, User, AlertCircle, Phone, Hash, GraduationCap, Briefcase, Building2, UserCircle, Award } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 // ── Bireysel şema (kurum kodu yok) ────────────────────────────────────────────
@@ -33,13 +33,23 @@ type KurumsalForm = z.infer<typeof kurumsalSchema>;
 export default function Register() {
   const { register: registerUser } = useAuth();
   const [error, setError] = useState<string | null>(null);
-  const [accountType, setAccountType] = useState<"bireysel" | "kurumsal">("bireysel");
+  const [accountType, setAccountType] = useState<"bireysel" | "kurumsal" | "partner">("bireysel");
   const [kurumsalRole, setKurumsalRole] = useState<"student" | "corporate">("student");
 
   const bireyselForm = useForm<BireyselForm>({ resolver: zodResolver(bireyselSchema) });
   const kurumsalForm = useForm<KurumsalForm>({ resolver: zodResolver(kurumsalSchema) });
+  const partnerForm = useForm<BireyselForm>({ resolver: zodResolver(bireyselSchema) });
 
-  const isSubmitting = bireyselForm.formState.isSubmitting || kurumsalForm.formState.isSubmitting;
+  const isSubmitting = bireyselForm.formState.isSubmitting || kurumsalForm.formState.isSubmitting || partnerForm.formState.isSubmitting;
+
+  const onPartnerSubmit = async (data: BireyselForm) => {
+    try {
+      setError(null);
+      await (registerUser as any)({ ...data, role: "partner", accountType: "bireysel" });
+    } catch (err: any) {
+      setError(err.message || "Kayıt olunamadı. Lütfen tekrar deneyin.");
+    }
+  };
 
   const onBireyselSubmit = async (data: BireyselForm) => {
     try {
@@ -69,6 +79,8 @@ export default function Register() {
           <p className="text-lg text-white/80">
             {accountType === "bireysel"
               ? "Hemen ücretsiz hesap oluşturun ve İngilizce öğrenmeye başlayın."
+              : accountType === "partner"
+              ? "Sphere English'i tavsiye et, satışlardan komisyon kazan."
               : "Kurumunuzdan aldığınız kod ile hemen kayıt olun."}
           </p>
         </div>
@@ -88,35 +100,49 @@ export default function Register() {
             <p className="mt-2 text-muted-foreground">
               {accountType === "bireysel"
                 ? "Bireysel olarak ücretsiz kaydolun."
+                : accountType === "partner"
+                ? "Partner Programı için ön hesap oluşturun, sonra başvuru formunu doldurun."
                 : "Kurumunuzdan aldığınız kod ile kayıt olun."}
             </p>
           </div>
 
           {/* ── Hesap tipi seçimi ──────────────────────────────── */}
-          <div className="flex gap-3 mb-6">
+          <div className="grid grid-cols-3 gap-2 mb-6">
             <button
               type="button"
               onClick={() => { setAccountType("bireysel"); setError(null); }}
-              className={`flex-1 flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all font-medium text-sm ${
+              className={`flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all font-medium text-xs ${
                 accountType === "bireysel"
                   ? "border-primary bg-primary/5 text-primary"
                   : "border-border text-muted-foreground hover:border-primary/40"
               }`}
             >
-              <UserCircle className="h-7 w-7" />
+              <UserCircle className="h-6 w-6" />
               Bireysel
             </button>
             <button
               type="button"
               onClick={() => { setAccountType("kurumsal"); setError(null); }}
-              className={`flex-1 flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all font-medium text-sm ${
+              className={`flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all font-medium text-xs ${
                 accountType === "kurumsal"
                   ? "border-primary bg-primary/5 text-primary"
                   : "border-border text-muted-foreground hover:border-primary/40"
               }`}
             >
-              <Building2 className="h-7 w-7" />
+              <Building2 className="h-6 w-6" />
               Kurumsal
+            </button>
+            <button
+              type="button"
+              onClick={() => { setAccountType("partner"); setError(null); }}
+              className={`flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all font-medium text-xs ${
+                accountType === "partner"
+                  ? "border-primary bg-primary/5 text-primary"
+                  : "border-border text-muted-foreground hover:border-primary/40"
+              }`}
+            >
+              <Award className="h-6 w-6" />
+              Partner Ol
             </button>
           </div>
 
@@ -132,6 +158,48 @@ export default function Register() {
                 <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
                 <p className="text-sm font-medium">{error}</p>
               </motion.div>
+            )}
+            {/* ── PARTNER FORM ──────────────────────────────────── */}
+            {accountType === "partner" && (
+              <motion.form
+                key="partner"
+                initial={{ opacity: 0, x: 16 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -16 }}
+                transition={{ duration: 0.2 }}
+                onSubmit={partnerForm.handleSubmit(onPartnerSubmit)}
+                className="space-y-4"
+              >
+                <div className="p-3 bg-sapphire/5 border border-sapphire/20 rounded-lg text-xs text-slate-600">
+                  <strong className="text-sapphire">Partner Programı:</strong> Önce ücretsiz hesap oluştur, sonra
+                  hesabınla giriş yapıp partner başvuru formunu doldur. Onay sonrası komisyonlar başlar.
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="p-firstName">Ad</Label>
+                    <Input id="p-firstName" icon={<User size={18} />} placeholder="Mehmet" error={partnerForm.formState.errors.firstName?.message} {...partnerForm.register("firstName")} />
+                  </div>
+                  <div>
+                    <Label htmlFor="p-lastName">Soyad</Label>
+                    <Input id="p-lastName" placeholder="Yılmaz" error={partnerForm.formState.errors.lastName?.message} {...partnerForm.register("lastName")} />
+                  </div>
+                </div>
+                <div>
+                  <Label htmlFor="p-email">E-posta adresi</Label>
+                  <Input id="p-email" type="email" icon={<Mail size={18} />} placeholder="ad@ornek.com" error={partnerForm.formState.errors.email?.message} {...partnerForm.register("email")} />
+                </div>
+                <div>
+                  <Label htmlFor="p-phone">Telefon <span className="text-muted-foreground font-normal">(isteğe bağlı)</span></Label>
+                  <Input id="p-phone" type="tel" icon={<Phone size={18} />} placeholder="+90 (555) 000-0000" {...partnerForm.register("phone")} />
+                </div>
+                <div>
+                  <Label htmlFor="p-password">Şifre</Label>
+                  <Input id="p-password" type="password" icon={<Lock size={18} />} placeholder="••••••••" error={partnerForm.formState.errors.password?.message} {...partnerForm.register("password")} />
+                </div>
+                <Button type="submit" className="w-full text-lg h-12 mt-2" isLoading={isSubmitting}>
+                  Partner Hesabı Oluştur
+                </Button>
+              </motion.form>
             )}
           </AnimatePresence>
 

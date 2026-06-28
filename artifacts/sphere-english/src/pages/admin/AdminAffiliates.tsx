@@ -158,7 +158,7 @@ export default function AdminAffiliates() {
     <div className="p-6 max-w-7xl mx-auto">
       <header className="mb-6 flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-emerald-700 flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-blue-800 flex items-center gap-2">
             <Award size={26} /> Affiliate Program
           </h1>
           <p className="text-sm text-slate-500 mt-1">
@@ -205,7 +205,7 @@ export default function AdminAffiliates() {
         ] as const).map(([k, label]) => (
           <button key={k} onClick={() => setTab(k)}
             className={`px-4 py-2 text-sm font-medium border-b-2 ${
-              tab === k ? "border-emerald-600 text-emerald-700" : "border-transparent text-slate-500 hover:text-slate-700"
+              tab === k ? "border-blue-700 text-blue-800" : "border-transparent text-slate-500 hover:text-slate-700"
             }`}>
             {label}
           </button>
@@ -217,7 +217,7 @@ export default function AdminAffiliates() {
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <input type="text" value={search} onChange={(e) => setSearch(e.target.value)}
             placeholder="İsim, e-posta, kod ara..."
-            className="w-full pl-9 pr-3 py-2 text-sm border border-slate-200 rounded-md focus:ring-2 focus:ring-emerald-500" />
+            className="w-full pl-9 pr-3 py-2 text-sm border border-slate-200 rounded-md focus:ring-2 focus:ring-blue-500" />
         </div>
       )}
 
@@ -250,7 +250,7 @@ export default function AdminAffiliates() {
                     <td className="px-3 py-2 text-center">{p.commission_count}</td>
                     <td className="px-3 py-2 text-center">
                       <button onClick={() => createPayout(p.id)}
-                        className="px-3 py-1 text-xs bg-emerald-600 text-white rounded hover:bg-emerald-700">
+                        className="px-3 py-1 text-xs bg-blue-700 text-white rounded hover:bg-blue-800">
                         Payout Oluştur
                       </button>
                     </td>
@@ -290,7 +290,7 @@ export default function AdminAffiliates() {
                       {a.status === "pending" && (
                         <div className="flex gap-1 justify-center" onClick={(e) => e.stopPropagation()}>
                           <button onClick={() => approve(a.id)}
-                            className="px-2 py-1 text-xs bg-emerald-600 text-white rounded hover:bg-emerald-700">Onayla</button>
+                            className="px-2 py-1 text-xs bg-blue-700 text-white rounded hover:bg-blue-800">Onayla</button>
                           <button onClick={() => reject(a.id)}
                             className="px-2 py-1 text-xs bg-red-100 text-red-700 rounded hover:bg-red-200">Reddet</button>
                         </div>
@@ -357,7 +357,7 @@ export default function AdminAffiliates() {
                     <div className="flex justify-between mt-1 text-xs">
                       <StatusBadge status={p.status} />
                       {p.status === "pending" && (
-                        <button onClick={() => markPaid(p.id)} className="text-emerald-700 underline">Ödendi işaretle</button>
+                        <button onClick={() => markPaid(p.id)} className="text-blue-800 underline">Ödendi işaretle</button>
                       )}
                     </div>
                   </div>
@@ -375,7 +375,7 @@ function StatCard({ label, value, icon, color }: { label: string; value: any; ic
   const m: Record<string, string> = {
     slate: "bg-slate-50 text-slate-700 border-slate-200",
     amber: "bg-amber-50 text-amber-700 border-amber-200",
-    emerald: "bg-emerald-50 text-emerald-700 border-emerald-200",
+    emerald: "bg-blue-50 text-blue-800 border-blue-200",
     blue: "bg-blue-50 text-blue-700 border-blue-200",
     rose: "bg-rose-50 text-rose-700 border-rose-200",
     violet: "bg-violet-50 text-violet-700 border-violet-200",
@@ -392,9 +392,9 @@ function StatCard({ label, value, icon, color }: { label: string; value: any; ic
 function StatusBadge({ status }: { status: string }) {
   const m: Record<string, { c: string; t: string }> = {
     pending: { c: "bg-amber-100 text-amber-700", t: "Bekliyor" },
-    active: { c: "bg-emerald-100 text-emerald-700", t: "Aktif" },
+    active: { c: "bg-blue-100 text-blue-800", t: "Aktif" },
     approved: { c: "bg-blue-100 text-blue-700", t: "Onaylı" },
-    paid: { c: "bg-emerald-100 text-emerald-700", t: "Ödendi" },
+    paid: { c: "bg-blue-100 text-blue-800", t: "Ödendi" },
     suspended: { c: "bg-slate-100 text-slate-700", t: "Askıda" },
     rejected: { c: "bg-red-100 text-red-700", t: "Red" },
     refunded: { c: "bg-red-100 text-red-700", t: "İade" },
