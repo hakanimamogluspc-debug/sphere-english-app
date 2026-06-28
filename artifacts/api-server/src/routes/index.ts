@@ -115,26 +115,31 @@ router.use(affiliateRouter);
 router.use(adminAffiliatesRouter);
 router.use(couponsRouter);
 router.use(adminBackupsRouter);
-router.use(proGuard, pronunciationRouter);
-router.use(proGuard, writingRouter);
+// PUBLIC (kendi auth'unu yapan) router'lar — proGuard'dan ÖNCE mount et
+// Çünkü router.use(proGuard, X) path-less mount'tur ve middleware HER request'te
+// çalışır; chatbot /chat'e ulaşmadan önce requireSubscription 401 atıyordu.
 router.use(marketingRouter);
 router.use(outreachRouter);
 router.use(chatbotRouter);
 router.use(chatbotEmbedRouter);
 router.use(activityRouter);
 router.use(featureSettingsRouter);
-router.use(proGuard, vocabGameRouter);
-router.use(proGuard, grammarCoachRouter);
 router.use(placementTestRouter);
-router.use(proGuard, simulationRouter);
 router.use(presenceRouter);
 router.use(notificationsRouter);
+router.use(corporateAiReportRouter);
+router.use(levelExamsRouter);
+
+// PRO (login + abonelik) router'lar — EN SONA, path-less proGuard mount'ları
+router.use(proGuard, pronunciationRouter);
+router.use(proGuard, writingRouter);
+router.use(proGuard, vocabGameRouter);
+router.use(proGuard, grammarCoachRouter);
+router.use(proGuard, simulationRouter);
 router.use(proGuard, interviewRouter);
 router.use(proGuard, presentationRouter);
 router.use(proGuard, aiQuizRouter);
 router.use(proGuard, tutorRouter);
 router.use(proGuard, learningPathRouter);
-router.use(corporateAiReportRouter);
-router.use(levelExamsRouter);
 
 export default router;
