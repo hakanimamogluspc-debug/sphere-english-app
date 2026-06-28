@@ -87,17 +87,22 @@ router.post("/chat", async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Kullanıcı mesajı bulunamadı." });
     }
 
-    // Aktif FAQ'leri çek
-    const faqs = await db
-      .select({
-        question: chatbotFaqsTable.question,
-        answer: chatbotFaqsTable.answer,
-        category: chatbotFaqsTable.category,
-      })
-      .from(chatbotFaqsTable)
-      .where(eq(chatbotFaqsTable.isActive, true))
-      .orderBy(desc(chatbotFaqsTable.sortOrder))
-      .limit(50);
+    // Aktif FAQ'leri çek (tablo yoksa boş array ile devam et)
+    let faqs: any[] = [];
+    try {
+      faqs = await db
+        .select({
+          question: chatbotFaqsTable.question,
+          answer: chatbotFaqsTable.answer,
+          category: chatbotFaqsTable.category,
+        })
+        .from(chatbotFaqsTable)
+        .where(eq(chatbotFaqsTable.isActive, true))
+        .orderBy(desc(chatbotFaqsTable.sortOrder))
+        .limit(50);
+    } catch (faqErr: any) {
+      console.warn("[chatbot] FAQ select fail (boş ile devam):", faqErr?.message);
+    }
 
     const systemPrompt = buildSystemPrompt(faqs);
 
@@ -219,7 +224,12 @@ router.post("/chat", async (req: Request, res: Response) => {
       capturedLead: capturedLead?.email ? { email: capturedLead.email } : null,
     });
   } catch (err: any) {
-    console.error("[chatbot] error:", err?.message ?? err);
+    console.error("[chatbot] CRASH:", err?.message, err?.stack?.slice(0, 500));
+    // Sentry'ye gönder (varsa)
+    try {
+      const { captureException } = await import("../lib/sentry.js");
+      captureException(err, { route: "/chat", body: req.body });
+    } catch {}
     setChatbotCors(res, req);
     return res.status(500).json({ error: "Asistan şu an cevap veremiyor. Lütfen birazdan tekrar deneyin." });
   }
