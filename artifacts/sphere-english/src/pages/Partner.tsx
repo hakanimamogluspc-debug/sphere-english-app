@@ -42,11 +42,22 @@ export default function Partner() {
   const [bank, setBank] = useState({ tcNumber: "", iban: "", bankName: "", accountHolderName: "" });
   const [bankSaving, setBankSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [debugInfo, setDebugInfo] = useState<any>(null);
 
   async function load() {
     try {
       setLoading(true);
+      // Login user bilgisini de al — teşhis için
+      let meUser: any = null;
+      try {
+        const userRes = await fetch(`${API}/users/me`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem(TOKEN_KEY)}` },
+        });
+        meUser = userRes.ok ? await userRes.json() : { error: userRes.status };
+      } catch (e: any) { meUser = { error: e.message }; }
+
       const meData = await apiFetch("/affiliate/me");
+      setDebugInfo({ user: meUser, affiliateResp: meData });
       setAff(meData.affiliate);
       if (meData.affiliate && meData.affiliate.status === "active") {
         const [s, c, p] = await Promise.all([
@@ -113,19 +124,58 @@ export default function Partner() {
   // Henüz başvurmamış → /partner/apply'a yönlendir
   if (!aff) {
     return (
-      <div className="max-w-2xl mx-auto py-12 px-6 text-center">
-        <Award size={56} className="text-blue-700 mx-auto mb-4" />
-        <h1 className="text-3xl font-bold mb-3">Sphere Partner Programı</h1>
-        <p className="text-slate-600 mb-6">
-          Sphere'i sevdiğin kişilere öner, satışlardan komisyon kazan.
-          <strong> %20 ilk ödeme + %10 yenileme (12 ay)</strong>.
-        </p>
-        <Link
-          href="/partner/apply"
-          className="inline-flex items-center gap-2 bg-blue-700 text-white px-6 py-3 rounded-lg hover:bg-blue-800"
-        >
-          <Sparkles size={18} /> Hemen Başvur
-        </Link>
+      <div className="max-w-3xl mx-auto py-12 px-6">
+        <div className="text-center mb-8">
+          <Award size={56} className="text-blue-700 mx-auto mb-4" />
+          <h1 className="text-3xl font-bold mb-3">Sphere Partner Programı</h1>
+          <p className="text-slate-600 mb-6">
+            Sphere'i sevdiğin kişilere öner, satışlardan komisyon kazan.
+            <strong> %20 ilk ödeme + %10 yenileme (12 ay)</strong>.
+          </p>
+          <Link
+            href="/partner/apply"
+            className="inline-flex items-center gap-2 bg-blue-700 text-white px-6 py-3 rounded-lg hover:bg-blue-800"
+          >
+            <Sparkles size={18} /> Hemen Başvur
+          </Link>
+        </div>
+
+        {/* TEŞHİS — kullanıcı bağı sorununu görmek için */}
+        {debugInfo && (
+          <details className="bg-slate-50 border border-slate-200 rounded-lg p-4 mt-8 text-xs" open>
+            <summary className="font-semibold cursor-pointer text-slate-700">
+              🔍 Teşhis bilgisi (admin'e gönder)
+            </summary>
+            <div className="mt-3 space-y-2 font-mono text-[11px]">
+              <div>
+                <strong>Login user:</strong>{" "}
+                {debugInfo.user?.id ? (
+                  <>id={debugInfo.user.id} · email={debugInfo.user.email} · role={debugInfo.user.role}</>
+                ) : (
+                  <span className="text-red-600">YOK ({JSON.stringify(debugInfo.user)})</span>
+                )}
+              </div>
+              <div>
+                <strong>/affiliate/me dönen affiliate:</strong>{" "}
+                {debugInfo.affiliateResp?.affiliate ? (
+                  <>id={debugInfo.affiliateResp.affiliate.id} · status={debugInfo.affiliateResp.affiliate.status}</>
+                ) : (
+                  <span className="text-red-600">null (kayıt bulunamadı)</span>
+                )}
+              </div>
+              <div className="pt-2 border-t border-slate-200 text-slate-500">
+                Tahmini sorun:{" "}
+                {!debugInfo.user?.id
+                  ? "Login token bozuk — çıkış yapıp tekrar giriş yap"
+                  : debugInfo.user.role !== "partner"
+                  ? `Role hâlâ "${debugInfo.user.role}" — eski token. Çıkış yap → tekrar login.`
+                  : !debugInfo.affiliateResp?.affiliate
+                  ? "Affiliate kaydı bulunamadı. Admin panelden 'Kullanıcı Bağı'nı kontrol et."
+                  : "Bilinmeyen"}
+              </div>
+            </div>
+          </details>
+        )}
       </div>
     );
   }
