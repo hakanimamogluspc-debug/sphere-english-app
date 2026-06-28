@@ -11,6 +11,7 @@
  */
 
 import { attributeEbookSale } from "../lib/affiliate.js";
+import { recordRedemption } from "../lib/coupon.js";
 import { Router, Request, Response } from "express";
 import crypto from "node:crypto";
 import { sql } from "drizzle-orm";
@@ -62,6 +63,8 @@ router.post("/internal/ebook-purchase/pre-create", async (req: Request, res: Res
     billingDistrict,
     billingPostalCode,
     affiliateCode,
+    couponCode,
+    couponDiscountKurus,
   } = (req.body ?? {}) as any;
 
   if (!ebookId || !buyerEmail || !iyzicoConversationId) {
@@ -102,6 +105,7 @@ router.post("/internal/ebook-purchase/pre-create", async (req: Request, res: Res
           billing_city = ${billingCity ?? null},
           billing_district = ${billingDistrict ?? null},
           billing_postal_code = ${billingPostalCode ?? null},
+          coupon_discount_kurus = ${couponDiscountKurus ?? null},
           updated_at = NOW()
         WHERE id = ${existingRow.id}
       `);
@@ -117,7 +121,8 @@ router.post("/internal/ebook-purchase/pre-create", async (req: Request, res: Res
         amount_paid, currency,
         iyzico_conversation_id,
         payment_status, invoice_status,
-        download_count
+        download_count,
+        coupon_discount_kurus
       ) VALUES (
         ${ebookId}, ${userId}, ${buyerEmail.toLowerCase()}, ${buyerName ?? null}, ${buyerPhone ?? null},
         ${invoiceType ?? "individual"}, ${taxId ?? null}, ${taxOffice ?? null}, ${companyName ?? null},
@@ -125,11 +130,22 @@ router.post("/internal/ebook-purchase/pre-create", async (req: Request, res: Res
         ${amountPaid ?? 0}, ${currency ?? "TRY"},
         ${iyzicoConversationId},
         'pending', 'pending',
-        0
+        0,
+        ${couponDiscountKurus ?? null}
       )
       RETURNING id
     `);
     const purchaseId = ((inserted.rows ?? inserted)[0] as any)?.id;
+    // Coupon ID'yi e-postaya kayıt için ek update
+    if (couponCode && purchaseId) {
+      try {
+        const cRows = await db.execute(sql`SELECT id FROM coupons WHERE code = ${couponCode} LIMIT 1`);
+        const cId = ((cRows.rows ?? cRows)[0] as any)?.id;
+        if (cId) {
+          await db.execute(sql`UPDATE ebook_purchases SET coupon_id = ${cId} WHERE id = ${purchaseId}`);
+        }
+      } catch {}
+    }
     console.info(`[EBOOK-PURCHASE] Pre-create: purchaseId=${purchaseId} buyer=${buyerEmail} conv=${iyzicoConversationId}`);
     return res.json({ ok: true, purchaseId });
   } catch (e: any) {
@@ -187,6 +203,31 @@ router.post("/internal/ebook-purchase/activate", async (req: Request, res: Respo
       const updatedRow = (upd.rows ?? upd)[0] as any;
       if (updatedRow) {
         console.info(`[EBOOK-PURCHASE] Activate: purchaseId=${updatedRow.id} buyer=${buyerEmail}`);
+        // Coupon redemption record (varsa)
+        try {
+          const cRows = await db.execute(sql`
+            SELECT coupon_id, coupon_discount_kurus, amount_paid FROM ebook_purchases WHERE id = ${updatedRow.id} LIMIT 1
+          `);
+          const purchaseRow = ((cRows.rows ?? cRows)[0] as any);
+          if (purchaseRow?.coupon_id && purchaseRow.coupon_discount_kurus) {
+            const finalKurus = Math.round(Number(purchaseRow.amount_paid ?? 0) * 100);
+            const discountKurus = Number(purchaseRow.coupon_discount_kurus);
+            await recordRedemption({
+              couponId: purchaseRow.coupon_id,
+              userId: null,
+              sourceType: "ebook",
+              sourceId: Number(updatedRow.id),
+              buyerEmail,
+              originalAmountKurus: finalKurus + discountKurus,
+              discountKurus,
+              finalAmountKurus: finalKurus,
+              conversationId: iyzicoConversationId ?? null,
+            });
+            console.info(`[EBOOK-PURCHASE] Coupon redeemed: ${discountKurus} kurus indirim`);
+          }
+        } catch (cErr: any) {
+          console.error("[EBOOK-PURCHASE] coupon redeem HATA:", cErr?.message);
+        }
         // Affiliate attribution + commission
         if (affiliateCode) {
           try {
