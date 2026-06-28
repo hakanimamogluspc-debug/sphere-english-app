@@ -173,8 +173,8 @@ router.get("/affiliate/me", authMiddleware, async (req: AuthRequest, res: Respon
           FROM affiliates
           WHERE LOWER(email) = LOWER(${userEmail})
           ORDER BY
-            CASE WHEN user_id IS NULL THEN 0 ELSE 1 END,
-            CASE WHEN status = 'active' THEN 0 WHEN status = 'pending' THEN 1 ELSE 2 END,
+            CASE WHEN status = 'active' THEN 0 WHEN status = 'pending' THEN 1 WHEN status = 'rejected' THEN 3 ELSE 2 END,
+            CASE WHEN user_id IS NOT NULL THEN 0 ELSE 1 END,
             created_at DESC
           LIMIT 1
         `);
