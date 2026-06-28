@@ -1,3 +1,4 @@
+import { initSentry } from "./lib/sentry";
 import { createRoot } from "react-dom/client";
 import { setBaseUrl } from "@workspace/api-client-react";
 import App from "./App";
@@ -11,3 +12,5 @@ if (apiUrl) {
 }
 
 createRoot(document.getElementById("root")!).render(<App />);
+
+initSentry();

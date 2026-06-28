@@ -5,7 +5,7 @@ NODE_ENV = "production"
 PORT = "3000"
 
 [phases.setup]
-nixPkgs = ["nodejs_20", "ffmpeg"]
+nixPkgs = ["nodejs_20", "ffmpeg", "postgresql_16"]
 cmds = ["npm install -g pnpm@9"]
 
 [phases.install]

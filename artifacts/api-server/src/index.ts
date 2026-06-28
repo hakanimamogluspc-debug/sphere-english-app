@@ -1,3 +1,5 @@
+import { initSentry } from "./lib/sentry.js";
+import { startBackupCron } from "./lib/db-backup.js";
 import cluster from "node:cluster";
 import os from "node:os";
 import app from "./app";
@@ -1130,3 +1132,7 @@ if (cluster.isPrimary) {
   process.on("SIGTERM", () => shutdown("SIGTERM"));
   process.on("SIGINT",  () => shutdown("SIGINT"));
 }
+
+// ── Background services ──
+initSentry().catch(() => {});
+startBackupCron();
