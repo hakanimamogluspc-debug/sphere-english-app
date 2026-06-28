@@ -270,12 +270,13 @@ async function triggerAiReply(threadId: number, senderId: string, text: string):
   fetchUserProfile(senderId)
     .then((profile) => {
       if (profile?.username) {
+        // Conditional SET — COALESCE(NULL param, col) Postgres tip belirsizliği yaratıyor
+        const sets: any[] = [sql`ig_username = ${String(profile.username)}`];
+        if (profile.name) sets.push(sql`ig_full_name = ${String(profile.name)}`);
+        if (profile.profilePicUrl) sets.push(sql`profile_pic_url = ${String(profile.profilePicUrl)}`);
+        sets.push(sql`updated_at = NOW()`);
         return db.execute(sql`
-          UPDATE instagram_threads SET
-            ig_username = COALESCE(${profile.username}, ig_username),
-            ig_full_name = COALESCE(${profile.name ?? null}, ig_full_name),
-            profile_pic_url = COALESCE(${profile.profilePicUrl ?? null}, profile_pic_url),
-            updated_at = NOW()
+          UPDATE instagram_threads SET ${sql.join(sets, sql`, `)}
           WHERE id = ${threadId}
         `);
       }

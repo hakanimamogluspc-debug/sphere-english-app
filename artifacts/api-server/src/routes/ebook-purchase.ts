@@ -315,15 +315,27 @@ router.post("/internal/ebook-purchase/mark-failed", async (req: Request, res: Re
   }
 
   try {
-    await db.execute(sql`
-      UPDATE ebook_purchases SET
-        payment_status = 'failed',
-        iyzico_payment_id = COALESCE(${iyzicoPaymentId ?? null}, iyzico_payment_id),
-        payment_error = ${paymentError ?? null},
-        updated_at = NOW()
-      WHERE iyzico_conversation_id = ${iyzicoConversationId}
-        AND payment_status = 'pending'
-    `);
+    // iyzico_payment_id null gelirse COALESCE bug'ı tetiklenir — conditional SET
+    if (iyzicoPaymentId) {
+      await db.execute(sql`
+        UPDATE ebook_purchases SET
+          payment_status = 'failed',
+          iyzico_payment_id = ${String(iyzicoPaymentId)},
+          payment_error = ${paymentError ?? null},
+          updated_at = NOW()
+        WHERE iyzico_conversation_id = ${iyzicoConversationId}
+          AND payment_status = 'pending'
+      `);
+    } else {
+      await db.execute(sql`
+        UPDATE ebook_purchases SET
+          payment_status = 'failed',
+          payment_error = ${paymentError ?? null},
+          updated_at = NOW()
+        WHERE iyzico_conversation_id = ${iyzicoConversationId}
+          AND payment_status = 'pending'
+      `);
+    }
     return res.json({ ok: true });
   } catch (e: any) {
     console.error("[EBOOK-PURCHASE] mark-failed HATA:", e?.message);

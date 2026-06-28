@@ -129,9 +129,10 @@ router.post(
       // Postgres array literal: {"v1","v2","v3"} — Drizzle ${array} interpolation
       // tuple cast'e dönüştüğü için doğrudan string literal olarak veriyoruz.
       const appliesLiteral = `{${appliesArr.map((s: any) => `"${String(s).replace(/[\\"]/g, (m) => "\\" + m)}"`).join(",")}}`;
-      // Tarih dönüşümü — datetime-local "2026-08-31T02:27" formatı gelirse Z eklemiyoruz; Postgres yerel parse eder.
+      // Tarih dönüşümü — null param + ::TIMESTAMPTZ cast Postgres'te tip belirsizliği yaratır.
+      // Null durumda SQL'de doğrudan NULL literal kullan.
       const validFromVal: string = validFrom ? String(validFrom) : new Date().toISOString();
-      const validUntilVal: string | null = validUntil ? String(validUntil) : null;
+      const validUntilSql = validUntil ? sql`${String(validUntil)}::TIMESTAMPTZ` : sql`NULL`;
 
       const inserted = await db.execute(sql`
         INSERT INTO coupons (
@@ -142,7 +143,7 @@ router.post(
           ${normCode}, ${description ?? null}, ${discountType}, ${Number(discountValue)},
           ${appliesLiteral}::TEXT[],
           ${Number(minPurchaseKurus ?? 0)}, ${maxUses ?? null}, ${Number(maxUsesPerUser ?? 1)},
-          ${validFromVal}::TIMESTAMPTZ, ${validUntilVal}::TIMESTAMPTZ,
+          ${validFromVal}::TIMESTAMPTZ, ${validUntilSql},
           TRUE, ${adminId ?? null}, ${notes ?? null}
         )
         RETURNING id, code
@@ -179,7 +180,10 @@ router.patch(
       if (body.minPurchaseKurus !== undefined) sets.push(sql`min_purchase_kurus = ${Number(body.minPurchaseKurus)}`);
       if (body.maxUses !== undefined) sets.push(sql`max_uses = ${body.maxUses === null ? null : Number(body.maxUses)}`);
       if (body.maxUsesPerUser !== undefined) sets.push(sql`max_uses_per_user = ${Number(body.maxUsesPerUser)}`);
-      if (body.validUntil !== undefined) sets.push(sql`valid_until = ${body.validUntil ? String(body.validUntil) : null}::TIMESTAMPTZ`);
+      if (body.validUntil !== undefined) {
+        if (body.validUntil) sets.push(sql`valid_until = ${String(body.validUntil)}::TIMESTAMPTZ`);
+        else sets.push(sql`valid_until = NULL`);
+      }
       if (body.isActive !== undefined) sets.push(sql`is_active = ${!!body.isActive}`);
       if (body.notes !== undefined) sets.push(sql`notes = ${body.notes}`);
       if (sets.length === 0) return res.status(400).json({ error: "Güncellenecek alan yok" });

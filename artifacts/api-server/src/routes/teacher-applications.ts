@@ -223,19 +223,30 @@ router.patch(
       return res.status(400).json({ error: "Geçersiz status" });
     }
     try {
+      // Conditional SET — Postgres "could not determine data type of parameter"
+      // bug'ını önlemek için COALESCE(NULL, ...) kullanmıyoruz.
+      const sets: any[] = [];
+      if (status) {
+        sets.push(sql`status = ${status}`);
+        sets.push(sql`reviewed_at = NOW()`);
+      }
+      if (adminNotes !== undefined) sets.push(sql`admin_notes = ${adminNotes ?? null}`);
+      sets.push(sql`reviewed_by = ${req.userId ?? null}`);
+      sets.push(sql`updated_at = NOW()`);
+
+      if (sets.length === 2 /* sadece reviewed_by + updated_at */) {
+        return res.status(400).json({ error: "Güncellenecek alan yok" });
+      }
+
       await db.execute(sql`
         UPDATE teacher_applications
-        SET status = COALESCE(${status ?? null}, status),
-            admin_notes = COALESCE(${adminNotes ?? null}, admin_notes),
-            reviewed_by = ${req.userId ?? null},
-            reviewed_at = CASE WHEN ${status ?? null} IS NOT NULL THEN NOW() ELSE reviewed_at END,
-            updated_at = NOW()
+        SET ${sql.join(sets, sql`, `)}
         WHERE id = ${id}
       `);
       return res.json({ ok: true });
     } catch (e: any) {
-      console.error("[TEACHER-APP] patch HATA:", e?.message);
-      return res.status(500).json({ error: "Güncellenemedi" });
+      console.error("[TEACHER-APP] patch HATA:", { message: e?.message, code: e?.code, detail: e?.detail });
+      return res.status(500).json({ error: e?.message || "Güncellenemedi" });
     }
   },
 );

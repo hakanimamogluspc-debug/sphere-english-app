@@ -280,13 +280,17 @@ router.patch("/affiliate/me/bank", authMiddleware, async (req: AuthRequest, res:
 
     const normIban = iban ? String(iban).replace(/\s/g, "").toUpperCase() : null;
 
+    // Conditional SET — COALESCE(NULL, col) Postgres'te tip belirleyemiyor
+    const sets: any[] = [];
+    if (tcNumber) sets.push(sql`tc_number = ${String(tcNumber)}`);
+    if (normIban) sets.push(sql`iban = ${normIban}`);
+    if (bankName) sets.push(sql`bank_name = ${String(bankName)}`);
+    if (accountHolderName) sets.push(sql`account_holder_name = ${String(accountHolderName)}`);
+    if (sets.length === 0) return res.status(400).json({ error: "Güncellenecek alan yok" });
+    sets.push(sql`updated_at = NOW()`);
+
     await db.execute(sql`
-      UPDATE affiliates SET
-        tc_number = COALESCE(${tcNumber ?? null}, tc_number),
-        iban = COALESCE(${normIban}, iban),
-        bank_name = COALESCE(${bankName ?? null}, bank_name),
-        account_holder_name = COALESCE(${accountHolderName ?? null}, account_holder_name),
-        updated_at = NOW()
+      UPDATE affiliates SET ${sql.join(sets, sql`, `)}
       WHERE user_id = ${userId}
     `);
     return res.json({ ok: true });

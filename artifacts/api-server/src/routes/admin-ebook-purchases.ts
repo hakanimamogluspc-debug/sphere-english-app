@@ -175,18 +175,23 @@ router.patch(
       // Otomatik invoice_issued_at: status 'issued'/'sent' olduğunda set et
       let issuedAtSql = sql`invoice_issued_at`;
       if (invoiceIssuedAt) {
-        issuedAtSql = sql`${invoiceIssuedAt}::TIMESTAMPTZ`;
+        issuedAtSql = sql`${String(invoiceIssuedAt)}::TIMESTAMPTZ`;
       } else if (invoiceStatus === "issued" || invoiceStatus === "sent") {
         issuedAtSql = sql`COALESCE(invoice_issued_at, NOW())`;
       }
 
+      // Conditional SET — COALESCE(NULL param, col) Postgres'te tip belirleyemiyor
+      const sets: any[] = [];
+      if (invoiceStatus) sets.push(sql`invoice_status = ${String(invoiceStatus)}`);
+      if (invoiceNumber !== undefined && invoiceNumber !== null)
+        sets.push(sql`invoice_number = ${String(invoiceNumber)}`);
+      if (invoiceNotes !== undefined && invoiceNotes !== null)
+        sets.push(sql`invoice_notes = ${String(invoiceNotes)}`);
+      sets.push(sql`invoice_issued_at = ${issuedAtSql}`);
+      sets.push(sql`updated_at = NOW()`);
+
       await db.execute(sql`
-        UPDATE ebook_purchases SET
-          invoice_status = COALESCE(${invoiceStatus ?? null}, invoice_status),
-          invoice_number = COALESCE(${invoiceNumber ?? null}, invoice_number),
-          invoice_notes = COALESCE(${invoiceNotes ?? null}, invoice_notes),
-          invoice_issued_at = ${issuedAtSql},
-          updated_at = NOW()
+        UPDATE ebook_purchases SET ${sql.join(sets, sql`, `)}
         WHERE id = ${id}
       `);
 
