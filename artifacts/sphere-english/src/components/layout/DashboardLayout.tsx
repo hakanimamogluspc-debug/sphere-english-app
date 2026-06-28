@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   BookOpen, LayoutDashboard, Video, FileQuestion, LineChart,
   Award, MessageSquare, Users, Megaphone, LogOut, Menu, Building2, BarChart3, GraduationCap, Mic, MessageCircle, FolderOpen, PenLine, TrendingUp, Settings2, Gamepad2, Crown, Lock,
-  Sparkles, ChevronDown, Brain, Briefcase, Presentation, Wand2, Compass, Bot, Activity, UserPlus, ShoppingBag, Phone, UserCircle
+  Sparkles, ChevronDown, Brain, Briefcase, Presentation, Wand2, Compass, Bot, Activity, UserPlus, ShoppingBag, Phone, UserCircle, Ticket
 } from "lucide-react";
 import { Avatar } from "../ui/core";
 import { NotificationBell } from "../NotificationBell";
@@ -115,6 +115,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       { name: 'Instagram Bot',       href: '/admin/instagram-bot',            icon: MessageCircle },
       { name: 'WhatsApp Bot',        href: '/admin/whatsapp-bot',             icon: Phone },
       { name: 'Affiliate Program',   href: '/admin/affiliates',               icon: Award },
+      { name: 'Kupon Kodları',       href: '/admin/coupons',                  icon: Ticket },
       { name: 'Modül Yönetimi',      href: '/admin/modules',                  icon: Settings2 },
       { name: 'Abonelikler',         href: '/admin/subscriptions',            icon: Crown },
       { name: 'Kelime Oyunu 🎮',     href: '/student/vocab-game',             icon: Gamepad2 },

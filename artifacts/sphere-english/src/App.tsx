@@ -45,6 +45,7 @@ const WebAnalytics        = lazy(() => import("./pages/admin/WebAnalytics"));
 const AdminInstagramBot   = lazy(() => import("./pages/admin/AdminInstagramBot"));
 const AdminWhatsAppBot    = lazy(() => import("./pages/admin/AdminWhatsAppBot"));
 const AdminAffiliates     = lazy(() => import("./pages/admin/AdminAffiliates"));
+const AdminCoupons        = lazy(() => import("./pages/admin/AdminCoupons"));
 const Partner             = lazy(() => import("./pages/Partner"));
 const PartnerApply        = lazy(() => import("./pages/PartnerApply"));
 const AdminChatbotFaqs    = lazy(() => import("./pages/admin/ChatbotFaqs"));
@@ -275,6 +276,7 @@ function Router() {
         <Route path="/admin/instagram-bot"><LayoutWrapper component={AdminInstagramBot} allowedRoles={['admin']} /></Route>
         <Route path="/admin/whatsapp-bot"><LayoutWrapper component={AdminWhatsAppBot} allowedRoles={['admin']} /></Route>
         <Route path="/admin/affiliates"><LayoutWrapper component={AdminAffiliates} allowedRoles={['admin']} /></Route>
+        <Route path="/admin/coupons"><LayoutWrapper component={AdminCoupons} allowedRoles={['admin']} /></Route>
         <Route path="/partner/apply"><LayoutWrapper component={PartnerApply} /></Route>
         <Route path="/partner"><LayoutWrapper component={Partner} /></Route>
         <Route path="/admin/chatbot"><LayoutWrapper component={AdminChatbotFaqs} allowedRoles={['admin']} /></Route>

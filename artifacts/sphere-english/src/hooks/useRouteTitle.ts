@@ -87,6 +87,7 @@ const ROUTE_TITLES: RouteTitleEntry[] = [
   { prefix: '/admin/instagram-bot', title: 'Instagram Bot — Admin' },
   { prefix: '/admin/whatsapp-bot', title: 'WhatsApp Bot — Admin' },
   { prefix: '/admin/affiliates', title: 'Affiliate Program — Admin' },
+  { prefix: '/admin/coupons', title: 'Kupon Kodları — Admin' },
   { prefix: '/partner/apply', title: 'Partner Başvurusu' },
   { prefix: '/partner', title: 'Partner Paneli' },
   { prefix: '/admin/reports', title: 'Sistem Raporları — Admin' },
