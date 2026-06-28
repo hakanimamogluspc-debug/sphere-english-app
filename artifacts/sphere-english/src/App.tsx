@@ -327,4 +327,14 @@ function App() {
                 <HeartbeatProvider>
                   <Router />
                 </HeartbeatProvider>
-              </Subscrip
+              </SubscriptionProvider>
+            </AuthProvider>
+          </WouterRouter>
+          <Toaster />
+        </TooltipProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
+  );
+}
+
+export default App;
