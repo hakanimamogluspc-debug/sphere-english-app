@@ -146,7 +146,7 @@ router.post(
   async (req: AuthRequest, res: Response) => {
     try {
       const id = parseInt(req.params.id ?? "", 10);
-      const adminId = req.user?.id;
+      const adminId = req.userId;
       if (!id) return res.status(400).json({ error: "id geçersiz" });
 
       await db.execute(sql`
@@ -359,7 +359,7 @@ router.post(
     try {
       const payoutId = parseInt(req.params.payoutId ?? "", 10);
       const { paymentReference, notes } = (req.body ?? {}) as any;
-      const adminId = req.user?.id;
+      const adminId = req.userId;
       if (!payoutId) return res.status(400).json({ error: "payoutId geçersiz" });
 
       // Payout'u paid yap

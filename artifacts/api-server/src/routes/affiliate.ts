@@ -142,7 +142,7 @@ router.post("/affiliate/apply", async (req: Request, res: Response) => {
 // ─── AUTH: Affiliate kaydımı getir ──────────────────────────────────────
 router.get("/affiliate/me", authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
-    const userId = req.user?.id;
+    const userId = req.userId;
     if (!userId) return res.status(401).json({ error: "auth" });
 
     // Önce user_id ile dene
@@ -200,7 +200,7 @@ router.get("/affiliate/me", authMiddleware, async (req: AuthRequest, res: Respon
 // ─── AUTH: Stats ────────────────────────────────────────────────────────
 router.get("/affiliate/me/stats", authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
-    const userId = req.user?.id;
+    const userId = req.userId;
     const aRows = await db.execute(sql`
       SELECT id FROM affiliates WHERE user_id = ${userId} AND status = 'active' LIMIT 1
     `);
@@ -217,7 +217,7 @@ router.get("/affiliate/me/stats", authMiddleware, async (req: AuthRequest, res: 
 // ─── AUTH: Komisyonlar ──────────────────────────────────────────────────
 router.get("/affiliate/me/commissions", authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
-    const userId = req.user?.id;
+    const userId = req.userId;
     const limit = Math.min(parseInt(String(req.query?.limit ?? "100"), 10) || 100, 500);
 
     const aRows = await db.execute(sql`
@@ -244,7 +244,7 @@ router.get("/affiliate/me/commissions", authMiddleware, async (req: AuthRequest,
 // ─── AUTH: Ödeme geçmişi ────────────────────────────────────────────────
 router.get("/affiliate/me/payouts", authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
-    const userId = req.user?.id;
+    const userId = req.userId;
     const aRows = await db.execute(sql`
       SELECT id FROM affiliates WHERE user_id = ${userId} LIMIT 1
     `);
@@ -268,7 +268,7 @@ router.get("/affiliate/me/payouts", authMiddleware, async (req: AuthRequest, res
 // ─── AUTH: IBAN/TC güncelle ─────────────────────────────────────────────
 router.patch("/affiliate/me/bank", authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
-    const userId = req.user?.id;
+    const userId = req.userId;
     const { tcNumber, iban, bankName, accountHolderName } = (req.body ?? {}) as any;
 
     if (iban && !/^TR\d{24}$/.test(String(iban).replace(/\s/g, "").toUpperCase())) {
