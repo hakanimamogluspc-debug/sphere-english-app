@@ -8,8 +8,8 @@
     "./schema": "./src/schema/index.ts"
   },
   "scripts": {
-    "push": "drizzle-kit push --config ./drizzle.config.ts",
-    "push-force": "drizzle-kit push --force --config ./drizzle.config.ts"
+    "push": "echo '⚠️ Otomatik drizzle push devre dışı bırakıldı (veri kaybı önlemi). Manuel olarak çalıştırmak istersen: npx drizzle-kit push --config ./drizzle.config.ts' && exit 0",
+    "push-force": "echo '⚠️ drizzle push --force devre dışı (veri kaybı önlemi). Manuel: npx drizzle-kit push --force --config ./drizzle.config.ts' && exit 0"
   },
   "dependencies": {
     "drizzle-orm": "catalog:",
