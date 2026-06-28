@@ -44,6 +44,9 @@ const AdminMarketing      = lazy(() => import("./pages/admin/Marketing"));
 const WebAnalytics        = lazy(() => import("./pages/admin/WebAnalytics"));
 const AdminInstagramBot   = lazy(() => import("./pages/admin/AdminInstagramBot"));
 const AdminWhatsAppBot    = lazy(() => import("./pages/admin/AdminWhatsAppBot"));
+const AdminAffiliates     = lazy(() => import("./pages/admin/AdminAffiliates"));
+const Partner             = lazy(() => import("./pages/Partner"));
+const PartnerApply        = lazy(() => import("./pages/PartnerApply"));
 const AdminChatbotFaqs    = lazy(() => import("./pages/admin/ChatbotFaqs"));
 const MebReport           = lazy(() => import("./pages/admin/MebReport"));
 const AdminModules        = lazy(() => import("./pages/admin/AdminModules"));
@@ -271,6 +274,9 @@ function Router() {
         <Route path="/admin/web-analytics"><LayoutWrapper component={WebAnalytics} allowedRoles={['admin']} /></Route>
         <Route path="/admin/instagram-bot"><LayoutWrapper component={AdminInstagramBot} allowedRoles={['admin']} /></Route>
         <Route path="/admin/whatsapp-bot"><LayoutWrapper component={AdminWhatsAppBot} allowedRoles={['admin']} /></Route>
+        <Route path="/admin/affiliates"><LayoutWrapper component={AdminAffiliates} allowedRoles={['admin']} /></Route>
+        <Route path="/partner/apply"><LayoutWrapper component={PartnerApply} /></Route>
+        <Route path="/partner"><LayoutWrapper component={Partner} /></Route>
         <Route path="/admin/chatbot"><LayoutWrapper component={AdminChatbotFaqs} allowedRoles={['admin']} /></Route>
         <Route path="/admin/modules"><LayoutWrapper component={AdminModules} allowedRoles={['admin']} /></Route>
         <Route path="/admin/subscriptions"><LayoutWrapper component={AdminSubscriptions} allowedRoles={['admin']} /></Route>

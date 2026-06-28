@@ -28,6 +28,7 @@ import bcrypt from "bcryptjs";
 import { sql } from "drizzle-orm";
 import { db } from "@workspace/db";
 import { getPlan } from "../lib/plans.js";
+import { attributeSubscriptionSale } from "../lib/affiliate.js";
 import { sendWelcomeMail } from "../lib/subscription-mail.js";
 
 const SETUP_TOKEN_TTL_HOURS = 24;
@@ -137,6 +138,7 @@ router.post("/internal/payment/activate", async (req: Request, res: Response) =>
     iyzicoPaymentId,
     iyzicoConversationId,
     paidAt,
+    affiliateCode,
   } = (req.body ?? {}) as {
     email?: string;
     name?: string;
@@ -146,6 +148,7 @@ router.post("/internal/payment/activate", async (req: Request, res: Response) =>
     iyzicoPaymentId?: string;
     iyzicoConversationId?: string;
     paidAt?: string;
+    affiliateCode?: string;
   };
 
   if (!email || !planCode) {
@@ -268,6 +271,25 @@ router.post("/internal/payment/activate", async (req: Request, res: Response) =>
     `);
 
     console.info(`[INTERNAL] Abonelik aktive: user=${user.id} plan=${planCode}`);
+
+    // ── Affiliate attribution + commission ──
+    try {
+      const subIdRows = await db.execute(sql`
+        SELECT id FROM subscriptions WHERE user_id = ${user.id} LIMIT 1
+      `);
+      const subRow = (subIdRows.rows ?? subIdRows)[0] as any;
+      if (subRow && affiliateCode) {
+        const amountKurus = Math.round(Number(amount ?? plan.amount) * 100);
+        await attributeSubscriptionSale({
+          subscriptionId: Number(subRow.id),
+          userId: Number(user.id),
+          amountKurus,
+          affiliateCode,
+        });
+      }
+    } catch (affErr: any) {
+      console.error("[INTERNAL] affiliate attribution HATA:", affErr?.message);
+    }
 
     // ── Magic link + hoşgeldin mail (fire-and-forget) ──
     // Yeni kullanıcıya şifre belirleme linki, mevcut kullanıcıya sadece giriş bilgisi

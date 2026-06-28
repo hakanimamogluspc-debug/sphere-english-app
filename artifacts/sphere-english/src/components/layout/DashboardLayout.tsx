@@ -114,6 +114,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       { name: 'Chatbot (Sphere Asistan)', href: '/admin/chatbot',             icon: Bot },
       { name: 'Instagram Bot',       href: '/admin/instagram-bot',            icon: MessageCircle },
       { name: 'WhatsApp Bot',        href: '/admin/whatsapp-bot',             icon: Phone },
+      { name: 'Affiliate Program',   href: '/admin/affiliates',               icon: Award },
       { name: 'Modül Yönetimi',      href: '/admin/modules',                  icon: Settings2 },
       { name: 'Abonelikler',         href: '/admin/subscriptions',            icon: Crown },
       { name: 'Kelime Oyunu 🎮',     href: '/student/vocab-game',             icon: Gamepad2 },

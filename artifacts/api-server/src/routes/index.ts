@@ -60,6 +60,8 @@ import instagramWebhookRouter from "./instagram-webhook";
 import adminInstagramBotRouter from "./admin-instagram-bot";
 import whatsappWebhookRouter from "./whatsapp-webhook";
 import adminWhatsappBotRouter from "./admin-whatsapp-bot";
+import affiliateRouter from "./affiliate";
+import adminAffiliatesRouter from "./admin-affiliates";
 import { requireSubscription } from "../middlewares/require-subscription";
 import { authMiddleware } from "../middlewares/auth";
 
@@ -107,6 +109,8 @@ router.use(instagramWebhookRouter);
 router.use(adminInstagramBotRouter);
 router.use(whatsappWebhookRouter);
 router.use(adminWhatsappBotRouter);
+router.use(affiliateRouter);
+router.use(adminAffiliatesRouter);
 router.use(proGuard, pronunciationRouter);
 router.use(proGuard, writingRouter);
 router.use(marketingRouter);

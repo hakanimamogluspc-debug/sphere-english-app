@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 1080" width="1080" height="1080">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#065f46"/>
+      <stop offset="1" stop-color="#10b981"/>
+    </linearGradient>
+  </defs>
+  <rect width="1080" height="1080" fill="url(#g)"/>
+  <g fill="white" font-family="-apple-system,BlinkMacSystemFont,Inter,sans-serif">
+    <text x="540" y="380" font-size="58" font-weight="700" text-anchor="middle" opacity="0.85">SPHERE ENGLISH</text>
+    <text x="540" y="510" font-size="92" font-weight="800" text-anchor="middle">İş İngilizcesi</text>
+    <text x="540" y="610" font-size="92" font-weight="800" text-anchor="middle">AI Koçluğu</text>
+    <rect x="240" y="700" width="600" height="100" rx="50" fill="white"/>
+    <text x="540" y="765" font-size="42" font-weight="700" text-anchor="middle" fill="#065f46">7 GÜN ÜCRETSİZ DENE</text>
+    <text x="540" y="900" font-size="32" text-anchor="middle" opacity="0.9">www.sphereenglish.com</text>
+    <text x="540" y="950" font-size="26" text-anchor="middle" opacity="0.7">Partner kodumla giriş yap → ?ref=[KOD]</text>
+  </g>
+</svg>

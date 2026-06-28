@@ -10,6 +10,7 @@
  * Internal endpoint'ler HMAC X-Internal-Signature ile authenticate.
  */
 
+import { attributeEbookSale } from "../lib/affiliate.js";
 import { Router, Request, Response } from "express";
 import crypto from "node:crypto";
 import { sql } from "drizzle-orm";
@@ -60,6 +61,7 @@ router.post("/internal/ebook-purchase/pre-create", async (req: Request, res: Res
     billingCity,
     billingDistrict,
     billingPostalCode,
+    affiliateCode,
   } = (req.body ?? {}) as any;
 
   if (!ebookId || !buyerEmail || !iyzicoConversationId) {
@@ -185,6 +187,20 @@ router.post("/internal/ebook-purchase/activate", async (req: Request, res: Respo
       const updatedRow = (upd.rows ?? upd)[0] as any;
       if (updatedRow) {
         console.info(`[EBOOK-PURCHASE] Activate: purchaseId=${updatedRow.id} buyer=${buyerEmail}`);
+        // Affiliate attribution + commission
+        if (affiliateCode) {
+          try {
+            const amountKurus = Math.round(Number(amountPaid ?? 0) * 100);
+            await attributeEbookSale({
+              purchaseId: Number(updatedRow.id),
+              userId: null,
+              amountKurus,
+              affiliateCode,
+            });
+          } catch (affErr: any) {
+            console.error("[EBOOK-PURCHASE] affiliate attr HATA:", affErr?.message);
+          }
+        }
         // Mail gönder (fire-and-forget — response'u bloklamasın)
         sendPurchaseEmailFireForget(updatedRow.id).catch((e) => {
           console.error("[EBOOK-PURCHASE] mail fire-forget HATA:", e?.message);
@@ -217,6 +233,19 @@ router.post("/internal/ebook-purchase/activate", async (req: Request, res: Respo
     `);
     const newId = ((inserted.rows ?? inserted)[0] as any)?.id;
     console.info(`[EBOOK-PURCHASE] Activate (fallback INSERT): purchaseId=${newId} buyer=${buyerEmail}`);
+    if (affiliateCode && newId) {
+      try {
+        const amountKurus = Math.round(Number(amountPaid ?? 0) * 100);
+        await attributeEbookSale({
+          purchaseId: Number(newId),
+          userId,
+          amountKurus,
+          affiliateCode,
+        });
+      } catch (affErr: any) {
+        console.error("[EBOOK-PURCHASE] affiliate attr (fallback) HATA:", affErr?.message);
+      }
+    }
     if (newId) {
       sendPurchaseEmailFireForget(newId).catch((e) => {
         console.error("[EBOOK-PURCHASE] mail fire-forget HATA:", e?.message);
