@@ -29,6 +29,7 @@ import { sql } from "drizzle-orm";
 import { db } from "@workspace/db";
 import { getPlan } from "../lib/plans.js";
 import { attributeSubscriptionSale } from "../lib/affiliate.js";
+import { recordRedemption } from "../lib/coupon.js";
 import { sendWelcomeMail } from "../lib/subscription-mail.js";
 
 const SETUP_TOKEN_TTL_HOURS = 24;
@@ -77,6 +78,9 @@ router.post("/internal/subscription/pre-create", async (req: Request, res: Respo
     billingCity,
     billingDistrict,
     billingPostalCode,
+    couponCode,
+    couponDiscountKurus,
+    affiliateCode,
   } = (req.body ?? {}) as any;
 
   if (!conversationId || !planCode || !email) {
@@ -88,11 +92,13 @@ router.post("/internal/subscription/pre-create", async (req: Request, res: Respo
       INSERT INTO pending_subscription_drafts (
         conversation_id, plan_code, buyer_email, buyer_name, buyer_phone,
         invoice_type, tax_id, tax_office, company_name,
-        billing_address, billing_city, billing_district, billing_postal_code
+        billing_address, billing_city, billing_district, billing_postal_code,
+        coupon_code, coupon_discount_kurus, affiliate_code
       ) VALUES (
         ${conversationId}, ${planCode}, ${String(email).toLowerCase()}, ${name ?? null}, ${phone ?? null},
         ${invoiceType ?? "individual"}, ${taxId ?? null}, ${taxOffice ?? null}, ${companyName ?? null},
-        ${billingAddress ?? null}, ${billingCity ?? null}, ${billingDistrict ?? null}, ${billingPostalCode ?? null}
+        ${billingAddress ?? null}, ${billingCity ?? null}, ${billingDistrict ?? null}, ${billingPostalCode ?? null},
+        ${couponCode ?? null}, ${couponDiscountKurus ?? null}, ${affiliateCode ?? null}
       )
       ON CONFLICT (conversation_id) DO UPDATE SET
         plan_code = EXCLUDED.plan_code,
@@ -190,7 +196,7 @@ router.post("/internal/payment/activate", async (req: Request, res: Response) =>
       const draftRows = await db.execute(sql`
         SELECT invoice_type, tax_id, tax_office, company_name,
                billing_address, billing_city, billing_district, billing_postal_code,
-               buyer_phone
+               buyer_phone, coupon_code, coupon_discount_kurus, affiliate_code
         FROM pending_subscription_drafts
         WHERE conversation_id = ${iyzicoConversationId}
         LIMIT 1
@@ -272,19 +278,53 @@ router.post("/internal/payment/activate", async (req: Request, res: Response) =>
 
     console.info(`[INTERNAL] Abonelik aktive: user=${user.id} plan=${planCode}`);
 
+    // Coupon attribution + redemption
+    if (invoiceData?.coupon_code) {
+      try {
+        const cRows = await db.execute(sql`
+          SELECT id FROM coupons WHERE code = ${invoiceData.coupon_code} LIMIT 1
+        `);
+        const couponRow = ((cRows.rows ?? cRows)[0] as any);
+        if (couponRow) {
+          const originalKurus = Math.round(Number(plan.amount) * 100);
+          const discountKurus = Number(invoiceData.coupon_discount_kurus ?? 0);
+          const finalKurus = Math.round(Number(amount ?? plan.amount) * 100);
+          await db.execute(sql`
+            UPDATE subscriptions SET coupon_id = ${couponRow.id}, coupon_discount_kurus = ${discountKurus}
+            WHERE user_id = ${user.id}
+          `);
+          await recordRedemption({
+            couponId: couponRow.id,
+            userId: Number(user.id),
+            sourceType: "subscription",
+            sourceId: null,
+            buyerEmail: user.email,
+            originalAmountKurus: originalKurus,
+            discountKurus,
+            finalAmountKurus: finalKurus,
+            conversationId: iyzicoConversationId ?? null,
+          });
+          console.info(`[INTERNAL] Coupon redeemed: code=${invoiceData.coupon_code} discount=${discountKurus}`);
+        }
+      } catch (cErr: any) {
+        console.error("[INTERNAL] coupon redeem HATA:", cErr?.message);
+      }
+    }
+
     // ── Affiliate attribution + commission ──
     try {
       const subIdRows = await db.execute(sql`
         SELECT id FROM subscriptions WHERE user_id = ${user.id} LIMIT 1
       `);
       const subRow = (subIdRows.rows ?? subIdRows)[0] as any;
-      if (subRow && affiliateCode) {
+      const finalAffCode = affiliateCode ?? invoiceData?.affiliate_code ?? null;
+      if (subRow && finalAffCode) {
         const amountKurus = Math.round(Number(amount ?? plan.amount) * 100);
         await attributeSubscriptionSale({
           subscriptionId: Number(subRow.id),
           userId: Number(user.id),
           amountKurus,
-          affiliateCode,
+          affiliateCode: finalAffCode,
         });
       }
     } catch (affErr: any) {

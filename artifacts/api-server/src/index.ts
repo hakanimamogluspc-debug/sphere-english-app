@@ -720,6 +720,54 @@ async function runStartupMigrations() {
     `INSERT INTO feature_settings (key, label, is_enabled, visible_to, category) VALUES
       ('admin-affiliates', 'Affiliate Program', true, ARRAY['admin']::TEXT[], 'admin')
       ON CONFLICT (key) DO NOTHING`,
+    // ─── Coupons (Indirim Kuponları) ──────────────────────────────────────
+    `CREATE TABLE IF NOT EXISTS coupons (
+      id SERIAL PRIMARY KEY,
+      code VARCHAR(40) NOT NULL UNIQUE,
+      description TEXT,
+      discount_type VARCHAR(20) NOT NULL,
+      discount_value NUMERIC(10, 2) NOT NULL,
+      applies_to TEXT[] NOT NULL DEFAULT ARRAY['subscription_all','ebook']::TEXT[],
+      min_purchase_kurus BIGINT NOT NULL DEFAULT 0,
+      max_uses INTEGER,
+      max_uses_per_user INTEGER NOT NULL DEFAULT 1,
+      total_used_count INTEGER NOT NULL DEFAULT 0,
+      valid_from TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      valid_until TIMESTAMPTZ,
+      is_active BOOLEAN NOT NULL DEFAULT TRUE,
+      created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+      notes TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`,
+    `CREATE INDEX IF NOT EXISTS coupons_code_idx ON coupons(code)`,
+    `CREATE INDEX IF NOT EXISTS coupons_active_idx ON coupons(is_active, valid_until) WHERE is_active = TRUE`,
+    `CREATE TABLE IF NOT EXISTS coupon_redemptions (
+      id BIGSERIAL PRIMARY KEY,
+      coupon_id INTEGER NOT NULL REFERENCES coupons(id) ON DELETE CASCADE,
+      user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+      source_type VARCHAR(20) NOT NULL,
+      source_id INTEGER,
+      buyer_email VARCHAR(200),
+      original_amount_kurus BIGINT NOT NULL,
+      discount_kurus BIGINT NOT NULL,
+      final_amount_kurus BIGINT NOT NULL,
+      conversation_id VARCHAR(100),
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`,
+    `CREATE INDEX IF NOT EXISTS cr_coupon_idx ON coupon_redemptions(coupon_id, created_at DESC)`,
+    `CREATE INDEX IF NOT EXISTS cr_user_idx ON coupon_redemptions(user_id, coupon_id)`,
+    `CREATE INDEX IF NOT EXISTS cr_source_idx ON coupon_redemptions(source_type, source_id)`,
+    `ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS coupon_id INTEGER REFERENCES coupons(id) ON DELETE SET NULL`,
+    `ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS coupon_discount_kurus BIGINT`,
+    `ALTER TABLE ebook_purchases ADD COLUMN IF NOT EXISTS coupon_id INTEGER REFERENCES coupons(id) ON DELETE SET NULL`,
+    `ALTER TABLE ebook_purchases ADD COLUMN IF NOT EXISTS coupon_discount_kurus BIGINT`,
+    `ALTER TABLE pending_subscription_drafts ADD COLUMN IF NOT EXISTS coupon_code VARCHAR(40)`,
+    `ALTER TABLE pending_subscription_drafts ADD COLUMN IF NOT EXISTS coupon_discount_kurus BIGINT`,
+    `ALTER TABLE pending_subscription_drafts ADD COLUMN IF NOT EXISTS affiliate_code VARCHAR(40)`,
+    `INSERT INTO feature_settings (key, label, is_enabled, visible_to, category) VALUES
+      ('admin-coupons', 'Kupon Kodları', true, ARRAY['admin']::TEXT[], 'admin')
+      ON CONFLICT (key) DO NOTHING`,
     // İlk kitap seed — sadece yoksa ekle
     `INSERT INTO ebooks (
       slug, title, subtitle, description, long_description,
