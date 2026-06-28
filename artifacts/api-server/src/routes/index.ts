@@ -123,4 +123,10 @@ router.use(presenceRouter);
 router.use(notificationsRouter);
 router.use(proGuard, interviewRouter);
 router.use(proGuard, presentationRouter);
-router.use(proGuard, 
+router.use(proGuard, aiQuizRouter);
+router.use(proGuard, tutorRouter);
+router.use(proGuard, learningPathRouter);
+router.use(corporateAiReportRouter);
+router.use(levelExamsRouter);
+
+export default router;
