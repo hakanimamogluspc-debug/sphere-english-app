@@ -50,7 +50,7 @@ export default function Partner() {
       // Login user bilgisini de al — teşhis için
       let meUser: any = null;
       try {
-        const userRes = await fetch(`${API}/users/me`, {
+        const userRes = await fetch(`${API}/auth/me`, {
           headers: { Authorization: `Bearer ${localStorage.getItem(TOKEN_KEY)}` },
         });
         meUser = userRes.ok ? await userRes.json() : { error: userRes.status };

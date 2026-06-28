@@ -46,7 +46,7 @@ export default function PartnerApply() {
       let userId: number | null = null;
       if (token) {
         try {
-          const me = await fetch(`${API}/users/me`, {
+          const me = await fetch(`${API}/auth/me`, {
             headers: { Authorization: `Bearer ${token}` },
           }).then((r) => r.ok ? r.json() : null);
           userId = me?.id ?? null;
