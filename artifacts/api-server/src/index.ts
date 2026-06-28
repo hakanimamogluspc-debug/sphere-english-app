@@ -570,6 +570,59 @@ async function runStartupMigrations() {
     `ALTER TABLE instagram_comments ALTER COLUMN ig_parent_comment_id TYPE TEXT`,
     `ALTER TABLE instagram_comments ALTER COLUMN ig_media_id TYPE TEXT`,
     `ALTER TABLE instagram_comments ALTER COLUMN reply_ig_id TYPE TEXT`,
+    // ─── WhatsApp bot (Cloud API — DM AI cevap) ───────────────────────────
+    `CREATE TABLE IF NOT EXISTS whatsapp_threads (
+      id SERIAL PRIMARY KEY,
+      wa_phone_number VARCHAR(30) NOT NULL UNIQUE,
+      wa_profile_name VARCHAR(200),
+      last_message_text TEXT,
+      last_message_at TIMESTAMPTZ,
+      last_inbound_at TIMESTAMPTZ,
+      unread_count INTEGER NOT NULL DEFAULT 0,
+      is_blocked BOOLEAN NOT NULL DEFAULT FALSE,
+      bot_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+      escalated_at TIMESTAMPTZ,
+      escalation_reason TEXT,
+      first_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`,
+    `CREATE INDEX IF NOT EXISTS wa_threads_last_msg_idx ON whatsapp_threads(last_message_at DESC)`,
+    `CREATE INDEX IF NOT EXISTS wa_threads_unread_idx ON whatsapp_threads(unread_count, last_message_at DESC) WHERE unread_count > 0`,
+    `CREATE TABLE IF NOT EXISTS whatsapp_messages (
+      id BIGSERIAL PRIMARY KEY,
+      thread_id INTEGER NOT NULL REFERENCES whatsapp_threads(id) ON DELETE CASCADE,
+      wa_message_id TEXT UNIQUE,
+      direction VARCHAR(10) NOT NULL,
+      sender_phone VARCHAR(30) NOT NULL,
+      message_text TEXT,
+      message_type VARCHAR(20) DEFAULT 'text',
+      attachments JSONB DEFAULT '[]'::JSONB,
+      ai_generated BOOLEAN NOT NULL DEFAULT FALSE,
+      ai_confidence NUMERIC(4, 3),
+      ai_model VARCHAR(60),
+      ai_latency_ms INTEGER,
+      delivery_status VARCHAR(20) DEFAULT 'pending',
+      delivery_error TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      sent_at TIMESTAMPTZ
+    )`,
+    `CREATE INDEX IF NOT EXISTS wa_messages_thread_idx ON whatsapp_messages(thread_id, created_at DESC)`,
+    `CREATE INDEX IF NOT EXISTS wa_messages_direction_idx ON whatsapp_messages(direction, created_at DESC)`,
+    `CREATE TABLE IF NOT EXISTS whatsapp_bot_settings (
+      key VARCHAR(80) PRIMARY KEY,
+      value TEXT,
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`,
+    `INSERT INTO whatsapp_bot_settings (key, value) VALUES
+      ('bot_enabled', 'true'),
+      ('reply_to_dms', 'true'),
+      ('persona_name', 'Ezgi'),
+      ('persona_tone', 'samimi-pazarlama'),
+      ('escalation_keywords', 'şikayet,para iade,ücret iadesi,iptal et,müdürünüzle,avukat,dava açacağım,sahte,dolandırıcı,scam,fraud,refund')
+      ON CONFLICT (key) DO NOTHING`,
+    `INSERT INTO feature_settings (key, label, is_enabled, visible_to, category) VALUES
+      ('admin-whatsapp-bot', 'WhatsApp Bot', true, ARRAY['admin']::TEXT[], 'admin')
+      ON CONFLICT (key) DO NOTHING`,
     // İlk kitap seed — sadece yoksa ekle
     `INSERT INTO ebooks (
       slug, title, subtitle, description, long_description,
@@ -866,69 +919,4 @@ async function seedVocabWords() {
     const values: string[] = [];
     let idx = 1;
     for (const w of VOCAB_WORDS) {
-      placeholders.push(`($${idx}, $${idx + 1}, $${idx + 2}, $${idx + 3}, $${idx + 4})`);
-      values.push(w.word, w.turkish, w.imagePrompt, w.level, w.category);
-      idx += 5;
-    }
-    await pool.query(
-      `INSERT INTO vocab_words (word, turkish, image_prompt, level, category) VALUES ${placeholders.join(",")}`,
-      values
-    );
-    logger.info({ count: VOCAB_WORDS.length }, "Vocab words seeded successfully");
-  } catch (err: any) {
-    logger.warn({ err: err.message }, "Vocab word seeding skipped");
-  }
-}
-
-// ─── Cluster modu — tüm CPU çekirdeklerini kullan ────────────────────────────
-if (cluster.isPrimary) {
-  // Sadece primary süreç migration + seed çalıştırır
-  runStartupMigrations()
-    .then(() => seedDatabase())
-    .then(() => seedVocabWords())
-    .then(() => promoteAdminFromEnv())
-    .then(() => {
-      const numWorkers = Math.max(1, Math.min(os.cpus().length, 8));
-      logger.info({ workers: numWorkers, cpus: os.cpus().length }, "Cluster başlatılıyor");
-      for (let i = 0; i < numWorkers; i++) {
-        cluster.fork();
-      }
-      cluster.on("exit", (worker, code, signal) => {
-        logger.warn({ pid: worker.process.pid, code, signal }, "Worker düştü, yeniden başlatılıyor");
-        cluster.fork(); // Çöken worker'ı otomatik yeniden başlat
-      });
-    })
-    .catch((err) => {
-      logger.error({ err }, "Başlangıç hatası, sunucu kapatılıyor");
-      process.exit(1);
-    });
-} else {
-  // Worker süreçler sadece HTTP isteklerini dinler
-  const server = app.listen(port, "0.0.0.0", (err) => {
-    if (err) {
-      logger.error({ err }, "Port dinleme hatası");
-      process.exit(1);
-    }
-    logger.info({ port, pid: process.pid, worker: cluster.worker?.id }, "Worker hazır");
-  });
-
-  // ─── Graceful shutdown — deploy sırasında aktif istekleri kesmeden kapat ───
-  const shutdown = (signal: string) => {
-    logger.info({ signal, pid: process.pid }, "Kapatma sinyali alındı, yeni bağlantılar durduruldu");
-    server.close(() => {
-      logger.info({ pid: process.pid }, "HTTP server kapandı, DB pool temizleniyor");
-      pool.end().then(() => {
-        logger.info({ pid: process.pid }, "Temiz kapatma tamamlandı");
-        process.exit(0);
-      }).catch(() => process.exit(0));
-    });
-    // 15 saniyede kapanmazsa zorla kapat (takılı kalmayı önler)
-    setTimeout(() => {
-      logger.warn({ pid: process.pid }, "Graceful shutdown zaman aşımı, zorla kapatılıyor");
-      process.exit(1);
-    }, 15_000).unref();
-  };
-
-  process.on("SIGTERM", () => shutdown("SIGTERM"));
-  process.on("SIGINT",  () => shutdown("SIGINT"));
-}
+      placeholders.push(`($${idx}, $${idx + 1}, $${idx + 2}, $${idx + 3

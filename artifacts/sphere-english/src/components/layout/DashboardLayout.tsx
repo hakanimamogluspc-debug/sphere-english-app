@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   BookOpen, LayoutDashboard, Video, FileQuestion, LineChart,
   Award, MessageSquare, Users, Megaphone, LogOut, Menu, Building2, BarChart3, GraduationCap, Mic, MessageCircle, FolderOpen, PenLine, TrendingUp, Settings2, Gamepad2, Crown, Lock,
-  Sparkles, ChevronDown, Brain, Briefcase, Presentation, Wand2, Compass, Bot, Activity, UserPlus, ShoppingBag
+  Sparkles, ChevronDown, Brain, Briefcase, Presentation, Wand2, Compass, Bot, Activity, UserPlus, ShoppingBag, Phone
 } from "lucide-react";
 import { Avatar } from "../ui/core";
 import { NotificationBell } from "../NotificationBell";
@@ -113,6 +113,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       { name: 'Web Analiz',          href: '/admin/web-analytics',            icon: Activity },
       { name: 'Chatbot (Sphere Asistan)', href: '/admin/chatbot',             icon: Bot },
       { name: 'Instagram Bot',       href: '/admin/instagram-bot',            icon: MessageCircle },
+      { name: 'WhatsApp Bot',        href: '/admin/whatsapp-bot',             icon: Phone },
       { name: 'Modül Yönetimi',      href: '/admin/modules',                  icon: Settings2 },
       { name: 'Abonelikler',         href: '/admin/subscriptions',            icon: Crown },
       { name: 'Kelime Oyunu 🎮',     href: '/student/vocab-game',             icon: Gamepad2 },
@@ -304,11 +305,4 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         <main className="flex-1 overflow-y-auto">
           <div className="py-8 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
-              {children}
-            </motion.div>
-          </div>
-        </main>
-      </div>
-    </div>
-  );
-}
+              {childre
