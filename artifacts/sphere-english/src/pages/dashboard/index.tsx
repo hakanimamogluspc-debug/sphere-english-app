@@ -3,7 +3,7 @@ import { useGetDashboardStats, useGetMyProgress, useGetAdminDashboard } from "@w
 import { Card, CardContent, CardHeader, CardTitle, Badge, Button } from "@/components/ui/core";
 import { formatDateTime, getLevelColor } from "@/lib/utils";
 import { Trophy, Flame, BookOpen, Video, Users, CheckCircle, TrendingUp, DollarSign, Megaphone, AlertCircle, Info, ChevronRight, Wifi, BookMarked, Cpu, LayoutDashboard, GraduationCap } from "lucide-react";
-import { Link } from "wouter";
+import { Link, useLocation, Redirect } from "wouter";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useEffect, useState } from "react";
 import { API } from "@/lib/api-url";
@@ -500,6 +500,8 @@ function AdminDashboard() {
 export default function Dashboard() {
   const { user } = useAuth();
 
+  if (user?.role === 'partner') return <Redirect to="/partner" />;
+  if (user?.role === 'corporate') return <Redirect to="/corporate/dashboard" />;
   if (user?.role === 'admin') return <AdminDashboard />;
   if (user?.role === 'teacher') return <TeacherDashboard />;
   return <StudentDashboard />;

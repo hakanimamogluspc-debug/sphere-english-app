@@ -127,7 +127,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     ],
     partner: [
       { name: 'Partner Paneli',      href: '/partner',                        icon: Award },
-      { name: 'Profilim',            href: '/student/profile',                icon: UserCircle },
+      { name: 'Profilim',            href: '/profile',                        icon: UserCircle },
     ],
   };
 

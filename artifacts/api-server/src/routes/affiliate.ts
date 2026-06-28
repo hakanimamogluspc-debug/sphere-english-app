@@ -109,12 +109,21 @@ router.post("/affiliate/apply", async (req: Request, res: Response) => {
     const codeBase = desiredCode || fullName.replace(/\s+/g, "");
     const code = await generateUniqueCode(codeBase);
 
+    // userId gelmemişse e-posta ile mevcut kullanıcıyı bul
+    let resolvedUserId = userId ?? null;
+    if (!resolvedUserId && email) {
+      const uRows = await db.execute(sql`
+        SELECT id FROM users WHERE LOWER(email) = LOWER(${email}) LIMIT 1
+      `);
+      resolvedUserId = ((uRows.rows ?? uRows)[0] as any)?.id ?? null;
+    }
+
     const inserted = await db.execute(sql`
       INSERT INTO affiliates (
         user_id, code, status, full_name, email, phone, website,
         social_links, motivation, audience_description
       ) VALUES (
-        ${userId ?? null}, ${code}, 'pending', ${fullName}, ${email}, ${phone ?? null},
+        ${resolvedUserId}, ${code}, 'pending', ${fullName}, ${email}, ${phone ?? null},
         ${website ?? null}, ${socialLinks ?? null}, ${motivation ?? null},
         ${audienceDescription ?? null}
       )
@@ -136,7 +145,8 @@ router.get("/affiliate/me", authMiddleware, async (req: AuthRequest, res: Respon
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "auth" });
 
-    const rows = await db.execute(sql`
+    // Önce user_id ile dene
+    let rows = await db.execute(sql`
       SELECT id, code, status, full_name, email, phone, website,
              social_links, motivation, audience_description,
              tc_number, iban, bank_name, account_holder_name,
@@ -145,7 +155,31 @@ router.get("/affiliate/me", authMiddleware, async (req: AuthRequest, res: Respon
              created_at
       FROM affiliates WHERE user_id = ${userId} LIMIT 1
     `);
-    const aff = (rows.rows ?? rows)[0] ?? null;
+    let aff = (rows.rows ?? rows)[0] ?? null;
+
+    // Bulamazsa kullanıcının e-postasıyla dene + bağla
+    if (!aff) {
+      const uRows = await db.execute(sql`SELECT email FROM users WHERE id = ${userId} LIMIT 1`);
+      const userEmail = ((uRows.rows ?? uRows)[0] as any)?.email;
+      if (userEmail) {
+        rows = await db.execute(sql`
+          SELECT id, code, status, full_name, email, phone, website,
+                 social_links, motivation, audience_description,
+                 tc_number, iban, bank_name, account_holder_name,
+                 approved_at, rejected_at, rejection_reason,
+                 total_clicks, total_conversions, total_earned_kurus, total_paid_kurus,
+                 created_at
+          FROM affiliates
+          WHERE LOWER(email) = LOWER(${userEmail}) AND user_id IS NULL
+          ORDER BY created_at DESC LIMIT 1
+        `);
+        aff = (rows.rows ?? rows)[0] ?? null;
+        // Eşleşti, user_id'yi bağla
+        if (aff) {
+          await db.execute(sql`UPDATE affiliates SET user_id = ${userId} WHERE id = ${aff.id}`);
+        }
+      }
+    }
     return res.json({ affiliate: aff });
   } catch (e: any) {
     return res.status(500).json({ error: e?.message });

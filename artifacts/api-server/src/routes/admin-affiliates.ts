@@ -151,6 +151,32 @@ router.post(
           updated_at = NOW()
         WHERE id = ${id}
       `);
+
+      // user_id NULL ise email match ile bağla + user'ın role'ünü "partner" yap
+      const affRows = await db.execute(sql`
+        SELECT user_id, email FROM affiliates WHERE id = ${id} LIMIT 1
+      `);
+      const aff = (affRows.rows ?? affRows)[0] as any;
+      if (aff) {
+        let linkedUserId = aff.user_id;
+        if (!linkedUserId && aff.email) {
+          const uRows = await db.execute(sql`
+            SELECT id FROM users WHERE LOWER(email) = LOWER(${aff.email}) LIMIT 1
+          `);
+          linkedUserId = ((uRows.rows ?? uRows)[0] as any)?.id ?? null;
+          if (linkedUserId) {
+            await db.execute(sql`UPDATE affiliates SET user_id = ${linkedUserId} WHERE id = ${id}`);
+          }
+        }
+        // Role partner yap (student → partner)
+        if (linkedUserId) {
+          await db.execute(sql`
+            UPDATE users SET role = 'partner', updated_at = NOW()
+            WHERE id = ${linkedUserId} AND role IN ('student','partner')
+          `);
+        }
+      }
+
       // TODO: e-mail bildirimi (sendAffiliateApprovedMail)
       return res.json({ ok: true });
     } catch (e: any) {
