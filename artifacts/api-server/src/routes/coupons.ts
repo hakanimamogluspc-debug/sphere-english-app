@@ -126,6 +126,12 @@ router.post(
 
       const adminId = req.userId;
       const appliesArr = Array.isArray(appliesTo) && appliesTo.length > 0 ? appliesTo : ["subscription_all", "ebook"];
+      // Postgres array literal: {"v1","v2","v3"} — Drizzle ${array} interpolation
+      // tuple cast'e dönüştüğü için doğrudan string literal olarak veriyoruz.
+      const appliesLiteral = `{${appliesArr.map((s: any) => `"${String(s).replace(/[\\"]/g, (m) => "\\" + m)}"`).join(",")}}`;
+      // Tarih dönüşümü — datetime-local "2026-08-31T02:27" formatı gelirse Z eklemiyoruz; Postgres yerel parse eder.
+      const validFromVal: string = validFrom ? String(validFrom) : new Date().toISOString();
+      const validUntilVal: string | null = validUntil ? String(validUntil) : null;
 
       const inserted = await db.execute(sql`
         INSERT INTO coupons (
@@ -134,9 +140,9 @@ router.post(
           valid_from, valid_until, is_active, created_by, notes
         ) VALUES (
           ${normCode}, ${description ?? null}, ${discountType}, ${Number(discountValue)},
-          ${appliesArr}::TEXT[],
-          ${minPurchaseKurus ?? 0}, ${maxUses ?? null}, ${maxUsesPerUser ?? 1},
-          ${validFrom ?? new Date().toISOString()}, ${validUntil ?? null},
+          ${appliesLiteral}::TEXT[],
+          ${Number(minPurchaseKurus ?? 0)}, ${maxUses ?? null}, ${Number(maxUsesPerUser ?? 1)},
+          ${validFromVal}::TIMESTAMPTZ, ${validUntilVal}::TIMESTAMPTZ,
           TRUE, ${adminId ?? null}, ${notes ?? null}
         )
         RETURNING id, code
@@ -165,12 +171,15 @@ router.patch(
       const sets: any[] = [];
       if (body.description !== undefined) sets.push(sql`description = ${body.description}`);
       if (body.discountValue !== undefined) sets.push(sql`discount_value = ${Number(body.discountValue)}`);
-      if (body.appliesTo !== undefined && Array.isArray(body.appliesTo))
-        sets.push(sql`applies_to = ${body.appliesTo}::TEXT[]`);
+      if (body.appliesTo !== undefined && Array.isArray(body.appliesTo)) {
+        // Postgres array literal — tuple cast bug'ı önlemek için
+        const lit = `{${body.appliesTo.map((s: any) => `"${String(s).replace(/[\\"]/g, (m: string) => "\\" + m)}"`).join(",")}}`;
+        sets.push(sql`applies_to = ${lit}::TEXT[]`);
+      }
       if (body.minPurchaseKurus !== undefined) sets.push(sql`min_purchase_kurus = ${Number(body.minPurchaseKurus)}`);
       if (body.maxUses !== undefined) sets.push(sql`max_uses = ${body.maxUses === null ? null : Number(body.maxUses)}`);
       if (body.maxUsesPerUser !== undefined) sets.push(sql`max_uses_per_user = ${Number(body.maxUsesPerUser)}`);
-      if (body.validUntil !== undefined) sets.push(sql`valid_until = ${body.validUntil}`);
+      if (body.validUntil !== undefined) sets.push(sql`valid_until = ${body.validUntil ? String(body.validUntil) : null}::TIMESTAMPTZ`);
       if (body.isActive !== undefined) sets.push(sql`is_active = ${!!body.isActive}`);
       if (body.notes !== undefined) sets.push(sql`notes = ${body.notes}`);
       if (sets.length === 0) return res.status(400).json({ error: "Güncellenecek alan yok" });
