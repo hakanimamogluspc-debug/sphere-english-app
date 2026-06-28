@@ -27,14 +27,26 @@ export function authMiddleware(req: AuthRequest, res: Response, next: NextFuncti
   // açıklanamayan bir Express middleware ordering ile authMiddleware
   // bunlara da uygulanıyor. Bu erken-çıkış güvenli, çünkü chatbot endpoint'leri
   // zaten public olarak tasarlandı.
-  // Public endpoints — chatbot widget herkesin yüklediği yerden çağırır
-  // req.path bazen "/chat", bazen "/api/chat" gelir (middleware ordering); ikisini de tut
-  if (
-    req.path === "/chat" || req.path === "/chat/lead" ||
-    req.path.endsWith("/chat") || req.path.endsWith("/chat/lead") ||
-    req.path.startsWith("/affiliate/track") || req.path.startsWith("/coupons/validate")
-  ) {
-    return next();
+  // Public endpoints — chatbot widget + affiliate track + coupon validate
+  // req.path bazen "/chat", bazen "/api/chat" gelir; originalUrl tüm path'i tutar
+  const fullPath = (req as any).originalUrl || req.path;
+  const checkPath = req.path;
+  const publicPaths = [
+    "/chat", "/chat/lead",
+    "/affiliate/track", "/coupons/validate",
+    "/affiliate/code/", // /affiliate/code/:code
+  ];
+  for (const p of publicPaths) {
+    if (
+      checkPath === p ||
+      checkPath.startsWith(p) ||
+      checkPath.endsWith(p) ||
+      fullPath === p ||
+      fullPath.startsWith("/api" + p) ||
+      fullPath.endsWith(p)
+    ) {
+      return next();
+    }
   }
 
   let token: string | undefined;

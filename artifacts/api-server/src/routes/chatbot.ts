@@ -56,6 +56,7 @@ router.options("/chat", (req, res) => {
 });
 
 router.post("/chat", async (req: Request, res: Response) => {
+  console.info(`[chatbot] /chat POST geldi — path=${req.path} originalUrl=${req.originalUrl}`);
   setChatbotCors(res, req);
 
   try {
