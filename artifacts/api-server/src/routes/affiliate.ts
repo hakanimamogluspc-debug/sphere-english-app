@@ -157,10 +157,11 @@ router.get("/affiliate/me", authMiddleware, async (req: AuthRequest, res: Respon
     `);
     let aff = (rows.rows ?? rows)[0] ?? null;
 
-    // Bulamazsa kullanıcının e-postasıyla dene + bağla
+    // Bulamazsa kullanıcının e-postasıyla agresif arama yap
     if (!aff) {
       const uRows = await db.execute(sql`SELECT email FROM users WHERE id = ${userId} LIMIT 1`);
       const userEmail = ((uRows.rows ?? uRows)[0] as any)?.email;
+      console.info(`[affiliate/me] user_id=${userId} eşleşme yok, email ile arıyorum: ${userEmail}`);
       if (userEmail) {
         rows = await db.execute(sql`
           SELECT id, code, status, full_name, email, phone, website,
@@ -170,15 +171,25 @@ router.get("/affiliate/me", authMiddleware, async (req: AuthRequest, res: Respon
                  total_clicks, total_conversions, total_earned_kurus, total_paid_kurus,
                  created_at
           FROM affiliates
-          WHERE LOWER(email) = LOWER(${userEmail}) AND user_id IS NULL
-          ORDER BY created_at DESC LIMIT 1
+          WHERE LOWER(email) = LOWER(${userEmail})
+          ORDER BY
+            CASE WHEN user_id IS NULL THEN 0 ELSE 1 END,
+            CASE WHEN status = 'active' THEN 0 WHEN status = 'pending' THEN 1 ELSE 2 END,
+            created_at DESC
+          LIMIT 1
         `);
         aff = (rows.rows ?? rows)[0] ?? null;
-        // Eşleşti, user_id'yi bağla
         if (aff) {
+          console.info(`[affiliate/me] Email match buldu: aff.id=${aff.id} status=${aff.status}, user_id'yi ${userId} olarak bağlıyorum`);
           await db.execute(sql`UPDATE affiliates SET user_id = ${userId} WHERE id = ${aff.id}`);
+          // role'u da partner yap
+          await db.execute(sql`UPDATE users SET role = 'partner' WHERE id = ${userId} AND role = 'student'`);
+        } else {
+          console.warn(`[affiliate/me] Email ile de affiliate bulamadım: ${userEmail}`);
         }
       }
+    } else {
+      console.info(`[affiliate/me] user_id=${userId} direkt eşleşti: aff.id=${aff.id} status=${aff.status}`);
     }
     return res.json({ affiliate: aff });
   } catch (e: any) {
