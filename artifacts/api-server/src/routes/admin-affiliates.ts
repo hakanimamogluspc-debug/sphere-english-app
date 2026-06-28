@@ -99,8 +99,16 @@ router.get(
       if (!id) return res.status(400).json({ error: "id geçersiz" });
 
       const aRows = await db.execute(sql`SELECT * FROM affiliates WHERE id = ${id} LIMIT 1`);
-      const aff = (aRows.rows ?? aRows)[0];
+      const aff = (aRows.rows ?? aRows)[0] as any;
       if (!aff) return res.status(404).json({ error: "bulunamadı" });
+      // Linked user info
+      if (aff.user_id) {
+        const uRows = await db.execute(sql`SELECT id, email, first_name, last_name, role FROM users WHERE id = ${aff.user_id} LIMIT 1`);
+        aff.linkedUser = (uRows.rows ?? uRows)[0] ?? null;
+      }
+      // Aynı email'le kayıtlı user var mı?
+      const emailMatch = await db.execute(sql`SELECT id, email, first_name, last_name, role FROM users WHERE LOWER(email) = LOWER(${aff.email}) LIMIT 1`);
+      aff.emailMatchUser = (emailMatch.rows ?? emailMatch)[0] ?? null;
 
       const cRows = await db.execute(sql`
         SELECT id, source_type, source_id, sale_amount_kurus, commission_rate,
@@ -385,6 +393,39 @@ router.post(
 
       // TODO: e-mail bildirimi (sendAffiliatePaidMail)
       return res.json({ ok: true });
+    } catch (e: any) {
+      return res.status(500).json({ error: e?.message });
+    }
+  },
+);
+
+// ─── Manuel kullanıcıya bağla (debug/teşhis için) ──────────────────────
+router.post(
+  "/admin/affiliates/:id/bind-user",
+  authMiddleware,
+  requireRole("admin"),
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const id = parseInt(req.params.id ?? "", 10);
+      const { userId, userEmail } = (req.body ?? {}) as any;
+      if (!id) return res.status(400).json({ error: "id geçersiz" });
+
+      let finalUserId: number | null = null;
+      if (userId) {
+        finalUserId = Number(userId);
+      } else if (userEmail) {
+        const uRows = await db.execute(sql`
+          SELECT id FROM users WHERE LOWER(email) = LOWER(${userEmail}) LIMIT 1
+        `);
+        finalUserId = ((uRows.rows ?? uRows)[0] as any)?.id ?? null;
+        if (!finalUserId) return res.status(404).json({ error: `${userEmail} ile kullanıcı bulunamadı` });
+      } else {
+        return res.status(400).json({ error: "userId veya userEmail gerekli" });
+      }
+
+      await db.execute(sql`UPDATE affiliates SET user_id = ${finalUserId}, updated_at = NOW() WHERE id = ${id}`);
+      await db.execute(sql`UPDATE users SET role = 'partner' WHERE id = ${finalUserId} AND role IN ('student','partner')`);
+      return res.json({ ok: true, userId: finalUserId });
     } catch (e: any) {
       return res.status(500).json({ error: e?.message });
     }

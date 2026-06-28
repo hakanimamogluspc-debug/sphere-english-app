@@ -321,6 +321,52 @@ export default function AdminAffiliates() {
                 {detail.affiliate.motivation && <div className="italic text-slate-600 mt-1">"{detail.affiliate.motivation}"</div>}
               </Section>
 
+              <Section label="Kullanıcı Bağı">
+                <div className="text-xs space-y-2">
+                  <div><strong>Başvuru e-posta:</strong> <span className="font-mono">{detail.affiliate.email}</span></div>
+                  <div>
+                    <strong>affiliates.user_id:</strong>{" "}
+                    {detail.affiliate.user_id ?? <em className="text-red-600">NULL — bağlı değil</em>}
+                  </div>
+                  {detail.affiliate.linkedUser && (
+                    <div className="bg-emerald-50 border border-emerald-200 rounded p-2">
+                      ✓ <strong>Bağlı user:</strong> {detail.affiliate.linkedUser.first_name} {detail.affiliate.linkedUser.last_name}
+                      <br /><span className="font-mono">{detail.affiliate.linkedUser.email}</span> · role: <strong>{detail.affiliate.linkedUser.role}</strong>
+                    </div>
+                  )}
+                  {detail.affiliate.emailMatchUser && (
+                    <div className={`border rounded p-2 ${detail.affiliate.user_id === detail.affiliate.emailMatchUser.id ? "bg-slate-50 border-slate-200" : "bg-amber-50 border-amber-200"}`}>
+                      <strong>E-postayla bulunan user:</strong>{" "}
+                      {detail.affiliate.emailMatchUser.first_name} {detail.affiliate.emailMatchUser.last_name} (id: {detail.affiliate.emailMatchUser.id})
+                      <br /><span className="font-mono">{detail.affiliate.emailMatchUser.email}</span> · role: <strong>{detail.affiliate.emailMatchUser.role}</strong>
+                      {detail.affiliate.user_id !== detail.affiliate.emailMatchUser.id && (
+                        <button
+                          onClick={async () => {
+                            if (!confirm(`Affiliate'i user id=${detail.affiliate.emailMatchUser.id} ile bağla?`)) return;
+                            try {
+                              await apiFetch(`/admin/affiliates/${detail.affiliate.id}/bind-user`, {
+                                method: "POST",
+                                body: JSON.stringify({ userId: detail.affiliate.emailMatchUser.id }),
+                              });
+                              alert("Bağlandı + role=partner yapıldı");
+                              await openDetail(detail.affiliate.id);
+                            } catch (e: any) { setError(e.message); }
+                          }}
+                          className="mt-2 px-3 py-1 text-xs bg-blue-700 text-white rounded hover:bg-blue-800"
+                        >
+                          ✓ Bu user'a bağla
+                        </button>
+                      )}
+                    </div>
+                  )}
+                  {!detail.affiliate.emailMatchUser && !detail.affiliate.user_id && (
+                    <div className="bg-red-50 border border-red-200 rounded p-2 text-red-800">
+                      ⚠ Bu e-posta ile kayıtlı bir kullanıcı YOK. Kullanıcının önce /register'dan bu e-postayla kayıt olması gerek.
+                    </div>
+                  )}
+                </div>
+              </Section>
+
               <Section label="Banka Bilgisi">
                 {detail.affiliate.iban ? (
                   <div className="font-mono text-xs">
