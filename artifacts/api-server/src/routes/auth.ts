@@ -20,7 +20,7 @@ const registerSchema = z.object({
   password: schemas.password,
   firstName: z.string().trim().min(1, "Ad gerekli").max(100),
   lastName: z.string().trim().min(1, "Soyad gerekli").max(100),
-  role: z.enum(["student", "corporate"]).optional(),
+  role: z.enum(["student", "corporate", "partner"]).optional(),
   phone: z.string().trim().max(40).optional().or(z.literal("")),
   companyCode: z.string().trim().max(50).optional().or(z.literal("")),
   accountType: z.enum(["bireysel", "kurumsal"]).optional(),
