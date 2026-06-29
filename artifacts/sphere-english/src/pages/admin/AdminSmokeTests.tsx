@@ -1,0 +1,251 @@
+import { useState } from "react";
+import {
+  Play, CheckCircle2, XCircle, Loader2, ChevronDown, ChevronRight,
+  Activity, Clock, AlertTriangle,
+} from "lucide-react";
+import { API } from "@/lib/api-url";
+
+const TOKEN_KEY = "sphere_token";
+
+async function apiFetch(path: string, opts: RequestInit = {}) {
+  const token = localStorage.getItem(TOKEN_KEY);
+  const res = await fetch(`${API}${path}`, {
+    ...opts,
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+      ...(opts.headers || {}),
+    },
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || `HTTP ${res.status}`);
+  }
+  return res.json();
+}
+
+type TestResult = {
+  id: string;
+  category: string;
+  name: string;
+  method: string;
+  path: string;
+  ok: boolean;
+  status: number;
+  responseTime: number;
+  expectedStatus?: number;
+  body?: any;
+  error?: string;
+};
+
+type Summary = {
+  total: number;
+  passed: number;
+  failed: number;
+  avgResponseTime: number;
+  runAt: string;
+};
+
+export default function AdminSmokeTests() {
+  const [running, setRunning] = useState(false);
+  const [results, setResults] = useState<TestResult[]>([]);
+  const [summary, setSummary] = useState<Summary | null>(null);
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [error, setError] = useState<string | null>(null);
+
+  async function runTests() {
+    setRunning(true);
+    setError(null);
+    setResults([]);
+    setSummary(null);
+    setExpanded(new Set());
+    try {
+      const data = await apiFetch("/admin/smoke-tests/run", { method: "POST" });
+      setResults(data.results || []);
+      setSummary(data.summary || null);
+      // Hatalı testleri otomatik aç
+      const failedIds = (data.results || []).filter((r: TestResult) => !r.ok).map((r: TestResult) => r.id);
+      setExpanded(new Set(failedIds));
+    } catch (e: any) {
+      setError(e?.message ?? "Bilinmeyen hata");
+    } finally {
+      setRunning(false);
+    }
+  }
+
+  function toggleExpand(id: string) {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  // Kategorilere göre grupla — sıralama: önce hatalılar
+  const grouped = results.reduce<Record<string, TestResult[]>>((acc, r) => {
+    if (!acc[r.category]) acc[r.category] = [];
+    acc[r.category].push(r);
+    return acc;
+  }, {});
+
+  const categoryOrder = Object.keys(grouped).sort((a, b) => {
+    const failedA = grouped[a].filter((r) => !r.ok).length;
+    const failedB = grouped[b].filter((r) => !r.ok).length;
+    if (failedA !== failedB) return failedB - failedA; // hatalı kategoriler önce
+    return a.localeCompare(b, "tr");
+  });
+
+  return (
+    <div className="p-6 max-w-6xl mx-auto">
+      <div className="flex items-start justify-between mb-6 gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+            <Activity className="w-6 h-6 text-blue-600" />
+            Smoke Testleri
+          </h1>
+          <p className="text-sm text-gray-500 mt-1">
+            Kritik API endpoint'lerini tek tıkla test et — yeni bug'ları erken yakala
+          </p>
+        </div>
+        <button
+          onClick={runTests}
+          disabled={running}
+          className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-blue-300 transition shrink-0"
+        >
+          {running ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
+          {running ? "Çalışıyor..." : "Tümünü Çalıştır"}
+        </button>
+      </div>
+
+      {error && (
+        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
+          <AlertTriangle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+          <div className="text-sm text-red-700">
+            <strong>Test çalıştırılamadı:</strong> {error}
+          </div>
+        </div>
+      )}
+
+      {summary && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+          <Stat label="Toplam" value={String(summary.total)} />
+          <Stat label="Başarılı" value={String(summary.passed)} color="green" />
+          <Stat label="Başarısız" value={String(summary.failed)} color={summary.failed > 0 ? "red" : "gray"} />
+          <Stat label="Ort. yanıt" value={`${summary.avgResponseTime}ms`} icon={<Clock className="w-4 h-4" />} />
+        </div>
+      )}
+
+      {summary && (
+        <p className="text-xs text-gray-500 mb-4">
+          Son çalıştırma: {new Date(summary.runAt).toLocaleString("tr-TR")}
+        </p>
+      )}
+
+      {categoryOrder.map((category) => {
+        const tests = grouped[category];
+        const failedCount = tests.filter((t) => !t.ok).length;
+        return (
+          <div key={category} className="mb-5">
+            <h2 className="text-base font-semibold text-gray-900 mb-2 flex items-center gap-2">
+              {category}
+              <span className="text-xs text-gray-400 font-normal">({tests.length})</span>
+              {failedCount > 0 && (
+                <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full font-medium">
+                  {failedCount} başarısız
+                </span>
+              )}
+            </h2>
+            <div className="bg-white rounded-lg border divide-y">
+              {tests.map((r) => {
+                const isExpanded = expanded.has(r.id);
+                const hasDetail = !!(r.body || r.error);
+                return (
+                  <div key={r.id}>
+                    <button
+                      onClick={() => hasDetail && toggleExpand(r.id)}
+                      className={`w-full flex items-center gap-3 px-4 py-3 text-left transition ${
+                        hasDetail ? "hover:bg-gray-50 cursor-pointer" : "cursor-default"
+                      }`}
+                    >
+                      {r.ok ? (
+                        <CheckCircle2 className="w-5 h-5 text-green-600 shrink-0" />
+                      ) : (
+                        <XCircle className="w-5 h-5 text-red-600 shrink-0" />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-gray-900 truncate">{r.name}</div>
+                        <div className="text-xs text-gray-500 font-mono mt-0.5">
+                          <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold mr-1.5 ${methodColor(r.method)}`}>
+                            {r.method}
+                          </span>
+                          {r.path}
+                        </div>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <div className={`text-sm font-mono font-medium ${r.ok ? "text-gray-700" : "text-red-600"}`}>
+                          {r.status || "—"}
+                        </div>
+                        <div className="text-xs text-gray-500">{r.responseTime}ms</div>
+                      </div>
+                      {hasDetail && (
+                        isExpanded ? (
+                          <ChevronDown className="w-4 h-4 text-gray-400 shrink-0" />
+                        ) : (
+                          <ChevronRight className="w-4 h-4 text-gray-400 shrink-0" />
+                        )
+                      )}
+                    </button>
+                    {isExpanded && hasDetail && (
+                      <div className="px-4 pb-3 bg-gray-50 border-t">
+                        <div className="text-xs text-gray-500 mt-2 mb-1">Yanıt detayı:</div>
+                        <pre className="text-xs text-gray-700 whitespace-pre-wrap overflow-x-auto p-3 bg-white rounded border max-h-64">
+                          {r.error ?? (typeof r.body === "string" ? r.body : JSON.stringify(r.body, null, 2))}
+                        </pre>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
+
+      {results.length === 0 && !running && !error && (
+        <div className="text-center py-12 text-gray-500 bg-white rounded-lg border-2 border-dashed">
+          <Activity className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+          <p className="font-medium text-gray-700 mb-1">Henüz test çalıştırılmadı</p>
+          <p className="text-sm">"Tümünü Çalıştır" butonuna tıklayarak başla</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Stat({ label, value, color, icon }: { label: string; value: string; color?: "green" | "red" | "gray"; icon?: React.ReactNode }) {
+  const colorClass =
+    color === "green" ? "text-green-700" :
+    color === "red" ? "text-red-700" :
+    "text-gray-900";
+  return (
+    <div className="bg-white rounded-lg border p-4">
+      <div className="text-xs text-gray-500 mb-1 flex items-center gap-1">
+        {icon}
+        {label}
+      </div>
+      <div className={`text-2xl font-bold ${colorClass}`}>{value}</div>
+    </div>
+  );
+}
+
+function methodColor(method: string): string {
+  switch (method) {
+    case "GET": return "bg-blue-100 text-blue-700";
+    case "POST": return "bg-green-100 text-green-700";
+    case "PATCH": return "bg-yellow-100 text-yellow-700";
+    case "PUT": return "bg-purple-100 text-purple-700";
+    case "DELETE": return "bg-red-100 text-red-700";
+    default: return "bg-gray-100 text-gray-700";
+  }
+}

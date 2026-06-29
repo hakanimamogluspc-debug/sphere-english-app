@@ -117,6 +117,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       { name: 'Affiliate Program',   href: '/admin/affiliates',               icon: Award },
       { name: 'Kupon Kodları',       href: '/admin/coupons',                  icon: Ticket },
       { name: 'DB Yedekleri',        href: '/admin/backups',                  icon: HardDrive },
+      { name: 'Smoke Testleri',      href: '/admin/smoke-tests',              icon: Activity },
       { name: 'Modül Yönetimi',      href: '/admin/modules',                  icon: Settings2 },
       { name: 'Abonelikler',         href: '/admin/subscriptions',            icon: Crown },
       { name: 'Kelime Oyunu 🎮',     href: '/student/vocab-game',             icon: Gamepad2 },

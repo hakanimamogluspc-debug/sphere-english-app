@@ -64,6 +64,7 @@ import affiliateRouter from "./affiliate";
 import adminAffiliatesRouter from "./admin-affiliates";
 import couponsRouter from "./coupons";
 import adminBackupsRouter from "./admin-backups";
+import adminSmokeTestsRouter from "./admin-smoke-tests";
 import { requireSubscription } from "../middlewares/require-subscription";
 import { authMiddleware } from "../middlewares/auth";
 
@@ -115,6 +116,7 @@ router.use(affiliateRouter);
 router.use(adminAffiliatesRouter);
 router.use(couponsRouter);
 router.use(adminBackupsRouter);
+router.use(adminSmokeTestsRouter);
 // PUBLIC (kendi auth'unu yapan) router'lar — proGuard'dan ÖNCE mount et
 // Çünkü router.use(proGuard, X) path-less mount'tur ve middleware HER request'te
 // çalışır; chatbot /chat'e ulaşmadan önce requireSubscription 401 atıyordu.
