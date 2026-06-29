@@ -114,6 +114,17 @@ router.post(
       const newId = (inserted.rows ?? inserted)[0]?.id;
 
       console.info(`[TEACHER-APP] Yeni başvuru: ${body.email} (id=${newId})`);
+
+      // Admin'lere mail bildirimi (non-blocking, hata ignore edilir)
+      void import("../lib/admin-notifications.js").then((m) =>
+        m.notifyNewTeacherApplication({
+          applicationId: newId,
+          fullName: body.fullName,
+          email: body.email,
+          experience: body.experience,
+          englishLevel: body.englishLevel,
+        }),
+      ).catch((e) => console.error("[TEACHER-APP] notify HATA:", e?.message));
       return res.status(201).json({ ok: true, id: newId, message: "Başvurunuz alındı. En kısa sürede dönüş yapacağız." });
     } catch (e: any) {
       // Tüm detay sunucu log'unda; kullanıcıya kısa mesaj döner

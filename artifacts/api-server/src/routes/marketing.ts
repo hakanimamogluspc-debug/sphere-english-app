@@ -137,6 +137,17 @@ router.post("/marketing/contact", async (req: Request, res: Response) => {
     const { name, email, phone, company, message, source } = req.body;
     if (!name || !email) return res.status(400).json({ error: "Ad ve e-posta zorunludur." });
     await db.insert(contactLeadsTable).values({ name, email, phone, company, message, source: source || "website" });
+
+    // Admin'lere mail bildirimi (non-blocking)
+    void import("../lib/admin-notifications.js").then((m) =>
+      m.notifyNewContactMessage({
+        name,
+        email,
+        subject: company ? `${company} (${source ?? "website"})` : (source ?? "website"),
+        message: message ?? "(Mesaj boş)",
+      }),
+    ).catch((e) => console.error("[marketing/contact] notify HATA:", e?.message));
+
     return res.json({ ok: true, message: "Mesajınız alındı. En kısa sürede iletişime geçeceğiz." });
   } catch (e: any) {
     return res.status(500).json({ error: "Bir hata oluştu." });

@@ -376,6 +376,16 @@ router.post("/internal/payment/activate", async (req: Request, res: Response) =>
       console.error("[INTERNAL] mail/magic-link HATA:", mailErr?.message);
     }
 
+    // Admin'e yeni abonelik bildirimi (non-blocking)
+    void import("../lib/admin-notifications.js").then((m) =>
+      m.notifyNewSubscription({
+        userEmail: user.email,
+        planLabel: plan.label ?? plan.code ?? planCode,
+        amountTl: Number(amount ?? 0),
+        partnerCode: affiliateCode ?? null,
+      }),
+    ).catch((e) => console.error("[INTERNAL] activate notify HATA:", e?.message));
+
     return res.json({ ok: true, userId: user.id, magicLinkSent: mailSent, isNewAccount });
   } catch (e: any) {
     console.error("[INTERNAL] activate HATA:", e?.message ?? e);

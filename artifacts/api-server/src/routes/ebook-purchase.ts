@@ -17,6 +17,31 @@ import crypto from "node:crypto";
 import { sql } from "drizzle-orm";
 import { db } from "@workspace/db";
 import { sendEbookDownloadMail } from "../lib/ebook-mail.js";
+import { notifyNewEbookPurchase } from "../lib/admin-notifications.js";
+
+/** Admin'lere yeni e-kitap satışı bildirimi (non-blocking) */
+function notifyAdminOfEbookPurchase(purchaseId: number): void {
+  void (async () => {
+    try {
+      const rows = await db.execute(sql`
+        SELECT ep.buyer_email, ep.amount_paid, e.title
+        FROM ebook_purchases ep
+        JOIN ebooks e ON ep.ebook_id = e.id
+        WHERE ep.id = ${purchaseId} LIMIT 1
+      `);
+      const r = (rows.rows ?? rows)[0] as any;
+      if (!r) return;
+      await notifyNewEbookPurchase({
+        purchaseId,
+        buyerEmail: r.buyer_email,
+        ebookTitle: r.title ?? "E-kitap",
+        amountTl: Number(r.amount_paid ?? 0),
+      });
+    } catch (e: any) {
+      console.error("[EBOOK-PURCHASE] admin notify HATA:", e?.message);
+    }
+  })();
+}
 
 const router = Router();
 
@@ -246,6 +271,8 @@ router.post("/internal/ebook-purchase/activate", async (req: Request, res: Respo
         sendPurchaseEmailFireForget(updatedRow.id).catch((e) => {
           console.error("[EBOOK-PURCHASE] mail fire-forget HATA:", e?.message);
         });
+        // Admin'lere yeni satış bildirimi
+        notifyAdminOfEbookPurchase(updatedRow.id);
         return res.json({ ok: true, purchaseId: updatedRow.id, action: "updated" });
       }
     }
@@ -291,6 +318,8 @@ router.post("/internal/ebook-purchase/activate", async (req: Request, res: Respo
       sendPurchaseEmailFireForget(newId).catch((e) => {
         console.error("[EBOOK-PURCHASE] mail fire-forget HATA:", e?.message);
       });
+      // Admin'lere yeni satış bildirimi
+      notifyAdminOfEbookPurchase(Number(newId));
     }
     return res.json({ ok: true, purchaseId: newId, action: "inserted" });
   } catch (e: any) {

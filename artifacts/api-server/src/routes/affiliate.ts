@@ -132,6 +132,17 @@ router.post("/affiliate/apply", async (req: Request, res: Response) => {
     const aff = ((inserted.rows ?? inserted)[0] as any);
 
     console.info(`[affiliate/apply] Yeni başvuru: id=${aff.id} code=${aff.code} email=${aff.email}`);
+
+    // Admin'lere mail bildirimi (non-blocking)
+    void import("../lib/admin-notifications.js").then((m) =>
+      m.notifyNewPartnerApplication({
+        affiliateId: aff.id,
+        fullName: aff.full_name,
+        email: aff.email,
+        promotionPlan: motivation,
+      }),
+    ).catch((e) => console.error("[affiliate/apply] notify HATA:", e?.message));
+
     return res.json({ ok: true, affiliate: aff });
   } catch (e: any) {
     console.error("[affiliate/apply] HATA:", e?.message);
