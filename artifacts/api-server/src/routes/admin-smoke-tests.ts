@@ -33,7 +33,7 @@ type TestDef = {
 const TESTS: TestDef[] = [
   // ── Public (auth yok) ────────────────────────────────────────────────
   { id: "healthz", category: "Public", name: "Health check", method: "GET", path: "/api/healthz" },
-  { id: "api-spec", category: "Public", name: "API spec", method: "GET", path: "/api/spec" },
+  { id: "openapi-json", category: "Public", name: "OpenAPI spec JSON", method: "GET", path: "/api/openapi.json" },
 
   // ── Chatbot ──────────────────────────────────────────────────────────
   {
@@ -62,10 +62,11 @@ const TESTS: TestDef[] = [
   {
     id: "affiliate-track",
     category: "Affiliate",
-    name: "Track click (anonim)",
+    name: "Track click (geçersiz kod — 404 beklenir)",
     method: "POST",
     path: "/api/affiliate/track",
-    body: { code: "SMOKETEST", path: "/abonelik" },
+    body: { code: "ZZZZINVALID", landingPath: "/abonelik" },
+    expectedStatus: 404,
   },
   {
     id: "affiliate-code-invalid",
