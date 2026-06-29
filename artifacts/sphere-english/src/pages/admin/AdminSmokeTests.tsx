@@ -1,7 +1,7 @@
 import { useState } from "react";
 import {
   Play, CheckCircle2, XCircle, Loader2, ChevronDown, ChevronRight,
-  Activity, Clock, AlertTriangle,
+  Activity, Clock, AlertTriangle, Mail,
 } from "lucide-react";
 import { API } from "@/lib/api-url";
 
@@ -52,6 +52,28 @@ export default function AdminSmokeTests() {
   const [summary, setSummary] = useState<Summary | null>(null);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
+  const [mailTesting, setMailTesting] = useState(false);
+  const [mailResult, setMailResult] = useState<{ ok: boolean; message: string; recipients?: string[] } | null>(null);
+
+  async function testNotifications() {
+    setMailTesting(true);
+    setMailResult(null);
+    try {
+      const data = await apiFetch("/admin/notifications/test", {
+        method: "POST",
+        body: JSON.stringify({ eventType: "all" }),
+      });
+      setMailResult({
+        ok: true,
+        message: `${data.eventsSent?.length ?? 0} bildirim gönderildi, ${data.recipientCount ?? 0} alıcı`,
+        recipients: data.recipients,
+      });
+    } catch (e: any) {
+      setMailResult({ ok: false, message: e?.message ?? "Bilinmeyen hata" });
+    } finally {
+      setMailTesting(false);
+    }
+  }
 
   async function runTests() {
     setRunning(true);
@@ -108,15 +130,49 @@ export default function AdminSmokeTests() {
             Kritik API endpoint'lerini tek tıkla test et — yeni bug'ları erken yakala
           </p>
         </div>
-        <button
-          onClick={runTests}
-          disabled={running}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-blue-300 transition shrink-0"
-        >
-          {running ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
-          {running ? "Çalışıyor..." : "Tümünü Çalıştır"}
-        </button>
+        <div className="flex gap-2 shrink-0">
+          <button
+            onClick={testNotifications}
+            disabled={mailTesting}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 disabled:bg-amber-300 transition"
+            title="Admin'e 5 farklı event tipinde test mail at"
+          >
+            {mailTesting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />}
+            {mailTesting ? "Gönderiliyor..." : "Test Mail Gönder"}
+          </button>
+          <button
+            onClick={runTests}
+            disabled={running}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-blue-300 transition"
+          >
+            {running ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
+            {running ? "Çalışıyor..." : "Tümünü Çalıştır"}
+          </button>
+        </div>
       </div>
+
+      {mailResult && (
+        <div className={`mb-4 p-3 rounded-lg border flex items-start gap-2 ${mailResult.ok ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200"}`}>
+          {mailResult.ok ? (
+            <CheckCircle2 className="w-5 h-5 text-green-600 shrink-0 mt-0.5" />
+          ) : (
+            <AlertTriangle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+          )}
+          <div className="text-sm">
+            <div className={`font-medium ${mailResult.ok ? "text-green-800" : "text-red-800"}`}>
+              {mailResult.ok ? "Test mailleri gönderildi" : "Test mail gönderilemedi"}
+            </div>
+            <div className={mailResult.ok ? "text-green-700" : "text-red-700"}>
+              {mailResult.message}
+            </div>
+            {mailResult.recipients && mailResult.recipients.length > 0 && (
+              <div className="text-xs text-green-600 mt-1">
+                Alıcılar: {mailResult.recipients.join(", ")}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {error && (
         <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
