@@ -418,4 +418,16 @@ router.get("/ebooks/asset/:assetId", async (req: Request, res: Response) => {
     res.setHeader("Content-Length", String(asset.size_bytes));
     res.setHeader("Cache-Control", "public, max-age=3600, immutable");
     // Cross-origin <img> tag'lerinin yükleyebilmesi için CORP override
-    // (He
+    // (Header'sız asset'leri tarayıcı bloklamasın)
+    res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+    res.setHeader("Access-Control-Allow-Origin", "*");
+
+    const buf = Buffer.from(asset.data_base64, "base64");
+    return res.send(buf);
+  } catch (e: any) {
+    console.error("[EBOOK-ASSET] HATA:", e?.message);
+    return res.status(500).send("Asset alınamadı");
+  }
+});
+
+export default router;
