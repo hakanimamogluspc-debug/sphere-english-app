@@ -30,6 +30,24 @@ export function errorHandler(
     return;
   }
 
+  // Multer hataları — dosya yükleme limitleri/format
+  if (err?.name === "MulterError" || err?.type === "MulterError") {
+    const code = String(err?.code ?? "");
+    let msg = "Dosya yüklenemedi";
+    if (code === "LIMIT_FILE_SIZE") {
+      msg = "Dosya çok büyük (maksimum 100 MB). Lütfen daha küçük bir dosya yükle.";
+    } else if (code === "LIMIT_UNEXPECTED_FILE") {
+      msg = "Beklenmeyen dosya alanı";
+    } else if (code === "LIMIT_FILE_COUNT") {
+      msg = "Çok fazla dosya yüklendi";
+    } else if (err?.message) {
+      msg = `Yükleme hatası: ${err.message}`;
+    }
+    logger.warn({ code, url: req.originalUrl }, "Multer hatası");
+    res.status(413).json({ error: msg });
+    return;
+  }
+
   // 4xx — kullanıcı hatası, info düzeyinde
   if (status >= 400 && status < 500) {
     logger.info({ err: err.message, url: req.originalUrl, status }, "Client error");
@@ -50,11 +68,20 @@ export function errorHandler(
     "Unhandled server error"
   );
 
-  // Production'da stack trace dışarı verme
+  // Production'da stack trace dışarı verme ama error.message'ı her zaman göster
+  // (admin için teşhis kolaylaştırıcı, hassas bilgi içermiyorsa).
   const expose = process.env.NODE_ENV !== "production";
+  const errMsg = typeof err?.message === "string" ? err.message : "";
+  // Hassas bilgi (DB connection string, secret, vs.) içeriyorsa filtrele
+  const safeMsg = errMsg.match(/password|secret|token|api[_-]?key|connection/i)
+    ? "Sunucu hatası, lütfen daha sonra tekrar deneyin"
+    : errMsg
+      ? `Sunucu hatası: ${errMsg}`
+      : "Sunucu hatası, lütfen daha sonra tekrar deneyin";
+
   res.status(status).json({
-    error: "Sunucu hatası, lütfen daha sonra tekrar deneyin",
-    ...(expose ? { detail: err?.message, stack: err?.stack } : {}),
+    error: safeMsg,
+    ...(expose ? { stack: err?.stack } : {}),
   });
 }
 

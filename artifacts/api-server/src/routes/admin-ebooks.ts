@@ -28,7 +28,9 @@ import { generatePreviewPdf } from "../lib/pdf-preview.js";
 
 const router = Router();
 
-const MAX_ASSET_SIZE = 15 * 1024 * 1024; // 15 MB (PDF için yeterli)
+// E-kitap PDF'leri tipik 20-80 MB arası, kapak görselleri 1-5 MB
+// 100 MB güvenli üst sınır (DB'de bytea olarak saklanıyor)
+const MAX_ASSET_SIZE = 100 * 1024 * 1024; // 100 MB
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: MAX_ASSET_SIZE },
