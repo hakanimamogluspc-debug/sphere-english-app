@@ -21,24 +21,32 @@ import { notifyNewEbookPurchase } from "../lib/admin-notifications.js";
 
 /** Admin'lere yeni e-kitap satışı bildirimi (non-blocking) */
 function notifyAdminOfEbookPurchase(purchaseId: number): void {
+  console.info(`[EBOOK-PURCHASE] admin notify ÇAĞRILDI: purchaseId=${purchaseId}`);
   void (async () => {
     try {
       const rows = await db.execute(sql`
-        SELECT ep.buyer_email, ep.amount_paid, e.title
+        SELECT ep.buyer_email, ep.amount_paid, e.title, e.id AS ebook_id_check
         FROM ebook_purchases ep
-        JOIN ebooks e ON ep.ebook_id = e.id
+        LEFT JOIN ebooks e ON ep.ebook_id = e.id
         WHERE ep.id = ${purchaseId} LIMIT 1
       `);
       const r = (rows.rows ?? rows)[0] as any;
-      if (!r) return;
+      if (!r) {
+        console.warn(`[EBOOK-PURCHASE] admin notify: purchase bulunamadi (id=${purchaseId}) — atlandı`);
+        return;
+      }
+      console.info(
+        `[EBOOK-PURCHASE] admin notify: purchase bulundu — buyer=${r.buyer_email}, ebookExists=${!!r.ebook_id_check}, title=${r.title ?? "(yok)"}`,
+      );
       await notifyNewEbookPurchase({
         purchaseId,
         buyerEmail: r.buyer_email,
         ebookTitle: r.title ?? "E-kitap",
         amountTl: Number(r.amount_paid ?? 0),
       });
+      console.info(`[EBOOK-PURCHASE] admin notify TAMAMLANDI: purchaseId=${purchaseId}`);
     } catch (e: any) {
-      console.error("[EBOOK-PURCHASE] admin notify HATA:", e?.message);
+      console.error("[EBOOK-PURCHASE] admin notify HATA:", e?.message, e?.stack);
     }
   })();
 }
@@ -200,6 +208,7 @@ router.post("/internal/ebook-purchase/activate", async (req: Request, res: Respo
     iyzicoConversationId,
     downloadToken,
     paidAt,
+    affiliateCode,
   } = (req.body ?? {}) as any;
 
   // Defense-in-depth: Iyzico response'da bazen buyer.email veya conversationId boş gelir.
