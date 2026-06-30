@@ -375,27 +375,49 @@ router.post("/internal/ebook-purchase/mark-failed", async (req: Request, res: Re
 // ─── PUBLIC: Tam PDF indirme (token ile) ─────────────────────────────────
 // CORS açık, çoğu tarayıcıdan link tıklanır
 router.get("/ebooks/download", async (req: Request, res: Response) => {
+  // UTF-8 charset her response için (Türkçe karakterlerin tarayıcıda doğru görünmesi)
+  res.setHeader("Content-Type", "text/plain; charset=utf-8");
+
   const token = String(req.query?.token ?? "").trim();
   if (!token) return res.status(400).send("Token eksik");
+
+  console.info(`[EBOOK-DOWNLOAD] token denendi: ${token.slice(0, 12)}... (uzunluk=${token.length})`);
 
   try {
     // Token + süre + indirme sayısı kontrolü
     const rows = await db.execute(sql`
-      SELECT id, ebook_id, download_count, download_expires_at, payment_status
+      SELECT id, ebook_id, download_count, download_expires_at, payment_status, buyer_email
       FROM ebook_purchases
       WHERE download_token = ${token}
       LIMIT 1
     `);
     const purchase = (rows.rows ?? rows)[0] as any;
 
-    if (!purchase) return res.status(404).send("Geçersiz indirme bağlantısı");
+    if (!purchase) {
+      // Token DB'de yok — ya hiç oluşturulmadı, ya silindi, ya da farklı bir token
+      // Yakın token var mı diye prefix ile bak (debug için)
+      const similarRows = await db.execute(sql`
+        SELECT id, payment_status, LEFT(download_token, 12) AS token_prefix, created_at
+        FROM ebook_purchases
+        WHERE download_token IS NOT NULL
+        ORDER BY created_at DESC
+        LIMIT 3
+      `);
+      const recent = (similarRows.rows ?? similarRows) as any[];
+      console.error(`[EBOOK-DOWNLOAD] Token bulunamadı. Denenen: ${token.slice(0, 12)}... | Son 3 DB token prefix: ${recent.map(r => `${r.token_prefix}(${r.payment_status})`).join(", ")}`);
+      return res.status(404).send("Geçersiz indirme bağlantısı");
+    }
+    console.info(`[EBOOK-DOWNLOAD] token eşleşti: id=${purchase.id} status=${purchase.payment_status} expires=${purchase.download_expires_at}`);
     if (purchase.payment_status !== "success") {
-      return res.status(403).send("Bu sipariş için ödeme tamamlanmamış");
+      console.warn(`[EBOOK-DOWNLOAD] Reddedildi - status=${purchase.payment_status} id=${purchase.id}`);
+      return res.status(403).send(`Bu sipariş için ödeme tamamlanmamış (status: ${purchase.payment_status})`);
     }
     if (!purchase.download_expires_at || new Date(purchase.download_expires_at) < new Date()) {
+      console.warn(`[EBOOK-DOWNLOAD] Reddedildi - süresi dolmuş id=${purchase.id} expires=${purchase.download_expires_at}`);
       return res.status(410).send("İndirme bağlantısının süresi dolmuş (7 gün)");
     }
     if (purchase.download_count >= 10) {
+      console.warn(`[EBOOK-DOWNLOAD] Reddedildi - limit dolu id=${purchase.id} count=${purchase.download_count}`);
       return res.status(429).send("İndirme limiti doldu (max 10). Destek ile iletişime geçin.");
     }
 
