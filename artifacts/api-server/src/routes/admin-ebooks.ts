@@ -63,7 +63,11 @@ router.get(
   "/admin/ebooks/:id",
   authMiddleware,
   requireRole("admin"),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthRequest, res: Response, next: any) => {
+    // Non-numeric path geldiyse (örn. "health-check", "yeni") sonraki route'a bırak
+    if (!/^\d+$/.test(String(req.params.id ?? ""))) {
+      return next();
+    }
     const id = parseInt(req.params.id, 10);
     if (!Number.isFinite(id)) return res.status(400).json({ error: "Geçersiz id" });
     try {
@@ -90,7 +94,7 @@ router.post(
   "/admin/ebooks",
   authMiddleware,
   requireRole("admin"),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthRequest, res: Response, next: any) => {
     const b = req.body ?? {};
     if (!b.slug || !b.title || !b.description || !b.author || b.priceTry == null) {
       return res.status(400).json({ error: "Zorunlu: slug, title, description, author, priceTry" });
@@ -136,7 +140,11 @@ router.patch(
   "/admin/ebooks/:id",
   authMiddleware,
   requireRole("admin"),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthRequest, res: Response, next: any) => {
+    // Non-numeric path geldiyse (örn. "health-check", "yeni") sonraki route'a bırak
+    if (!/^\d+$/.test(String(req.params.id ?? ""))) {
+      return next();
+    }
     const id = parseInt(req.params.id, 10);
     if (!Number.isFinite(id)) return res.status(400).json({ error: "Geçersiz id" });
     const b = req.body ?? {};
@@ -186,7 +194,11 @@ router.delete(
   "/admin/ebooks/:id",
   authMiddleware,
   requireRole("admin"),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthRequest, res: Response, next: any) => {
+    // Non-numeric path geldiyse (örn. "health-check", "yeni") sonraki route'a bırak
+    if (!/^\d+$/.test(String(req.params.id ?? ""))) {
+      return next();
+    }
     const id = parseInt(req.params.id, 10);
     if (!Number.isFinite(id)) return res.status(400).json({ error: "Geçersiz id" });
     try {
@@ -205,7 +217,11 @@ router.post(
   authMiddleware,
   requireRole("admin"),
   upload.single("file"),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthRequest, res: Response, next: any) => {
+    // Non-numeric path geldiyse (örn. "health-check", "yeni") sonraki route'a bırak
+    if (!/^\d+$/.test(String(req.params.id ?? ""))) {
+      return next();
+    }
     const id = parseInt(req.params.id, 10);
     if (!Number.isFinite(id)) return res.status(400).json({ error: "Geçersiz id" });
     const file = req.file;
@@ -324,7 +340,7 @@ router.delete(
   "/admin/ebook-assets/:assetId",
   authMiddleware,
   requireRole("admin"),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthRequest, res: Response, next: any) => {
     const id = parseInt(req.params.assetId, 10);
     if (!Number.isFinite(id)) return res.status(400).json({ error: "Geçersiz id" });
     try {
@@ -371,7 +387,7 @@ router.patch(
   "/admin/ebook-assets/:assetId",
   authMiddleware,
   requireRole("admin"),
-  async (req: AuthRequest, res: Response) => {
+  async (req: AuthRequest, res: Response, next: any) => {
     const id = parseInt(req.params.assetId, 10);
     if (!Number.isFinite(id)) return res.status(400).json({ error: "Geçersiz id" });
     const position = parseInt(req.body?.position ?? "0", 10) || 0;
@@ -402,18 +418,4 @@ router.get("/ebooks/asset/:assetId", async (req: Request, res: Response) => {
     res.setHeader("Content-Length", String(asset.size_bytes));
     res.setHeader("Cache-Control", "public, max-age=3600, immutable");
     // Cross-origin <img> tag'lerinin yükleyebilmesi için CORP override
-    // (Helmet default 'same-origin' set ediyor — www.sphereenglish.com'dan
-    // app.sphereenglish.com asset'i yüklenince engellenmesini önler)
-    res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
-    res.setHeader("Access-Control-Allow-Origin", "*");
-    // Inline göster — download zorla değil
-    res.setHeader("Content-Disposition", `inline; filename="${asset.filename.replace(/[^a-zA-Z0-9._-]/g, "_")}"`);
-    const buf = Buffer.from(asset.data_base64, "base64");
-    return res.send(buf);
-  } catch (e: any) {
-    console.error("[EBOOK-ASSET] stream HATA:", e?.message);
-    return res.status(500).send("Yüklenemedi");
-  }
-});
-
-export default router;
+    // (He

@@ -108,6 +108,9 @@ router.use(teacherApplicationsRouter);
 // path'i ebooksRouter'ın /ebooks/:slug route'una yakalanmasın diye
 router.use(ebookPurchaseRouter);
 router.use(ebooksRouter);
+// Health check + smoke + bildirim test gibi spesifik admin endpoint'leri,
+// adminEbooks'tan ÖNCE mount edilmeli — :id parametresi non-numeric path'leri yakalar
+router.use(adminEbookHealthRouter);
 router.use(adminEbooksRouter);
 router.use(adminEbookPurchasesRouter);
 router.use(webAnalyticsRouter);
