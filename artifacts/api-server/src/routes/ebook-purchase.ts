@@ -190,7 +190,7 @@ router.post("/internal/ebook-purchase/activate", async (req: Request, res: Respo
     return res.status(401).json({ error: "Geçersiz imza" });
   }
 
-  const {
+  let {
     ebookId,
     buyerEmail,
     buyerName,
@@ -202,8 +202,52 @@ router.post("/internal/ebook-purchase/activate", async (req: Request, res: Respo
     paidAt,
   } = (req.body ?? {}) as any;
 
+  // Defense-in-depth: Iyzico response'da bazen buyer.email veya conversationId boş gelir.
+  // Pending kayıt (pre-create) bilgilerinden eksik alanları doldur.
+  if ((!ebookId || !buyerEmail || !buyerName || !amountPaid) && iyzicoConversationId) {
+    try {
+      const lookupRows = await db.execute(sql`
+        SELECT ebook_id, buyer_email, buyer_name, amount_paid
+        FROM ebook_purchases
+        WHERE iyzico_conversation_id = ${iyzicoConversationId}
+        ORDER BY created_at DESC
+        LIMIT 1
+      `);
+      const lookupRow = (lookupRows.rows ?? lookupRows)[0] as any;
+      if (lookupRow) {
+        if (!ebookId && lookupRow.ebook_id) {
+          ebookId = Number(lookupRow.ebook_id);
+          console.info(`[EBOOK-PURCHASE] activate: ebookId pending'den resolve → ${ebookId}`);
+        }
+        if (!buyerEmail && lookupRow.buyer_email) {
+          buyerEmail = String(lookupRow.buyer_email);
+          console.info(`[EBOOK-PURCHASE] activate: buyerEmail pending'den resolve → ${buyerEmail}`);
+        }
+        if (!buyerName && lookupRow.buyer_name) {
+          buyerName = String(lookupRow.buyer_name);
+        }
+        if (!amountPaid && lookupRow.amount_paid != null) {
+          amountPaid = Number(lookupRow.amount_paid);
+        }
+      } else {
+        console.warn(`[EBOOK-PURCHASE] activate: pending kayit bulunamadi convId=${iyzicoConversationId}`);
+      }
+    } catch (lookupErr: any) {
+      console.error("[EBOOK-PURCHASE] activate: pending lookup HATA:", lookupErr?.message);
+    }
+  }
+
   if (!ebookId || !buyerEmail || !downloadToken) {
-    return res.status(400).json({ error: "Eksik alan: ebookId, buyerEmail, downloadToken" });
+    return res.status(400).json({
+      error: "Eksik alan: ebookId, buyerEmail, downloadToken",
+      debug: {
+        ebookId: ebookId ?? null,
+        hasBuyerEmail: !!buyerEmail,
+        hasDownloadToken: !!downloadToken,
+        hasConvId: !!iyzicoConversationId,
+        convIdValue: iyzicoConversationId ?? null,
+      },
+    });
   }
 
   try {
