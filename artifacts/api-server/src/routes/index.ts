@@ -103,10 +103,12 @@ router.use(adminSubscriptionsRouter);
 router.use("/payment", paymentRouter);
 router.use(internalPaymentRouter);
 router.use(teacherApplicationsRouter);
+// ebookPurchaseRouter'ı ebooksRouter'dan ÖNCE mount et — /ebooks/download
+// path'i ebooksRouter'ın /ebooks/:slug route'una yakalanmasın diye
+router.use(ebookPurchaseRouter);
 router.use(ebooksRouter);
 router.use(adminEbooksRouter);
 router.use(adminEbookPurchasesRouter);
-router.use(ebookPurchaseRouter);
 router.use(webAnalyticsRouter);
 router.use(accountSetupRouter);
 router.use(instagramWebhookRouter);

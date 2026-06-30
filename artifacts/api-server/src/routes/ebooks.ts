@@ -41,9 +41,16 @@ router.get("/ebooks", async (_req: Request, res: Response) => {
   }
 });
 
-router.get("/ebooks/:slug", async (req: Request, res: Response) => {
+// Reserved path'ler — slug olarak yakalanmasın (başka router handle eder)
+const RESERVED_EBOOK_PATHS = new Set(["download", "asset", "yeni", "new"]);
+
+router.get("/ebooks/:slug", async (req: Request, res: Response, next) => {
   const slug = String(req.params.slug || "").trim();
   if (!slug) return res.status(400).json({ error: "Geçersiz slug" });
+  // Reserved keyword ise sonraki route'a devret (Express next())
+  if (RESERVED_EBOOK_PATHS.has(slug.toLowerCase())) {
+    return next();
+  }
   try {
     const rows = await db.execute(sql`
       SELECT ${PUBLIC_COLUMNS}
