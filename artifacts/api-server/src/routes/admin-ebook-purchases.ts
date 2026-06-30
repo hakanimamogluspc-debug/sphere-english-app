@@ -344,7 +344,7 @@ router.post(
 
     try {
       const rows = await db.execute(sql`
-        SELECT id, payment_status, download_token, buyer_email, ebook_id, amount_paid
+        SELECT id, payment_status, download_token, buyer_email, ebook_id, amount_paid, paid_at, notes
         FROM ebook_purchases WHERE id = ${id} LIMIT 1
       `);
       const purchase = (rows.rows ?? rows)[0] as any;
@@ -365,19 +365,29 @@ router.post(
       const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
       const paidAtIso = new Date().toISOString();
 
-      // Pending → success + token + expire + paid_at
+      // Mevcut paid_at'i çek (COALESCE param bug'ı önlemek için JS tarafında)
+      const existingPaidAt = (purchase as any).paid_at;
+      const finalPaidAtIso = existingPaidAt ? new Date(existingPaidAt).toISOString() : paidAtIso;
+
+      // Audit notu (mevcut notes'a ekle, JS tarafında concat)
+      const adminId = req.userId ?? 0;
+      const auditNote = ` [MANUEL AKTIVE: admin ${adminId} / ${new Date().toISOString()}]`;
+      const existingNotes = (purchase as any).notes ?? "";
+      const newNotes = `${existingNotes}${auditNote}`;
+
+      // Pending → success + token + expire + paid_at — tüm parametreler typed
       await db.execute(sql`
         UPDATE ebook_purchases SET
           payment_status = 'success',
           download_token = ${newToken},
           download_expires_at = ${expiresAt}::TIMESTAMPTZ,
-          paid_at = COALESCE(paid_at, ${paidAtIso}::TIMESTAMPTZ),
+          paid_at = ${finalPaidAtIso}::TIMESTAMPTZ,
           updated_at = NOW(),
-          notes = COALESCE(notes, '') || ' [MANUEL AKTIVE: admin ' || ${req.userId ?? 0}::TEXT || ' / ' || NOW()::TEXT || ']'
+          notes = ${newNotes}
         WHERE id = ${id}
       `);
 
-      console.info(`[admin-ebook-purchases/manual-activate] id=${id} success'e çevrildi (admin=${req.userId})`);
+      console.info(`[admin-ebook-purchases/manual-activate] id=${id} success'e çevrildi (admin=${adminId})`);
 
       // Müşteriye PDF mail gönder
       try {
