@@ -135,7 +135,7 @@ router.post("/internal/payment/activate", async (req: Request, res: Response) =>
     return res.status(401).json({ error: "Geçersiz imza" });
   }
 
-  const {
+  let {
     email,
     name,
     planCode,
@@ -157,8 +157,44 @@ router.post("/internal/payment/activate", async (req: Request, res: Response) =>
     affiliateCode?: string;
   };
 
+  // Defense-in-depth: Iyzico response'unda email/planCode yoksa,
+  // pre-create draft'ından çek. Bu sayede www email göndermese bile
+  // abonelik aktivasyonu kaybolmaz.
+  if ((!email || !planCode) && iyzicoConversationId) {
+    try {
+      const draftRows = await db.execute(sql`
+        SELECT buyer_email, buyer_name, plan_code, affiliate_code
+        FROM pending_subscription_drafts
+        WHERE conversation_id = ${iyzicoConversationId}
+        LIMIT 1
+      `);
+      const draft = (draftRows.rows ?? draftRows)[0] as any;
+      if (draft) {
+        if (!email && draft.buyer_email) {
+          email = String(draft.buyer_email);
+          console.info(`[INTERNAL] activate: email pre-create'ten resolve edildi (${email})`);
+        }
+        if (!name && draft.buyer_name) name = String(draft.buyer_name);
+        if (!planCode && draft.plan_code) {
+          planCode = String(draft.plan_code);
+          console.info(`[INTERNAL] activate: planCode pre-create'ten resolve edildi (${planCode})`);
+        }
+        if (!affiliateCode && draft.affiliate_code) affiliateCode = String(draft.affiliate_code);
+      }
+    } catch (lookupErr: any) {
+      console.error("[INTERNAL] activate: pre-create lookup HATA:", lookupErr?.message);
+    }
+  }
+
   if (!email || !planCode) {
-    return res.status(400).json({ error: "email ve planCode zorunlu" });
+    return res.status(400).json({
+      error: "email ve planCode zorunlu",
+      debug: {
+        hasEmail: !!email,
+        hasPlanCode: !!planCode,
+        hasConvId: !!iyzicoConversationId,
+      },
+    });
   }
   const plan = getPlan(planCode);
   if (!plan) return res.status(400).json({ error: "Bilinmeyen planCode" });
