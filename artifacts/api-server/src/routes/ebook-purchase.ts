@@ -1,11 +1,11 @@
-﻿/**
- * E-kitap satÄ±n alma + indirme.
+/**
+ * E-kitap satın alma + indirme.
  *
  * Endpoint'ler:
- *   POST /api/internal/ebook-purchase/pre-create  â†’ Initialize aÅŸamasÄ±nda pending purchase yaz (billing info ile)
- *   POST /api/internal/ebook-purchase/activate    â†’ Callback baÅŸarÄ±lÄ±ysa pending'i success'e Ã§evir, downloadToken Ã¼ret
- *   POST /api/internal/ebook-purchase/mark-failed â†’ Callback baÅŸarÄ±sÄ±zsa pending'i failed olarak iÅŸaretle
- *   GET  /api/ebooks/download?token=X             â†’ Token ile tam PDF'i stream et (max 10 indirme, 7 gÃ¼n geÃ§erli)
+ *   POST /api/internal/ebook-purchase/pre-create  → Initialize aşamasında pending purchase yaz (billing info ile)
+ *   POST /api/internal/ebook-purchase/activate    → Callback başarılıysa pending'i success'e çevir, downloadToken üret
+ *   POST /api/internal/ebook-purchase/mark-failed → Callback başarısızsa pending'i failed olarak işaretle
+ *   GET  /api/ebooks/download?token=X             → Token ile tam PDF'i stream et (max 10 indirme, 7 gün geçerli)
  *
  * Internal endpoint'ler HMAC X-Internal-Signature ile authenticate.
  */
@@ -19,7 +19,7 @@ import { db } from "@workspace/db";
 import { sendEbookDownloadMail } from "../lib/ebook-mail.js";
 import { notifyNewEbookPurchase } from "../lib/admin-notifications.js";
 
-/** Admin'lere yeni e-kitap satÄ±ÅŸÄ± bildirimi (non-blocking) */
+/** Admin'lere yeni e-kitap satışı bildirimi (non-blocking) */
 function notifyAdminOfEbookPurchase(purchaseId: number): void {
   void (async () => {
     try {
@@ -49,7 +49,7 @@ function verifySignature(rawBody: string, signature: string | undefined): boolea
   if (!signature) return false;
   const secret = process.env["INTERNAL_API_SHARED_SECRET"];
   if (!secret) {
-    console.error("[INTERNAL] INTERNAL_API_SHARED_SECRET tanÄ±mlÄ± deÄŸil");
+    console.error("[INTERNAL] INTERNAL_API_SHARED_SECRET tanımlı değil");
     return false;
   }
   const expected = crypto.createHmac("sha256", secret).update(rawBody).digest("hex");
@@ -60,15 +60,15 @@ function verifySignature(rawBody: string, signature: string | undefined): boolea
   }
 }
 
-// â”€â”€â”€ INTERNAL: Pre-create (initialize aÅŸamasÄ±) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// sphere-www payment/ebook/initialize bunu Ã§aÄŸÄ±rÄ±r â†’ DB'ye pending purchase yazar
+// ─── INTERNAL: Pre-create (initialize aşaması) ──────────────────────────
+// sphere-www payment/ebook/initialize bunu çağırır → DB'ye pending purchase yazar
 // callback'te conversationId ile bulunup activate edilir
 router.post("/internal/ebook-purchase/pre-create", async (req: Request, res: Response) => {
   const rawBody = JSON.stringify(req.body);
   const signature = req.headers["x-internal-signature"];
 
   if (!verifySignature(rawBody, typeof signature === "string" ? signature : undefined)) {
-    return res.status(401).json({ error: "GeÃ§ersiz imza" });
+    return res.status(401).json({ error: "Geçersiz imza" });
   }
 
   const {
@@ -99,11 +99,11 @@ router.post("/internal/ebook-purchase/pre-create", async (req: Request, res: Res
   }
 
   try {
-    // KitabÄ±n varlÄ±ÄŸÄ±nÄ± doÄŸrula
+    // Kitabın varlığını doğrula
     const eb = await db.execute(sql`SELECT id FROM ebooks WHERE id = ${ebookId} LIMIT 1`);
-    if (!(eb.rows ?? eb)[0]) return res.status(404).json({ error: "Kitap bulunamadÄ±" });
+    if (!(eb.rows ?? eb)[0]) return res.status(404).json({ error: "Kitap bulunamadı" });
 
-    // AynÄ± conversationId'li satÄ±r varsa idempotent â€” update et
+    // Aynı conversationId'li satır varsa idempotent — update et
     const existing = await db.execute(sql`
       SELECT id FROM ebook_purchases
       WHERE iyzico_conversation_id = ${iyzicoConversationId}
@@ -111,7 +111,7 @@ router.post("/internal/ebook-purchase/pre-create", async (req: Request, res: Res
     `);
     const existingRow = (existing.rows ?? existing)[0] as any;
 
-    // Email ile mevcut kullanÄ±cÄ± varsa user_id'yi yakala
+    // Email ile mevcut kullanıcı varsa user_id'yi yakala
     const userRows = await db.execute(sql`
       SELECT id FROM users WHERE LOWER(email) = LOWER(${buyerEmail}) LIMIT 1
     `);
@@ -137,7 +137,7 @@ router.post("/internal/ebook-purchase/pre-create", async (req: Request, res: Res
       return res.json({ ok: true, purchaseId: existingRow.id, updated: true });
     }
 
-    // Yeni pending kayÄ±t
+    // Yeni pending kayıt
     const inserted = await db.execute(sql`
       INSERT INTO ebook_purchases (
         ebook_id, user_id, buyer_email, buyer_name, buyer_phone,
@@ -161,7 +161,7 @@ router.post("/internal/ebook-purchase/pre-create", async (req: Request, res: Res
       RETURNING id
     `);
     const purchaseId = ((inserted.rows ?? inserted)[0] as any)?.id;
-    // Coupon ID'yi e-postaya kayÄ±t iÃ§in ek update
+    // Coupon ID'yi e-postaya kayıt için ek update
     if (couponCode && purchaseId) {
       try {
         const cRows = await db.execute(sql`SELECT id FROM coupons WHERE code = ${couponCode} LIMIT 1`);
@@ -175,23 +175,23 @@ router.post("/internal/ebook-purchase/pre-create", async (req: Request, res: Res
     return res.json({ ok: true, purchaseId });
   } catch (e: any) {
     console.error("[EBOOK-PURCHASE] pre-create HATA:", e?.message);
-    return res.status(500).json({ error: "Pre-create baÅŸarÄ±sÄ±z: " + e?.message });
+    return res.status(500).json({ error: "Pre-create başarısız: " + e?.message });
   }
 });
 
-// â”€â”€â”€ INTERNAL: Activate (callback baÅŸarÄ±lÄ±) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// Iyzico callback baÅŸarÄ±lÄ± paymentStatus dÃ¶ndÃ¼rÃ¼rse Ã§aÄŸrÄ±lÄ±r
-// Pending kaydÄ± bulup success'e Ã§evirir + download token Ã¼retir
+// ─── INTERNAL: Activate (callback başarılı) ──────────────────────────────
+// Iyzico callback başarılı paymentStatus döndürürse çağrılır
+// Pending kaydı bulup success'e çevirir + download token üretir
 router.post("/internal/ebook-purchase/activate", async (req: Request, res: Response) => {
   const rawBody = JSON.stringify(req.body);
   const signature = req.headers["x-internal-signature"];
 
   if (!verifySignature(rawBody, typeof signature === "string" ? signature : undefined)) {
-    return res.status(401).json({ error: "GeÃ§ersiz imza" });
+    return res.status(401).json({ error: "Geçersiz imza" });
   }
 
   const {
-    ebookId: providedEbookId,
+    ebookId,
     buyerEmail,
     buyerName,
     amountPaid,
@@ -202,46 +202,15 @@ router.post("/internal/ebook-purchase/activate", async (req: Request, res: Respo
     paidAt,
   } = (req.body ?? {}) as any;
 
-  // ebookId resolve â€” www tarafÄ± regex match edememiÅŸse iyzicoConversationId
-  // Ã¼zerinden pending kayÄ±ttan Ã§ek (defense-in-depth)
-  let ebookId: number | null = providedEbookId ? Number(providedEbookId) : null;
-  if (!ebookId && iyzicoConversationId) {
-    try {
-      const lookupRows = await db.execute(sql`
-        SELECT ebook_id FROM ebook_purchases
-        WHERE iyzico_conversation_id = ${iyzicoConversationId}
-        ORDER BY created_at DESC
-        LIMIT 1
-      `);
-      const lookupRow = (lookupRows.rows ?? lookupRows)[0] as any;
-      if (lookupRow?.ebook_id) {
-        ebookId = Number(lookupRow.ebook_id);
-        console.info(
-          `[EBOOK-PURCHASE] activate: ebookId www'den gelmedi, pending kayÄ±ttan resolve edildi â†’ ${ebookId} (conv=${iyzicoConversationId})`,
-        );
-      }
-    } catch (lookupErr: any) {
-      console.error("[EBOOK-PURCHASE] activate: pending lookup HATA:", lookupErr?.message);
-    }
-  }
-
   if (!ebookId || !buyerEmail || !downloadToken) {
-    return res.status(400).json({
-      error: "Eksik alan: ebookId, buyerEmail, downloadToken",
-      debug: {
-        ebookId: ebookId ?? null,
-        hasBuyerEmail: !!buyerEmail,
-        hasDownloadToken: !!downloadToken,
-        hasConvId: !!iyzicoConversationId,
-      },
-    });
+    return res.status(400).json({ error: "Eksik alan: ebookId, buyerEmail, downloadToken" });
   }
 
   try {
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
     const paidAtIso = paidAt ?? new Date().toISOString();
 
-    // Ã–nce pending satÄ±rÄ± conversationId ile bul ve gÃ¼ncelle
+    // Önce pending satırı conversationId ile bul ve güncelle
     if (iyzicoConversationId) {
       const upd = await db.execute(sql`
         UPDATE ebook_purchases SET
@@ -298,17 +267,17 @@ router.post("/internal/ebook-purchase/activate", async (req: Request, res: Respo
             console.error("[EBOOK-PURCHASE] affiliate attr HATA:", affErr?.message);
           }
         }
-        // Mail gÃ¶nder (fire-and-forget â€” response'u bloklamasÄ±n)
+        // Mail gönder (fire-and-forget — response'u bloklamasın)
         sendPurchaseEmailFireForget(updatedRow.id).catch((e) => {
           console.error("[EBOOK-PURCHASE] mail fire-forget HATA:", e?.message);
         });
-        // Admin'lere yeni satÄ±ÅŸ bildirimi
+        // Admin'lere yeni satış bildirimi
         notifyAdminOfEbookPurchase(updatedRow.id);
         return res.json({ ok: true, purchaseId: updatedRow.id, action: "updated" });
       }
     }
 
-    // Pre-create kaydÄ± yoksa fallback: yeni kayÄ±t oluÅŸtur (eski akÄ±ÅŸ uyumu iÃ§in)
+    // Pre-create kaydı yoksa fallback: yeni kayıt oluştur (eski akış uyumu için)
     const userRows = await db.execute(sql`
       SELECT id FROM users WHERE LOWER(email) = LOWER(${buyerEmail}) LIMIT 1
     `);
@@ -349,24 +318,24 @@ router.post("/internal/ebook-purchase/activate", async (req: Request, res: Respo
       sendPurchaseEmailFireForget(newId).catch((e) => {
         console.error("[EBOOK-PURCHASE] mail fire-forget HATA:", e?.message);
       });
-      // Admin'lere yeni satÄ±ÅŸ bildirimi
+      // Admin'lere yeni satış bildirimi
       notifyAdminOfEbookPurchase(Number(newId));
     }
     return res.json({ ok: true, purchaseId: newId, action: "inserted" });
   } catch (e: any) {
     console.error("[EBOOK-PURCHASE] activate HATA:", e?.message);
-    return res.status(500).json({ error: "KayÄ±t baÅŸarÄ±sÄ±z: " + e?.message });
+    return res.status(500).json({ error: "Kayıt başarısız: " + e?.message });
   }
 });
 
-// â”€â”€â”€ INTERNAL: Mark failed (callback baÅŸarÄ±sÄ±z) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// Iyzico callback failure dÃ¶ndÃ¼rÃ¼rse pending kaydÄ± failed olarak iÅŸaretlenir
+// ─── INTERNAL: Mark failed (callback başarısız) ──────────────────────────
+// Iyzico callback failure döndürürse pending kaydı failed olarak işaretlenir
 router.post("/internal/ebook-purchase/mark-failed", async (req: Request, res: Response) => {
   const rawBody = JSON.stringify(req.body);
   const signature = req.headers["x-internal-signature"];
 
   if (!verifySignature(rawBody, typeof signature === "string" ? signature : undefined)) {
-    return res.status(401).json({ error: "GeÃ§ersiz imza" });
+    return res.status(401).json({ error: "Geçersiz imza" });
   }
 
   const { iyzicoConversationId, iyzicoPaymentId, paymentError } = (req.body ?? {}) as any;
@@ -375,7 +344,7 @@ router.post("/internal/ebook-purchase/mark-failed", async (req: Request, res: Re
   }
 
   try {
-    // iyzico_payment_id null gelirse COALESCE bug'Ä± tetiklenir â€” conditional SET
+    // iyzico_payment_id null gelirse COALESCE bug'ı tetiklenir — conditional SET
     if (iyzicoPaymentId) {
       await db.execute(sql`
         UPDATE ebook_purchases SET
@@ -399,18 +368,18 @@ router.post("/internal/ebook-purchase/mark-failed", async (req: Request, res: Re
     return res.json({ ok: true });
   } catch (e: any) {
     console.error("[EBOOK-PURCHASE] mark-failed HATA:", e?.message);
-    return res.status(500).json({ error: "Mark failed baÅŸarÄ±sÄ±z: " + e?.message });
+    return res.status(500).json({ error: "Mark failed başarısız: " + e?.message });
   }
 });
 
-// â”€â”€â”€ PUBLIC: Tam PDF indirme (token ile) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// CORS aÃ§Ä±k, Ã§oÄŸu tarayÄ±cÄ±dan link tÄ±klanÄ±r
+// ─── PUBLIC: Tam PDF indirme (token ile) ─────────────────────────────────
+// CORS açık, çoğu tarayıcıdan link tıklanır
 router.get("/ebooks/download", async (req: Request, res: Response) => {
   const token = String(req.query?.token ?? "").trim();
   if (!token) return res.status(400).send("Token eksik");
 
   try {
-    // Token + sÃ¼re + indirme sayÄ±sÄ± kontrolÃ¼
+    // Token + süre + indirme sayısı kontrolü
     const rows = await db.execute(sql`
       SELECT id, ebook_id, download_count, download_expires_at, payment_status
       FROM ebook_purchases
@@ -419,15 +388,15 @@ router.get("/ebooks/download", async (req: Request, res: Response) => {
     `);
     const purchase = (rows.rows ?? rows)[0] as any;
 
-    if (!purchase) return res.status(404).send("GeÃ§ersiz indirme baÄŸlantÄ±sÄ±");
+    if (!purchase) return res.status(404).send("Geçersiz indirme bağlantısı");
     if (purchase.payment_status !== "success") {
-      return res.status(403).send("Bu sipariÅŸ iÃ§in Ã¶deme tamamlanmamÄ±ÅŸ");
+      return res.status(403).send("Bu sipariş için ödeme tamamlanmamış");
     }
     if (!purchase.download_expires_at || new Date(purchase.download_expires_at) < new Date()) {
-      return res.status(410).send("Ä°ndirme baÄŸlantÄ±sÄ±nÄ±n sÃ¼resi dolmuÅŸ (7 gÃ¼n)");
+      return res.status(410).send("İndirme bağlantısının süresi dolmuş (7 gün)");
     }
     if (purchase.download_count >= 10) {
-      return res.status(429).send("Ä°ndirme limiti doldu (max 10). Destek ile iletiÅŸime geÃ§in.");
+      return res.status(429).send("İndirme limiti doldu (max 10). Destek ile iletişime geçin.");
     }
 
     // Full PDF asset'i bul
@@ -440,7 +409,7 @@ router.get("/ebooks/download", async (req: Request, res: Response) => {
     const asset = (assetRows.rows ?? assetRows)[0] as any;
     if (!asset) {
       console.error(`[EBOOK-DOWNLOAD] Full PDF asset yok: ebookId=${purchase.ebook_id}`);
-      return res.status(500).send("PDF dosyasÄ± bulunamadÄ±. LÃ¼tfen destek ile iletiÅŸime geÃ§in.");
+      return res.status(500).send("PDF dosyası bulunamadı. Lütfen destek ile iletişime geçin.");
     }
 
     // Counter ++
@@ -463,16 +432,16 @@ router.get("/ebooks/download", async (req: Request, res: Response) => {
     return res.send(buf);
   } catch (e: any) {
     console.error("[EBOOK-DOWNLOAD] HATA:", e?.message);
-    return res.status(500).send("Ä°ndirme hatasÄ±");
+    return res.status(500).send("İndirme hatası");
   }
 });
 
 /**
- * Verilen purchaseId iÃ§in satÄ±n alma mailini gÃ¶nder.
+ * Verilen purchaseId için satın alma mailini gönder.
  * Mail durumu (sent/failed/error) ebook_purchases tablosuna kaydedilir.
- * Fire-and-forget kullanÄ±ldÄ±ÄŸÄ±nda Ã¶deme akÄ±ÅŸÄ±nÄ± bloklamaz.
+ * Fire-and-forget kullanıldığında ödeme akışını bloklamaz.
  */
-export async function sendPurchaseEmailFireForget(purchaseId: number): Promise<void> {
+async function sendPurchaseEmailFireForget(purchaseId: number): Promise<void> {
   try {
     const rows = await db.execute(sql`
       SELECT p.id, p.buyer_email, p.buyer_name, p.invoice_type,
@@ -487,15 +456,15 @@ export async function sendPurchaseEmailFireForget(purchaseId: number): Promise<v
     `);
     const p = (rows.rows ?? rows)[0] as any;
     if (!p) {
-      console.error(`[EBOOK-PURCHASE/mail] purchase bulunamadÄ±: id=${purchaseId}`);
+      console.error(`[EBOOK-PURCHASE/mail] purchase bulunamadı: id=${purchaseId}`);
       return;
     }
     if (p.payment_status !== "success" || !p.download_token) {
-      console.warn(`[EBOOK-PURCHASE/mail] mail atlandÄ± (status=${p.payment_status}, token=${!!p.download_token})`);
+      console.warn(`[EBOOK-PURCHASE/mail] mail atlandı (status=${p.payment_status}, token=${!!p.download_token})`);
       return;
     }
 
-    // Attempt counter artÄ±r
+    // Attempt counter artır
     await db.execute(sql`
       UPDATE ebook_purchases SET mail_attempts = mail_attempts + 1, updated_at = NOW()
       WHERE id = ${purchaseId}
@@ -522,7 +491,7 @@ export async function sendPurchaseEmailFireForget(purchaseId: number): Promise<v
           updated_at = NOW()
         WHERE id = ${purchaseId}
       `);
-      console.info(`[EBOOK-PURCHASE/mail] GÃ¶nderildi: id=${purchaseId} to=${p.buyer_email}`);
+      console.info(`[EBOOK-PURCHASE/mail] Gönderildi: id=${purchaseId} to=${p.buyer_email}`);
     } else {
       await db.execute(sql`
         UPDATE ebook_purchases SET
@@ -531,7 +500,7 @@ export async function sendPurchaseEmailFireForget(purchaseId: number): Promise<v
           updated_at = NOW()
         WHERE id = ${purchaseId}
       `);
-      console.error(`[EBOOK-PURCHASE/mail] BaÅŸarÄ±sÄ±z: id=${purchaseId} err=${result.error}`);
+      console.error(`[EBOOK-PURCHASE/mail] Başarısız: id=${purchaseId} err=${result.error}`);
     }
   } catch (e: any) {
     console.error("[EBOOK-PURCHASE/mail] HATA:", e?.message);
@@ -549,6 +518,7 @@ export async function sendPurchaseEmailFireForget(purchaseId: number): Promise<v
   }
 }
 
-// Export â€” admin endpoint'inden de Ã§aÄŸrÄ±labilsin
+// Export — admin endpoint'inden de çağrılabilsin
+export { sendPurchaseEmailFireForget };
 
 export default router;

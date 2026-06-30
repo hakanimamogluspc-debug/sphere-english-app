@@ -1,7 +1,7 @@
 import { useState } from "react";
 import {
   Play, CheckCircle2, XCircle, Loader2, ChevronDown, ChevronRight,
-  Activity, Clock, AlertTriangle, Mail,
+  Activity, Clock, AlertTriangle, Mail, BookOpen,
 } from "lucide-react";
 import { API } from "@/lib/api-url";
 
@@ -54,6 +54,21 @@ export default function AdminSmokeTests() {
   const [error, setError] = useState<string | null>(null);
   const [mailTesting, setMailTesting] = useState(false);
   const [mailResult, setMailResult] = useState<{ ok: boolean; message: string; recipients?: string[] } | null>(null);
+  const [ebookChecking, setEbookChecking] = useState(false);
+  const [ebookHealth, setEbookHealth] = useState<any | null>(null);
+
+  async function checkEbookHealth() {
+    setEbookChecking(true);
+    setEbookHealth(null);
+    try {
+      const data = await apiFetch("/admin/ebooks/health-check");
+      setEbookHealth(data);
+    } catch (e: any) {
+      setEbookHealth({ error: e?.message ?? "Sağlık kontrolü başarısız" });
+    } finally {
+      setEbookChecking(false);
+    }
+  }
 
   async function testNotifications() {
     setMailTesting(true);
@@ -130,7 +145,16 @@ export default function AdminSmokeTests() {
             Kritik API endpoint'lerini tek tıkla test et — yeni bug'ları erken yakala
           </p>
         </div>
-        <div className="flex gap-2 shrink-0">
+        <div className="flex flex-wrap gap-2 shrink-0">
+          <button
+            onClick={checkEbookHealth}
+            disabled={ebookChecking}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:bg-purple-300 transition"
+            title="Tüm e-kitapların PDF asset, slug, satış durumlarını kontrol et"
+          >
+            {ebookChecking ? <Loader2 className="w-4 h-4 animate-spin" /> : <BookOpen className="w-4 h-4" />}
+            {ebookChecking ? "Kontrol ediliyor..." : "E-Kitap Sistemi Kontrol"}
+          </button>
           <button
             onClick={testNotifications}
             disabled={mailTesting}
@@ -150,6 +174,10 @@ export default function AdminSmokeTests() {
           </button>
         </div>
       </div>
+
+      {ebookHealth && (
+        <EbookHealthPanel data={ebookHealth} />
+      )}
 
       {mailResult && (
         <div className={`mb-4 p-3 rounded-lg border flex items-start gap-2 ${mailResult.ok ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200"}`}>
@@ -291,6 +319,134 @@ function Stat({ label, value, color, icon }: { label: string; value: string; col
         {label}
       </div>
       <div className={`text-2xl font-bold ${colorClass}`}>{value}</div>
+    </div>
+  );
+}
+
+function EbookHealthPanel({ data }: { data: any }) {
+  if (data?.error) {
+    return (
+      <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+        <div className="flex items-center gap-2 text-red-800 font-medium">
+          <AlertTriangle className="w-4 h-4" />
+          E-Kitap Sağlık Kontrolü Başarısız
+        </div>
+        <p className="text-sm text-red-700 mt-1">{data.error}</p>
+      </div>
+    );
+  }
+
+  const summary = data?.summary || {};
+  const warnings: string[] = data?.warnings || [];
+  const ebooks = data?.ebooks || [];
+  const isHealthy = summary.overallStatus === "healthy";
+
+  return (
+    <div className="mb-6 bg-white rounded-lg border-2 border-purple-200 overflow-hidden">
+      <div className={`px-4 py-3 ${isHealthy ? "bg-green-50" : "bg-amber-50"} border-b`}>
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-bold flex items-center gap-2">
+            {isHealthy ? (
+              <CheckCircle2 className="w-5 h-5 text-green-600" />
+            ) : (
+              <AlertTriangle className="w-5 h-5 text-amber-600" />
+            )}
+            E-Kitap Sistemi: {isHealthy ? "Sağlıklı" : `${summary.warningCount ?? warnings.length} Uyarı`}
+          </h2>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 p-4 border-b">
+        <MiniStat label="Toplam Kitap" value={summary.totalEbooks ?? 0} />
+        <MiniStat label="Aktif" value={summary.activeEbooks ?? 0} />
+        <MiniStat label="PDF Eksik" value={summary.missingFullPdf ?? 0} color={summary.missingFullPdf > 0 ? "red" : "gray"} />
+        <MiniStat label="Slug Sorunu" value={summary.slugConflicts ?? 0} color={summary.slugConflicts > 0 ? "red" : "gray"} />
+        <MiniStat label="Bekleyen Satış" value={summary.totalPendingSales ?? 0} color={summary.totalPendingSales > 0 ? "amber" : "gray"} />
+      </div>
+
+      {warnings.length > 0 && (
+        <div className="p-4 border-b bg-amber-50/50">
+          <h3 className="text-sm font-semibold mb-2 text-amber-900">Uyarılar:</h3>
+          <ul className="space-y-1.5">
+            {warnings.map((w, i) => (
+              <li key={i} className="text-sm text-amber-900 font-mono">{w}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead className="bg-gray-50 text-xs uppercase text-gray-600">
+            <tr>
+              <th className="text-left px-4 py-2">Kitap</th>
+              <th className="text-center px-2 py-2">Aktif</th>
+              <th className="text-center px-2 py-2">Full PDF</th>
+              <th className="text-center px-2 py-2">Preview</th>
+              <th className="text-center px-2 py-2">Slug</th>
+              <th className="text-center px-2 py-2">Satış</th>
+              <th className="text-center px-2 py-2">Bekleyen</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y">
+            {ebooks.map((eb: any) => (
+              <tr key={eb.id} className={eb.status === "warning" ? "bg-amber-50/30" : ""}>
+                <td className="px-4 py-2">
+                  <div className="font-medium text-gray-900">{eb.title}</div>
+                  <div className="text-xs text-gray-500 font-mono">#{eb.id} · {eb.slug}</div>
+                </td>
+                <td className="text-center px-2">{eb.isActive ? "✓" : "—"}</td>
+                <td className="text-center px-2">
+                  {eb.hasFullPdf ? (
+                    <CheckCircle2 className="w-4 h-4 text-green-600 inline" />
+                  ) : (
+                    <XCircle className="w-4 h-4 text-red-600 inline" />
+                  )}
+                </td>
+                <td className="text-center px-2">
+                  {eb.hasPreview ? (
+                    <CheckCircle2 className="w-4 h-4 text-green-600 inline" />
+                  ) : (
+                    <span className="text-gray-400">—</span>
+                  )}
+                </td>
+                <td className="text-center px-2">
+                  {eb.slugConflict ? (
+                    <span className="text-red-600 font-bold" title="Reserved keyword">⚠</span>
+                  ) : (
+                    "✓"
+                  )}
+                </td>
+                <td className="text-center px-2 text-gray-700">
+                  {eb.sales?.success ?? 0}/{eb.sales?.total ?? 0}
+                </td>
+                <td className="text-center px-2">
+                  {eb.sales?.pending > 0 ? (
+                    <span className="inline-block px-2 py-0.5 bg-amber-100 text-amber-800 rounded text-xs font-medium">
+                      {eb.sales.pending}
+                    </span>
+                  ) : (
+                    <span className="text-gray-400">0</span>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function MiniStat({ label, value, color }: { label: string; value: number; color?: "red" | "amber" | "gray" }) {
+  const cls =
+    color === "red" ? "text-red-700" :
+    color === "amber" ? "text-amber-700" :
+    "text-gray-900";
+  return (
+    <div className="bg-gray-50 rounded p-3">
+      <div className="text-xs text-gray-500 mb-1">{label}</div>
+      <div className={`text-xl font-bold ${cls}`}>{value}</div>
     </div>
   );
 }
