@@ -16,6 +16,7 @@ import {
   User as UserIcon,
   Mail,
   Send,
+  Check,
 } from "lucide-react";
 import { API } from "@/lib/api-url";
 
@@ -746,6 +747,11 @@ function PurchaseDetail({
             </Section>
           )}
 
+          {/* Bekleyen kayıt için manuel aktivasyon */}
+          {purchase.payment_status === "pending" && (
+            <ManualActivateSection purchase={purchase} onUpdated={onUpdated} />
+          )}
+
           {/* Mail durumu + yeniden gönder */}
           {purchase.payment_status === "success" && (
             <MailSection purchase={purchase} onUpdated={onUpdated} />
@@ -962,6 +968,101 @@ function MailSection({
         ) : (
           <>
             <Send size={14} /> {purchase.mail_status === "sent" ? "Linki Yeniden Gönder" : "Mail Gönder"}
+          </>
+        )}
+      </button>
+    </div>
+  );
+}
+
+// ─── Bekleyen satışları manuel aktive etme bölümü ────────────────────────
+function ManualActivateSection({
+  purchase,
+  onUpdated,
+}: {
+  purchase: Purchase;
+  onUpdated: (p: Purchase) => void;
+}) {
+  const [activating, setActivating] = useState(false);
+  const [msg, setMsg] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
+
+  async function manualActivate() {
+    if (
+      !confirm(
+        "Bu satışı 'success' durumuna çevirip download token üretmek istediğinden emin misin?\n\n" +
+        "→ Müşteriye PDF indirme bağlantısı mail olarak gönderilecek\n" +
+        "→ Admin'lere yeni satış bildirimi gönderilecek\n" +
+        "→ Satın alma 'success' olarak işaretlenecek\n\n" +
+        "Bu işlem geri alınamaz."
+      )
+    ) {
+      return;
+    }
+    setActivating(true);
+    setMsg(null);
+    try {
+      const data = await apiFetch(`/admin/ebook-purchases/${purchase.id}/manual-activate`, {
+        method: "POST",
+      });
+      setMsg({
+        kind: "ok",
+        text: data.message ?? "Aktivasyon başarılı. Mail gönderildi.",
+      });
+      // Detayı yenile
+      const fresh = await apiFetch(`/admin/ebook-purchases/${purchase.id}`);
+      if (fresh.purchase) onUpdated(fresh.purchase as Purchase);
+    } catch (e: any) {
+      setMsg({ kind: "err", text: e.message });
+    } finally {
+      setActivating(false);
+    }
+  }
+
+  return (
+    <div className="rounded-xl border border-amber-300 bg-amber-50 p-4">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="font-bold text-amber-900 text-sm flex items-center gap-2">
+          <Clock size={14} /> Bekleyen Satış — Kurtarma
+        </h3>
+      </div>
+
+      <p className="text-[13px] text-amber-900 mb-3">
+        Bu satış 'BEKLEYEN' durumunda. Iyzico tarafında ödeme tamamlanmış olabilir ama
+        Sphere'de aktif edilememiş. Aşağıdaki butonu kullanarak manuel aktive
+        edebilirsin — müşteriye PDF mail'i gönderilir, admin'lere bildirim atılır.
+      </p>
+
+      <div className="bg-amber-100/60 rounded p-2 text-[12px] text-amber-900 mb-3 space-y-1">
+        <div>
+          <strong>İpucu:</strong> Önce Iyzico panelinden ödemenin <em>gerçekten</em>{" "}
+          tahsil edildiğini doğrula. Tahsil edilmediyse iade et, aktive etme.
+        </div>
+      </div>
+
+      {msg && (
+        <div
+          className={`mb-3 p-2 rounded text-[12px] ${
+            msg.kind === "ok"
+              ? "bg-emerald-50 border border-emerald-200 text-emerald-900"
+              : "bg-red-50 border border-red-200 text-red-900"
+          }`}
+        >
+          {msg.text}
+        </div>
+      )}
+
+      <button
+        onClick={manualActivate}
+        disabled={activating}
+        className="w-full py-2.5 rounded-lg bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white text-sm font-bold inline-flex items-center justify-center gap-2"
+      >
+        {activating ? (
+          <>
+            <Loader2 size={14} className="animate-spin" /> Aktive ediliyor…
+          </>
+        ) : (
+          <>
+            <Check size={14} /> Manuel Aktive Et (Token üret + Mail gönder)
           </>
         )}
       </button>

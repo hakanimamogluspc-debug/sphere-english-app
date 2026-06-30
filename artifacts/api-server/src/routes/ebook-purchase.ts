@@ -191,7 +191,7 @@ router.post("/internal/ebook-purchase/activate", async (req: Request, res: Respo
   }
 
   const {
-    ebookId,
+    ebookId: providedEbookId,
     buyerEmail,
     buyerName,
     amountPaid,
@@ -202,8 +202,39 @@ router.post("/internal/ebook-purchase/activate", async (req: Request, res: Respo
     paidAt,
   } = (req.body ?? {}) as any;
 
+  // ebookId resolve — www tarafı regex match edememişse iyzicoConversationId
+  // üzerinden pending kayıttan çek (defense-in-depth)
+  let ebookId: number | null = providedEbookId ? Number(providedEbookId) : null;
+  if (!ebookId && iyzicoConversationId) {
+    try {
+      const lookupRows = await db.execute(sql`
+        SELECT ebook_id FROM ebook_purchases
+        WHERE iyzico_conversation_id = ${iyzicoConversationId}
+        ORDER BY created_at DESC
+        LIMIT 1
+      `);
+      const lookupRow = (lookupRows.rows ?? lookupRows)[0] as any;
+      if (lookupRow?.ebook_id) {
+        ebookId = Number(lookupRow.ebook_id);
+        console.info(
+          `[EBOOK-PURCHASE] activate: ebookId www'den gelmedi, pending kayıttan resolve edildi → ${ebookId} (conv=${iyzicoConversationId})`,
+        );
+      }
+    } catch (lookupErr: any) {
+      console.error("[EBOOK-PURCHASE] activate: pending lookup HATA:", lookupErr?.message);
+    }
+  }
+
   if (!ebookId || !buyerEmail || !downloadToken) {
-    return res.status(400).json({ error: "Eksik alan: ebookId, buyerEmail, downloadToken" });
+    return res.status(400).json({
+      error: "Eksik alan: ebookId, buyerEmail, downloadToken",
+      debug: {
+        ebookId: ebookId ?? null,
+        hasBuyerEmail: !!buyerEmail,
+        hasDownloadToken: !!downloadToken,
+        hasConvId: !!iyzicoConversationId,
+      },
+    });
   }
 
   try {
@@ -441,7 +472,7 @@ router.get("/ebooks/download", async (req: Request, res: Response) => {
  * Mail durumu (sent/failed/error) ebook_purchases tablosuna kaydedilir.
  * Fire-and-forget kullanıldığında ödeme akışını bloklamaz.
  */
-async function sendPurchaseEmailFireForget(purchaseId: number): Promise<void> {
+export async function sendPurchaseEmailFireForget(purchaseId: number): Promise<void> {
   try {
     const rows = await db.execute(sql`
       SELECT p.id, p.buyer_email, p.buyer_name, p.invoice_type,

@@ -11,9 +11,11 @@
 import { Router, Response } from "express";
 import { sql } from "drizzle-orm";
 import { db } from "@workspace/db";
+import crypto from "node:crypto";
 import { authMiddleware, requireRole, type AuthRequest } from "../middlewares/auth.js";
 import { sendPurchaseEmailFireForget } from "./ebook-purchase.js";
 import { sendEbookDownloadMail } from "../lib/ebook-mail.js";
+import { notifyNewEbookPurchase } from "../lib/admin-notifications.js";
 
 const router = Router();
 
@@ -319,6 +321,111 @@ router.post(
     } catch (e: any) {
       console.error("[admin-ebook-purchases/resend-email] HATA:", e?.message);
       return res.status(500).json({ error: "Mail gönderilemedi: " + e?.message });
+    }
+  },
+);
+
+/**
+ * Manuel aktive et (kurtarma) — pending kayıtları success'e çevirir,
+ * download token üretir, müşteriye mail atar, admin bildirim gönderir.
+ *
+ * Activate callback fail olduğunda veya başka manuel müdahale gerektiğinde
+ * kullanılır. Sadece pending status için çalışır (idempotency: success ise reddet).
+ *
+ * Endpoint: POST /api/admin/ebook-purchases/:id/manual-activate
+ */
+router.post(
+  "/admin/ebook-purchases/:id/manual-activate",
+  authMiddleware,
+  requireRole("admin"),
+  async (req: AuthRequest, res: Response) => {
+    const id = parseInt(req.params.id ?? "", 10);
+    if (!id) return res.status(400).json({ error: "id geçersiz" });
+
+    try {
+      const rows = await db.execute(sql`
+        SELECT id, payment_status, download_token, buyer_email, ebook_id, amount_paid
+        FROM ebook_purchases WHERE id = ${id} LIMIT 1
+      `);
+      const purchase = (rows.rows ?? rows)[0] as any;
+      if (!purchase) return res.status(404).json({ error: "Satın alma bulunamadı" });
+      if (purchase.payment_status === "success") {
+        return res.status(400).json({
+          error: "Bu satış zaten 'success' durumunda. Mail göndermek için 'Mail Yeniden Gönder' butonunu kullan.",
+        });
+      }
+      if (purchase.payment_status === "failed") {
+        return res.status(400).json({
+          error: "Bu satış 'failed' durumda. Önce status'ü düzelt veya yeni bir satış oluştur.",
+        });
+      }
+
+      // download_token yoksa üret
+      const newToken = purchase.download_token || crypto.randomBytes(32).toString("base64url");
+      const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+      const paidAtIso = new Date().toISOString();
+
+      // Pending → success + token + expire + paid_at
+      await db.execute(sql`
+        UPDATE ebook_purchases SET
+          payment_status = 'success',
+          download_token = ${newToken},
+          download_expires_at = ${expiresAt}::TIMESTAMPTZ,
+          paid_at = COALESCE(paid_at, ${paidAtIso}::TIMESTAMPTZ),
+          updated_at = NOW(),
+          notes = COALESCE(notes, '') || ' [MANUEL AKTIVE: admin ' || ${req.userId ?? 0}::TEXT || ' / ' || NOW()::TEXT || ']'
+        WHERE id = ${id}
+      `);
+
+      console.info(`[admin-ebook-purchases/manual-activate] id=${id} success'e çevrildi (admin=${req.userId})`);
+
+      // Müşteriye PDF mail gönder
+      try {
+        await sendPurchaseEmailFireForget(id);
+      } catch (mailErr: any) {
+        console.error("[admin-ebook-purchases/manual-activate] mail HATA:", mailErr?.message);
+      }
+
+      // Admin'lere yeni satış bildirimi
+      try {
+        const titleRows = await db.execute(sql`
+          SELECT title FROM ebooks WHERE id = ${purchase.ebook_id} LIMIT 1
+        `);
+        const title = (titleRows.rows ?? titleRows)[0]?.title ?? "E-kitap";
+        await notifyNewEbookPurchase({
+          purchaseId: id,
+          buyerEmail: purchase.buyer_email,
+          ebookTitle: String(title),
+          amountTl: Number(purchase.amount_paid ?? 0),
+        });
+      } catch (notifyErr: any) {
+        console.error("[admin-ebook-purchases/manual-activate] notify HATA:", notifyErr?.message);
+      }
+
+      // Güncel durumu döndür
+      const updatedRows = await db.execute(sql`
+        SELECT payment_status, download_token, download_expires_at,
+               mail_status, mail_sent_at, mail_error
+        FROM ebook_purchases WHERE id = ${id} LIMIT 1
+      `);
+      const updated = (updatedRows.rows ?? updatedRows)[0] as any;
+
+      return res.json({
+        ok: true,
+        message: "Satın alma başarıyla aktive edildi. Müşteriye mail gönderildi.",
+        purchase: {
+          id,
+          paymentStatus: updated?.payment_status,
+          downloadToken: updated?.download_token,
+          downloadExpiresAt: updated?.download_expires_at,
+          mailStatus: updated?.mail_status,
+          mailSentAt: updated?.mail_sent_at,
+          mailError: updated?.mail_error,
+        },
+      });
+    } catch (e: any) {
+      console.error("[admin-ebook-purchases/manual-activate] HATA:", e?.message);
+      return res.status(500).json({ error: "Aktive edilemedi: " + e?.message });
     }
   },
 );
