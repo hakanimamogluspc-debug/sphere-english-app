@@ -263,6 +263,34 @@ router.post("/internal/ebook-purchase/activate", async (req: Request, res: Respo
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
     const paidAtIso = paidAt ?? new Date().toISOString();
 
+    // ── IDEMPOTENCY GUARD ────────────────────────────────────────────────
+    // Aynı conversationId veya paymentId ile SUCCESS satır zaten varsa
+    // hiçbir şey yapma — duplicate insert bug'ı önleme.
+    // Iyzico bazen callback'i 2 kez tetikler (subscription redirect'i dahil).
+    if (iyzicoConversationId || iyzicoPaymentId) {
+      const existingSuccessRows = await db.execute(sql`
+        SELECT id, download_token FROM ebook_purchases
+        WHERE payment_status = 'success'
+          AND (
+            (${iyzicoConversationId ?? null}::TEXT IS NOT NULL AND iyzico_conversation_id = ${iyzicoConversationId ?? null})
+            OR (${iyzicoPaymentId ?? null}::TEXT IS NOT NULL AND iyzico_payment_id = ${iyzicoPaymentId ?? null})
+          )
+        ORDER BY created_at ASC
+        LIMIT 1
+      `);
+      const existingSuccess = (existingSuccessRows.rows ?? existingSuccessRows)[0] as any;
+      if (existingSuccess) {
+        console.info(
+          `[EBOOK-PURCHASE] Activate SKIPPED (idempotent) — zaten aktive: purchaseId=${existingSuccess.id} convId=${iyzicoConversationId} paymentId=${iyzicoPaymentId}`,
+        );
+        return res.json({
+          ok: true,
+          purchaseId: existingSuccess.id,
+          action: "already_active",
+        });
+      }
+    }
+
     // Önce pending satırı conversationId ile bul ve güncelle
     if (iyzicoConversationId) {
       const upd = await db.execute(sql`
