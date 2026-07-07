@@ -290,8 +290,9 @@ router.post(
       const size = file.size;
 
       // Tam URL — www tarafından direkt <img src> ile çağrılabilir
+      // Cache-buster ?v=<ts> ile browser cache invalidation (aynı ID re-upload'da yeni görsel görünsün)
       const ASSET_BASE = process.env["PUBLIC_ASSET_BASE_URL"] ?? "https://app.sphereenglish.com/api-server";
-      const coverUrl = `${ASSET_BASE.replace(/\/$/, "")}/api/bundle-cover/${id}`;
+      const coverUrl = `${ASSET_BASE.replace(/\/$/, "")}/api/bundle-cover/${id}?v=${Date.now()}`;
 
       // DB'ye BYTEA olarak kaydet + full URL
       await db.execute(sql`
