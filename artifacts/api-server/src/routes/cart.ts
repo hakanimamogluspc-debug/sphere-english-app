@@ -96,7 +96,7 @@ async function resolveCartItems(
         FROM ebook_bundle_items bi
         INNER JOIN ebooks e ON e.id = bi.ebook_id
         WHERE bi.bundle_id = ${bundle.id} AND e.is_active = TRUE
-        ORDER BY bi.sort_order ASC, e.id ASC
+        ORDER BY bi.position ASC, e.id ASC
       `);
       const ebooks = (itemsRows.rows ?? itemsRows) as any[];
       if (ebooks.length === 0) return { error: `Paket boş: ${it.slug}` };
