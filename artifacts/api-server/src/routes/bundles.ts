@@ -162,4 +162,36 @@ router.get("/bundles/:slug", async (req: Request, res: Response, next) => {
   }
 });
 
+// ─── PUBLIC: Bundle Kapak Görseli Stream ────────────────────────────────
+// GET /api/bundle-cover/:id → binary görsel stream
+// CORS açık — pazarlama sitesinden <img src> ile çağrılabilir
+router.get("/bundle-cover/:id", async (req: Request, res: Response) => {
+  const id = parseInt(String(req.params.id ?? ""), 10);
+  if (!Number.isFinite(id)) return res.status(400).send("Invalid id");
+
+  try {
+    const rows = await db.execute(sql`
+      SELECT cover_data, cover_mime, cover_size
+      FROM ebook_bundles
+      WHERE id = ${id} AND cover_data IS NOT NULL
+      LIMIT 1
+    `);
+    const asset = (rows.rows ?? rows)[0] as any;
+    if (!asset || !asset.cover_data) {
+      return res.status(404).send("Kapak bulunamadı");
+    }
+
+    res.setHeader("Content-Type", asset.cover_mime || "image/jpeg");
+    if (asset.cover_size) res.setHeader("Content-Length", String(asset.cover_size));
+    res.setHeader("Cache-Control", "public, max-age=3600, immutable");
+    res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+    res.setHeader("Access-Control-Allow-Origin", "*");
+
+    return res.send(asset.cover_data);
+  } catch (e: any) {
+    console.error("[bundle-cover] HATA:", e?.message);
+    return res.status(500).send("Cover alınamadı");
+  }
+});
+
 export default router;

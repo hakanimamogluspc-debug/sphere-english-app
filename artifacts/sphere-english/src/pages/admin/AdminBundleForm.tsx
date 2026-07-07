@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   X, Save, Loader2, AlertCircle, Check, BookOpen, Star,
-  Search, Package,
+  Search, Package, Upload, Image as ImageIcon, Trash2,
 } from "lucide-react";
 import { API } from "@/lib/api-url";
 
@@ -82,6 +82,9 @@ export default function AdminBundleForm({
   const [loading, setLoading] = useState(isEdit);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [uploadingCover, setUploadingCover] = useState(false);
+  const [coverPreviewUrl, setCoverPreviewUrl] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Tüm kitapları yükle
   useEffect(() => {
@@ -155,6 +158,64 @@ export default function AdminBundleForm({
   const bundlePrice = Number(form.priceTry || 0);
   const savings = individualTotal - bundlePrice;
   const savingsPercent = individualTotal > 0 ? Math.round((savings / individualTotal) * 100) : 0;
+
+  async function uploadCover(file: File) {
+    if (!bundleId) {
+      setError("Kapak yüklemek için önce paketi kaydet");
+      return;
+    }
+    if (!file.type.startsWith("image/")) {
+      setError("Sadece görsel dosyaları (JPG/PNG/WebP)");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setError("Dosya boyutu 5 MB'ı aşıyor");
+      return;
+    }
+
+    setUploadingCover(true);
+    setError(null);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+
+      const token = localStorage.getItem(TOKEN_KEY);
+      const res = await fetch(`${API}/admin/bundles/${bundleId}/cover`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: fd,
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || `HTTP ${res.status}`);
+      }
+      const data = await res.json();
+
+      // Form'daki cover URL'i güncelle + preview göster
+      update("coverImageUrl", data.url);
+      const previewUrl = URL.createObjectURL(file);
+      setCoverPreviewUrl(previewUrl);
+      setMessage("Kapak yüklendi");
+    } catch (e: any) {
+      setError("Kapak yüklenemedi: " + e.message);
+    } finally {
+      setUploadingCover(false);
+    }
+  }
+
+  async function deleteCover() {
+    if (!bundleId) return;
+    if (!confirm("Kapak görselini silmek istediğinden emin misin?")) return;
+    try {
+      await apiFetch(`/admin/bundles/${bundleId}/cover`, { method: "DELETE" });
+      update("coverImageUrl", "");
+      setCoverPreviewUrl(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      setMessage("Kapak silindi");
+    } catch (e: any) {
+      setError("Silme hatası: " + e.message);
+    }
+  }
 
   async function handleSave() {
     setError(null);
@@ -316,15 +377,89 @@ export default function AdminBundleForm({
                   />
                 </div>
                 <div className="md:col-span-2">
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">
-                    Kapak Görseli URL
+                  <label className="block text-xs font-semibold text-gray-600 mb-2">
+                    Kapak Görseli
                   </label>
-                  <input
-                    value={form.coverImageUrl}
-                    onChange={(e) => update("coverImageUrl", e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm font-mono"
-                    placeholder="https://…"
-                  />
+
+                  {/* Mevcut kapak preview */}
+                  {(coverPreviewUrl || form.coverImageUrl) && (
+                    <div className="mb-3 flex items-start gap-3 p-3 bg-gray-50 rounded-lg border">
+                      <img
+                        src={coverPreviewUrl || (form.coverImageUrl.startsWith("http")
+                          ? form.coverImageUrl
+                          : `${API}${form.coverImageUrl}`)}
+                        alt="Kapak"
+                        className="w-24 h-32 object-cover rounded border"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).style.display = "none";
+                        }}
+                      />
+                      <div className="flex-1 text-xs text-gray-600">
+                        <div className="font-mono break-all mb-2">{form.coverImageUrl}</div>
+                        {isEdit && (
+                          <button
+                            type="button"
+                            onClick={deleteCover}
+                            className="inline-flex items-center gap-1 px-2 py-1 text-red-600 hover:bg-red-50 rounded text-xs"
+                          >
+                            <Trash2 className="w-3 h-3" /> Kapağı Sil
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Upload alanı — sadece kaydettikten sonra */}
+                  {isEdit ? (
+                    <div>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) uploadCover(file);
+                        }}
+                        className="hidden"
+                        id="cover-upload-input"
+                      />
+                      <label
+                        htmlFor="cover-upload-input"
+                        className={`inline-flex items-center gap-2 px-3 py-2 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-indigo-400 hover:bg-indigo-50 transition ${
+                          uploadingCover ? "opacity-50 pointer-events-none" : ""
+                        }`}
+                      >
+                        {uploadingCover ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Upload className="w-4 h-4 text-gray-600" />
+                        )}
+                        <span className="text-sm">
+                          {uploadingCover ? "Yükleniyor…" : "Bilgisayardan Yükle (JPG/PNG, max 5MB)"}
+                        </span>
+                      </label>
+                      <div className="mt-2 text-xs text-gray-500">
+                        veya harici URL kullan:
+                      </div>
+                      <input
+                        value={form.coverImageUrl}
+                        onChange={(e) => update("coverImageUrl", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm font-mono mt-1"
+                        placeholder="https://…"
+                      />
+                    </div>
+                  ) : (
+                    <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800">
+                      💡 <strong>Not:</strong> Dosya yükleme sadece paketi kaydettikten sonra çalışır.
+                      Şimdilik harici URL girebilir veya sonra Düzenle'den yükleyebilirsin.
+                      <input
+                        value={form.coverImageUrl}
+                        onChange={(e) => update("coverImageUrl", e.target.value)}
+                        className="w-full px-3 py-2 border border-amber-200 rounded-lg text-sm font-mono mt-2 bg-white"
+                        placeholder="https://… (opsiyonel)"
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
             </section>

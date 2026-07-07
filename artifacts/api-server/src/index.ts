@@ -446,6 +446,11 @@ async function runStartupMigrations() {
     `CREATE INDEX IF NOT EXISTS ebook_bundle_items_bundle_idx ON ebook_bundle_items(bundle_id, position)`,
     `CREATE INDEX IF NOT EXISTS ebook_bundle_items_ebook_idx ON ebook_bundle_items(ebook_id)`,
 
+    // Bundle kapak görseli — DB'de bytea (Easypanel ephemeral filesystem çözümü)
+    `ALTER TABLE ebook_bundles ADD COLUMN IF NOT EXISTS cover_data BYTEA`,
+    `ALTER TABLE ebook_bundles ADD COLUMN IF NOT EXISTS cover_mime VARCHAR(100)`,
+    `ALTER TABLE ebook_bundles ADD COLUMN IF NOT EXISTS cover_size INTEGER`,
+
     // ebook_purchases'a bundle bağlantısı — bundle satışlarında her item için kayıt açılır,
     // aynı order_id ile gruplanır, bundle_id ile hangi paketten geldiği izlenir.
     `ALTER TABLE ebook_purchases ADD COLUMN IF NOT EXISTS bundle_id INTEGER REFERENCES ebook_bundles(id) ON DELETE SET NULL`,

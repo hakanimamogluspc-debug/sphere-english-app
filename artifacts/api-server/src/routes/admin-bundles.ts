@@ -11,10 +11,26 @@
  *   DELETE /api/admin/bundles/:id            — Sil (satış yoksa)
  */
 
-import { Router, type IRouter, Response } from "express";
+import { Router, type IRouter, Request, Response } from "express";
+import multer from "multer";
 import { sql } from "drizzle-orm";
 import { db } from "@workspace/db";
 import { authMiddleware, requireRole, type AuthRequest } from "../middlewares/auth.js";
+
+// Kapak görseli için multer — max 5MB (görsel için yeterli)
+const MAX_COVER_SIZE = 5 * 1024 * 1024;
+const coverUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: MAX_COVER_SIZE },
+  fileFilter: (_req, file, cb) => {
+    // Sadece görsel MIME tipleri kabul et
+    if (file.mimetype.startsWith("image/")) {
+      cb(null, true);
+    } else {
+      cb(new Error("Sadece görsel dosyaları (JPG/PNG/WebP) kabul edilir"));
+    }
+  },
+});
 
 const router: IRouter = Router();
 
@@ -246,6 +262,73 @@ router.post(
     try {
       await db.execute(sql`
         UPDATE ebook_bundles SET is_active = NOT is_active, updated_at = NOW()
+        WHERE id = ${id}
+      `);
+      return res.json({ ok: true });
+    } catch (e: any) {
+      return res.status(500).json({ error: e?.message });
+    }
+  },
+);
+
+// ─── KAPAK GÖRSELİ YÜKLE ────────────────────────────────────────────────
+router.post(
+  "/admin/bundles/:id/cover",
+  authMiddleware,
+  requireRole("admin"),
+  coverUpload.single("file"),
+  async (req: AuthRequest, res: Response, next: any) => {
+    if (!/^\d+$/.test(String(req.params.id ?? ""))) return next();
+    const id = parseInt(req.params.id, 10);
+
+    const file = (req as any).file as Express.Multer.File | undefined;
+    if (!file) return res.status(400).json({ error: "Dosya yüklenmedi" });
+
+    try {
+      const buffer = file.buffer;
+      const mime = file.mimetype;
+      const size = file.size;
+
+      // DB'ye BYTEA olarak kaydet
+      await db.execute(sql`
+        UPDATE ebook_bundles SET
+          cover_data = ${buffer},
+          cover_mime = ${mime},
+          cover_size = ${size},
+          cover_image_url = ${'/api/bundle-cover/' + id},
+          updated_at = NOW()
+        WHERE id = ${id}
+      `);
+
+      return res.json({
+        ok: true,
+        url: `/api/bundle-cover/${id}`,
+        mime,
+        size,
+      });
+    } catch (e: any) {
+      console.error("[ADMIN-BUNDLES] cover upload HATA:", e?.message);
+      return res.status(500).json({ error: "Kapak yüklenemedi: " + e?.message });
+    }
+  },
+);
+
+// ─── KAPAK GÖRSELİ SİL ──────────────────────────────────────────────────
+router.delete(
+  "/admin/bundles/:id/cover",
+  authMiddleware,
+  requireRole("admin"),
+  async (req: AuthRequest, res: Response, next: any) => {
+    if (!/^\d+$/.test(String(req.params.id ?? ""))) return next();
+    const id = parseInt(req.params.id, 10);
+    try {
+      await db.execute(sql`
+        UPDATE ebook_bundles SET
+          cover_data = NULL,
+          cover_mime = NULL,
+          cover_size = NULL,
+          cover_image_url = NULL,
+          updated_at = NOW()
         WHERE id = ${id}
       `);
       return res.json({ ok: true });
