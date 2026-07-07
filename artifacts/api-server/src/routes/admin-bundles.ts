@@ -289,20 +289,24 @@ router.post(
       const mime = file.mimetype;
       const size = file.size;
 
-      // DB'ye BYTEA olarak kaydet
+      // Tam URL — www tarafından direkt <img src> ile çağrılabilir
+      const ASSET_BASE = process.env["PUBLIC_ASSET_BASE_URL"] ?? "https://app.sphereenglish.com/api-server";
+      const coverUrl = `${ASSET_BASE.replace(/\/$/, "")}/api/bundle-cover/${id}`;
+
+      // DB'ye BYTEA olarak kaydet + full URL
       await db.execute(sql`
         UPDATE ebook_bundles SET
           cover_data = ${buffer},
           cover_mime = ${mime},
           cover_size = ${size},
-          cover_image_url = ${'/api/bundle-cover/' + id},
+          cover_image_url = ${coverUrl},
           updated_at = NOW()
         WHERE id = ${id}
       `);
 
       return res.json({
         ok: true,
-        url: `/api/bundle-cover/${id}`,
+        url: coverUrl,
         mime,
         size,
       });
