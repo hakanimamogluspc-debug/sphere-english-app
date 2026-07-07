@@ -182,3 +182,177 @@ export async function sendEbookDownloadMail(opts: EbookMailOptions): Promise<{
 
   return await sendEmail(opts.buyerEmail, subject, html);
 }
+
+// ─── SEPET (MULTI-ITEM) MAIL ─────────────────────────────────────────────
+
+interface CartMailOptions {
+  buyerEmail: string;
+  buyerName: string | null;
+  orderId: string;
+  totalAmount: number;
+  currency: string;
+  invoiceType: "individual" | "corporate";
+  items: Array<{
+    ebookTitle: string;
+    ebookAuthor: string | null;
+    downloadToken: string;
+    downloadExpiresAt: Date;
+    bundleTitle: string | null;
+  }>;
+}
+
+/**
+ * Sepet ödemesi sonrası TEK mailde tüm PDF linklerini gönderir.
+ * Her item için ayrı bir "PDF'i İndir" butonu + kendi token URL'i.
+ */
+export async function sendCartDownloadMail(opts: CartMailOptions): Promise<{
+  ok: boolean;
+  error?: string;
+}> {
+  const downloadBase = process.env.PUBLIC_DOWNLOAD_BASE_URL
+    ?? process.env.PUBLIC_API_BASE_URL
+    ?? "https://app.sphereenglish.com";
+
+  const greeting = opts.buyerName ? `Merhaba ${opts.buyerName},` : "Merhaba,";
+  const itemCountLabel =
+    opts.items.length === 1 ? "1 kitap" : `${opts.items.length} kitap`;
+  const subject = `📚 Siparişin hazır — ${itemCountLabel} indirilebilir`;
+
+  const invoiceMsg =
+    opts.invoiceType === "corporate"
+      ? "Kurumsal faturanız e-Arşiv olarak en geç 7 iş günü içinde e-posta adresinize gönderilecektir."
+      : "e-Arşiv faturanız en geç 7 iş günü içinde e-posta adresinize gönderilecektir.";
+
+  // Item HTML'ini kur
+  const itemsHtml = opts.items
+    .map((it) => {
+      const downloadUrl = `${downloadBase.replace(/\/$/, "")}/api/ebooks/download?token=${encodeURIComponent(it.downloadToken)}`;
+      const expiresFormatted = formatDate(it.downloadExpiresAt);
+      const bundleBadge = it.bundleTitle
+        ? `<div style="display:inline-block;background:#dcfce7;color:#166534;font-size:10px;font-weight:700;padding:3px 8px;border-radius:6px;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;">📦 ${it.bundleTitle}</div>`
+        : "";
+      return `
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;margin:12px 0;">
+          <tr>
+            <td style="padding:18px 20px;">
+              ${bundleBadge}
+              <div style="font-size:16px;font-weight:700;color:#1B365D;margin-bottom:4px;">${it.ebookTitle}</div>
+              <div style="font-size:13px;color:#64748b;margin-bottom:14px;">${it.ebookAuthor ?? "Sphere English"}</div>
+              <a href="${downloadUrl}" style="display:inline-block;background:#10b981;color:#ffffff;font-size:14px;font-weight:700;text-decoration:none;padding:12px 24px;border-radius:10px;box-shadow:0 2px 8px rgba(16,185,129,0.25);">
+                📄 PDF'i İndir
+              </a>
+              <div style="margin-top:10px;font-size:10px;color:#94a3b8;">
+                Süre: <strong>${expiresFormatted}</strong> · Maks 10 indirme
+              </div>
+            </td>
+          </tr>
+        </table>`;
+    })
+    .join("");
+
+  const html = `<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>${subject}</title>
+</head>
+<body style="margin:0;padding:0;background:#f4f6f9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#f4f6f9;padding:32px 16px;">
+  <tr>
+    <td align="center">
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" style="max-width:600px;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.05);">
+
+        <tr>
+          <td style="background:linear-gradient(135deg,#0ea5e9 0%,#0284c7 100%);padding:32px 32px 28px;text-align:center;">
+            <div style="font-size:26px;font-weight:800;color:#ffffff;letter-spacing:-0.5px;margin-bottom:4px;">Sphere English</div>
+            <div style="font-size:13px;color:rgba(255,255,255,0.85);">Siparişin hazır 🎉</div>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:32px 32px 16px;">
+            <h1 style="margin:0 0 16px;font-size:22px;font-weight:800;color:#1B365D;line-height:1.3;">
+              ${greeting}
+            </h1>
+            <p style="margin:0 0 20px;font-size:15px;color:#475569;line-height:1.6;">
+              Ödemen başarıyla alındı. Toplam <strong>${itemCountLabel}</strong> için indirme linklerini
+              aşağıda bulabilirsin. Her link <strong>sana özel</strong> — başkasıyla paylaşma.
+            </p>
+
+            <!-- Sipariş özeti -->
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:12px;margin:20px 0;">
+              <tr>
+                <td style="padding:16px 20px;">
+                  <div style="font-size:11px;font-weight:700;color:#0369a1;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Sipariş #${opts.orderId.slice(-8)}</div>
+                  <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <div style="font-size:13px;color:#0c4a6e;">${itemCountLabel}</div>
+                    <div style="font-size:22px;font-weight:800;color:#0ea5e9;">${formatTRY(opts.totalAmount)}</div>
+                  </div>
+                </td>
+              </tr>
+            </table>
+
+            <!-- Kitap listesi (her biri için ayrı download butonu) -->
+            <div style="margin:24px 0;">
+              <div style="font-size:14px;font-weight:700;color:#1B365D;margin-bottom:12px;">📚 Kitaplarınız (${opts.items.length})</div>
+              ${itemsHtml}
+            </div>
+
+            <!-- Uyarı -->
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#fef3c7;border:1px solid #fcd34d;border-radius:12px;margin:16px 0;">
+              <tr>
+                <td style="padding:14px 18px;">
+                  <div style="font-size:12px;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">⏰ Önemli</div>
+                  <ul style="margin:0;padding-left:18px;font-size:13px;color:#78350f;line-height:1.7;">
+                    <li>Bağlantılar <strong>7 gün</strong> süreyle geçerli</li>
+                    <li>Her kitap için maksimum <strong>10 kez</strong> indirme hakkın var</li>
+                    <li>Linkler sadece sana özel — paylaşırsan limit hızlı dolar</li>
+                    <li>PDF'leri indirip kendi cihazına kaydetmeni öneririz</li>
+                  </ul>
+                </td>
+              </tr>
+            </table>
+
+            <!-- Fatura -->
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;margin:16px 0;">
+              <tr>
+                <td style="padding:14px 18px;">
+                  <div style="font-size:12px;font-weight:700;color:#1e40af;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">🧾 Fatura</div>
+                  <div style="font-size:13px;color:#1e3a8a;line-height:1.6;">
+                    ${invoiceMsg}
+                  </div>
+                </td>
+              </tr>
+            </table>
+
+            <p style="margin:24px 0 0;font-size:14px;color:#475569;line-height:1.6;">
+              Sorun yaşarsan, kaybolduysan veya yeni bağlantı istersen bu maili yanıtla — birkaç saat içinde dönüş yapıyoruz.
+            </p>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="background:#f8fafc;padding:24px 32px;border-top:1px solid #e2e8f0;text-align:center;">
+            <p style="margin:0 0 8px;font-size:12px;color:#64748b;">
+              <strong style="color:#1B365D;">Sphere English</strong> · Dijital Yayıncılık
+            </p>
+            <p style="margin:0 0 4px;font-size:11px;color:#94a3b8;">
+              <a href="mailto:info@sphereenglish.com" style="color:#0ea5e9;text-decoration:none;">info@sphereenglish.com</a>
+              ·
+              <a href="https://wa.me/905066085810" style="color:#0ea5e9;text-decoration:none;">WhatsApp</a>
+            </p>
+            <p style="margin:8px 0 0;font-size:10px;color:#cbd5e1;">
+              Bu mail satın aldığınız e-kitapların teslimatı için gönderildi.
+            </p>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+</body>
+</html>`;
+
+  return await sendEmail(opts.buyerEmail, subject, html);
+}

@@ -33,20 +33,36 @@ function getAppUrl(): string {
  */
 async function notifyAll(subject: string, html: string): Promise<void> {
   const recipients = getRecipients();
+  console.info(`[admin-notify] Subject="${subject}" — ${recipients.length} alıcı: [${recipients.join(", ")}]`);
+
   if (recipients.length === 0) {
     console.warn("[admin-notify] ADMIN_NOTIFICATION_EMAILS env var tanımlı değil — bildirim atlandı");
     return;
   }
 
   try {
-    await Promise.allSettled(
-      recipients.map((to) =>
-        sendEmail(to, subject, html).catch((e) => {
-          console.error(`[admin-notify] ${to} mail HATA:`, e?.message ?? e);
-        }),
-      ),
+    const results = await Promise.allSettled(
+      recipients.map(async (to) => {
+        try {
+          const r = await sendEmail(to, subject, html);
+          if (r?.ok) {
+            console.info(`[admin-notify] ✓ ${to} OK`);
+          } else {
+            console.error(`[admin-notify] ✗ ${to} FAIL:`, r?.error ?? "unknown");
+          }
+          return r;
+        } catch (e: any) {
+          console.error(`[admin-notify] ✗ ${to} EXCEPTION:`, e?.message ?? e);
+          throw e;
+        }
+      }),
     );
+    const failed = results.filter((r) => r.status === "rejected").length;
+    if (failed > 0) {
+      console.warn(`[admin-notify] ${failed}/${recipients.length} alıcıya gönderilemedi`);
+    }
   } catch (e: any) {
+    console.error("[admin-notify] notifyAll EXCEPTION:", e?.message);
     captureException(e, { context: "admin-notify", subject });
   }
 }
@@ -172,6 +188,29 @@ export async function notifyNewEbookPurchase(opts: {
     url,
   );
   await notifyAll(`[Sphere] Yeni e-kitap satışı — ${opts.amountTl} TL`, html);
+}
+
+export async function notifyNewCartPurchase(opts: {
+  orderId: string;
+  buyerEmail: string;
+  itemCount: number;
+  totalTl: number;
+}): Promise<void> {
+  const url = `${getAppUrl()}/admin/ebook-purchases`;
+  const html = wrapHtml(
+    "Yeni Sepet Satışı 🛒",
+    `Yeni bir çoklu ürün siparişi tamamlandı.<br><br>${fieldList([
+      { label: "Alıcı", value: opts.buyerEmail },
+      { label: "Ürün Sayısı", value: `${opts.itemCount} kitap` },
+      { label: "Toplam Tutar", value: `${opts.totalTl.toLocaleString("tr-TR")} TL` },
+      { label: "Sipariş Ref", value: opts.orderId },
+    ])}`,
+    url,
+  );
+  await notifyAll(
+    `[Sphere] Yeni sepet satışı — ${opts.totalTl} TL / ${opts.itemCount} kitap`,
+    html,
+  );
 }
 
 export async function notifyNewContactMessage(opts: {

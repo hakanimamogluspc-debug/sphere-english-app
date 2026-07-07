@@ -54,6 +54,7 @@ import ebooksRouter from "./ebooks";
 import adminEbooksRouter from "./admin-ebooks";
 import adminEbookPurchasesRouter from "./admin-ebook-purchases";
 import ebookPurchaseRouter from "./ebook-purchase";
+import cartRouter from "./cart";
 import webAnalyticsRouter from "./web-analytics";
 import accountSetupRouter from "./account-setup";
 import instagramWebhookRouter from "./instagram-webhook";
@@ -109,6 +110,9 @@ router.use(teacherApplicationsRouter);
 // ebookPurchaseRouter'ı ebooksRouter'dan ÖNCE mount et — /ebooks/download
 // path'i ebooksRouter'ın /ebooks/:slug route'una yakalanmasın diye
 router.use(ebookPurchaseRouter);
+// Cart router — /internal/cart/pre-create, /internal/cart/activate, /order/:orderId
+// ebooksRouter'dan ÖNCE mount — /order/:orderId path'i kimseye yakalanmasın
+router.use(cartRouter);
 router.use(ebooksRouter);
 // Health check + smoke + bildirim test gibi spesifik admin endpoint'leri,
 // adminEbooks'tan ÖNCE mount edilmeli — :id parametresi non-numeric path'leri yakalar
