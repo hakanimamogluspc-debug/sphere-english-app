@@ -48,6 +48,7 @@ const AdminAffiliates     = lazy(() => import("./pages/admin/AdminAffiliates"));
 const AdminCoupons        = lazy(() => import("./pages/admin/AdminCoupons"));
 const AdminBackups        = lazy(() => import("./pages/admin/AdminBackups"));
 const AdminSmokeTests     = lazy(() => import("./pages/admin/AdminSmokeTests"));
+const AdminBundles        = lazy(() => import("./pages/admin/AdminBundles"));
 const Partner             = lazy(() => import("./pages/Partner"));
 const PartnerApply        = lazy(() => import("./pages/PartnerApply"));
 const AdminChatbotFaqs    = lazy(() => import("./pages/admin/ChatbotFaqs"));
@@ -281,6 +282,7 @@ function Router() {
         <Route path="/admin/coupons"><LayoutWrapper component={AdminCoupons} allowedRoles={['admin']} /></Route>
         <Route path="/admin/backups"><LayoutWrapper component={AdminBackups} allowedRoles={['admin']} /></Route>
         <Route path="/admin/smoke-tests"><LayoutWrapper component={AdminSmokeTests} allowedRoles={['admin']} /></Route>
+        <Route path="/admin/bundles"><LayoutWrapper component={AdminBundles} allowedRoles={['admin']} /></Route>
         <Route path="/partner/apply"><LayoutWrapper component={PartnerApply} /></Route>
         <Route path="/partner"><LayoutWrapper component={Partner} /></Route>
         <Route path="/admin/chatbot"><LayoutWrapper component={AdminChatbotFaqs} allowedRoles={['admin']} /></Route>
