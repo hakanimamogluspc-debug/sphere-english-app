@@ -224,17 +224,17 @@ export default function AdminBundles() {
 
       {/* Bundle listesi */}
       {!loading && bundles.length > 0 && (
-        <div className="bg-white rounded-lg border overflow-hidden">
-          <table className="w-full text-sm">
+        <div className="bg-white rounded-lg border overflow-x-auto">
+          <table className="w-full text-sm min-w-[900px]">
             <thead className="bg-gray-50 text-xs uppercase text-gray-600">
               <tr>
                 <th className="text-left px-4 py-3">Paket</th>
-                <th className="text-center px-2 py-3">Kitap</th>
-                <th className="text-right px-3 py-3">Fiyat</th>
-                <th className="text-center px-2 py-3">Satış</th>
-                <th className="text-center px-2 py-3">Öne Çıkan</th>
-                <th className="text-center px-2 py-3">Aktif</th>
-                <th className="text-right px-4 py-3">İşlem</th>
+                <th className="text-center px-2 py-3 whitespace-nowrap">Kitap</th>
+                <th className="text-right px-3 py-3 whitespace-nowrap">Fiyat</th>
+                <th className="text-center px-2 py-3 whitespace-nowrap">Satış</th>
+                <th className="text-center px-2 py-3 whitespace-nowrap">Öne Çıkan</th>
+                <th className="text-center px-2 py-3 whitespace-nowrap">Aktif</th>
+                <th className="text-right px-4 py-3 whitespace-nowrap sticky right-0 bg-gray-50">İşlem</th>
               </tr>
             </thead>
             <tbody className="divide-y">
@@ -243,10 +243,14 @@ export default function AdminBundles() {
                 return (
                   <tr key={b.id} className={!b.is_active ? "bg-gray-50/50 opacity-70" : ""}>
                     <td className="px-4 py-3">
-                      <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => openEditForm(b.id)}
+                        className="flex items-center gap-3 text-left hover:opacity-80 transition group w-full"
+                        title="Düzenle"
+                      >
                         {b.cover_image_url ? (
                           <img
-                            src={b.cover_image_url}
+                            src={b.cover_image_url.startsWith("http") ? b.cover_image_url : `${API}${b.cover_image_url}`}
                             alt={b.title}
                             className="w-10 h-14 object-cover rounded border"
                             onError={(e) => ((e.target as HTMLImageElement).style.display = "none")}
@@ -257,13 +261,15 @@ export default function AdminBundles() {
                           </div>
                         )}
                         <div className="min-w-0">
-                          <div className="font-medium text-gray-900 truncate">{b.title}</div>
+                          <div className="font-medium text-gray-900 truncate group-hover:text-indigo-600">
+                            {b.title}
+                          </div>
                           <div className="text-xs text-gray-500 font-mono truncate">/{b.slug}</div>
                           {b.subtitle && (
                             <div className="text-xs text-gray-500 truncate mt-0.5">{b.subtitle}</div>
                           )}
                         </div>
-                      </div>
+                      </button>
                     </td>
                     <td className="text-center px-2 py-3">
                       <span className="inline-block bg-blue-50 text-blue-700 text-xs px-2 py-0.5 rounded font-semibold">
@@ -307,14 +313,16 @@ export default function AdminBundles() {
                         )}
                       </button>
                     </td>
-                    <td className="px-4 py-3 text-right">
+                    <td className={`px-4 py-3 text-right sticky right-0 ${
+                      !b.is_active ? "bg-gray-50/95" : "bg-white/95"
+                    } backdrop-blur-sm border-l`}>
                       <div className="inline-flex gap-1">
                         <button
                           onClick={() => openEditForm(b.id)}
-                          className="p-1.5 text-blue-600 hover:bg-blue-50 rounded"
+                          className="inline-flex items-center gap-1 px-3 py-1.5 bg-indigo-600 text-white hover:bg-indigo-700 rounded text-xs font-medium"
                           title="Düzenle"
                         >
-                          <Edit3 className="w-4 h-4" />
+                          <Edit3 className="w-3.5 h-3.5" /> Düzenle
                         </button>
                         <button
                           onClick={() => deleteBundle(b)}
