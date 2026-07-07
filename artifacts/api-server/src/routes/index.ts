@@ -67,6 +67,8 @@ import adminBackupsRouter from "./admin-backups";
 import adminSmokeTestsRouter from "./admin-smoke-tests";
 import adminNotificationsTestRouter from "./admin-notifications-test";
 import adminEbookHealthRouter from "./admin-ebook-health";
+import bundlesRouter from "./bundles";
+import adminBundlesRouter from "./admin-bundles";
 import { requireSubscription } from "../middlewares/require-subscription";
 import { authMiddleware } from "../middlewares/auth";
 
@@ -111,6 +113,11 @@ router.use(ebooksRouter);
 // Health check + smoke + bildirim test gibi spesifik admin endpoint'leri,
 // adminEbooks'tan ÖNCE mount edilmeli — :id parametresi non-numeric path'leri yakalar
 router.use(adminEbookHealthRouter);
+// Bundles — /bundles/featured spesifik route + /admin/bundles CRUD
+// bundlesRouter'ı ebooksRouter'dan ÖNCE mount edelim ki /bundles/:slug slug
+// route'una yakalanmasın diye reserved guard'ı zaten var ama order da önemli
+router.use(bundlesRouter);
+router.use(adminBundlesRouter);
 router.use(adminEbooksRouter);
 router.use(adminEbookPurchasesRouter);
 router.use(webAnalyticsRouter);

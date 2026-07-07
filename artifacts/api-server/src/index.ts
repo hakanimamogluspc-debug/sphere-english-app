@@ -1,5 +1,6 @@
 import { initSentry } from "./lib/sentry.js";
 import { startBackupCron } from "./lib/db-backup.js";
+import { startEbookRecoveryCron } from "./lib/ebook-recovery-cron.js";
 import cluster from "node:cluster";
 import os from "node:os";
 import app from "./app";
@@ -405,6 +406,53 @@ async function runStartupMigrations() {
     `CREATE INDEX IF NOT EXISTS ebook_purchases_status_idx ON ebook_purchases(payment_status, created_at)`,
     `CREATE INDEX IF NOT EXISTS ebook_purchases_invoice_status_idx ON ebook_purchases(invoice_status, paid_at)`,
     `CREATE INDEX IF NOT EXISTS ebook_purchases_conv_idx ON ebook_purchases(iyzico_conversation_id)`,
+
+    // ─── E-Kitap Paketleri (Bundle) ─────────────────────────────────────────
+    // Birden fazla e-kitabı tek fiyata satmak için paket sistemi.
+    // Admin panelden oluşturulur, www tarafında paketler sayfasında satılır.
+    `CREATE TABLE IF NOT EXISTS ebook_bundles (
+      id SERIAL PRIMARY KEY,
+      slug VARCHAR(200) NOT NULL,
+      title VARCHAR(300) NOT NULL,
+      subtitle TEXT,
+      description TEXT,
+      cover_image_url TEXT,
+      price_try DECIMAL(10, 2) NOT NULL,
+      list_price_try DECIMAL(10, 2),
+      currency VARCHAR(3) NOT NULL DEFAULT 'TRY',
+      is_active BOOLEAN NOT NULL DEFAULT TRUE,
+      is_featured BOOLEAN NOT NULL DEFAULT FALSE,
+      sort_order INTEGER NOT NULL DEFAULT 0,
+      tags JSONB DEFAULT '[]'::JSONB,
+      seo_title VARCHAR(300),
+      seo_description TEXT,
+      seo_keywords TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`,
+    `CREATE UNIQUE INDEX IF NOT EXISTS ebook_bundles_slug_unique ON ebook_bundles(slug)`,
+    `CREATE INDEX IF NOT EXISTS ebook_bundles_active_idx ON ebook_bundles(is_active, sort_order)`,
+    `CREATE INDEX IF NOT EXISTS ebook_bundles_featured_idx ON ebook_bundles(is_featured, sort_order) WHERE is_featured = TRUE`,
+
+    // Bundle içindeki kitap listesi (many-to-many junction)
+    `CREATE TABLE IF NOT EXISTS ebook_bundle_items (
+      id SERIAL PRIMARY KEY,
+      bundle_id INTEGER NOT NULL REFERENCES ebook_bundles(id) ON DELETE CASCADE,
+      ebook_id INTEGER NOT NULL REFERENCES ebooks(id) ON DELETE CASCADE,
+      position INTEGER NOT NULL DEFAULT 0,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      UNIQUE(bundle_id, ebook_id)
+    )`,
+    `CREATE INDEX IF NOT EXISTS ebook_bundle_items_bundle_idx ON ebook_bundle_items(bundle_id, position)`,
+    `CREATE INDEX IF NOT EXISTS ebook_bundle_items_ebook_idx ON ebook_bundle_items(ebook_id)`,
+
+    // ebook_purchases'a bundle bağlantısı — bundle satışlarında her item için kayıt açılır,
+    // aynı order_id ile gruplanır, bundle_id ile hangi paketten geldiği izlenir.
+    `ALTER TABLE ebook_purchases ADD COLUMN IF NOT EXISTS bundle_id INTEGER REFERENCES ebook_bundles(id) ON DELETE SET NULL`,
+    `ALTER TABLE ebook_purchases ADD COLUMN IF NOT EXISTS order_id VARCHAR(100)`,
+    `CREATE INDEX IF NOT EXISTS ebook_purchases_bundle_idx ON ebook_purchases(bundle_id) WHERE bundle_id IS NOT NULL`,
+    `CREATE INDEX IF NOT EXISTS ebook_purchases_order_idx ON ebook_purchases(order_id) WHERE order_id IS NOT NULL`,
+
     // ─── Website Analytics (ziyaretçi takibi) ──────────────────────────────
     `CREATE TABLE IF NOT EXISTS web_visitor_sessions (
       id BIGSERIAL PRIMARY KEY,
@@ -1089,6 +1137,11 @@ if (cluster.isPrimary) {
     .then(() => seedDatabase())
     .then(() => seedVocabWords())
     .then(() => promoteAdminFromEnv())
+    .then(() => {
+      // Background cron'ları başlat (idempotent — birden fazla çağrı zararsız)
+      startBackupCron();
+      startEbookRecoveryCron();
+    })
     .then(() => {
       const numWorkers = Math.max(1, Math.min(os.cpus().length, 8));
       logger.info({ workers: numWorkers, cpus: os.cpus().length }, "Cluster başlatılıyor");
