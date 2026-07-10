@@ -142,13 +142,21 @@ interface WhisperWord {
 
 async function transcribeAudio(
   audioBuffer: Buffer,
-): Promise<{ text: string; words: WhisperWord[]; durationMs: number } | null> {
+): Promise<{
+  text: string;
+  words: WhisperWord[];
+  durationMs: number;
+  audioSeconds: number;
+} | null> {
   try {
     let finalBuffer = audioBuffer;
     let ext = "mp3";
     let mime = "audio/mpeg";
+    let audioSeconds = 0;
     try {
       finalBuffer = await convertToMp3(audioBuffer);
+      // ffmpeg dönüşüm sonrası approx süre (32kbps'de bytes/4000 ~ saniye — kaba)
+      audioSeconds = finalBuffer.length / 4000;
     } catch {
       ext = "webm";
       mime = "audio/webm";
@@ -162,8 +170,10 @@ async function transcribeAudio(
       language: "en",
       response_format: "verbose_json",
       timestamp_granularities: ["word"],
-      temperature: 0.1,
-      prompt: "English learner practicing scripted business dialog. Transcribe exactly as said.",
+      temperature: 0,
+      // As-pronounced prompt — Whisper'ı normalizasyondan uzaklaştır
+      prompt:
+        "English learner practicing scripted business dialog. Transcribe EXACTLY as heard, including mispronunciations, hesitations, and unusual word forms. Do not autocorrect. If a word is unclear or partial, spell it phonetically as heard.",
     } as any);
 
     const words: WhisperWord[] = (res.words || []).map((w: any) => ({
@@ -172,10 +182,16 @@ async function transcribeAudio(
       end: w.end ?? 0,
       probability: w.probability ?? 1,
     }));
+
+    // Whisper response'da genelde `duration` gelir
+    const responseSeconds = Number(res.duration ?? 0);
+    if (responseSeconds > 0) audioSeconds = responseSeconds;
+
     return {
       text: String(res.text || "").trim(),
       words,
       durationMs: Date.now() - t0,
+      audioSeconds,
     };
   } catch (e: any) {
     console.error("[scenes] Whisper HATA:", e?.message);
@@ -261,7 +277,7 @@ function computeScores(
   targetText: string,
   transcript: string,
   whisperWords: WhisperWord[],
-  audioMs: number,
+  audioSeconds: number,
 ): { scores: Scores; wordAnalysis: any[] } {
   const targetWords = normalize(targetText).split(" ").filter(Boolean);
   const saidWords = normalize(transcript).split(" ").filter(Boolean);
@@ -275,44 +291,81 @@ function computeScores(
 
   const aligned = alignWords(targetWords, saidWords);
 
-  // Accuracy: exact + close eşleşme oranı
+  // ── ACCURACY ──
   const exactCount = aligned.filter((a) => a.match === "exact").length;
   const closeCount = aligned.filter((a) => a.match === "close").length;
+  const missingCount = aligned.filter((a) => a.match === "missing").length;
+  const extraCount = aligned.filter((a) => a.match === "extra").length;
+
   const accuracy = Math.round(
     ((exactCount + closeCount * 0.5) / targetWords.length) * 100,
   );
 
-  // Completeness: söylenen target kelimeler / toplam target
+  // ── COMPLETENESS ──
   const completeness = Math.round(
     ((exactCount + closeCount) / targetWords.length) * 100,
   );
 
-  // Pronunciation: Whisper confidence ortalaması (whisper transcript'te bulunan word'ler için)
+  // ── PRONUNCIATION ──
+  // Word-level Whisper confidence — sıkı threshold + düşük confidence cezası
   let pronScore = 100;
   if (whisperWords.length > 0) {
-    const avgProb =
-      whisperWords.reduce((s, w) => s + Math.max(0, Math.min(1, w.probability)), 0) /
-      whisperWords.length;
-    pronScore = Math.round(avgProb * 100);
+    // Her kelime için: 0.95+ → 100, 0.85-0.95 → 80-100 arası, 0.85 altı → cezayla düşer
+    const perWord = whisperWords.map((w) => {
+      const p = Math.max(0, Math.min(1, w.probability));
+      if (p >= 0.95) return 100;
+      if (p >= 0.85) return 80 + ((p - 0.85) / 0.1) * 20;
+      if (p >= 0.7) return 50 + ((p - 0.7) / 0.15) * 30;
+      return Math.max(0, p * 70); // 0.7 altı = ciddi problem
+    });
+    const avgWord = perWord.reduce((s, x) => s + x, 0) / perWord.length;
+    // Ek olarak: extra/missing kelime varsa cezalandır — bozuk telaffuz genelde
+    // kelime kaybına veya fazla ses yaratmaya neden olur
+    const editRatio = (missingCount + extraCount) / Math.max(1, targetWords.length);
+    const editPenalty = Math.min(30, editRatio * 60);
+    pronScore = Math.round(Math.max(0, avgWord - editPenalty));
   }
 
-  // Fluency: WPM (kelime/dakika) hedefi 100-140
-  const audioSeconds = Math.max(1, audioMs / 1000);
-  const wpm = (saidWords.length / audioSeconds) * 60;
-  let fluency = 100;
-  if (wpm < 60) fluency = Math.round((wpm / 60) * 80);
-  else if (wpm > 180) fluency = Math.round(100 - Math.min(30, (wpm - 180) / 3));
-  else if (wpm < 100) fluency = Math.round(80 + ((wpm - 60) / 40) * 20);
-  fluency = Math.max(0, Math.min(100, fluency));
+  // ── FLUENCY ──
+  // İki metrik birlikte:
+  //   1. Speech ratio = konuşulan süre / toplam ses süresi (bekleme cezası)
+  //   2. WPM (kelime/dakika) — hedef 110-150
+  let speechRatio = 1;
+  if (whisperWords.length > 0 && audioSeconds > 0.5) {
+    const first = whisperWords[0].start;
+    const last = whisperWords[whisperWords.length - 1].end;
+    // Toplam word duration + sadece kelimeler arası kısa sessizlikleri say
+    const totalWordSpan = Math.max(0, last - first);
+    speechRatio = Math.max(0, Math.min(1, totalWordSpan / audioSeconds));
+  }
+  // Speech ratio skoru: 0.7+ ideal → 100, düştükçe hızla azalır
+  let ratioScore = 100;
+  if (speechRatio < 0.3) ratioScore = Math.round(speechRatio * 100); // <30% → çok kötü
+  else if (speechRatio < 0.6) ratioScore = Math.round(30 + ((speechRatio - 0.3) / 0.3) * 50);
+  else if (speechRatio < 0.75) ratioScore = Math.round(80 + ((speechRatio - 0.6) / 0.15) * 20);
+  else ratioScore = 100;
 
+  // WPM skoru
+  const wpm = audioSeconds > 0 ? (saidWords.length / audioSeconds) * 60 : 0;
+  let wpmScore = 100;
+  if (wpm < 40) wpmScore = Math.round((wpm / 40) * 40); // <40 → çok yavaş
+  else if (wpm < 90) wpmScore = Math.round(40 + ((wpm - 40) / 50) * 40);
+  else if (wpm < 110) wpmScore = Math.round(80 + ((wpm - 90) / 20) * 20);
+  else if (wpm > 200) wpmScore = Math.round(100 - Math.min(40, (wpm - 200) / 3));
+  else wpmScore = 100;
+
+  // Fluency = 60% speech ratio + 40% WPM (bekleme daha çok cezalandırılır)
+  const fluency = Math.max(0, Math.min(100, Math.round(ratioScore * 0.6 + wpmScore * 0.4)));
+
+  // ── OVERALL ──
+  // Ağırlıklar telaffuz odaklı: pron 40% + accuracy 30% + fluency 20% + completeness 10%
   const overall = Math.round(
-    accuracy * 0.35 +
-      pronScore * 0.3 +
-      completeness * 0.2 +
-      fluency * 0.15,
+    pronScore * 0.4 +
+      accuracy * 0.3 +
+      fluency * 0.2 +
+      completeness * 0.1,
   );
 
-  // Word-level analiz — front-end renkli gösterecek
   const wordAnalysis = aligned.map((a) => ({
     target: a.target,
     said: a.said,
@@ -557,12 +610,12 @@ router.post(
         return res.status(502).json({ error: "Ses tanıma başarısız. Tekrar dene." });
       }
 
-      // Skorla
+      // Skorla — audioSeconds ile (durationMs yerine gerçek ses uzunluğu)
       const { scores, wordAnalysis } = computeScores(
         String(targetTurn.text_en),
         whisper.text,
         whisper.words,
-        whisper.durationMs,
+        whisper.audioSeconds,
       );
 
       // Turn attempt kaydet
