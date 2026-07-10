@@ -1,6 +1,7 @@
 import { initSentry } from "./lib/sentry.js";
 import { startBackupCron } from "./lib/db-backup.js";
 import { startEbookRecoveryCron } from "./lib/ebook-recovery-cron.js";
+import { startCartAbandonedCron } from "./lib/cart-abandoned-cron.js";
 import cluster from "node:cluster";
 import os from "node:os";
 import app from "./app";
@@ -457,6 +458,10 @@ async function runStartupMigrations() {
     `ALTER TABLE ebook_purchases ADD COLUMN IF NOT EXISTS order_id VARCHAR(100)`,
     `CREATE INDEX IF NOT EXISTS ebook_purchases_bundle_idx ON ebook_purchases(bundle_id) WHERE bundle_id IS NOT NULL`,
     `CREATE INDEX IF NOT EXISTS ebook_purchases_order_idx ON ebook_purchases(order_id) WHERE order_id IS NOT NULL`,
+
+    // Terkedilmiş sepet hatırlatma maili — timestamp NULL ise henüz mail atılmadı
+    `ALTER TABLE ebook_purchases ADD COLUMN IF NOT EXISTS abandoned_mail_sent_at TIMESTAMPTZ`,
+    `CREATE INDEX IF NOT EXISTS ebook_purchases_abandoned_idx ON ebook_purchases(payment_status, created_at) WHERE payment_status = 'pending' AND abandoned_mail_sent_at IS NULL`,
 
     // ─── Website Analytics (ziyaretçi takibi) ──────────────────────────────
     `CREATE TABLE IF NOT EXISTS web_visitor_sessions (
@@ -1146,6 +1151,7 @@ if (cluster.isPrimary) {
       // Background cron'ları başlat (idempotent — birden fazla çağrı zararsız)
       startBackupCron();
       startEbookRecoveryCron();
+      startCartAbandonedCron();
     })
     .then(() => {
       const numWorkers = Math.max(1, Math.min(os.cpus().length, 8));

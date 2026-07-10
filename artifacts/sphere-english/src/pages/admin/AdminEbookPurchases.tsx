@@ -985,6 +985,7 @@ function ManualActivateSection({
 }) {
   const [activating, setActivating] = useState(false);
   const [msg, setMsg] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
+  const [resultDownloadUrl, setResultDownloadUrl] = useState<string | null>(null);
 
   async function manualActivate() {
     if (
@@ -1000,6 +1001,7 @@ function ManualActivateSection({
     }
     setActivating(true);
     setMsg(null);
+    setResultDownloadUrl(null);
     try {
       const data = await apiFetch(`/admin/ebook-purchases/${purchase.id}/manual-activate`, {
         method: "POST",
@@ -1008,6 +1010,13 @@ function ManualActivateSection({
         kind: "ok",
         text: data.message ?? "Aktivasyon başarılı. Mail gönderildi.",
       });
+      // Yeni download URL'i göster (test için)
+      if (data.purchase?.downloadToken) {
+        const apiBase = (API || "").replace(/\/$/, "");
+        // /api varsa olduğu gibi, /api-server/api'ye de uyum sağla
+        const url = `${apiBase}/ebooks/download?token=${encodeURIComponent(data.purchase.downloadToken)}`;
+        setResultDownloadUrl(url);
+      }
       // Detayı yenile
       const fresh = await apiFetch(`/admin/ebook-purchases/${purchase.id}`);
       if (fresh.purchase) onUpdated(fresh.purchase as Purchase);
@@ -1048,6 +1057,34 @@ function ManualActivateSection({
           }`}
         >
           {msg.text}
+        </div>
+      )}
+
+      {resultDownloadUrl && (
+        <div className="mb-3 p-3 rounded bg-emerald-50 border border-emerald-300">
+          <div className="text-[11px] font-bold uppercase text-emerald-700 mb-2">
+            Yeni İndirme Linki (Test Et)
+          </div>
+          <a
+            href={resultDownloadUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 text-[12px] text-emerald-800 hover:text-emerald-900 underline break-all"
+          >
+            <Download size={13} /> {resultDownloadUrl}
+          </a>
+          <button
+            onClick={() => {
+              if (resultDownloadUrl) navigator.clipboard?.writeText(resultDownloadUrl);
+            }}
+            className="ml-2 text-[11px] px-2 py-0.5 rounded bg-emerald-100 hover:bg-emerald-200 text-emerald-900"
+            title="Kopyala"
+          >
+            Kopyala
+          </button>
+          <div className="mt-2 text-[11px] text-emerald-700">
+            ⏱ 7 gün geçerli, 10 indirme hakkı. Mail de gönderildi.
+          </div>
         </div>
       )}
 

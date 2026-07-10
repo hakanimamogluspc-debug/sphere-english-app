@@ -299,6 +299,27 @@ router.post(
       // sendPurchaseEmailFireForget kendi içinde mail_status'u günceller
       await sendPurchaseEmailFireForget(id);
 
+      // Admin'lere de bildirim gönder (eğer ilk satışta gitmemişse)
+      try {
+        const titleRows = await db.execute(sql`
+          SELECT e.title, ep.amount_paid FROM ebook_purchases ep
+          JOIN ebooks e ON ep.ebook_id = e.id
+          WHERE ep.id = ${id} LIMIT 1
+        `);
+        const r = (titleRows.rows ?? titleRows)[0] as any;
+        if (r) {
+          await notifyNewEbookPurchase({
+            purchaseId: id,
+            buyerEmail: purchase.buyer_email,
+            ebookTitle: String(r.title ?? "E-kitap"),
+            amountTl: Number(r.amount_paid ?? 0),
+          });
+          console.info(`[admin-ebook-purchases/resend-email] Admin bildirim de gönderildi (id=${id})`);
+        }
+      } catch (notifyErr: any) {
+        console.error("[admin-ebook-purchases/resend-email] admin notify HATA:", notifyErr?.message);
+      }
+
       // Güncel durumu döndür
       const updatedRows = await db.execute(sql`
         SELECT mail_status, mail_sent_at, mail_error, mail_attempts

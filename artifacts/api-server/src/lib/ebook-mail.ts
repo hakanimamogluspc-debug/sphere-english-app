@@ -183,6 +183,172 @@ export async function sendEbookDownloadMail(opts: EbookMailOptions): Promise<{
   return await sendEmail(opts.buyerEmail, subject, html);
 }
 
+// ─── TERKEDİLMİŞ SEPET HATIRLATMA MAİLİ ──────────────────────────────────
+
+interface AbandonedMailOptions {
+  buyerEmail: string;
+  buyerName: string | null;
+  items: Array<{
+    title: string;
+    author: string | null;
+    priceTry: number;
+    isBundle: boolean;
+    coverUrl: string | null;
+  }>;
+  totalTry: number;
+  cartUrl: string;
+  couponCode?: string | null;
+  couponPercent?: number | null;
+}
+
+/**
+ * Terkedilmiş sepet hatırlatma maili — pending kalan sipariş için 4 saat sonra.
+ * Kullanıcının form doldurduğu (dolayısıyla email verdiği) sepetler hedefleniyor.
+ * cartUrl = /sepet linki (kullanıcı sepetteki ürünler localStorage'da olmasa da
+ * pending kayıttan resume edebilir — MVP'de sadece sepet sayfasına yönlendir).
+ */
+export async function sendCartAbandonedMail(opts: AbandonedMailOptions): Promise<{
+  ok: boolean;
+  error?: string;
+}> {
+  const greeting = opts.buyerName ? `Merhaba ${opts.buyerName},` : "Merhaba,";
+  const itemLabel = opts.items.length === 1 ? "1 kitap" : `${opts.items.length} ürün`;
+  const subject = `📚 ${itemLabel} sepetinde bekliyor — Sphere English`;
+
+  const couponBlock = opts.couponCode
+    ? `
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:linear-gradient(135deg,#10b981 0%,#059669 100%);border-radius:14px;margin:20px 0;">
+      <tr>
+        <td style="padding:22px 24px;color:#ffffff;text-align:center;">
+          <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;opacity:0.9;margin-bottom:6px;">Bu maile özel</div>
+          <div style="font-size:32px;font-weight:800;margin-bottom:4px;">%${opts.couponPercent ?? 10} İNDİRİM</div>
+          <div style="font-size:14px;opacity:0.95;margin-bottom:12px;">Kupon kodu:</div>
+          <div style="display:inline-block;background:rgba(255,255,255,0.95);color:#059669;padding:10px 22px;border-radius:10px;font-size:18px;font-weight:800;letter-spacing:2px;font-family:monospace;">
+            ${opts.couponCode}
+          </div>
+          <div style="font-size:11px;opacity:0.85;margin-top:10px;">Sepette otomatik uygulanır. 48 saat geçerli.</div>
+        </td>
+      </tr>
+    </table>`
+    : "";
+
+  const itemsHtml = opts.items
+    .map((it) => {
+      const badge = it.isBundle
+        ? `<div style="display:inline-block;background:#dcfce7;color:#166534;font-size:10px;font-weight:700;padding:2px 7px;border-radius:5px;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px;">📦 Paket</div>`
+        : "";
+      const coverImg = it.coverUrl
+        ? `<img src="${it.coverUrl}" alt="${it.title}" width="70" style="width:70px;border-radius:6px;border:1px solid #e2e8f0;display:block;" />`
+        : `<div style="width:70px;height:94px;background:linear-gradient(135deg,#dbeafe,#bfdbfe);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:28px;">📚</div>`;
+      return `
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin:10px 0;">
+          <tr>
+            <td width="80" valign="top" style="padding-right:12px;">
+              ${coverImg}
+            </td>
+            <td valign="middle" style="padding:6px 0;">
+              ${badge}
+              <div style="font-size:15px;font-weight:700;color:#1B365D;line-height:1.3;">${it.title}</div>
+              ${it.author ? `<div style="font-size:12px;color:#64748b;margin-top:2px;">${it.author}</div>` : ""}
+              <div style="font-size:15px;font-weight:800;color:#0ea5e9;margin-top:6px;">${formatTRY(it.priceTry)}</div>
+            </td>
+          </tr>
+        </table>`;
+    })
+    .join("");
+
+  const html = `<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>${subject}</title>
+</head>
+<body style="margin:0;padding:0;background:#f4f6f9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#f4f6f9;padding:32px 16px;">
+  <tr>
+    <td align="center">
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" style="max-width:600px;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.05);">
+
+        <tr>
+          <td style="background:linear-gradient(135deg,#0ea5e9 0%,#0284c7 100%);padding:32px 32px 28px;text-align:center;">
+            <div style="font-size:26px;font-weight:800;color:#ffffff;letter-spacing:-0.5px;margin-bottom:4px;">Sphere English</div>
+            <div style="font-size:13px;color:rgba(255,255,255,0.9);">Sepetinde bir şeyler var 👀</div>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:32px 32px 20px;">
+            <h1 style="margin:0 0 12px;font-size:22px;font-weight:800;color:#1B365D;line-height:1.3;">
+              ${greeting}
+            </h1>
+            <p style="margin:0 0 6px;font-size:15px;color:#475569;line-height:1.6;">
+              Az önce sepette bir sipariş başlattın ama tamamlayamadın. Belki bir sorun oldu, belki
+              bir şeyi kontrol etmek istedin — biz sepetini kaybolmasın diye sakladık.
+            </p>
+            <p style="margin:0 0 8px;font-size:15px;color:#475569;line-height:1.6;">
+              <strong>Kaldığın yerden</strong> devam etmek için tek tıkla ödemeye geç.
+            </p>
+
+            <!-- Sepet özeti -->
+            <div style="margin:22px 0 8px;padding:16px 18px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;">
+              <div style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Sepetin</div>
+              ${itemsHtml}
+              <div style="display:flex;justify-content:space-between;align-items:center;padding-top:12px;margin-top:6px;border-top:1px dashed #cbd5e1;">
+                <span style="font-size:13px;color:#64748b;">Toplam</span>
+                <span style="font-size:22px;font-weight:800;color:#0ea5e9;">${formatTRY(opts.totalTry)}</span>
+              </div>
+            </div>
+
+            ${couponBlock}
+
+            <!-- CTA -->
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin:24px 0;">
+              <tr>
+                <td align="center">
+                  <a href="${opts.cartUrl}" style="display:inline-block;background:#0ea5e9;color:#ffffff;font-size:16px;font-weight:700;text-decoration:none;padding:16px 44px;border-radius:12px;box-shadow:0 4px 12px rgba(14,165,233,0.3);">
+                    🛒 Ödemeyi Tamamla
+                  </a>
+                  <div style="margin-top:12px;font-size:11px;color:#94a3b8;">
+                    veya sepete gitmek için:<br>
+                    <a href="${opts.cartUrl}" style="color:#0ea5e9;word-break:break-all;font-size:10px;">${opts.cartUrl}</a>
+                  </div>
+                </td>
+              </tr>
+            </table>
+
+            <p style="margin:20px 0 0;font-size:13px;color:#64748b;line-height:1.6;text-align:center;">
+              Sepetini kapatmak veya değiştirmek mi istiyorsun? Sepet sayfasında dilediğin gibi düzenleyebilirsin.
+            </p>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="background:#f8fafc;padding:24px 32px;border-top:1px solid #e2e8f0;text-align:center;">
+            <p style="margin:0 0 8px;font-size:12px;color:#64748b;">
+              <strong style="color:#1B365D;">Sphere English</strong> · Dijital Yayıncılık
+            </p>
+            <p style="margin:0 0 4px;font-size:11px;color:#94a3b8;">
+              <a href="mailto:info@sphereenglish.com" style="color:#0ea5e9;text-decoration:none;">info@sphereenglish.com</a>
+              ·
+              <a href="https://wa.me/905066085810" style="color:#0ea5e9;text-decoration:none;">WhatsApp</a>
+            </p>
+            <p style="margin:10px 0 0;font-size:10px;color:#cbd5e1;">
+              Bu maili sepette bilgilerini bıraktığın için gönderdik. Bir daha almak istemezsen
+              <a href="mailto:info@sphereenglish.com?subject=Sepet%20maili%20almak%20istemiyorum" style="color:#94a3b8;text-decoration:underline;">buradan bize yaz</a>.
+            </p>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+</body>
+</html>`;
+
+  return await sendEmail(opts.buyerEmail, subject, html);
+}
+
 // ─── SEPET (MULTI-ITEM) MAIL ─────────────────────────────────────────────
 
 interface CartMailOptions {
