@@ -1,20 +1,24 @@
 /**
  * Sepet (multi-item) satın alma akışı.
  *
- * Tek order_id altında birden fazla e-kitap veya bundle satılır.
- * Her item için ayrı ebook_purchases satırı yazılır (aynı order_id + iyzico_conversation_id).
+ * DATA MODELİ:
+ *   PENDING (pre-create):
+ *     Her sepet item için 1 satır. Bundle ise bundle_id set + ebook_id=dummy
+ *     (bundle'ın ilk kitabı, yalnızca NOT NULL için). Böylece admin panelde 5
+ *     paket satırı yerine 1 satır görünür.
+ *
+ *   SUCCESS (activate):
+ *     Ebook satırı → mevcut satır success'e çevrilir + download token.
+ *     Bundle master satırı → satır SİLİNİR, içindeki her ebook için ayrı yeni
+ *     satır oluşturulur (her PDF için ayrı download token gerekli).
+ *
+ *   Bu sayede: pending durumunda sepet başına 1 satır; success durumunda her
+ *   PDF için ayrı download link — hem UI temiz, hem indirme mekaniği doğru.
  *
  * Endpoint'ler:
- *   POST /api/internal/cart/pre-create   → Sepetteki items array'ini alır, order_id üretir,
- *                                          bundle'ları ebook'lara açar, her ebook için pending
- *                                          purchase yazar. Fiyat backend'de doğrulanır.
- *   POST /api/internal/cart/activate     → Callback success'te order_id'ye ait tüm pending
- *                                          satırları success'e çevirir, downloadToken üretir,
- *                                          TEK mail'de tüm PDF linklerini gönderir.
- *   GET  /api/order/:orderId             → Public. order_id ile başarılı satın alımları getirir
- *                                          (success sayfasında download linkleri için).
- *
- * Internal endpoint'ler HMAC X-Internal-Signature ile authenticate.
+ *   POST /api/internal/cart/pre-create   → 1 satır per item (bundle master dahil)
+ *   POST /api/internal/cart/activate     → bundle master satırlarını expand et
+ *   GET  /api/order/:orderId             → success items (bundle expanded ebook'lar)
  */
 
 import { Router, Request, Response } from "express";
@@ -43,25 +47,32 @@ function verifySignature(rawBody: string, signature: string | undefined): boolea
   }
 }
 
-type ResolvedItem = {
-  ebookId: number;
+/**
+ * Sepet item = 1 satır (pending için).
+ * Ebook: {ebookId, priceKurus, bundleId=null}
+ * Bundle: {ebookId=first_ebook_of_bundle, priceKurus=bundle_price, bundleId=bundle.id}
+ */
+type ResolvedRow = {
+  ebookId: number; // Bundle ise: bundle'ın ilk ebook_id'si (NOT NULL için)
   ebookTitle: string;
-  priceKurus: number; // Ana ürün fiyatı (bu ebook için ne kadar ödendi)
-  bundleId: number | null; // Eğer bir bundle'dan geldiyse bundle.id
+  priceKurus: number; // Bundle ise: bundle toplam fiyatı
+  bundleId: number | null;
   bundleTitle: string | null;
 };
 
 /**
- * Cart items'ı ebook_purchases satırlarına açan resolver.
- * Bundle içindeki her ebook için ayrı satır oluşturulur.
- * Bundle fiyatı, içindeki ebook sayısına eşit dağıtılır (kalan artık son ebook'a).
+ * Cart items → pending satırlar için resolver.
+ * Bundle 5 ebook içerse bile SADECE 1 satır döner (bundle master).
+ * Activate zamanında bundle master expand edilir.
  */
-async function resolveCartItems(
+async function resolveCartRows(
   items: Array<{ type: "ebook" | "bundle"; slug: string }>,
-): Promise<{ resolved: ResolvedItem[]; subtotalKurus: number; itemCount: number } | { error: string }> {
-  const resolved: ResolvedItem[] = [];
+): Promise<
+  | { resolved: ResolvedRow[]; subtotalKurus: number; itemCount: number }
+  | { error: string }
+> {
+  const resolved: ResolvedRow[] = [];
   let subtotalKurus = 0;
-  let itemCount = 0;
 
   for (const it of items) {
     if (it.type === "ebook") {
@@ -81,7 +92,6 @@ async function resolveCartItems(
         bundleTitle: null,
       });
       subtotalKurus += priceKurus;
-      itemCount += 1;
     } else if (it.type === "bundle") {
       const bRows = await db.execute(sql`
         SELECT id, title, price_try FROM ebook_bundles
@@ -91,37 +101,31 @@ async function resolveCartItems(
       const bundle = (bRows.rows ?? bRows)[0] as any;
       if (!bundle) return { error: `Paket bulunamadı: ${it.slug}` };
 
-      const itemsRows = await db.execute(sql`
-        SELECT e.id, e.title
+      // Bundle'ın ilk ebook_id'sini alalım (NOT NULL constraint için dummy)
+      const firstRows = await db.execute(sql`
+        SELECT e.id
         FROM ebook_bundle_items bi
         INNER JOIN ebooks e ON e.id = bi.ebook_id
         WHERE bi.bundle_id = ${bundle.id} AND e.is_active = TRUE
         ORDER BY bi.position ASC, e.id ASC
+        LIMIT 1
       `);
-      const ebooks = (itemsRows.rows ?? itemsRows) as any[];
-      if (ebooks.length === 0) return { error: `Paket boş: ${it.slug}` };
+      const firstEbook = (firstRows.rows ?? firstRows)[0] as any;
+      if (!firstEbook) return { error: `Paket boş: ${it.slug}` };
 
       const bundlePriceKurus = Math.round(Number(bundle.price_try) * 100);
-      const perItemKurus = Math.floor(bundlePriceKurus / ebooks.length);
-      const remainder = bundlePriceKurus - perItemKurus * ebooks.length;
-
-      ebooks.forEach((eb, idx) => {
-        // Son item'a rounding artığını ekle → toplam paket fiyatı korunur
-        const price = idx === ebooks.length - 1 ? perItemKurus + remainder : perItemKurus;
-        resolved.push({
-          ebookId: Number(eb.id),
-          ebookTitle: String(eb.title),
-          priceKurus: price,
-          bundleId: Number(bundle.id),
-          bundleTitle: String(bundle.title),
-        });
+      resolved.push({
+        ebookId: Number(firstEbook.id),
+        ebookTitle: String(bundle.title), // Bundle master için title = bundle adı
+        priceKurus: bundlePriceKurus,
+        bundleId: Number(bundle.id),
+        bundleTitle: String(bundle.title),
       });
       subtotalKurus += bundlePriceKurus;
-      itemCount += 1;
     }
   }
 
-  return { resolved, subtotalKurus, itemCount };
+  return { resolved, subtotalKurus, itemCount: resolved.length };
 }
 
 // ─── INTERNAL: cart/pre-create ────────────────────────────────────────────
@@ -147,7 +151,7 @@ router.post("/internal/cart/pre-create", async (req: Request, res: Response) => 
     billingPostalCode,
     couponCode,
     couponDiscountKurus,
-    affiliateCode,
+    affiliateCode: _affiliateCode,
     iyzicoConversationId,
   } = (req.body ?? {}) as any;
 
@@ -159,13 +163,11 @@ router.post("/internal/cart/pre-create", async (req: Request, res: Response) => 
   }
 
   try {
-    // Items resolve — bundle → ebook satırları
-    const r = await resolveCartItems(items);
+    const r = await resolveCartRows(items);
     if ("error" in r) return res.status(400).json({ error: r.error });
 
-    const { resolved, subtotalKurus, itemCount } = r;
+    const { resolved, subtotalKurus } = r;
 
-    // Coupon indirimini item'lara pro-rata dağıt
     const discountKurus = Math.max(0, Number(couponDiscountKurus ?? 0));
     const finalKurus = Math.max(0, subtotalKurus - discountKurus);
 
@@ -173,25 +175,26 @@ router.post("/internal/cart/pre-create", async (req: Request, res: Response) => 
     let couponId: number | null = null;
     if (couponCode) {
       try {
-        const cRows = await db.execute(sql`SELECT id FROM coupons WHERE code = ${couponCode} LIMIT 1`);
+        const cRows = await db.execute(
+          sql`SELECT id FROM coupons WHERE code = ${couponCode} LIMIT 1`,
+        );
         couponId = ((cRows.rows ?? cRows)[0] as any)?.id ?? null;
       } catch {}
     }
 
-    // User ID lookup
     const userRows = await db.execute(sql`
       SELECT id FROM users WHERE LOWER(email) = LOWER(${buyerEmail}) LIMIT 1
     `);
     const userId = (userRows.rows ?? userRows)[0]?.id ?? null;
 
-    // Order_id — conversationId'yi order_id olarak kullan (birebir eşleşir)
     const orderId = iyzicoConversationId;
 
-    // Idempotency: aynı order_id + ebookId satır varsa hiçbir şey yapma (double-submit koruması)
+    // Idempotency check
     const existingRows = await db.execute(sql`
       SELECT COUNT(*)::int AS n FROM ebook_purchases WHERE order_id = ${orderId}
     `);
-    const alreadyExists = Number(((existingRows.rows ?? existingRows)[0] as any)?.n ?? 0) > 0;
+    const alreadyExists =
+      Number(((existingRows.rows ?? existingRows)[0] as any)?.n ?? 0) > 0;
     if (alreadyExists) {
       console.info(`[CART] pre-create SKIP (idempotent): order_id=${orderId} zaten var`);
       return res.json({
@@ -205,18 +208,12 @@ router.post("/internal/cart/pre-create", async (req: Request, res: Response) => 
       });
     }
 
-    // Her resolved item için pending purchase yaz — aynı order_id + conversationId
-    // Coupon indirimi son satıra ekleniyor (tek redemption oluşturmak için)
     const purchaseIds: number[] = [];
     for (let i = 0; i < resolved.length; i++) {
       const item = resolved[i];
       const isLastItem = i === resolved.length - 1;
       const itemCouponDiscount = isLastItem ? discountKurus : 0;
-      // Bu ebook için ödenen tutar = base priceKurus - eğer son ise total discount pay
-      const paidKurusForThis = Math.max(
-        0,
-        item.priceKurus - itemCouponDiscount,
-      );
+      const paidKurusForThis = Math.max(0, item.priceKurus - itemCouponDiscount);
       const paidTry = paidKurusForThis / 100;
 
       const ins = await db.execute(sql`
@@ -248,7 +245,7 @@ router.post("/internal/cart/pre-create", async (req: Request, res: Response) => 
     }
 
     console.info(
-      `[CART] pre-create: order_id=${orderId} items=${resolved.length} purchase_ids=[${purchaseIds.join(",")}] finalKurus=${finalKurus}`,
+      `[CART] pre-create: order_id=${orderId} rows=${resolved.length} purchase_ids=[${purchaseIds.join(",")}] finalKurus=${finalKurus}`,
     );
 
     return res.json({
@@ -267,6 +264,7 @@ router.post("/internal/cart/pre-create", async (req: Request, res: Response) => 
 });
 
 // ─── INTERNAL: cart/activate ─────────────────────────────────────────────
+// Bundle master satırları BURADA expand edilir.
 router.post("/internal/cart/activate", async (req: Request, res: Response) => {
   const rawBody = JSON.stringify(req.body);
   const signature = req.headers["x-internal-signature"];
@@ -291,9 +289,9 @@ router.post("/internal/cart/activate", async (req: Request, res: Response) => {
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
     const paidAtIso = paidAt ?? new Date().toISOString();
 
-    // Idempotency guard — bu order zaten aktive edildiyse hemen dön
+    // Idempotency guard — bu order zaten aktive edildiyse dön
     const successRows = await db.execute(sql`
-      SELECT id, download_token FROM ebook_purchases
+      SELECT id FROM ebook_purchases
       WHERE order_id = ${orderKey} AND payment_status = 'success'
       LIMIT 1
     `);
@@ -302,9 +300,12 @@ router.post("/internal/cart/activate", async (req: Request, res: Response) => {
       return res.json({ ok: true, orderId: orderKey, action: "already_active" });
     }
 
-    // order_id ile pending kayıtları bul
+    // Pending kayıtları çek — buyer bilgileri + coupon + bundle_id
     const pendingRows = await db.execute(sql`
-      SELECT id, ebook_id, amount_paid, coupon_id, coupon_discount_kurus, buyer_email
+      SELECT id, ebook_id, bundle_id, amount_paid, buyer_email, buyer_name, buyer_phone,
+             invoice_type, tax_id, tax_office, company_name,
+             billing_address, billing_city, billing_district, billing_postal_code,
+             coupon_id, coupon_discount_kurus, user_id
       FROM ebook_purchases
       WHERE order_id = ${orderKey}
         AND payment_status IN ('pending', 'failed')
@@ -317,26 +318,14 @@ router.post("/internal/cart/activate", async (req: Request, res: Response) => {
       return res.status(404).json({ error: "Pending kayıt bulunamadı" });
     }
 
-    const activated: Array<{ id: number; downloadToken: string; ebookId: number }> = [];
+    const activatedPurchaseIds: number[] = [];
 
     for (const p of pending) {
-      const dlToken = crypto.randomBytes(32).toString("base64url");
-      await db.execute(sql`
-        UPDATE ebook_purchases SET
-          payment_status = 'success',
-          iyzico_payment_id = ${iyzicoPaymentId ? String(iyzicoPaymentId) : null},
-          download_token = ${dlToken},
-          download_expires_at = ${expiresAt},
-          paid_at = ${paidAtIso},
-          updated_at = NOW()
-        WHERE id = ${p.id}
-      `);
-      activated.push({ id: Number(p.id), downloadToken: dlToken, ebookId: Number(p.ebook_id) });
-
-      // Coupon redemption sadece SON kayda ekli olarak yaz
+      // COUPON REDEMPTION — sadece bir kere, master satırında
       if (p.coupon_id && p.coupon_discount_kurus) {
         try {
-          const originalKurus = Math.round(Number(p.amount_paid) * 100) + Number(p.coupon_discount_kurus);
+          const originalKurus =
+            Math.round(Number(p.amount_paid) * 100) + Number(p.coupon_discount_kurus);
           await recordRedemption({
             couponId: Number(p.coupon_id),
             userId: null,
@@ -353,7 +342,7 @@ router.post("/internal/cart/activate", async (req: Request, res: Response) => {
         }
       }
 
-      // Affiliate attribution — her satır için ayrı komisyon
+      // AFFILIATE ATTRIBUTION — master satır için
       if (affiliateCode) {
         try {
           const amountKurus = Math.round(Number(p.amount_paid) * 100);
@@ -367,14 +356,91 @@ router.post("/internal/cart/activate", async (req: Request, res: Response) => {
           console.error("[CART] affiliate attr HATA:", affErr?.message);
         }
       }
+
+      if (p.bundle_id) {
+        // ── BUNDLE MASTER → içindeki ebook'lara EXPAND ────────────────
+        const bundleItemsRows = await db.execute(sql`
+          SELECT e.id AS ebook_id, e.title AS ebook_title
+          FROM ebook_bundle_items bi
+          INNER JOIN ebooks e ON e.id = bi.ebook_id
+          WHERE bi.bundle_id = ${p.bundle_id} AND e.is_active = TRUE
+          ORDER BY bi.position ASC, e.id ASC
+        `);
+        const bundleEbooks = (bundleItemsRows.rows ?? bundleItemsRows) as any[];
+        if (bundleEbooks.length === 0) {
+          console.error(`[CART] bundle_id=${p.bundle_id} boş — expand atlandı`);
+          continue;
+        }
+
+        // Bundle toplam ödemesini içindeki ebook'lara pro-rata dağıt
+        const bundleTotalKurus = Math.round(Number(p.amount_paid) * 100);
+        const perItemKurus = Math.floor(bundleTotalKurus / bundleEbooks.length);
+        const remainder = bundleTotalKurus - perItemKurus * bundleEbooks.length;
+
+        for (let i = 0; i < bundleEbooks.length; i++) {
+          const eb = bundleEbooks[i];
+          const kurus =
+            i === bundleEbooks.length - 1 ? perItemKurus + remainder : perItemKurus;
+          const paidTry = kurus / 100;
+          const dlToken = crypto.randomBytes(32).toString("base64url");
+
+          const ins = await db.execute(sql`
+            INSERT INTO ebook_purchases (
+              ebook_id, user_id, buyer_email, buyer_name, buyer_phone,
+              invoice_type, tax_id, tax_office, company_name,
+              billing_address, billing_city, billing_district, billing_postal_code,
+              amount_paid, currency,
+              iyzico_conversation_id, iyzico_payment_id,
+              payment_status, invoice_status,
+              download_count, download_token, download_expires_at,
+              paid_at,
+              order_id, bundle_id
+            ) VALUES (
+              ${eb.ebook_id}, ${p.user_id}, ${p.buyer_email}, ${p.buyer_name}, ${p.buyer_phone},
+              ${p.invoice_type}, ${p.tax_id}, ${p.tax_office}, ${p.company_name},
+              ${p.billing_address}, ${p.billing_city}, ${p.billing_district}, ${p.billing_postal_code},
+              ${paidTry}, 'TRY',
+              ${iyzicoConversationId ?? null}, ${iyzicoPaymentId ? String(iyzicoPaymentId) : null},
+              'success', 'pending',
+              0, ${dlToken}, ${expiresAt}::TIMESTAMPTZ,
+              ${paidAtIso}::TIMESTAMPTZ,
+              ${orderKey}, ${p.bundle_id}
+            )
+            RETURNING id
+          `);
+          const newId = ((ins.rows ?? ins)[0] as any)?.id;
+          if (newId) activatedPurchaseIds.push(Number(newId));
+        }
+
+        // Bundle master satırını sil
+        await db.execute(sql`DELETE FROM ebook_purchases WHERE id = ${p.id}`);
+        console.info(
+          `[CART] bundle master silindi (id=${p.id}), ${bundleEbooks.length} ebook satırı oluşturuldu`,
+        );
+      } else {
+        // ── EBOOK: mevcut satırı success'e çevir ──────────────────────
+        const dlToken = crypto.randomBytes(32).toString("base64url");
+        await db.execute(sql`
+          UPDATE ebook_purchases SET
+            payment_status = 'success',
+            iyzico_payment_id = ${iyzicoPaymentId ? String(iyzicoPaymentId) : null},
+            download_token = ${dlToken},
+            download_expires_at = ${expiresAt}::TIMESTAMPTZ,
+            paid_at = ${paidAtIso}::TIMESTAMPTZ,
+            updated_at = NOW()
+          WHERE id = ${p.id}
+        `);
+        activatedPurchaseIds.push(Number(p.id));
+      }
     }
 
-    console.info(`[CART] activate: order_id=${orderKey} ${activated.length} satır aktive edildi`);
+    console.info(
+      `[CART] activate: order_id=${orderKey} ${activatedPurchaseIds.length} ebook satırı hazır`,
+    );
 
-    // Sepet için toplu mail (fire-and-forget)
+    // Mail (fire-and-forget)
     void (async () => {
       try {
-        // Order detayları
         const detailRows = await db.execute(sql`
           SELECT p.id, p.buyer_email, p.buyer_name, p.invoice_type,
                  p.amount_paid, p.currency,
@@ -390,7 +456,6 @@ router.post("/internal/cart/activate", async (req: Request, res: Response) => {
         const details = (detailRows.rows ?? detailRows) as any[];
         if (details.length === 0) return;
 
-        // Mail attempts artır
         await db.execute(sql`
           UPDATE ebook_purchases SET mail_attempts = mail_attempts + 1, updated_at = NOW()
           WHERE order_id = ${orderKey}
@@ -442,11 +507,14 @@ router.post("/internal/cart/activate", async (req: Request, res: Response) => {
     // Admin bildirim
     void (async () => {
       try {
-        const first = (await db.execute(sql`
-          SELECT buyer_email FROM ebook_purchases WHERE order_id = ${orderKey} LIMIT 1
-        `)).rows?.[0] as any;
+        const first = (
+          await db.execute(sql`
+            SELECT buyer_email FROM ebook_purchases WHERE order_id = ${orderKey} LIMIT 1
+          `)
+        ).rows?.[0] as any;
         const totalRows = await db.execute(sql`
-          SELECT COALESCE(SUM(amount_paid), 0)::TEXT AS total, COUNT(*)::INT AS n FROM ebook_purchases WHERE order_id = ${orderKey}
+          SELECT COALESCE(SUM(amount_paid), 0)::TEXT AS total, COUNT(*)::INT AS n
+          FROM ebook_purchases WHERE order_id = ${orderKey} AND payment_status = 'success'
         `);
         const t = (totalRows.rows ?? totalRows)[0] as any;
         await notifyNewCartPurchase({
@@ -463,8 +531,8 @@ router.post("/internal/cart/activate", async (req: Request, res: Response) => {
     return res.json({
       ok: true,
       orderId: orderKey,
-      itemCount: activated.length,
-      downloadTokens: activated.map((a) => a.downloadToken),
+      itemCount: activatedPurchaseIds.length,
+      purchaseIds: activatedPurchaseIds,
     });
   } catch (e: any) {
     console.error("[CART] activate HATA:", e?.message, e?.stack);
@@ -494,7 +562,6 @@ router.get("/order/:orderId", async (req: Request, res: Response) => {
     const items = (rows.rows ?? rows) as any[];
     if (items.length === 0) return res.status(404).json({ error: "Sipariş bulunamadı" });
 
-    // Sadece success olanları göster (public endpoint güvenliği)
     const successItems = items.filter((i) => i.payment_status === "success");
     if (successItems.length === 0) {
       return res.status(403).json({ error: "Bu sipariş henüz tamamlanmadı" });
