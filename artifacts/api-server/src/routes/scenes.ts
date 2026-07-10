@@ -53,8 +53,8 @@ const upload = multer({
 // ─── Plan tier + quota ──────────────────────────────────────────────────
 type PlanTier = "free" | "pro";
 
-const FREE_DAILY_LIMIT = 2;
-const FREE_ALLOWED_CATEGORIES = ["general_business", "meetings"];
+const FREE_DAILY_LIMIT = 3;
+const FREE_ALLOWED_CATEGORIES = ["general_business", "meetings", "phone_calls"];
 
 async function getUserTier(userId: number): Promise<PlanTier> {
   try {
@@ -140,6 +140,102 @@ interface WhisperWord {
   probability: number;
 }
 
+// ─── GPT-4o Audio ile ses tabanlı pronunciation analizi ─────────────────
+// Whisper text-based olduğu için "fridey" → "Friday" olarak yazıp yüksek puan
+// veriyordu. GPT-4o-audio-preview sesi doğrudan dinleyip her kelimenin
+// telaffuzunu değerlendirir — gerçek phoneme-benzeri analiz.
+interface GPT4oPronResult {
+  overallScore: number; // 0-100
+  pronunciationScore: number; // 0-100
+  fluencyScore: number; // 0-100
+  wordScores: Array<{ word: string; score: number; issue: string | null }>;
+  issues: string[];
+  positiveFeedback: string[];
+}
+
+async function analyzePronunciationGPT4o(
+  audioBuffer: Buffer,
+  targetText: string,
+): Promise<GPT4oPronResult | null> {
+  try {
+    const base64 = audioBuffer.toString("base64");
+    const systemPrompt = `You are a STRICT native English pronunciation coach analyzing a Turkish learner's spoken English.
+Return valid JSON only — no markdown, no explanation outside JSON.
+
+Structure:
+{
+  "overallScore": <0-100>,
+  "pronunciationScore": <0-100>,
+  "fluencyScore": <0-100>,
+  "wordScores": [{ "word": "<target word>", "score": <0-100>, "issue": "<brief Turkish or null>" }],
+  "issues": ["<brief Turkish issue>"],
+  "positiveFeedback": ["<brief Turkish positive>"]
+}
+
+STRICT RULES:
+- Listen carefully to ACTUAL pronunciation, not what the target text says
+- If speaker says "fridey" instead of "Friday", give that word 30-50 (Turkish accent trap)
+- If they say "sedule" instead of "schedule", low score
+- Common Turkish speaker issues: /θ/ → /t/, /w/ ↔ /v/, silent letters ignored, /r/ rolled
+- Pauses of 2+ seconds between words → drop fluencyScore heavily
+- Missing or extra words → drop overallScore
+- Be HONEST: bad pronunciation should NEVER get 85+
+- 90+ ONLY for near-native accuracy AND fluency
+- All Turkish feedback (concise, actionable)
+- wordScores: cover each target word in order`;
+
+    const userText = `TARGET TEXT (what they should say):\n"${targetText}"\n\nListen to the audio and evaluate the ACTUAL pronunciation.`;
+
+    const res: any = await getOpenAI().chat.completions.create({
+      model: "gpt-4o-audio-preview",
+      modalities: ["text"],
+      response_format: { type: "json_object" },
+      messages: [
+        { role: "system", content: systemPrompt },
+        {
+          role: "user",
+          content: [
+            { type: "text", text: userText },
+            {
+              type: "input_audio",
+              input_audio: { data: base64, format: "mp3" },
+            },
+          ],
+        } as any,
+      ],
+      temperature: 0.2,
+      max_tokens: 800,
+    });
+
+    const raw = res.choices[0]?.message?.content ?? "{}";
+    const parsed = JSON.parse(raw) as GPT4oPronResult;
+
+    // Defensive normalize
+    return {
+      overallScore: Math.max(0, Math.min(100, Math.round(Number(parsed.overallScore ?? 0)))),
+      pronunciationScore: Math.max(
+        0,
+        Math.min(100, Math.round(Number(parsed.pronunciationScore ?? 0))),
+      ),
+      fluencyScore: Math.max(0, Math.min(100, Math.round(Number(parsed.fluencyScore ?? 0)))),
+      wordScores: Array.isArray(parsed.wordScores)
+        ? parsed.wordScores.map((w) => ({
+            word: String(w.word ?? ""),
+            score: Math.max(0, Math.min(100, Math.round(Number(w.score ?? 0)))),
+            issue: w.issue ? String(w.issue) : null,
+          }))
+        : [],
+      issues: Array.isArray(parsed.issues) ? parsed.issues.map(String) : [],
+      positiveFeedback: Array.isArray(parsed.positiveFeedback)
+        ? parsed.positiveFeedback.map(String)
+        : [],
+    };
+  } catch (e: any) {
+    console.error("[scenes] GPT-4o audio HATA:", e?.message);
+    return null;
+  }
+}
+
 async function transcribeAudio(
   audioBuffer: Buffer,
 ): Promise<{
@@ -147,15 +243,17 @@ async function transcribeAudio(
   words: WhisperWord[];
   durationMs: number;
   audioSeconds: number;
+  mp3Buffer: Buffer;
 } | null> {
   try {
     let finalBuffer = audioBuffer;
     let ext = "mp3";
     let mime = "audio/mpeg";
     let audioSeconds = 0;
+    let mp3Buffer = audioBuffer; // GPT-4o audio için ayrı MP3 buffer
     try {
       finalBuffer = await convertToMp3(audioBuffer);
-      // ffmpeg dönüşüm sonrası approx süre (32kbps'de bytes/4000 ~ saniye — kaba)
+      mp3Buffer = finalBuffer;
       audioSeconds = finalBuffer.length / 4000;
     } catch {
       ext = "webm";
@@ -192,6 +290,7 @@ async function transcribeAudio(
       words,
       durationMs: Date.now() - t0,
       audioSeconds,
+      mp3Buffer,
     };
   } catch (e: any) {
     console.error("[scenes] Whisper HATA:", e?.message);
@@ -610,13 +709,73 @@ router.post(
         return res.status(502).json({ error: "Ses tanıma başarısız. Tekrar dene." });
       }
 
+      // GPT-4o audio pronunciation analizi (paralel — ses tabanlı gerçek phoneme kontrolü)
+      // Bunu whisper ile paralel de yapabilirdik ama şu an transcript'ten sonra çalıştırıyoruz
+      // ki en azından bir sonuç garantilesin. GPT-4o fail olsa bile Whisper skoru fallback.
+      const gpt4o = await analyzePronunciationGPT4o(whisper.mp3Buffer, String(targetTurn.text_en));
+
       // Skorla — audioSeconds ile (durationMs yerine gerçek ses uzunluğu)
-      const { scores, wordAnalysis } = computeScores(
+      const baseResult = computeScores(
         String(targetTurn.text_en),
         whisper.text,
         whisper.words,
         whisper.audioSeconds,
       );
+
+      // GPT-4o varsa skorları BLEND et — telaffuz/akıcılıkta GPT-4o'ya çok daha ağırlık ver
+      let finalScores = baseResult.scores;
+      let finalWordAnalysis = baseResult.wordAnalysis;
+
+      if (gpt4o) {
+        // GPT-4o ses tabanlı → pronunciation ve fluency için ana kaynak
+        const pronBlended = Math.round(
+          gpt4o.pronunciationScore * 0.75 + baseResult.scores.pronunciation * 0.25,
+        );
+        const fluencyBlended = Math.round(
+          gpt4o.fluencyScore * 0.75 + baseResult.scores.fluency * 0.25,
+        );
+
+        // Overall: GPT-4o overallScore ile Whisper hesabı ortalaması
+        const overallBlended = Math.round(
+          gpt4o.overallScore * 0.55 +
+            (pronBlended * 0.4 +
+              baseResult.scores.accuracy * 0.3 +
+              fluencyBlended * 0.2 +
+              baseResult.scores.completeness * 0.1) *
+              0.45,
+        );
+
+        finalScores = {
+          accuracy: baseResult.scores.accuracy,
+          completeness: baseResult.scores.completeness,
+          pronunciation: pronBlended,
+          fluency: fluencyBlended,
+          overall: overallBlended,
+        };
+
+        // wordAnalysis'i GPT-4o word-level ile zenginleştir
+        if (gpt4o.wordScores.length > 0) {
+          finalWordAnalysis = baseResult.wordAnalysis.map((wa) => {
+            const gptWord = gpt4o.wordScores.find(
+              (g) => g.word.toLowerCase().replace(/[^a-z']/g, "") ===
+                (wa.target ?? "").toLowerCase().replace(/[^a-z']/g, ""),
+            );
+            if (gptWord && gptWord.score < 70) {
+              // GPT-4o düşük skor verdiyse "close" ya da "missing" işaretle
+              return {
+                ...wa,
+                match: gptWord.score < 50 ? "missing" : "close",
+                gptScore: gptWord.score,
+                gptIssue: gptWord.issue,
+              };
+            }
+            return { ...wa, gptScore: gptWord?.score, gptIssue: gptWord?.issue };
+          });
+        }
+      }
+
+      const scores = finalScores;
+      const wordAnalysis = finalWordAnalysis;
 
       // Turn attempt kaydet
       await db.execute(sql`
@@ -677,6 +836,13 @@ router.post(
         target: String(targetTurn.text_en),
         scores,
         wordAnalysis,
+        // GPT-4o'nun ses tabanlı feedback'i — kullanıcıya konkret hatalarını göster
+        feedback: gpt4o
+          ? {
+              issues: gpt4o.issues.slice(0, 3),
+              positives: gpt4o.positiveFeedback.slice(0, 2),
+            }
+          : null,
         aiTurn: nextAi
           ? {
               turnId: nextAi.id,

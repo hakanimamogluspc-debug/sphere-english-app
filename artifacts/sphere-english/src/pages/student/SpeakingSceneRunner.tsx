@@ -45,6 +45,13 @@ interface WordAnalysisItem {
   target: string | null;
   said: string | null;
   match: "exact" | "close" | "missing" | "extra";
+  gptScore?: number;
+  gptIssue?: string | null;
+}
+
+interface Feedback {
+  issues: string[];
+  positives: string[];
 }
 
 interface CompleteResult {
@@ -87,6 +94,7 @@ export default function SpeakingSceneRunner() {
   const [lastWordAnalysis, setLastWordAnalysis] = useState<WordAnalysisItem[]>([]);
   const [lastTranscript, setLastTranscript] = useState<string>("");
   const [lastTarget, setLastTarget] = useState<string>("");
+  const [lastFeedback, setLastFeedback] = useState<Feedback | null>(null);
   const [showScoreCard, setShowScoreCard] = useState(false);
 
   // Complete state
@@ -255,6 +263,7 @@ export default function SpeakingSceneRunner() {
       setLastWordAnalysis(d.wordAnalysis || []);
       setLastTranscript(d.transcript);
       setLastTarget(d.target);
+      setLastFeedback(d.feedback || null);
       setShowScoreCard(true);
 
       // Sonraki AI turu + sonraki user turu
@@ -399,6 +408,7 @@ export default function SpeakingSceneRunner() {
           target={lastTarget}
           transcript={lastTranscript}
           wordAnalysis={lastWordAnalysis}
+          feedback={lastFeedback}
         />
       )}
 
@@ -519,11 +529,13 @@ function ScoreCard({
   target,
   transcript,
   wordAnalysis,
+  feedback,
 }: {
   scores: Scores;
   target: string;
   transcript: string;
   wordAnalysis: WordAnalysisItem[];
+  feedback: Feedback | null;
 }) {
   const overallColor =
     scores.overall >= 85
@@ -609,6 +621,65 @@ function ScoreCard({
           </span>
         </div>
       </div>
+
+      {/* GPT-4o word-level issues — düşük skorlu kelimeler */}
+      {wordAnalysis.some((w) => w.gptIssue && w.gptScore !== undefined && w.gptScore < 80) && (
+        <div className="mt-3 p-3 rounded-lg bg-red-50 border border-red-200">
+          <div className="text-[10px] font-bold text-red-900 uppercase tracking-wider mb-2">
+            🎯 Kelime Bazlı Telaffuz Notları
+          </div>
+          <ul className="space-y-1.5">
+            {wordAnalysis
+              .filter((w) => w.gptIssue && w.gptScore !== undefined && w.gptScore < 80)
+              .slice(0, 4)
+              .map((w, i) => (
+                <li key={i} className="text-xs text-red-900 flex items-start gap-2">
+                  <span className="font-mono bg-white px-1.5 py-0.5 rounded border border-red-200 text-red-800 flex-shrink-0">
+                    {w.target}
+                  </span>
+                  <span className="flex-1">
+                    <span className="font-semibold">{w.gptScore}/100 — </span>
+                    {w.gptIssue}
+                  </span>
+                </li>
+              ))}
+          </ul>
+        </div>
+      )}
+
+      {/* GPT-4o genel geri bildirim */}
+      {feedback && (feedback.issues.length > 0 || feedback.positives.length > 0) && (
+        <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-2">
+          {feedback.issues.length > 0 && (
+            <div className="p-3 rounded-lg bg-amber-50 border border-amber-200">
+              <div className="text-[10px] font-bold text-amber-900 uppercase tracking-wider mb-1.5">
+                ⚠️ Geliştirilecek
+              </div>
+              <ul className="space-y-1">
+                {feedback.issues.map((iss, i) => (
+                  <li key={i} className="text-xs text-amber-900 flex items-start gap-1.5">
+                    <span className="text-amber-600">→</span> {iss}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {feedback.positives.length > 0 && (
+            <div className="p-3 rounded-lg bg-emerald-50 border border-emerald-200">
+              <div className="text-[10px] font-bold text-emerald-900 uppercase tracking-wider mb-1.5">
+                ✓ İyi Yaptığın
+              </div>
+              <ul className="space-y-1">
+                {feedback.positives.map((pos, i) => (
+                  <li key={i} className="text-xs text-emerald-900 flex items-start gap-1.5">
+                    <span className="text-emerald-600">→</span> {pos}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
