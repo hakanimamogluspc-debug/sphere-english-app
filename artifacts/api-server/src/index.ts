@@ -2,6 +2,7 @@ import { initSentry } from "./lib/sentry.js";
 import { startBackupCron } from "./lib/db-backup.js";
 import { startEbookRecoveryCron } from "./lib/ebook-recovery-cron.js";
 import { startCartAbandonedCron } from "./lib/cart-abandoned-cron.js";
+import { seedSpeakingScenes } from "./lib/scenes-seed.js";
 import cluster from "node:cluster";
 import os from "node:os";
 import app from "./app";
@@ -462,6 +463,79 @@ async function runStartupMigrations() {
     // Terkedilmiş sepet hatırlatma maili — timestamp NULL ise henüz mail atılmadı
     `ALTER TABLE ebook_purchases ADD COLUMN IF NOT EXISTS abandoned_mail_sent_at TIMESTAMPTZ`,
     `CREATE INDEX IF NOT EXISTS ebook_purchases_abandoned_idx ON ebook_purchases(payment_status, created_at) WHERE payment_status = 'pending' AND abandoned_mail_sent_at IS NULL`,
+
+    // ─── Speaking Role-Play Sahneleri ───────────────────────────────────
+    // Sektör bazlı role-play sahnesi kütüphanesi
+    `CREATE TABLE IF NOT EXISTS speaking_scenes (
+      id SERIAL PRIMARY KEY,
+      slug VARCHAR(200) NOT NULL UNIQUE,
+      category VARCHAR(50) NOT NULL,
+      title_en VARCHAR(300) NOT NULL,
+      title_tr VARCHAR(300) NOT NULL,
+      description_tr TEXT NOT NULL,
+      user_role_tr VARCHAR(200),
+      counterpart_role_tr VARCHAR(200),
+      difficulty VARCHAR(4) NOT NULL DEFAULT 'B1' CHECK (difficulty IN ('A2','B1','B2','C1')),
+      min_plan VARCHAR(20) NOT NULL DEFAULT 'free' CHECK (min_plan IN ('free','pro')),
+      avg_duration_min INTEGER NOT NULL DEFAULT 5,
+      voice VARCHAR(20) NOT NULL DEFAULT 'nova',
+      is_active BOOLEAN NOT NULL DEFAULT TRUE,
+      sort_order INTEGER NOT NULL DEFAULT 0,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`,
+    `CREATE INDEX IF NOT EXISTS speaking_scenes_category_idx ON speaking_scenes(category, is_active, sort_order)`,
+
+    // Sahne turları — user ve ai konuşmaları sırayla
+    `CREATE TABLE IF NOT EXISTS speaking_scene_turns (
+      id SERIAL PRIMARY KEY,
+      scene_id INTEGER NOT NULL REFERENCES speaking_scenes(id) ON DELETE CASCADE,
+      turn_order INTEGER NOT NULL,
+      speaker VARCHAR(10) NOT NULL CHECK (speaker IN ('user','ai')),
+      text_en TEXT NOT NULL,
+      text_tr TEXT,
+      notes_tr TEXT,
+      phonetic_hint TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      UNIQUE(scene_id, turn_order)
+    )`,
+    `CREATE INDEX IF NOT EXISTS speaking_scene_turns_scene_idx ON speaking_scene_turns(scene_id, turn_order)`,
+
+    // Kullanıcı sahne denemesi (session)
+    `CREATE TABLE IF NOT EXISTS speaking_scene_attempts (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      scene_id INTEGER NOT NULL REFERENCES speaking_scenes(id) ON DELETE CASCADE,
+      started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      completed_at TIMESTAMPTZ,
+      status VARCHAR(20) NOT NULL DEFAULT 'in_progress' CHECK (status IN ('in_progress','completed','abandoned')),
+      total_score INTEGER,
+      turn_count INTEGER NOT NULL DEFAULT 0,
+      duration_seconds INTEGER,
+      ai_summary_tr TEXT,
+      weak_areas JSONB
+    )`,
+    `CREATE INDEX IF NOT EXISTS speaking_scene_attempts_user_idx ON speaking_scene_attempts(user_id, started_at DESC)`,
+    `CREATE INDEX IF NOT EXISTS speaking_scene_attempts_quota_idx ON speaking_scene_attempts(user_id, started_at) WHERE status IN ('completed','in_progress')`,
+
+    // Her turdaki kullanıcı denemesi (skor detayı)
+    `CREATE TABLE IF NOT EXISTS speaking_scene_turn_attempts (
+      id SERIAL PRIMARY KEY,
+      attempt_id INTEGER NOT NULL REFERENCES speaking_scene_attempts(id) ON DELETE CASCADE,
+      turn_id INTEGER REFERENCES speaking_scene_turns(id) ON DELETE SET NULL,
+      turn_order INTEGER NOT NULL,
+      target_text TEXT NOT NULL,
+      transcript TEXT NOT NULL DEFAULT '',
+      accuracy_score INTEGER,
+      fluency_score INTEGER,
+      pronunciation_score INTEGER,
+      completeness_score INTEGER,
+      overall_score INTEGER,
+      word_analysis JSONB,
+      duration_ms INTEGER,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`,
+    `CREATE INDEX IF NOT EXISTS speaking_scene_turn_attempts_attempt_idx ON speaking_scene_turn_attempts(attempt_id, turn_order)`,
 
     // ─── Website Analytics (ziyaretçi takibi) ──────────────────────────────
     `CREATE TABLE IF NOT EXISTS web_visitor_sessions (
@@ -1152,6 +1226,8 @@ if (cluster.isPrimary) {
       startBackupCron();
       startEbookRecoveryCron();
       startCartAbandonedCron();
+      // Speaking scenes seed (idempotent — sadece yoksa ekler)
+      void seedSpeakingScenes();
     })
     .then(() => {
       const numWorkers = Math.max(1, Math.min(os.cpus().length, 8));

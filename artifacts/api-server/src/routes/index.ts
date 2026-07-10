@@ -55,6 +55,7 @@ import adminEbooksRouter from "./admin-ebooks";
 import adminEbookPurchasesRouter from "./admin-ebook-purchases";
 import ebookPurchaseRouter from "./ebook-purchase";
 import cartRouter from "./cart";
+import scenesRouter from "./scenes";
 import webAnalyticsRouter from "./web-analytics";
 import accountSetupRouter from "./account-setup";
 import instagramWebhookRouter from "./instagram-webhook";
@@ -144,6 +145,8 @@ router.use(marketingRouter);
 router.use(outreachRouter);
 router.use(chatbotRouter);
 router.use(chatbotEmbedRouter);
+// Speaking role-play sahneleri — authMiddleware endpoint bazında + free tier quota
+router.use(scenesRouter);
 router.use(activityRouter);
 router.use(featureSettingsRouter);
 router.use(placementTestRouter);
