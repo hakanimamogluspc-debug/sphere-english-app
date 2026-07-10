@@ -98,6 +98,8 @@ const PresentationSimulator   = lazy(() => import("./pages/student/PresentationS
 const AIQuizGenerator         = lazy(() => import("./pages/student/AIQuizGenerator"));
 const AITutor                 = lazy(() => import("./pages/student/AITutor"));
 const LearningPath            = lazy(() => import("./pages/student/LearningPath"));
+const SpeakingScenes          = lazy(() => import("./pages/student/SpeakingScenes"));
+const SpeakingSceneRunner     = lazy(() => import("./pages/student/SpeakingSceneRunner"));
 const AIStudio                = lazy(() => import("./pages/AIStudio"));
 const PlacementTest           = lazy(() => import("./pages/PlacementTest"));
 const Subscription            = lazy(() => import("./pages/student/Subscription"));
@@ -240,6 +242,9 @@ function Router() {
         <Route path="/student/ai-quiz"><LayoutWrapper component={AIQuizGeneratorPro} allowedRoles={['student', 'admin']} /></Route>
         <Route path="/student/ai-tutor"><LayoutWrapper component={AITutorPro} allowedRoles={['student', 'admin']} /></Route>
         <Route path="/student/learning-path"><LayoutWrapper component={LearningPathPro} allowedRoles={['student', 'admin']} /></Route>
+        {/* Speaking role-play sahneleri — free tier de erişebilir (endpoint içinde quota kontrolü) */}
+        <Route path="/student/speaking-scenes"><LayoutWrapper component={SpeakingScenes} allowedRoles={['student', 'admin']} /></Route>
+        <Route path="/student/speaking-scenes/:slug"><LayoutWrapper component={SpeakingSceneRunner} allowedRoles={['student', 'admin']} /></Route>
         <Route path="/student/level-exams"><LayoutWrapper component={LevelExams} allowedRoles={['student', 'admin']} /></Route>
         <Route path="/student/level-exams/:level"><LayoutWrapper component={LevelExamTaking} allowedRoles={['student', 'admin']} /></Route>
         <Route path="/forum"><LayoutWrapper component={Forum} /></Route>

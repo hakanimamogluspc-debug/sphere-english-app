@@ -33,6 +33,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     '/student/writing-coach',
     '/student/vocab-game',
     '/student/grammar-coach',
+    '/student/speaking-scenes',
   ];
   const isAiStudioPage = AI_STUDIO_HREFS.some(h => location === h || location.startsWith(h));
   const [isAiStudioOpen, setIsAiStudioOpen] = useState(isAiStudioPage);
@@ -61,6 +62,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       { name: 'Alıştırmalar',        href: '/quizzes',                        icon: FileQuestion,  moduleKey: 'student-quizzes' },
       { name: 'Speaking Club',       href: '/student/speaking-club',          icon: Mic,           moduleKey: 'student-speaking-club' },
       { name: 'Telaffuz Koçu',       href: '/student/pronunciation-coach',    icon: Mic,           moduleKey: 'student-pronunciation-coach', group: 'ai-studio' },
+      { name: 'Konuşma Sahneleri',   href: '/student/speaking-scenes',        icon: Mic,           moduleKey: 'student-speaking-scenes',      group: 'ai-studio' },
       { name: 'Yazma Koçu',          href: '/student/writing-coach',          icon: PenLine,       moduleKey: 'student-writing-coach',        group: 'ai-studio' },
       { name: 'Kelime Oyunu',        href: '/student/vocab-game',             icon: Gamepad2,      moduleKey: 'student-vocab-game',           group: 'ai-studio' },
       { name: 'Dilbilgisi Koçu',    href: '/student/grammar-coach',          icon: Brain,         moduleKey: 'student-grammar-coach',        group: 'ai-studio' },
