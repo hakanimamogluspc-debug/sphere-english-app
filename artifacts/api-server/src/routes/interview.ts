@@ -278,7 +278,17 @@ router.post(
         return res.status(400).json({ error: "Ses kaydı çok kısa. En az 2 saniye konuşun." });
       }
 
-      const userText = await transcribe(req.file.buffer);
+      // Whisper transcript + Azure phoneme analysis (paralel)
+      const [userText, azurePron] = await Promise.all([
+        transcribe(req.file.buffer),
+        (async () => {
+          const { analyzePronunciation } = await import("../lib/azure-pronunciation.js");
+          return analyzePronunciation(req.file.buffer, {
+            referenceText: "",
+            enableProsodyAssessment: true,
+          });
+        })(),
+      ]);
       if (!userText) {
         return res.status(400).json({ error: "Ses anlaşılamadı. Daha net konuşmayı deneyin." });
       }
@@ -342,6 +352,27 @@ router.post(
         })
         .where(eq(interviewSessionsTable.id, sessionId));
 
+      // Azure phoneme feedback (varsa)
+      const azurePronunciation = azurePron
+        ? {
+            pronScore: azurePron.pronScore,
+            accuracyScore: azurePron.accuracyScore,
+            fluencyScore: azurePron.fluencyScore,
+            prosodyScore: azurePron.prosodyScore,
+            weakWords: azurePron.words
+              .filter((w) => w.accuracyScore < 70)
+              .slice(0, 5)
+              .map((w) => ({
+                word: w.word,
+                score: w.accuracyScore,
+                weakPhonemes: w.phonemes
+                  .filter((p) => p.accuracyScore < 70)
+                  .slice(0, 2)
+                  .map((p) => p.phoneme),
+              })),
+          }
+        : null;
+
       return res.json({
         userText,
         reply,
@@ -350,6 +381,7 @@ router.post(
         questionsAsked: newAsked,
         targetQuestions: session.targetQuestions,
         isFinalTurn,
+        azurePronunciation,
       });
     } catch (err: any) {
       console.error("Interview turn error:", err?.message || err);

@@ -12,6 +12,10 @@ import { usersTable, pronunciationAssessmentsTable } from "@workspace/db/schema"
 import { eq, desc } from "drizzle-orm";
 import { applyActivityStreak, computeEffectiveStreak } from "../utils/streak.js";
 import { notifyNewAssessment, notifyLevelUp } from "../lib/notifications.js";
+import {
+  analyzePronunciation as azureAnalyze,
+  buildWordFeedback as azureBuildFeedback,
+} from "../lib/azure-pronunciation.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -209,8 +213,15 @@ router.post(
       const mimeType = req.file.mimetype || "audio/webm";
       console.info(`Audio received: ${req.file.buffer.length} bytes, type: ${mimeType}`);
 
-      // ── Transcribe with Whisper verbose ──
-      const whisperResult = await transcribeVerbose(req.file.buffer, mimeType);
+      // ── Transcribe with Whisper + Azure phoneme analysis (paralel) ──
+      const [whisperResult, azurePron] = await Promise.all([
+        transcribeVerbose(req.file.buffer, mimeType),
+        // Chat mode = unscripted (referenceText boş) — Azure prosody + fluency + phoneme confidence
+        azureAnalyze(req.file.buffer, {
+          referenceText: "",
+          enableProsodyAssessment: true,
+        }),
+      ]);
 
       if (whisperResult?.apiError) {
         return res.status(500).json({ error: "Yapay zeka servisi şu an ulaşılamıyor. Lütfen biraz bekleyip tekrar deneyin." });
@@ -289,7 +300,26 @@ CONVERSATION STYLE:
 
       const audioBase64 = Buffer.from(await ttsResponse.arrayBuffer()).toString("base64");
 
-      return res.json({ userText, wordScores, reply, audioBase64, speechAnalysis });
+      // Azure sonucu — word-level pronunciation feedback
+      const azureWordFeedback = azurePron ? azureBuildFeedback(azurePron) : [];
+      const azureSummary = azurePron
+        ? {
+            pronScore: azurePron.pronScore,
+            accuracyScore: azurePron.accuracyScore,
+            fluencyScore: azurePron.fluencyScore,
+            prosodyScore: azurePron.prosodyScore,
+            words: azureWordFeedback.filter((w) => w.score < 80).slice(0, 5),
+          }
+        : null;
+
+      return res.json({
+        userText,
+        wordScores,
+        reply,
+        audioBase64,
+        speechAnalysis,
+        azurePronunciation: azureSummary,
+      });
 
     } catch (err: any) {
       console.error("Pronunciation chat error:", err?.message || err);

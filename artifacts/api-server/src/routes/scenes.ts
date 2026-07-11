@@ -31,6 +31,10 @@ import path from "path";
 import { sql } from "drizzle-orm";
 import { db } from "@workspace/db";
 import { authMiddleware } from "../middlewares/auth.js";
+import {
+  analyzePronunciation as azureAnalyze,
+  type AzurePronunciationResult,
+} from "../lib/azure-pronunciation.js";
 
 const execFileAsync = promisify(execFile);
 const router = Router();
@@ -188,7 +192,28 @@ async function convertToWav16k(inputBuffer: Buffer): Promise<Buffer> {
   }
 }
 
-async function analyzePronunciationAzure(
+async function analyzePronunciationAzureLegacy(
+  audioBuffer: Buffer,
+  targetText: string,
+): Promise<AzurePronunciationResult | null> {
+  // Yeni helper'ı çağır — reference mode
+  const r = await azureAnalyze(audioBuffer, {
+    referenceText: targetText,
+    enableProsodyAssessment: true,
+  });
+  if (!r) return null;
+  return {
+    accuracyScore: r.accuracyScore,
+    fluencyScore: r.fluencyScore,
+    completenessScore: r.completenessScore,
+    pronScore: r.pronScore,
+    words: r.words as any,
+    recognizedText: r.recognizedText,
+  };
+}
+
+// Eski implementasyon — helper'a devredildi, aşağıdaki geçici bloğu skip et
+async function _unusedAzureAnalyze(
   audioBuffer: Buffer,
   targetText: string,
 ): Promise<AzurePronunciationResult | null> {
@@ -838,7 +863,7 @@ router.post(
       // Whisper transcript + Azure pronunciation assessment (paralel)
       const [whisper, azure] = await Promise.all([
         transcribeAudio(req.file.buffer),
-        analyzePronunciationAzure(req.file.buffer, String(targetTurn.text_en)),
+        analyzePronunciationAzureLegacy(req.file.buffer, String(targetTurn.text_en)),
       ]);
       if (!whisper) {
         return res.status(502).json({ error: "Ses tanıma başarısız. Tekrar dene." });

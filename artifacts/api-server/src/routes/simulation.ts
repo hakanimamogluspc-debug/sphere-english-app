@@ -150,7 +150,11 @@ router.post(
       console.info(`[SIM] audio received: ${req.file.buffer.length} bytes, voice: ${safeVoice}, sector: ${sector}`);
 
       const t0 = Date.now();
-      const userText = await withTimeout(transcribe(req.file.buffer), 35_000, "Whisper");
+      const { analyzePronunciation: azureAnalyze3 } = await import("../lib/azure-pronunciation.js");
+      const [userText, azurePron3] = await Promise.all([
+        withTimeout(transcribe(req.file.buffer), 35_000, "Whisper"),
+        azureAnalyze3(req.file.buffer, { referenceText: "", enableProsodyAssessment: true }).catch(() => null),
+      ]);
       console.info(`[SIM] transcribe done: "${userText.slice(0, 60)}" (${Date.now() - t0}ms)`);
 
       if (!userText) {
@@ -226,7 +230,27 @@ SIMULATION RULES:
 
       const audioBase64 = Buffer.from(await ttsResponse.arrayBuffer()).toString("base64");
 
-      return res.json({ userText, reply, audioBase64, turnAnalysis });
+      const azurePronunciation = azurePron3
+        ? {
+            pronScore: azurePron3.pronScore,
+            accuracyScore: azurePron3.accuracyScore,
+            fluencyScore: azurePron3.fluencyScore,
+            prosodyScore: azurePron3.prosodyScore,
+            weakWords: azurePron3.words
+              .filter((w) => w.accuracyScore < 70)
+              .slice(0, 5)
+              .map((w) => ({
+                word: w.word,
+                score: w.accuracyScore,
+                weakPhonemes: w.phonemes
+                  .filter((p) => p.accuracyScore < 70)
+                  .slice(0, 2)
+                  .map((p) => p.phoneme),
+              })),
+          }
+        : null;
+
+      return res.json({ userText, reply, audioBase64, turnAnalysis, azurePronunciation });
     } catch (err: any) {
       console.error("[SIM] HATA:", err?.message || err, err?.status, err?.code);
       // Timeout hatasını ayrı mesajla bildir — kullanıcı tekrar denesin

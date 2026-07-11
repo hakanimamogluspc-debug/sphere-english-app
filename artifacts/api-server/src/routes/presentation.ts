@@ -248,8 +248,15 @@ router.post(
         return res.status(400).json({ error: "Kayıt çok kısa. Lütfen tam sunumunu en az 30 saniye olacak şekilde anlat." });
       }
 
-      // 1. Transcribe
-      const transcript = await transcribe(req.file.buffer, `English business presentation about ${session.setup.topic}`);
+      // 1. Transcribe + Azure phoneme (paralel)
+      const { analyzePronunciation } = await import("../lib/azure-pronunciation.js");
+      const [transcript, azurePron] = await Promise.all([
+        transcribe(req.file.buffer, `English business presentation about ${session.setup.topic}`),
+        analyzePronunciation(req.file.buffer, {
+          referenceText: "",
+          enableProsodyAssessment: true,
+        }),
+      ]);
       if (!transcript || transcript.length < 50) {
         return res.status(400).json({ error: "Sunum içeriği anlaşılamadı. Lütfen daha net konuşarak tekrar dene." });
       }
@@ -300,6 +307,25 @@ Respond with ONLY the question text — no preamble, no name, no explanation.`;
         questionerName: profile.questionerName,
         questionerRole: profile.questionerRole,
         targetQaTurns: session.targetQaTurns,
+        azurePronunciation: azurePron
+          ? {
+              pronScore: azurePron.pronScore,
+              accuracyScore: azurePron.accuracyScore,
+              fluencyScore: azurePron.fluencyScore,
+              prosodyScore: azurePron.prosodyScore,
+              weakWords: azurePron.words
+                .filter((w) => w.accuracyScore < 70)
+                .slice(0, 8)
+                .map((w) => ({
+                  word: w.word,
+                  score: w.accuracyScore,
+                  weakPhonemes: w.phonemes
+                    .filter((p) => p.accuracyScore < 70)
+                    .slice(0, 2)
+                    .map((p) => p.phoneme),
+                })),
+            }
+          : null,
       });
     } catch (err: any) {
       console.error("Presentation submit error:", err?.message || err);
@@ -331,7 +357,11 @@ router.post(
       }
 
       const profile = AUDIENCE_PROFILES[session.setup.audienceType] || AUDIENCE_PROFILES.team;
-      const answerText = await transcribe(req.file.buffer, `Answer to a Q&A question about ${session.setup.topic}`);
+      const { analyzePronunciation: azureAnalyze2 } = await import("../lib/azure-pronunciation.js");
+      const [answerText, azurePron2] = await Promise.all([
+        transcribe(req.file.buffer, `Answer to a Q&A question about ${session.setup.topic}`),
+        azureAnalyze2(req.file.buffer, { referenceText: "", enableProsodyAssessment: true }),
+      ]);
       if (!answerText) {
         return res.status(400).json({ error: "Cevap anlaşılamadı." });
       }
@@ -391,6 +421,25 @@ Ask ONE follow-up question (max 2 sentences) that drills deeper, challenges, or 
         remainingTurns: Math.max(0, remainingTurns),
         completedTurns: turns.filter((t) => t.candidateAnswer).length,
         targetQaTurns: session.targetQaTurns,
+        azurePronunciation: azurePron2
+          ? {
+              pronScore: azurePron2.pronScore,
+              accuracyScore: azurePron2.accuracyScore,
+              fluencyScore: azurePron2.fluencyScore,
+              prosodyScore: azurePron2.prosodyScore,
+              weakWords: azurePron2.words
+                .filter((w) => w.accuracyScore < 70)
+                .slice(0, 5)
+                .map((w) => ({
+                  word: w.word,
+                  score: w.accuracyScore,
+                  weakPhonemes: w.phonemes
+                    .filter((p) => p.accuracyScore < 70)
+                    .slice(0, 2)
+                    .map((p) => p.phoneme),
+                })),
+            }
+          : null,
       });
     } catch (err: any) {
       console.error("Presentation Q&A turn error:", err?.message || err);
