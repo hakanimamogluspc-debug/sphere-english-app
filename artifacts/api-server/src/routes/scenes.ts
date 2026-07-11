@@ -903,6 +903,9 @@ router.post(
         };
 
         // wordAnalysis'i Azure phoneme skorları ile zenginleştir
+        // ÖNEMLİ: Whisper'ın "exact" tanıdığı kelimelerde Azure'ın 0 skorunu güvenilmez say
+        // (başlangıç sessizlik artefaktları). Sadece Whisper doğrulayan + Azure düşük veren
+        // kelimeleri "gerçek telaffuz problemi" olarak göster.
         finalWordAnalysis = baseResult.wordAnalysis.map((wa) => {
           const azureWord = azure.words.find(
             (aw) =>
@@ -911,14 +914,11 @@ router.post(
           );
           if (!azureWord) return wa;
 
-          // Azure yanlış telaffuz veya eksik derse match'i güncelle
-          let match = wa.match;
-          if (azureWord.errorType === "Mispronunciation" && azureWord.accuracyScore < 60) {
-            match = "close";
-          } else if (azureWord.errorType === "Omission") {
-            match = "missing";
-          } else if (azureWord.errorType === "Insertion") {
-            match = "extra";
+          // Whisper "exact" dediyse (=doğru duydu) VE Azure 0-5 arası verdi → HAYALET SKOR
+          // Bu durumda Azure verisini görmezden gel, Whisper'a güven
+          const isAzureGhost = wa.match === "exact" && azureWord.accuracyScore < 5;
+          if (isAzureGhost) {
+            return wa;
           }
 
           // En düşük skorlu 1-2 phoneme'i note olarak ekle
@@ -931,50 +931,60 @@ router.post(
               ? `Zayıf sesler: /${worstPhonemes.map((p) => p.phoneme).join(", /")}/`
               : null;
 
+          // Skor gerçekten düşükse (< 60) close olarak işaretle — Whisper "exact" dese bile
+          let match = wa.match;
+          if (azureWord.accuracyScore < 60 && azureWord.accuracyScore >= 5) {
+            match = "close";
+          }
+
           return {
             ...wa,
             match,
             gptScore: azureWord.accuracyScore,
             gptIssue:
-              azureWord.errorType !== "None"
-                ? `${azureWord.errorType === "Mispronunciation" ? "Telaffuz hatası" : azureWord.errorType === "Omission" ? "Söylenmedi" : azureWord.errorType} ${phonemeNote ? `— ${phonemeNote}` : ""}`.trim()
+              azureWord.accuracyScore < 60
+                ? `Telaffuz zayıf ${phonemeNote ? `— ${phonemeNote}` : ""}`.trim()
                 : phonemeNote,
           };
         });
 
-        // Genel feedback üret
+        // Genel feedback üret — Whisper doğrulayan kelimeleri filtreyle Azure hayaletlerini engelle
         const issues: string[] = [];
         const positives: string[] = [];
-        const mispronounced = azure.words.filter(
-          (w) => w.errorType === "Mispronunciation" && w.accuracyScore < 70,
-        );
-        const omitted = azure.words.filter((w) => w.errorType === "Omission");
-        if (mispronounced.length > 0) {
+
+        // Whisper "exact" bulmadığı VE Azure < 60 verenler = gerçek telaffuz problemi
+        const realMispronounced = azure.words.filter((w) => {
+          if (w.accuracyScore >= 60) return false;
+          if (w.accuracyScore < 5) return false; // Azure hayaleti
+          // Whisper exact tanımışsa güven — Azure bunu gerçek problem olarak sayma
+          const whisperConfirmedExact = baseResult.wordAnalysis.find(
+            (wa) =>
+              (wa.target ?? "").toLowerCase().replace(/[^a-z']/g, "") ===
+                w.word.toLowerCase().replace(/[^a-z']/g, "") && wa.match === "exact",
+          );
+          if (whisperConfirmedExact && w.accuracyScore >= 40) return false;
+          return true;
+        });
+
+        if (realMispronounced.length > 0) {
           issues.push(
-            `${mispronounced.length} kelime yanlış telaffuz edildi: ${mispronounced
+            `${realMispronounced.length} kelime telaffuz düşük: ${realMispronounced
               .slice(0, 3)
               .map((w) => `"${w.word}"`)
               .join(", ")}`,
           );
         }
-        if (omitted.length > 0) {
-          issues.push(
-            `${omitted.length} kelime atlandı: ${omitted
-              .slice(0, 3)
-              .map((w) => `"${w.word}"`)
-              .join(", ")}`,
-          );
+        // Fluency threshold sıkılaştırıldı: sadece belirgin düşükse uyar
+        if (azure.fluencyScore < 45) {
+          issues.push("Akıcılık düşük — kelimeler arası bekleme var, doğal bir akış hedefle");
         }
-        if (azure.fluencyScore < 60) {
-          issues.push("Akıcılık düşük — kelimeler arası çok bekleme var, doğal bir akış hedefle");
+        if (azure.accuracyScore >= 80) {
+          positives.push("Ses üretimi çok iyi — kelimelerin net telaffuz edildi");
         }
-        if (azure.accuracyScore >= 85) {
-          positives.push("Ses üretimi çok iyi — kelimelerin genelde net telaffuz edildi");
-        }
-        if (azure.fluencyScore >= 80) {
+        if (azure.fluencyScore >= 70) {
           positives.push("Akıcılığın doğal — konuşman rahat");
         }
-        if (azure.completenessScore >= 95) {
+        if (azure.completenessScore >= 90) {
           positives.push("Hedef cümlenin tamamını söyledin");
         }
         azureFeedback = { issues, positives };

@@ -125,7 +125,9 @@ export async function analyzePronunciation(
     referenceText = "",
     phonemeAlphabet = "IPA",
     granularity = "Phoneme",
-    enableMiscue = referenceText.length > 0,
+    // Miscue kapalı — Whisper zaten kelime karşılaştırıyor, Azure sessizlik/başlangıç
+    // artefaktlarını "Omission" olarak yanlış işaretliyor (0/100 hayalet skorları).
+    enableMiscue = false,
     enableProsodyAssessment = true,
     language = "en-US",
   } = opts;
@@ -217,7 +219,11 @@ export function buildWordFeedback(result: AzurePronunciationResult): Array<{
   weakPhonemes: string[];
   feedbackTr: string | null;
 }> {
-  return result.words.map((w) => {
+  return result.words
+    // 0 skorlu kelimeleri filtrele — Azure başlangıç sessizliğini yanlış işaretliyor
+    // (Whisper doğru tanımışsa güvenilir; Azure hallucination'ları geç)
+    .filter((w) => w.accuracyScore > 5)
+    .map((w) => {
     const weakPhonemes = w.phonemes
       .filter((p) => p.accuracyScore < 70)
       .sort((a, b) => a.accuracyScore - b.accuracyScore)
