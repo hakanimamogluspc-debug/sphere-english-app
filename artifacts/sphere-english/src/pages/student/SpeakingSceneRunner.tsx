@@ -52,6 +52,7 @@ interface WordAnalysisItem {
 interface Feedback {
   issues: string[];
   positives: string[];
+  engine?: "azure" | "gpt4o";
 }
 
 interface CompleteResult {
@@ -647,9 +648,16 @@ function ScoreCard({
         </div>
       )}
 
-      {/* GPT-4o genel geri bildirim */}
+      {/* Engine badge */}
+      {feedback?.engine === "azure" && (
+        <div className="mt-3 inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2 py-0.5">
+          🎯 Azure phoneme-level analiz
+        </div>
+      )}
+
+      {/* Genel geri bildirim (Azure veya GPT-4o) */}
       {feedback && (feedback.issues.length > 0 || feedback.positives.length > 0) && (
-        <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-2">
+        <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-2">
           {feedback.issues.length > 0 && (
             <div className="p-3 rounded-lg bg-amber-50 border border-amber-200">
               <div className="text-[10px] font-bold text-amber-900 uppercase tracking-wider mb-1.5">
