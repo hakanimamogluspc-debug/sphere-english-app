@@ -169,10 +169,13 @@ export async function analyzePronunciation(
     const wavBuffer = await convertToWav16kMono(audioBuffer);
 
     // Config header (base64 encoded)
+    // Dimension: "Comprehensive" — Azure'ın tam skorlar döndürmesi için gerekli
+    // ProsodyAssessment preview state'te olduğu için opsiyonel, ana skorları bozmamalı
     const config: any = {
       ReferenceText: referenceText,
       GradingSystem: "HundredMark",
       Granularity: granularity,
+      Dimension: "Comprehensive",
       EnableMiscue: enableMiscue,
       PhonemeAlphabet: phonemeAlphabet,
       NBestPhonemeCount: 3,
@@ -232,11 +235,13 @@ export async function analyzePronunciation(
       `[azure-pron] RecognitionStatus=${data.RecognitionStatus}, NBest=${data.NBest?.length ?? 0}, recognized="${(data.DisplayText ?? "").slice(0, 50)}", words=${nBest.Words?.length ?? 0}, pron=${pronScore}, acc=${accuracyScore}, flu=${fluencyScore}, comp=${completenessScore}`,
     );
 
-    // Skorların hiçbiri gelmediyse response yapısı beklenmedik — debug için raw log
-    if (pronScore === 0 && accuracyScore === 0 && fluencyScore === 0) {
+    // Skorların bir kısmı 0 → raw response'u log'a yazdır (max 2000 char)
+    if (pronScore === 0 || fluencyScore === 0 || completenessScore === 0) {
+      const rawSnippet = JSON.stringify(nBest).slice(0, 2000);
       console.warn(
-        `[azure-pron] TÜM SKORLAR 0 — response yapısı beklenmedik. NBest[0] keys: ${Object.keys(nBest).join(",")}, PA keys: ${Object.keys(pa).join(",")}`,
+        `[azure-pron] EKSİK SKOR — NBest[0] keys: [${Object.keys(nBest).join(",")}], PA keys: [${Object.keys(pa).join(",")}], Word[0] keys: [${nBest.Words?.[0] ? Object.keys(nBest.Words[0]).join(",") : "-"}]`,
       );
+      console.warn(`[azure-pron] Raw NBest[0]: ${rawSnippet}`);
     }
 
     const words = (nBest.Words ?? []).map((w: any) => {
