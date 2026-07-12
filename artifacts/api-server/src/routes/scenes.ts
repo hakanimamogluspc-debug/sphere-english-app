@@ -876,11 +876,27 @@ router.post(
         });
       }
 
+      console.info(
+        `[scenes/speak] target="${String(targetTurn.text_en).slice(0, 40)}" recognized="${azure.recognizedText.slice(0, 40)}" words=${azure.words.length} scores=pron:${azure.pronScore}/acc:${azure.accuracyScore}/flu:${azure.fluencyScore}/comp:${azure.completenessScore}`,
+      );
+
       // Boş transcript = anlaşılamaz ses
       if (!azure.recognizedText || azure.recognizedText.trim().length === 0) {
         return res.status(400).json({
           error: "Ses anlaşılamadı. Mikrofona daha net ve yüksek sesle konuşmayı dene.",
         });
+      }
+
+      // Azure recognizedText geldi ama tüm skorlar 0 → PronunciationAssessment parse hatası veya audio problemi
+      if (
+        azure.recognizedText.length > 0 &&
+        azure.pronScore === 0 &&
+        azure.accuracyScore === 0 &&
+        azure.completenessScore === 0
+      ) {
+        console.error(
+          `[scenes/speak] BUG: recognized text var ama tüm skorlar 0. Response üretiliyor ama uyarı loguna al.`,
+        );
       }
 
       // Target text kelimeleri — hangi kelimelerin hedeflendiğini bilmek için

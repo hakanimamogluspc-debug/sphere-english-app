@@ -79,33 +79,51 @@ export interface AzurePronunciationResult {
  * WebM/MP3/OGG → WAV 16kHz mono PCM.
  * Azure Speech WAV/16kHz/mono/PCM bekler.
  *
- * KRİTİK: Silence removal filter uygulanır —
- *   - Başlangıçtan sessizliği trim et (< -40dB)
- *   - Sondan sessizliği trim et (< -40dB)
- * Bu adım OLMADAN Azure ilk kelimeleri "Omission" olarak 0/100 verir (hayalet skorları).
+ * İki geçişli:
+ *   1. Silence trim + normalize (agresif olmayan)
+ *   2. Fail ederse: basit WAV conversion (Azure kendi silence handling yapar)
  */
 export async function convertToWav16kMono(inputBuffer: Buffer): Promise<Buffer> {
   const tmpIn = path.join(os.tmpdir(), `az_${Date.now()}_${Math.random()}.raw`);
   const tmpOut = path.join(os.tmpdir(), `az_${Date.now()}_${Math.random()}.wav`);
   try {
     fs.writeFileSync(tmpIn, inputBuffer);
+
+    // Deneme 1: Basit silence trim (başlangıç sessizlik)
+    try {
+      await execFileAsync("ffmpeg", [
+        "-y", "-i", tmpIn,
+        "-vn",
+        // Sadece başlangıçtan sessizliği kes — sona dokunma, loudnorm yok
+        "-af", "silenceremove=start_periods=1:start_duration=0.1:start_threshold=-45dB",
+        "-acodec", "pcm_s16le",
+        "-ar", "16000",
+        "-ac", "1",
+        tmpOut,
+      ]);
+      const buf = fs.readFileSync(tmpOut);
+      // Sanity check — 1KB'den küçükse silence removal fazla kesti, fallback dene
+      if (buf.length < 1024) {
+        throw new Error("Silence removal çıktısı çok küçük");
+      }
+      console.info(`[azure-pron] wav conversion (with trim): ${inputBuffer.length} → ${buf.length} bytes`);
+      return buf;
+    } catch (trimErr: any) {
+      console.warn("[azure-pron] silence trim fail, basit conversion:", trimErr?.message);
+    }
+
+    // Deneme 2: Filter yok, sadece WAV conversion
     await execFileAsync("ffmpeg", [
       "-y", "-i", tmpIn,
       "-vn",
-      // Ses düzeltme filtreleri:
-      //  1. loudnorm: yumuşak normalizasyon (Türk mikrofonlarında büyük fark)
-      //  2. silenceremove: baştan sessizlik kes (start_periods=1, threshold=-40dB, min_duration=0)
-      //  3. silenceremove reverse trick ile sondan da kes
-      "-af",
-      "silenceremove=start_periods=1:start_duration=0:start_threshold=-40dB:detection=peak," +
-      "areverse,silenceremove=start_periods=1:start_duration=0.3:start_threshold=-40dB:detection=peak,areverse," +
-      "loudnorm=I=-16:LRA=11:TP=-1.5",
       "-acodec", "pcm_s16le",
       "-ar", "16000",
       "-ac", "1",
       tmpOut,
     ]);
-    return fs.readFileSync(tmpOut);
+    const buf2 = fs.readFileSync(tmpOut);
+    console.info(`[azure-pron] wav conversion (fallback): ${inputBuffer.length} → ${buf2.length} bytes`);
+    return buf2;
   } finally {
     try { fs.unlinkSync(tmpIn); } catch {}
     try { fs.unlinkSync(tmpOut); } catch {}
@@ -186,11 +204,19 @@ export async function analyzePronunciation(
     }
 
     const data: any = await response.json();
+    console.info(
+      `[azure-pron] RecognitionStatus=${data.RecognitionStatus}, NBest=${data.NBest?.length ?? 0}, ref="${referenceText.slice(0, 40)}"`,
+    );
     const nBest = data.NBest?.[0];
     if (!nBest) {
-      console.warn("[azure-pron] NBest boş:", data.RecognitionStatus);
+      console.warn(
+        `[azure-pron] NBest boş — status=${data.RecognitionStatus} DisplayText="${data.DisplayText ?? ""}"`,
+      );
       return null;
     }
+    console.info(
+      `[azure-pron] recognized="${data.DisplayText ?? ""}", words=${nBest.Words?.length ?? 0}, pron=${nBest.PronunciationAssessment?.PronScore}, acc=${nBest.PronunciationAssessment?.AccuracyScore}, flu=${nBest.PronunciationAssessment?.FluencyScore}`,
+    );
 
     const pa = nBest.PronunciationAssessment ?? {};
     const words = (nBest.Words ?? []).map((w: any) => ({
