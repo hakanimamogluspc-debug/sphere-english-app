@@ -1,24 +1,21 @@
 /**
- * Azure Speech Pronunciation Assessment — ortak helper.
+ * Azure Speech Pronunciation Assessment — Microsoft resmi SDK ile.
  *
- * Kullanım örnekleri:
- *
- *   // Reference mode (hedef cümle biliniyor):
- *   const result = await analyzePronunciation(audioBuffer, {
- *     referenceText: "Good morning everyone",
- *   });
- *
- *   // Unscripted mode (serbest konuşma):
- *   const result = await analyzePronunciation(audioBuffer, {
- *     referenceText: "",
- *     enableProsodyAssessment: true,
- *   });
+ * SDK yaklaşımı REST üzerinde çok daha güvenilir:
+ *   - Strongly-typed result (undefined field'lar yok)
+ *   - Otomatik retry, reconnect
+ *   - PronunciationAssessmentResult tüm skorları garantili verir
+ *   - Word + Syllable + Phoneme granularity destekler
  *
  * Env vars:
  *   AZURE_SPEECH_KEY
  *   AZURE_SPEECH_REGION  (default: westeurope)
  *
- * Fiyat: 5 saat/ay ücretsiz (F0), sonrası ~$1/saat.
+ * Kullanım (interface değişmedi):
+ *   const result = await analyzePronunciation(audioBuffer, {
+ *     referenceText: "Good morning",
+ *     enableProsodyAssessment: true,
+ *   });
  */
 
 import { execFile } from "child_process";
@@ -26,36 +23,25 @@ import { promisify } from "util";
 import fs from "fs";
 import os from "os";
 import path from "path";
+import * as speechsdk from "microsoft-cognitiveservices-speech-sdk";
 
 const execFileAsync = promisify(execFile);
 
 export interface AzurePronunciationOptions {
-  /** Hedef cümle. Boş bırakılırsa unscripted mode. */
   referenceText?: string;
-  /** Fonetik alfabesi — IPA (uluslararası) veya SAPI (Microsoft). */
   phonemeAlphabet?: "IPA" | "SAPI";
-  /** Granularity — Phoneme (en detaylı), Word, FullText. */
   granularity?: "Phoneme" | "Word" | "FullText";
-  /** Omission/Insertion tespiti — reference mode için */
   enableMiscue?: boolean;
-  /** Prosody skoru (vurgu, tonlama) — biraz daha pahalı ama değerli */
   enableProsodyAssessment?: boolean;
-  /** Language code — default en-US */
   language?: string;
 }
 
 export interface AzurePronunciationResult {
-  /** 0-100 — genel pronunciation skoru */
   pronScore: number;
-  /** 0-100 — phoneme-level doğruluk */
   accuracyScore: number;
-  /** 0-100 — akıcılık (pauses, prosody) */
   fluencyScore: number;
-  /** 0-100 — söylenen/hedef oranı (reference mode) */
   completenessScore: number;
-  /** 0-100 — prosody (vurgu/tonlama), sadece enableProsodyAssessment=true ise */
   prosodyScore: number | null;
-  /** Kelime seviyesi analiz */
   words: Array<{
     word: string;
     accuracyScore: number;
@@ -69,19 +55,13 @@ export interface AzurePronunciationResult {
       | "Monotone";
     phonemes: Array<{ phoneme: string; accuracyScore: number }>;
   }>;
-  /** Whisper-benzeri transcript — Azure'ın recognize ettiği metin */
   recognizedText: string;
-  /** Ses süresi (saniye) */
   audioDurationSec: number;
 }
 
 /**
  * WebM/MP3/OGG → WAV 16kHz mono PCM.
- * Azure Speech WAV/16kHz/mono/PCM bekler.
- *
- * İki geçişli:
- *   1. Silence trim + normalize (agresif olmayan)
- *   2. Fail ederse: basit WAV conversion (Azure kendi silence handling yapar)
+ * SDK PushAudioInputStream WAV/16kHz/mono/PCM bekler.
  */
 export async function convertToWav16kMono(inputBuffer: Buffer): Promise<Buffer> {
   const tmpIn = path.join(os.tmpdir(), `az_${Date.now()}_${Math.random()}.raw`);
@@ -94,7 +74,6 @@ export async function convertToWav16kMono(inputBuffer: Buffer): Promise<Buffer> 
       await execFileAsync("ffmpeg", [
         "-y", "-i", tmpIn,
         "-vn",
-        // Sadece başlangıçtan sessizliği kes — sona dokunma, loudnorm yok
         "-af", "silenceremove=start_periods=1:start_duration=0.1:start_threshold=-45dB",
         "-acodec", "pcm_s16le",
         "-ar", "16000",
@@ -102,17 +81,15 @@ export async function convertToWav16kMono(inputBuffer: Buffer): Promise<Buffer> 
         tmpOut,
       ]);
       const buf = fs.readFileSync(tmpOut);
-      // Sanity check — 1KB'den küçükse silence removal fazla kesti, fallback dene
       if (buf.length < 1024) {
         throw new Error("Silence removal çıktısı çok küçük");
       }
-      console.info(`[azure-pron] wav conversion (with trim): ${inputBuffer.length} → ${buf.length} bytes`);
       return buf;
     } catch (trimErr: any) {
       console.warn("[azure-pron] silence trim fail, basit conversion:", trimErr?.message);
     }
 
-    // Deneme 2: Filter yok, sadece WAV conversion
+    // Deneme 2: Filter yok
     await execFileAsync("ffmpeg", [
       "-y", "-i", tmpIn,
       "-vn",
@@ -121,9 +98,7 @@ export async function convertToWav16kMono(inputBuffer: Buffer): Promise<Buffer> 
       "-ac", "1",
       tmpOut,
     ]);
-    const buf2 = fs.readFileSync(tmpOut);
-    console.info(`[azure-pron] wav conversion (fallback): ${inputBuffer.length} → ${buf2.length} bytes`);
-    return buf2;
+    return fs.readFileSync(tmpOut);
   } finally {
     try { fs.unlinkSync(tmpIn); } catch {}
     try { fs.unlinkSync(tmpOut); } catch {}
@@ -131,15 +106,28 @@ export async function convertToWav16kMono(inputBuffer: Buffer): Promise<Buffer> 
 }
 
 /**
- * Azure Speech Pronunciation Assessment.
- *
- * Reference mode: referenceText verilirse, o cümleye karşı skorlanır (Mispronunciation,
- * Omission, Insertion tespiti aktif olur).
- *
- * Unscripted mode: referenceText boş ise, Azure sadece phoneme confidence + prosody skoru
- * döner (accuracy + fluency + prosody). completenessScore anlamsız olur.
- *
- * Env yoksa null döner — çağıran fallback kullanmalı.
+ * WAV buffer'dan Duration okur (RIFF header parse).
+ * SDK bize duration vermez, biz hesaplayalım.
+ */
+function readWavDurationSec(wavBuffer: Buffer): number {
+  try {
+    // RIFF header: 44 bytes
+    // Sample rate at offset 24 (4 bytes LE)
+    // Data chunk size at offset 40 (4 bytes LE)
+    if (wavBuffer.length < 44) return 0;
+    const sampleRate = wavBuffer.readUInt32LE(24);
+    const dataSize = wavBuffer.readUInt32LE(40);
+    if (sampleRate === 0) return 0;
+    // 16-bit mono → 2 bytes per sample
+    const samples = dataSize / 2;
+    return samples / sampleRate;
+  } catch {
+    return 0;
+  }
+}
+
+/**
+ * Azure Pronunciation Assessment — SDK ile.
  */
 export async function analyzePronunciation(
   audioBuffer: Buffer,
@@ -156,95 +144,108 @@ export async function analyzePronunciation(
     referenceText = "",
     phonemeAlphabet = "IPA",
     granularity = "Phoneme",
-    // Reference mode'da miscue AÇIK — Azure kelime karşılaştırma yapıyor.
-    // Silence removal filter'ı hayalet skorlarını önlüyor.
-    // Unscripted mode'da miscue anlamsız, kapalı.
     enableMiscue = referenceText.length > 0,
     enableProsodyAssessment = true,
     language = "en-US",
   } = opts;
 
   try {
-    // WAV'a dönüştür
+    // 1) WAV 16kHz mono'ya dönüştür
     const wavBuffer = await convertToWav16kMono(audioBuffer);
+    const audioDurationSec = readWavDurationSec(wavBuffer);
 
-    // Config header (base64 encoded)
-    // Dimension: "Comprehensive" — Azure'ın tam skorlar döndürmesi için gerekli
-    // ProsodyAssessment preview state'te olduğu için opsiyonel, ana skorları bozmamalı
-    const config: any = {
-      ReferenceText: referenceText,
-      GradingSystem: "HundredMark",
-      Granularity: granularity,
-      Dimension: "Comprehensive",
-      EnableMiscue: enableMiscue,
-      PhonemeAlphabet: phonemeAlphabet,
-      NBestPhonemeCount: 3,
-    };
+    // 2) SDK kurulumu
+    const speechConfig = speechsdk.SpeechConfig.fromSubscription(azureKey, azureRegion);
+    speechConfig.speechRecognitionLanguage = language;
+
+    // Pronunciation Assessment config
+    const granularityEnum =
+      granularity === "FullText"
+        ? speechsdk.PronunciationAssessmentGranularity.FullText
+        : granularity === "Word"
+          ? speechsdk.PronunciationAssessmentGranularity.Word
+          : speechsdk.PronunciationAssessmentGranularity.Phoneme;
+
+    const pronConfig = new speechsdk.PronunciationAssessmentConfig(
+      referenceText,
+      speechsdk.PronunciationAssessmentGradingSystem.HundredMark,
+      granularityEnum,
+      enableMiscue,
+    );
+    pronConfig.phonemeAlphabet = phonemeAlphabet;
+    pronConfig.nbestPhonemeCount = 3;
     if (enableProsodyAssessment) {
-      config.EnableProsodyAssessment = true;
+      pronConfig.enableProsodyAssessment = true;
     }
-    const configBase64 = Buffer.from(JSON.stringify(config)).toString("base64");
 
-    const endpoint =
-      `https://${azureRegion}.stt.speech.microsoft.com/speech/recognition/conversation/cognitiveservices/v1` +
-      `?language=${encodeURIComponent(language)}&format=detailed`;
+    // 3) Audio stream — buffer'ı push et
+    // WAV header formatı belirt (16-bit PCM, 16kHz, mono)
+    const audioFormat = speechsdk.AudioStreamFormat.getWaveFormatPCM(16000, 16, 1);
+    const pushStream = speechsdk.AudioInputStream.createPushStream(audioFormat);
+    // WAV header (44 byte) atla, sadece raw PCM data'yı yaz
+    const pcmData = wavBuffer.length > 44 ? wavBuffer.subarray(44) : wavBuffer;
+    // SDK ArrayBuffer bekliyor — Buffer → ArrayBuffer dönüşümü
+    const arrBuf = pcmData.buffer.slice(
+      pcmData.byteOffset,
+      pcmData.byteOffset + pcmData.byteLength,
+    ) as ArrayBuffer;
+    pushStream.write(arrBuf);
+    pushStream.close();
 
-    const response = await fetch(endpoint, {
-      method: "POST",
-      headers: {
-        "Ocp-Apim-Subscription-Key": azureKey,
-        "Content-Type": "audio/wav; codecs=audio/pcm; samplerate=16000",
-        Accept: "application/json",
-        "Pronunciation-Assessment": configBase64,
-      },
-      body: wavBuffer as any,
+    const audioConfig = speechsdk.AudioConfig.fromStreamInput(pushStream);
+    const recognizer = new speechsdk.SpeechRecognizer(speechConfig, audioConfig);
+    pronConfig.applyTo(recognizer);
+
+    // 4) Recognize + Pronunciation Assessment
+    const result: speechsdk.SpeechRecognitionResult = await new Promise((resolve, reject) => {
+      const timeoutMs = 25_000;
+      const timer = setTimeout(() => {
+        try {
+          recognizer.stopContinuousRecognitionAsync();
+        } catch {}
+        reject(new Error("Azure SDK timeout"));
+      }, timeoutMs);
+
+      recognizer.recognizeOnceAsync(
+        (r) => {
+          clearTimeout(timer);
+          resolve(r);
+        },
+        (err) => {
+          clearTimeout(timer);
+          reject(new Error(String(err)));
+        },
+      );
     });
 
-    if (!response.ok) {
-      const errText = await response.text().catch(() => "");
-      console.error(`[azure-pron] HTTP ${response.status}:`, errText.slice(0, 200));
-      return null;
-    }
+    // Cleanup
+    try { recognizer.close(); } catch {}
 
-    const data: any = await response.json();
-    const nBest = data.NBest?.[0];
-    if (!nBest) {
-      console.warn(
-        `[azure-pron] NBest boş — status=${data.RecognitionStatus} DisplayText="${data.DisplayText ?? ""}"`,
+    if (result.reason === speechsdk.ResultReason.Canceled) {
+      const cancel = speechsdk.CancellationDetails.fromResult(result);
+      console.error(
+        `[azure-pron] Recognition canceled: reason=${cancel.reason}, error=${cancel.errorDetails}`,
       );
       return null;
     }
 
-    // Azure iki farklı format döndürebiliyor:
-    //   1. NBest[0].PronunciationAssessment.AccuracyScore  (yeni)
-    //   2. NBest[0].AccuracyScore  (direkt, daha eski/yaygın)
-    // Fallback zinciri her ikisini destekler.
-    const pa = nBest.PronunciationAssessment ?? {};
-    const readScore = (key: string, altKey?: string): number => {
-      const v = pa[key] ?? nBest[key] ?? (altKey ? (pa[altKey] ?? nBest[altKey]) : undefined);
-      return v != null ? Number(v) : 0;
-    };
-
-    const pronScore = readScore("PronScore", "PronunciationScore");
-    const accuracyScore = readScore("AccuracyScore");
-    const fluencyScore = readScore("FluencyScore");
-    const completenessScore = readScore("CompletenessScore");
-    const prosodyRaw = pa.ProsodyScore ?? nBest.ProsodyScore;
-
-    console.info(
-      `[azure-pron] RecognitionStatus=${data.RecognitionStatus}, NBest=${data.NBest?.length ?? 0}, recognized="${(data.DisplayText ?? "").slice(0, 50)}", words=${nBest.Words?.length ?? 0}, pron=${pronScore}, acc=${accuracyScore}, flu=${fluencyScore}, comp=${completenessScore}`,
-    );
-
-    // Skorların bir kısmı 0 → raw response'u log'a yazdır (max 2000 char)
-    if (pronScore === 0 || fluencyScore === 0 || completenessScore === 0) {
-      const rawSnippet = JSON.stringify(nBest).slice(0, 2000);
-      console.warn(
-        `[azure-pron] EKSİK SKOR — NBest[0] keys: [${Object.keys(nBest).join(",")}], PA keys: [${Object.keys(pa).join(",")}], Word[0] keys: [${nBest.Words?.[0] ? Object.keys(nBest.Words[0]).join(",") : "-"}]`,
-      );
-      console.warn(`[azure-pron] Raw NBest[0]: ${rawSnippet}`);
+    if (result.reason !== speechsdk.ResultReason.RecognizedSpeech) {
+      console.warn(`[azure-pron] Recognition reason=${result.reason}, text="${result.text}"`);
+      // Text varsa yine devam et — pronunciation olmayabilir ama transcript var
+      if (!result.text) return null;
     }
 
-    const words = (nBest.Words ?? []).map((w: any) => {
+    // 5) Pronunciation result parse
+    const pronResult = speechsdk.PronunciationAssessmentResult.fromResult(result);
+
+    // detailResult raw JSON — Words[] kelime-seviyesi detay için
+    const detail: any = (result as any).privJson
+      ? JSON.parse((result as any).privJson)
+      : {};
+    const nBest = detail.NBest?.[0] ?? {};
+    const rawWords = nBest.Words ?? [];
+
+    const words = rawWords.map((w: any) => {
       const wpa = w.PronunciationAssessment ?? {};
       return {
         word: String(w.Word ?? ""),
@@ -262,25 +263,33 @@ export async function analyzePronunciation(
       };
     });
 
-    return {
-      pronScore: Math.round(pronScore),
-      accuracyScore: Math.round(accuracyScore),
-      fluencyScore: Math.round(fluencyScore),
-      completenessScore: Math.round(completenessScore),
-      prosodyScore: prosodyRaw != null ? Math.round(Number(prosodyRaw)) : null,
+    const finalResult: AzurePronunciationResult = {
+      pronScore: Math.round(pronResult.pronunciationScore ?? 0),
+      accuracyScore: Math.round(pronResult.accuracyScore ?? 0),
+      fluencyScore: Math.round(pronResult.fluencyScore ?? 0),
+      completenessScore: Math.round(pronResult.completenessScore ?? 0),
+      prosodyScore:
+        (pronResult as any).prosodyScore != null
+          ? Math.round((pronResult as any).prosodyScore)
+          : null,
       words,
-      recognizedText: String(data.DisplayText ?? nBest.Display ?? ""),
-      audioDurationSec: Number(data.Duration ?? 0) / 10_000_000, // 100ns → sec
+      recognizedText: String(result.text ?? ""),
+      audioDurationSec,
     };
+
+    console.info(
+      `[azure-pron] SDK OK — recognized="${finalResult.recognizedText.slice(0, 50)}", words=${finalResult.words.length}, pron=${finalResult.pronScore}, acc=${finalResult.accuracyScore}, flu=${finalResult.fluencyScore}, comp=${finalResult.completenessScore}, prosody=${finalResult.prosodyScore}`,
+    );
+
+    return finalResult;
   } catch (e: any) {
-    console.error("[azure-pron] HATA:", e?.message);
+    console.error("[azure-pron] SDK HATA:", e?.message);
     return null;
   }
 }
 
 /**
  * Word-level analiz — düşük skorlu kelimeler için Türkçe geri bildirim üret.
- * Frontend'de renkli göstermek için kullanışlı.
  */
 export function buildWordFeedback(result: AzurePronunciationResult): Array<{
   word: string;
@@ -290,41 +299,39 @@ export function buildWordFeedback(result: AzurePronunciationResult): Array<{
   feedbackTr: string | null;
 }> {
   return result.words
-    // 0 skorlu kelimeleri filtrele — Azure başlangıç sessizliğini yanlış işaretliyor
-    // (Whisper doğru tanımışsa güvenilir; Azure hallucination'ları geç)
     .filter((w) => w.accuracyScore > 5)
     .map((w) => {
-    const weakPhonemes = w.phonemes
-      .filter((p) => p.accuracyScore < 70)
-      .sort((a, b) => a.accuracyScore - b.accuracyScore)
-      .slice(0, 3)
-      .map((p) => p.phoneme);
+      const weakPhonemes = w.phonemes
+        .filter((p) => p.accuracyScore < 70)
+        .sort((a, b) => a.accuracyScore - b.accuracyScore)
+        .slice(0, 3)
+        .map((p) => p.phoneme);
 
-    let feedbackTr: string | null = null;
-    if (w.errorType === "Omission") {
-      feedbackTr = "Söylenmedi — bu kelimeyi atladın";
-    } else if (w.errorType === "Insertion") {
-      feedbackTr = "Fazla kelime — hedefte olmayan bir ses eklendi";
-    } else if (w.errorType === "Mispronunciation" || w.accuracyScore < 70) {
-      if (weakPhonemes.length > 0) {
-        feedbackTr = `Telaffuz zayıf — özellikle /${weakPhonemes.join(", /")}/ seslerine dikkat et`;
-      } else {
-        feedbackTr = "Telaffuzun anlaşılır ama netliği düşük";
+      let feedbackTr: string | null = null;
+      if (w.errorType === "Omission") {
+        feedbackTr = "Söylenmedi — bu kelimeyi atladın";
+      } else if (w.errorType === "Insertion") {
+        feedbackTr = "Fazla kelime — hedefte olmayan bir ses eklendi";
+      } else if (w.errorType === "Mispronunciation" || w.accuracyScore < 70) {
+        if (weakPhonemes.length > 0) {
+          feedbackTr = `Telaffuz zayıf — özellikle /${weakPhonemes.join(", /")}/ seslerine dikkat et`;
+        } else {
+          feedbackTr = "Telaffuzun anlaşılır ama netliği düşük";
+        }
+      } else if (w.errorType === "UnexpectedBreak") {
+        feedbackTr = "Beklenmeyen duraklama — akış bozuldu";
+      } else if (w.errorType === "MissingBreak") {
+        feedbackTr = "Gerekli mola atlandı — daha doğal akıcılık için nefes al";
+      } else if (w.errorType === "Monotone") {
+        feedbackTr = "Ton düz — vurguyu değiştirerek anlamı güçlendir";
       }
-    } else if (w.errorType === "UnexpectedBreak") {
-      feedbackTr = "Beklenmeyen duraklama — akış bozuldu";
-    } else if (w.errorType === "MissingBreak") {
-      feedbackTr = "Gerekli mola atlandı — daha doğal akıcılık için nefes al";
-    } else if (w.errorType === "Monotone") {
-      feedbackTr = "Ton düz — vurguyu değiştirerek anlamı güçlendir";
-    }
 
-    return {
-      word: w.word,
-      score: w.accuracyScore,
-      errorType: w.errorType,
-      weakPhonemes,
-      feedbackTr,
-    };
-  });
+      return {
+        word: w.word,
+        score: w.accuracyScore,
+        errorType: w.errorType,
+        weakPhonemes,
+        feedbackTr,
+      };
+    });
 }
