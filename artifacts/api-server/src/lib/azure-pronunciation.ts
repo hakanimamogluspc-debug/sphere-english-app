@@ -204,9 +204,6 @@ export async function analyzePronunciation(
     }
 
     const data: any = await response.json();
-    console.info(
-      `[azure-pron] RecognitionStatus=${data.RecognitionStatus}, NBest=${data.NBest?.length ?? 0}, ref="${referenceText.slice(0, 40)}"`,
-    );
     const nBest = data.NBest?.[0];
     if (!nBest) {
       console.warn(
@@ -214,30 +211,58 @@ export async function analyzePronunciation(
       );
       return null;
     }
+
+    // Azure iki farklı format döndürebiliyor:
+    //   1. NBest[0].PronunciationAssessment.AccuracyScore  (yeni)
+    //   2. NBest[0].AccuracyScore  (direkt, daha eski/yaygın)
+    // Fallback zinciri her ikisini destekler.
+    const pa = nBest.PronunciationAssessment ?? {};
+    const readScore = (key: string, altKey?: string): number => {
+      const v = pa[key] ?? nBest[key] ?? (altKey ? (pa[altKey] ?? nBest[altKey]) : undefined);
+      return v != null ? Number(v) : 0;
+    };
+
+    const pronScore = readScore("PronScore", "PronunciationScore");
+    const accuracyScore = readScore("AccuracyScore");
+    const fluencyScore = readScore("FluencyScore");
+    const completenessScore = readScore("CompletenessScore");
+    const prosodyRaw = pa.ProsodyScore ?? nBest.ProsodyScore;
+
     console.info(
-      `[azure-pron] recognized="${data.DisplayText ?? ""}", words=${nBest.Words?.length ?? 0}, pron=${nBest.PronunciationAssessment?.PronScore}, acc=${nBest.PronunciationAssessment?.AccuracyScore}, flu=${nBest.PronunciationAssessment?.FluencyScore}`,
+      `[azure-pron] RecognitionStatus=${data.RecognitionStatus}, NBest=${data.NBest?.length ?? 0}, recognized="${(data.DisplayText ?? "").slice(0, 50)}", words=${nBest.Words?.length ?? 0}, pron=${pronScore}, acc=${accuracyScore}, flu=${fluencyScore}, comp=${completenessScore}`,
     );
 
-    const pa = nBest.PronunciationAssessment ?? {};
-    const words = (nBest.Words ?? []).map((w: any) => ({
-      word: String(w.Word ?? ""),
-      accuracyScore: Number(w.PronunciationAssessment?.AccuracyScore ?? 0),
-      errorType: String(w.PronunciationAssessment?.ErrorType ?? "None") as any,
-      phonemes: Array.isArray(w.Phonemes)
-        ? w.Phonemes.map((p: any) => ({
-            phoneme: String(p.Phoneme ?? ""),
-            accuracyScore: Number(p.PronunciationAssessment?.AccuracyScore ?? 0),
-          }))
-        : [],
-    }));
+    // Skorların hiçbiri gelmediyse response yapısı beklenmedik — debug için raw log
+    if (pronScore === 0 && accuracyScore === 0 && fluencyScore === 0) {
+      console.warn(
+        `[azure-pron] TÜM SKORLAR 0 — response yapısı beklenmedik. NBest[0] keys: ${Object.keys(nBest).join(",")}, PA keys: ${Object.keys(pa).join(",")}`,
+      );
+    }
+
+    const words = (nBest.Words ?? []).map((w: any) => {
+      const wpa = w.PronunciationAssessment ?? {};
+      return {
+        word: String(w.Word ?? ""),
+        accuracyScore: Number(wpa.AccuracyScore ?? w.AccuracyScore ?? 0),
+        errorType: String(wpa.ErrorType ?? w.ErrorType ?? "None") as any,
+        phonemes: Array.isArray(w.Phonemes)
+          ? w.Phonemes.map((p: any) => {
+              const ppa = p.PronunciationAssessment ?? {};
+              return {
+                phoneme: String(p.Phoneme ?? ""),
+                accuracyScore: Number(ppa.AccuracyScore ?? p.AccuracyScore ?? 0),
+              };
+            })
+          : [],
+      };
+    });
 
     return {
-      pronScore: Math.round(Number(pa.PronScore ?? pa.PronunciationScore ?? 0)),
-      accuracyScore: Math.round(Number(pa.AccuracyScore ?? 0)),
-      fluencyScore: Math.round(Number(pa.FluencyScore ?? 0)),
-      completenessScore: Math.round(Number(pa.CompletenessScore ?? 0)),
-      prosodyScore:
-        pa.ProsodyScore != null ? Math.round(Number(pa.ProsodyScore)) : null,
+      pronScore: Math.round(pronScore),
+      accuracyScore: Math.round(accuracyScore),
+      fluencyScore: Math.round(fluencyScore),
+      completenessScore: Math.round(completenessScore),
+      prosodyScore: prosodyRaw != null ? Math.round(Number(prosodyRaw)) : null,
       words,
       recognizedText: String(data.DisplayText ?? nBest.Display ?? ""),
       audioDurationSec: Number(data.Duration ?? 0) / 10_000_000, // 100ns → sec
