@@ -78,6 +78,11 @@ export interface AzurePronunciationResult {
 /**
  * WebM/MP3/OGG → WAV 16kHz mono PCM.
  * Azure Speech WAV/16kHz/mono/PCM bekler.
+ *
+ * KRİTİK: Silence removal filter uygulanır —
+ *   - Başlangıçtan sessizliği trim et (< -40dB)
+ *   - Sondan sessizliği trim et (< -40dB)
+ * Bu adım OLMADAN Azure ilk kelimeleri "Omission" olarak 0/100 verir (hayalet skorları).
  */
 export async function convertToWav16kMono(inputBuffer: Buffer): Promise<Buffer> {
   const tmpIn = path.join(os.tmpdir(), `az_${Date.now()}_${Math.random()}.raw`);
@@ -87,6 +92,14 @@ export async function convertToWav16kMono(inputBuffer: Buffer): Promise<Buffer> 
     await execFileAsync("ffmpeg", [
       "-y", "-i", tmpIn,
       "-vn",
+      // Ses düzeltme filtreleri:
+      //  1. loudnorm: yumuşak normalizasyon (Türk mikrofonlarında büyük fark)
+      //  2. silenceremove: baştan sessizlik kes (start_periods=1, threshold=-40dB, min_duration=0)
+      //  3. silenceremove reverse trick ile sondan da kes
+      "-af",
+      "silenceremove=start_periods=1:start_duration=0:start_threshold=-40dB:detection=peak," +
+      "areverse,silenceremove=start_periods=1:start_duration=0.3:start_threshold=-40dB:detection=peak,areverse," +
+      "loudnorm=I=-16:LRA=11:TP=-1.5",
       "-acodec", "pcm_s16le",
       "-ar", "16000",
       "-ac", "1",
@@ -125,9 +138,10 @@ export async function analyzePronunciation(
     referenceText = "",
     phonemeAlphabet = "IPA",
     granularity = "Phoneme",
-    // Miscue kapalı — Whisper zaten kelime karşılaştırıyor, Azure sessizlik/başlangıç
-    // artefaktlarını "Omission" olarak yanlış işaretliyor (0/100 hayalet skorları).
-    enableMiscue = false,
+    // Reference mode'da miscue AÇIK — Azure kelime karşılaştırma yapıyor.
+    // Silence removal filter'ı hayalet skorlarını önlüyor.
+    // Unscripted mode'da miscue anlamsız, kapalı.
+    enableMiscue = referenceText.length > 0,
     enableProsodyAssessment = true,
     language = "en-US",
   } = opts;

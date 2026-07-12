@@ -860,69 +860,54 @@ router.post(
       }
       if (!targetTurn) return res.status(400).json({ error: "Hedef tur bulunamadı" });
 
-      // Whisper transcript + Azure pronunciation assessment (paralel)
-      const [whisper, azure] = await Promise.all([
-        transcribeAudio(req.file.buffer),
-        analyzePronunciationAzureLegacy(req.file.buffer, String(targetTurn.text_en)),
-      ]);
-      if (!whisper) {
-        return res.status(502).json({ error: "Ses tanıma başarısız. Tekrar dene." });
+      // ─── AZURE-ONLY MODE ─────────────────────────────────────────────
+      // Azure Speech Pronunciation Assessment tek doğruluk kaynağı.
+      // Whisper ve GPT-4o audio kaldırıldı — çakışma yok, tek transcript, tek skor.
+      // FFmpeg silence removal ile başlangıç sessizlik hayaletleri önleniyor.
+      const azure = await azureAnalyze(req.file.buffer, {
+        referenceText: String(targetTurn.text_en),
+        enableMiscue: true,
+        enableProsodyAssessment: true,
+      });
+
+      if (!azure) {
+        return res.status(502).json({
+          error: "Ses analizi geçici olarak erişilemez. Lütfen birkaç saniye sonra tekrar dene.",
+        });
       }
 
-      // GPT-4o audio fallback — Azure yoksa çalıştır
-      const gpt4o = azure
-        ? null
-        : await analyzePronunciationGPT4o(whisper.mp3Buffer, String(targetTurn.text_en));
+      // Boş transcript = anlaşılamaz ses
+      if (!azure.recognizedText || azure.recognizedText.trim().length === 0) {
+        return res.status(400).json({
+          error: "Ses anlaşılamadı. Mikrofona daha net ve yüksek sesle konuşmayı dene.",
+        });
+      }
 
-      // Skorla — audioSeconds ile (durationMs yerine gerçek ses uzunluğu)
-      const baseResult = computeScores(
-        String(targetTurn.text_en),
-        whisper.text,
-        whisper.words,
-        whisper.audioSeconds,
-      );
+      // Target text kelimeleri — hangi kelimelerin hedeflendiğini bilmek için
+      const targetWordsNorm = normalize(String(targetTurn.text_en)).split(" ").filter(Boolean);
 
-      // Skorları BLEND et — Azure PRIMARY, GPT-4o fallback, Whisper hesabı base
-      let finalScores = baseResult.scores;
-      let finalWordAnalysis = baseResult.wordAnalysis;
-      let azureFeedback: {
-        issues: string[];
-        positives: string[];
-      } | null = null;
+      // wordAnalysis: Azure'ın words array'ini frontend format'ına çevir
+      // Hayalet filtreleri:
+      //   - recognizedText'te kelime GEÇİYOR ama errorType='Omission' → çelişki, ignore
+      //   - accuracyScore < 5 VE errorType='None' → başka bir hayalet, ignore
+      const recognizedLower = azure.recognizedText.toLowerCase();
+      const finalWordAnalysis = azure.words
+        .filter((w) => {
+          const wordNorm = w.word.toLowerCase().replace(/[^a-z']/g, "");
+          // recognizedText'te varsa ama "Omission" işaretlenmişse → hayalet
+          if (w.errorType === "Omission" && recognizedLower.includes(wordNorm)) return false;
+          // Hayalet: skor sıfır AMA errorType hiçbir şey
+          if (w.errorType === "None" && w.accuracyScore < 5) return false;
+          return true;
+        })
+        .map((w) => {
+          const wordNorm = w.word.toLowerCase().replace(/[^a-z']/g, "");
+          let match: "exact" | "close" | "missing" | "extra" = "exact";
+          if (w.errorType === "Omission") match = "missing";
+          else if (w.errorType === "Insertion") match = "extra";
+          else if (w.errorType === "Mispronunciation" || w.accuracyScore < 60) match = "close";
 
-      // ── AZURE PRIMARY (endüstri standardı phoneme-level) ──
-      if (azure) {
-        // Azure'ın kendi 4 skoru en güvenilir
-        finalScores = {
-          accuracy: azure.accuracyScore,
-          fluency: azure.fluencyScore,
-          completeness: azure.completenessScore,
-          pronunciation: azure.pronScore, // Azure pronScore = weighted overall pron
-          // Overall = Azure pronScore ana + baseResult tamamlayıcı
-          overall: Math.round(azure.pronScore * 0.7 + baseResult.scores.overall * 0.3),
-        };
-
-        // wordAnalysis'i Azure phoneme skorları ile zenginleştir
-        // ÖNEMLİ: Whisper'ın "exact" tanıdığı kelimelerde Azure'ın 0 skorunu güvenilmez say
-        // (başlangıç sessizlik artefaktları). Sadece Whisper doğrulayan + Azure düşük veren
-        // kelimeleri "gerçek telaffuz problemi" olarak göster.
-        finalWordAnalysis = baseResult.wordAnalysis.map((wa) => {
-          const azureWord = azure.words.find(
-            (aw) =>
-              aw.word.toLowerCase().replace(/[^a-z']/g, "") ===
-              (wa.target ?? "").toLowerCase().replace(/[^a-z']/g, ""),
-          );
-          if (!azureWord) return wa;
-
-          // Whisper "exact" dediyse (=doğru duydu) VE Azure 0-5 arası verdi → HAYALET SKOR
-          // Bu durumda Azure verisini görmezden gel, Whisper'a güven
-          const isAzureGhost = wa.match === "exact" && azureWord.accuracyScore < 5;
-          if (isAzureGhost) {
-            return wa;
-          }
-
-          // En düşük skorlu 1-2 phoneme'i note olarak ekle
-          const worstPhonemes = azureWord.phonemes
+          const worstPhonemes = w.phonemes
             .filter((p) => p.accuracyScore < 70)
             .sort((a, b) => a.accuracyScore - b.accuracyScore)
             .slice(0, 2);
@@ -931,115 +916,92 @@ router.post(
               ? `Zayıf sesler: /${worstPhonemes.map((p) => p.phoneme).join(", /")}/`
               : null;
 
-          // Skor gerçekten düşükse (< 60) close olarak işaretle — Whisper "exact" dese bile
-          let match = wa.match;
-          if (azureWord.accuracyScore < 60 && azureWord.accuracyScore >= 5) {
-            match = "close";
-          }
-
           return {
-            ...wa,
+            target: w.errorType === "Insertion" ? null : w.word,
+            said: w.errorType === "Omission" ? null : w.word,
             match,
-            gptScore: azureWord.accuracyScore,
+            gptScore: w.accuracyScore,
             gptIssue:
-              azureWord.accuracyScore < 60
-                ? `Telaffuz zayıf ${phonemeNote ? `— ${phonemeNote}` : ""}`.trim()
-                : phonemeNote,
+              match === "missing"
+                ? "Söylenmedi"
+                : match === "extra"
+                  ? "Fazla kelime"
+                  : w.accuracyScore < 60
+                    ? `Telaffuz zayıf ${phonemeNote ? `— ${phonemeNote}` : ""}`.trim()
+                    : phonemeNote,
           };
         });
 
-        // Genel feedback üret — Whisper doğrulayan kelimeleri filtreyle Azure hayaletlerini engelle
-        const issues: string[] = [];
-        const positives: string[] = [];
+      // Skorlar direkt Azure'dan
+      const finalScores = {
+        accuracy: azure.accuracyScore,
+        fluency: azure.fluencyScore,
+        completeness: azure.completenessScore,
+        pronunciation: azure.pronScore,
+        // Overall = ağırlıklı Azure skorları
+        overall: Math.round(
+          azure.pronScore * 0.5 +
+            azure.accuracyScore * 0.25 +
+            azure.fluencyScore * 0.15 +
+            azure.completenessScore * 0.1,
+        ),
+      };
 
-        // Whisper "exact" bulmadığı VE Azure < 60 verenler = gerçek telaffuz problemi
-        const realMispronounced = azure.words.filter((w) => {
-          if (w.accuracyScore >= 60) return false;
-          if (w.accuracyScore < 5) return false; // Azure hayaleti
-          // Whisper exact tanımışsa güven — Azure bunu gerçek problem olarak sayma
-          const whisperConfirmedExact = baseResult.wordAnalysis.find(
-            (wa) =>
-              (wa.target ?? "").toLowerCase().replace(/[^a-z']/g, "") ===
-                w.word.toLowerCase().replace(/[^a-z']/g, "") && wa.match === "exact",
-          );
-          if (whisperConfirmedExact && w.accuracyScore >= 40) return false;
-          return true;
-        });
+      // Genel feedback — Azure'ın word errorType'larından türet
+      const issues: string[] = [];
+      const positives: string[] = [];
 
-        if (realMispronounced.length > 0) {
-          issues.push(
-            `${realMispronounced.length} kelime telaffuz düşük: ${realMispronounced
-              .slice(0, 3)
-              .map((w) => `"${w.word}"`)
-              .join(", ")}`,
-          );
-        }
-        // Fluency threshold sıkılaştırıldı: sadece belirgin düşükse uyar
-        if (azure.fluencyScore < 45) {
-          issues.push("Akıcılık düşük — kelimeler arası bekleme var, doğal bir akış hedefle");
-        }
-        if (azure.accuracyScore >= 80) {
-          positives.push("Ses üretimi çok iyi — kelimelerin net telaffuz edildi");
-        }
-        if (azure.fluencyScore >= 70) {
-          positives.push("Akıcılığın doğal — konuşman rahat");
-        }
-        if (azure.completenessScore >= 90) {
-          positives.push("Hedef cümlenin tamamını söyledin");
-        }
-        azureFeedback = { issues, positives };
+      const mispronounced = azure.words.filter(
+        (w) =>
+          w.errorType === "Mispronunciation" &&
+          w.accuracyScore < 60 &&
+          !(recognizedLower.includes(w.word.toLowerCase().replace(/[^a-z']/g, ""))
+            && w.accuracyScore >= 45),
+      );
+      if (mispronounced.length > 0) {
+        issues.push(
+          `${mispronounced.length} kelime telaffuz düşük: ${mispronounced
+            .slice(0, 3)
+            .map((w) => `"${w.word}"`)
+            .join(", ")}`,
+        );
       }
-      // ── GPT-4o FALLBACK (Azure yoksa) ──
-      else if (gpt4o) {
-        // GPT-4o ses tabanlı → pronunciation ve fluency için ana kaynak
-        const pronBlended = Math.round(
-          gpt4o.pronunciationScore * 0.75 + baseResult.scores.pronunciation * 0.25,
+      const omitted = azure.words.filter(
+        (w) =>
+          w.errorType === "Omission" &&
+          !recognizedLower.includes(w.word.toLowerCase().replace(/[^a-z']/g, "")),
+      );
+      if (omitted.length > 0) {
+        issues.push(
+          `${omitted.length} kelime söylenmedi: ${omitted
+            .slice(0, 3)
+            .map((w) => `"${w.word}"`)
+            .join(", ")}`,
         );
-        const fluencyBlended = Math.round(
-          gpt4o.fluencyScore * 0.75 + baseResult.scores.fluency * 0.25,
-        );
-
-        // Overall: GPT-4o overallScore ile Whisper hesabı ortalaması
-        const overallBlended = Math.round(
-          gpt4o.overallScore * 0.55 +
-            (pronBlended * 0.4 +
-              baseResult.scores.accuracy * 0.3 +
-              fluencyBlended * 0.2 +
-              baseResult.scores.completeness * 0.1) *
-              0.45,
-        );
-
-        finalScores = {
-          accuracy: baseResult.scores.accuracy,
-          completeness: baseResult.scores.completeness,
-          pronunciation: pronBlended,
-          fluency: fluencyBlended,
-          overall: overallBlended,
-        };
-
-        // wordAnalysis'i GPT-4o word-level ile zenginleştir
-        if (gpt4o.wordScores.length > 0) {
-          finalWordAnalysis = baseResult.wordAnalysis.map((wa) => {
-            const gptWord = gpt4o.wordScores.find(
-              (g) => g.word.toLowerCase().replace(/[^a-z']/g, "") ===
-                (wa.target ?? "").toLowerCase().replace(/[^a-z']/g, ""),
-            );
-            if (gptWord && gptWord.score < 70) {
-              // GPT-4o düşük skor verdiyse "close" ya da "missing" işaretle
-              return {
-                ...wa,
-                match: gptWord.score < 50 ? "missing" : "close",
-                gptScore: gptWord.score,
-                gptIssue: gptWord.issue,
-              };
-            }
-            return { ...wa, gptScore: gptWord?.score, gptIssue: gptWord?.issue };
-          });
-        }
       }
+      if (azure.fluencyScore < 45) {
+        issues.push("Akıcılık düşük — kelimeler arası bekleme var, doğal bir akış hedefle");
+      }
+      if (azure.accuracyScore >= 80) {
+        positives.push("Ses üretimi çok iyi — kelimelerin net telaffuz edildi");
+      }
+      if (azure.fluencyScore >= 70) {
+        positives.push("Akıcılığın doğal — konuşman rahat");
+      }
+      if (azure.completenessScore >= 90) {
+        positives.push("Hedef cümlenin tamamını söyledin");
+      }
+      const azureFeedback = { issues, positives };
+
+      // Transcript = Azure recognizedText
+      const transcript = azure.recognizedText;
+      // Kullanmadığımız değişkenler için stub (aşağıdaki DB insert için)
+      const _unusedTargetWords = targetWordsNorm;
 
       const scores = finalScores;
       const wordAnalysis = finalWordAnalysis;
+      // audioDurationSec'i ms'ye çevir (DB'de duration_ms tutuyoruz)
+      const durationMs = Math.round((azure.audioDurationSec ?? 0) * 1000);
 
       // Turn attempt kaydet
       await db.execute(sql`
@@ -1051,10 +1013,10 @@ router.post(
           word_analysis, duration_ms
         ) VALUES (
           ${attemptId}, ${targetTurn.id}, ${targetTurn.turn_order},
-          ${String(targetTurn.text_en)}, ${whisper.text},
+          ${String(targetTurn.text_en)}, ${transcript},
           ${scores.accuracy}, ${scores.fluency}, ${scores.pronunciation},
           ${scores.completeness}, ${scores.overall},
-          ${JSON.stringify(wordAnalysis)}::jsonb, ${whisper.durationMs}
+          ${JSON.stringify(wordAnalysis)}::jsonb, ${durationMs}
         )
       `);
 
@@ -1096,24 +1058,16 @@ router.post(
       const isLastTurn = !nextAi && !nextUser;
 
       return res.json({
-        transcript: whisper.text,
+        transcript,
         target: String(targetTurn.text_en),
         scores,
         wordAnalysis,
-        // Feedback öncelik sırası: Azure > GPT-4o > null
-        feedback: azureFeedback
-          ? {
-              issues: azureFeedback.issues.slice(0, 3),
-              positives: azureFeedback.positives.slice(0, 2),
-              engine: "azure",
-            }
-          : gpt4o
-            ? {
-                issues: gpt4o.issues.slice(0, 3),
-                positives: gpt4o.positiveFeedback.slice(0, 2),
-                engine: "gpt4o",
-              }
-            : null,
+        // Feedback: Azure (tek kaynak)
+        feedback: {
+          issues: azureFeedback.issues.slice(0, 3),
+          positives: azureFeedback.positives.slice(0, 2),
+          engine: "azure",
+        },
         aiTurn: nextAi
           ? {
               turnId: nextAi.id,
