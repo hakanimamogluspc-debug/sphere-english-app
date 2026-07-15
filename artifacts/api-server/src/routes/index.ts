@@ -71,6 +71,7 @@ import adminNotificationsTestRouter from "./admin-notifications-test";
 import adminEbookHealthRouter from "./admin-ebook-health";
 import bundlesRouter from "./bundles";
 import adminBundlesRouter from "./admin-bundles";
+import adminInvoicesRouter from "./admin-invoices";
 import { requireSubscription } from "../middlewares/require-subscription";
 import { authMiddleware } from "../middlewares/auth";
 
@@ -123,6 +124,7 @@ router.use(adminEbookHealthRouter);
 // route'una yakalanmasın diye reserved guard'ı zaten var ama order da önemli
 router.use(bundlesRouter);
 router.use(adminBundlesRouter);
+router.use(adminInvoicesRouter);
 router.use(adminEbooksRouter);
 router.use(adminEbookPurchasesRouter);
 router.use(webAnalyticsRouter);
