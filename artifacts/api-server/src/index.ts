@@ -464,6 +464,66 @@ async function runStartupMigrations() {
     `ALTER TABLE ebook_purchases ADD COLUMN IF NOT EXISTS abandoned_mail_sent_at TIMESTAMPTZ`,
     `CREATE INDEX IF NOT EXISTS ebook_purchases_abandoned_idx ON ebook_purchases(payment_status, created_at) WHERE payment_status = 'pending' AND abandoned_mail_sent_at IS NULL`,
 
+    // ─── E-Fatura / E-Arşiv sistemi ───────────────────────────────────
+    // Entegratör-agnostik: provider alanı 'luca' bugün, yarın başka olabilir
+    `CREATE TABLE IF NOT EXISTS invoices (
+      id SERIAL PRIMARY KEY,
+      -- Belge bilgileri
+      provider VARCHAR(30) NOT NULL DEFAULT 'luca',
+      env VARCHAR(10) NOT NULL DEFAULT 'test' CHECK (env IN ('test','prod')),
+      invoice_type VARCHAR(20) NOT NULL CHECK (invoice_type IN ('einvoice','earchive')),
+      scenario VARCHAR(30) DEFAULT 'TEMELFATURA',
+      ettn VARCHAR(50),
+      external_invoice_code VARCHAR(50) UNIQUE,
+      invoice_series VARCHAR(10),
+      invoice_number VARCHAR(20),
+      invoice_date DATE NOT NULL,
+      -- Kaynak: hangi sipariş için kesildi
+      source_type VARCHAR(30) NOT NULL CHECK (source_type IN ('ebook','ebook_cart','subscription','manual')),
+      source_id INTEGER,
+      order_id VARCHAR(100),
+      -- Alıcı (buyer) — snapshot at issue time
+      buyer_email VARCHAR(200) NOT NULL,
+      buyer_name VARCHAR(300) NOT NULL,
+      buyer_type VARCHAR(20) NOT NULL DEFAULT 'individual' CHECK (buyer_type IN ('individual','corporate','foreign')),
+      buyer_tax_id VARCHAR(20),
+      buyer_tax_office VARCHAR(200),
+      buyer_company_name VARCHAR(400),
+      buyer_receiver_inbox_tag VARCHAR(200),
+      buyer_address TEXT,
+      buyer_city VARCHAR(100),
+      buyer_district VARCHAR(100),
+      buyer_postal_code VARCHAR(10),
+      buyer_country VARCHAR(60) DEFAULT 'Türkiye',
+      -- Tutar (kuruş cinsinden — hassasiyet)
+      currency VARCHAR(3) NOT NULL DEFAULT 'TRY',
+      subtotal_kurus INTEGER NOT NULL,
+      discount_kurus INTEGER NOT NULL DEFAULT 0,
+      vat_kurus INTEGER NOT NULL,
+      total_kurus INTEGER NOT NULL,
+      -- Kalemler
+      line_items JSONB NOT NULL,
+      -- Durum
+      status VARCHAR(20) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','sent','failed','canceled')),
+      attempts INTEGER NOT NULL DEFAULT 0,
+      last_error TEXT,
+      provider_request_id VARCHAR(100),
+      provider_response JSONB,
+      viewer_url TEXT,
+      viewer_url_expires_at TIMESTAMPTZ,
+      -- Zaman damgaları
+      sent_at TIMESTAMPTZ,
+      canceled_at TIMESTAMPTZ,
+      cancellation_reason TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`,
+    `CREATE INDEX IF NOT EXISTS invoices_source_idx ON invoices(source_type, source_id)`,
+    `CREATE INDEX IF NOT EXISTS invoices_status_idx ON invoices(status, created_at DESC)`,
+    `CREATE INDEX IF NOT EXISTS invoices_order_idx ON invoices(order_id) WHERE order_id IS NOT NULL`,
+    `CREATE INDEX IF NOT EXISTS invoices_ettn_idx ON invoices(ettn) WHERE ettn IS NOT NULL`,
+    `CREATE UNIQUE INDEX IF NOT EXISTS invoices_source_unique_idx ON invoices(source_type, source_id) WHERE source_id IS NOT NULL AND status IN ('sent','pending')`,
+
     // ─── Speaking Role-Play Sahneleri ───────────────────────────────────
     // Sektör bazlı role-play sahnesi kütüphanesi
     `CREATE TABLE IF NOT EXISTS speaking_scenes (
