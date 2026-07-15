@@ -42,15 +42,88 @@ router.get(
   async (_req: Request, res: Response) => {
     try {
       const r = await invoiceHealthCheck();
+      // Debug: env'de ne var göster (şifre hariç ama uzunluk ve ilk/son char)
+      const pwd = process.env.LUCA_USER_PASSWORD ?? "";
+      const pwdInfo = pwd
+        ? `len=${pwd.length}, first=${JSON.stringify(pwd[0])}, last=${JSON.stringify(pwd[pwd.length - 1])}, hasTrailingSpace=${pwd !== pwd.trimEnd()}, hasLeadingSpace=${pwd !== pwd.trimStart()}`
+        : "MISSING";
       return res.json({
         ok: r.ok,
         message: r.message,
         provider: "luca",
         env: process.env.LUCA_ENV ?? "test",
         companyTaxCode: process.env.LUCA_COMPANY_TAX_CODE ?? "-",
+        userTaxCode: process.env.LUCA_USER_TAX_CODE ?? "-",
+        passwordInfo: pwdInfo,
       });
     } catch (e: any) {
       return res.status(500).json({ ok: false, error: e?.message });
+    }
+  },
+);
+
+// ─── POST /admin/invoices/validate-manual ────────────────────────────
+// Debug: env bypass — credentials'ı direkt gönderip test et
+router.post(
+  "/admin/invoices/validate-manual",
+  authMiddleware,
+  requireAdmin,
+  async (req: Request, res: Response) => {
+    try {
+      const { companyTaxCode, userTaxCode, userPassword, env } = (req.body ?? {}) as any;
+      if (!companyTaxCode || !userTaxCode || !userPassword) {
+        return res.status(400).json({ error: "companyTaxCode, userTaxCode, userPassword gerekli" });
+      }
+
+      const region = env === "prod" ? "einvoiceserviceturmob.luca.com.tr" : "einvoiceserviceturmobtest.luca.com.tr";
+      const url = `https://${region}/InvoiceService/ServiceContract/InvoiceService.svc`;
+
+      const xmlEscape = (s: string) =>
+        String(s)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&apos;");
+
+      const envelope = `<?xml version="1.0" encoding="utf-8"?>
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:tem="http://tempuri.org/" xmlns:ein="http://schemas.datacontract.org/2004/07/EInvoice.Service.Model">
+  <soapenv:Header/>
+  <soapenv:Body>
+    <tem:ValidateUserCompany>
+      <tem:request>
+        <ein:CompanyTaxCode>${xmlEscape(companyTaxCode)}</ein:CompanyTaxCode>
+        <ein:CompanyVendorNumber></ein:CompanyVendorNumber>
+        <ein:UserPassword>${xmlEscape(userPassword)}</ein:UserPassword>
+        <ein:UserTaxCode>${xmlEscape(userTaxCode)}</ein:UserTaxCode>
+      </tem:request>
+    </tem:ValidateUserCompany>
+  </soapenv:Body>
+</soapenv:Envelope>`;
+
+      const r = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "text/xml; charset=utf-8",
+          SOAPAction: `"http://tempuri.org/IInvoiceService/ValidateUserCompany"`,
+        },
+        body: envelope,
+      });
+      const text = await r.text();
+
+      return res.json({
+        httpStatus: r.status,
+        // İlk 2000 karakter — response yapısını görelim
+        responseSnippet: text.slice(0, 2000),
+        sentCredentials: {
+          companyTaxCode,
+          userTaxCode,
+          passwordLen: userPassword.length,
+          env: env ?? "test",
+        },
+      });
+    } catch (e: any) {
+      return res.status(500).json({ error: e?.message });
     }
   },
 );
