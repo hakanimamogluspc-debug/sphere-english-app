@@ -18,6 +18,89 @@ import { sql } from "drizzle-orm";
 import { db } from "@workspace/db";
 import { sendEbookDownloadMail } from "../lib/ebook-mail.js";
 import { notifyNewEbookPurchase } from "../lib/admin-notifications.js";
+import { issueInvoiceForSource } from "../lib/invoice/index.js";
+
+/** E-kitap satışı için otomatik e-Fatura/e-Arşiv kes (fire-and-forget) */
+function issueEbookInvoiceFireForget(purchaseId: number): void {
+  console.info(`[EBOOK-INVOICE] fatura kesme çağrıldı: purchaseId=${purchaseId}`);
+  void (async () => {
+    try {
+      const rows = await db.execute(sql`
+        SELECT ep.id, ep.buyer_email, ep.buyer_name, ep.buyer_phone,
+               ep.invoice_type, ep.tax_id, ep.tax_office, ep.company_name,
+               ep.billing_address, ep.billing_city, ep.billing_district, ep.billing_postal_code,
+               ep.amount_paid, ep.coupon_discount_kurus, ep.iyzico_payment_id,
+               e.title AS ebook_title, e.slug AS ebook_slug
+        FROM ebook_purchases ep
+        LEFT JOIN ebooks e ON e.id = ep.ebook_id
+        WHERE ep.id = ${purchaseId}
+        LIMIT 1
+      `);
+      const p = (rows.rows ?? rows)[0] as any;
+      if (!p) {
+        console.error(`[EBOOK-INVOICE] purchase bulunamadı: id=${purchaseId}`);
+        return;
+      }
+      // Bundle satırı ise fatura kesme (bundle master ya activate'te split olur ya da ayrı hook)
+      // Bireysel ebook için tek fatura yeter.
+
+      const amountKurus = Math.round(Number(p.amount_paid) * 100);
+      const discountKurus = Number(p.coupon_discount_kurus ?? 0);
+      // KDV %20 varsayılan — e-kitap dijital hizmet (istisna olabilir ama şimdilik %20)
+      const vatRate = 20;
+      // KDV DAHİL fiyat → KDV hariç fiyat (birim fiyat)
+      // amount_paid = KDV dahil, unitPriceKurus KDV hariç olmalı
+      const unitPriceKurus = Math.round((amountKurus + discountKurus) / (1 + vatRate / 100));
+
+      const buyerType = p.invoice_type === "corporate" ? "corporate" : "individual";
+      const r = await issueInvoiceForSource({
+        source: {
+          type: "ebook",
+          id: Number(p.id),
+          orderId: p.iyzico_payment_id ?? `EBOOK-${p.id}`,
+        },
+        buyer: {
+          email: String(p.buyer_email),
+          name: String(p.buyer_name ?? "Alıcı"),
+          type: buyerType,
+          taxId: p.tax_id ?? undefined,
+          taxOffice: p.tax_office ?? undefined,
+          companyName: p.company_name ?? undefined,
+          address: p.billing_address ?? undefined,
+          city: p.billing_city ?? undefined,
+          district: p.billing_district ?? undefined,
+          postalCode: p.billing_postal_code ?? undefined,
+          country: "Türkiye",
+          phone: p.buyer_phone ?? undefined,
+        },
+        lineItems: [
+          {
+            productCode: p.ebook_slug ? `ebook-${p.ebook_slug}` : `ebook-${p.id}`,
+            productName: String(p.ebook_title ?? "Sphere English E-Kitap"),
+            quantity: 1,
+            unitPriceKurus,
+            vatRate,
+            discountKurus: discountKurus > 0 ? discountKurus : undefined,
+            note: "Dijital yayın — anında PDF indirme",
+          },
+        ],
+        notes: [
+          "Sphere English E-Kitap Satışı",
+          p.iyzico_payment_id ? `Iyzico Payment ID: ${p.iyzico_payment_id}` : "",
+        ].filter(Boolean),
+        paymentReference: p.iyzico_payment_id ?? undefined,
+        sendMailAutomatically: true,
+      });
+      if (r.ok) {
+        console.info(`[EBOOK-INVOICE] fatura kesildi: purchaseId=${purchaseId} ettn=${r.ettn} skipped=${r.skipped ?? false}`);
+      } else {
+        console.error(`[EBOOK-INVOICE] fatura BAŞARISIZ: purchaseId=${purchaseId} err=${r.error}`);
+      }
+    } catch (e: any) {
+      console.error("[EBOOK-INVOICE] hata:", e?.message, e?.stack);
+    }
+  })();
+}
 
 /** Admin'lere yeni e-kitap satışı bildirimi (non-blocking) */
 function notifyAdminOfEbookPurchase(purchaseId: number): void {
@@ -354,6 +437,8 @@ router.post("/internal/ebook-purchase/activate", async (req: Request, res: Respo
         });
         // Admin'lere yeni satış bildirimi
         notifyAdminOfEbookPurchase(updatedRow.id);
+        // Otomatik e-Fatura/e-Arşiv (fire-and-forget)
+        issueEbookInvoiceFireForget(Number(updatedRow.id));
         return res.json({ ok: true, purchaseId: updatedRow.id, action: "updated" });
       }
     }
@@ -401,6 +486,8 @@ router.post("/internal/ebook-purchase/activate", async (req: Request, res: Respo
       });
       // Admin'lere yeni satış bildirimi
       notifyAdminOfEbookPurchase(Number(newId));
+      // Otomatik e-Fatura/e-Arşiv (fire-and-forget)
+      issueEbookInvoiceFireForget(Number(newId));
     }
     return res.json({ ok: true, purchaseId: newId, action: "inserted" });
   } catch (e: any) {

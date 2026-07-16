@@ -29,6 +29,7 @@ import { sendCartDownloadMail } from "../lib/ebook-mail.js";
 import { notifyNewCartPurchase } from "../lib/admin-notifications.js";
 import { recordRedemption } from "../lib/coupon.js";
 import { attributeEbookSale } from "../lib/affiliate.js";
+import { issueInvoiceForSource } from "../lib/invoice/index.js";
 
 const router = Router();
 
@@ -525,6 +526,92 @@ router.post("/internal/cart/activate", async (req: Request, res: Response) => {
         });
       } catch (e: any) {
         console.error("[CART] admin notify HATA:", e?.message);
+      }
+    })();
+
+    // Otomatik e-Fatura/e-Arşiv (tek fatura, tüm sepet için)
+    void (async () => {
+      try {
+        // Sepetin tüm ebook satırlarını ve buyer'ı al
+        const detailRows = await db.execute(sql`
+          SELECT ep.id, ep.buyer_email, ep.buyer_name, ep.buyer_phone,
+                 ep.invoice_type, ep.tax_id, ep.tax_office, ep.company_name,
+                 ep.billing_address, ep.billing_city, ep.billing_district, ep.billing_postal_code,
+                 ep.amount_paid, ep.coupon_discount_kurus, ep.iyzico_payment_id, ep.bundle_id,
+                 e.title AS ebook_title, e.slug AS ebook_slug,
+                 b.title AS bundle_title
+          FROM ebook_purchases ep
+          LEFT JOIN ebooks e ON e.id = ep.ebook_id
+          LEFT JOIN ebook_bundles b ON b.id = ep.bundle_id
+          WHERE ep.order_id = ${orderKey} AND ep.payment_status = 'success'
+          ORDER BY ep.id ASC
+        `);
+        const details = (detailRows.rows ?? detailRows) as any[];
+        if (details.length === 0) return;
+
+        const first = details[0];
+        const buyerType = first.invoice_type === "corporate" ? "corporate" : "individual";
+        const vatRate = 20;
+
+        // Line items — bundle satırları gruplu, tekil kitaplar ayrı
+        // Fatura kalemleri: her ebook satırı bir line
+        const lineItems = details.map((d) => {
+          const amountKurus = Math.round(Number(d.amount_paid) * 100);
+          const unitPriceKurus = Math.round(amountKurus / (1 + vatRate / 100));
+          const label = d.bundle_id
+            ? `${d.bundle_title ?? "Paket"} — ${d.ebook_title ?? "E-kitap"}`
+            : String(d.ebook_title ?? "E-kitap");
+          return {
+            productCode: d.ebook_slug ? `ebook-${d.ebook_slug}` : `ebook-${d.id}`,
+            productName: label,
+            quantity: 1,
+            unitPriceKurus,
+            vatRate,
+            note: d.bundle_id ? "Paket kapsamında" : undefined,
+          };
+        });
+
+        // Tek fatura kes — source olarak order_id kullan (integer değil, bigint tabanlı hash)
+        // source_id: order_id'nin hash'i (16 haneden az bigint)
+        const sourceIdHash = Math.abs(
+          orderKey.split("").reduce((acc, ch) => (acc * 31 + ch.charCodeAt(0)) % 9007199254740991, 0),
+        );
+
+        const r = await issueInvoiceForSource({
+          source: {
+            type: "ebook_cart",
+            id: sourceIdHash,
+            orderId: orderKey,
+          },
+          buyer: {
+            email: String(first.buyer_email),
+            name: String(first.buyer_name ?? "Alıcı"),
+            type: buyerType,
+            taxId: first.tax_id ?? undefined,
+            taxOffice: first.tax_office ?? undefined,
+            companyName: first.company_name ?? undefined,
+            address: first.billing_address ?? undefined,
+            city: first.billing_city ?? undefined,
+            district: first.billing_district ?? undefined,
+            postalCode: first.billing_postal_code ?? undefined,
+            country: "Türkiye",
+            phone: first.buyer_phone ?? undefined,
+          },
+          lineItems,
+          notes: [
+            `Sphere English Sepet Siparişi — ${details.length} kalem`,
+            first.iyzico_payment_id ? `Iyzico Payment ID: ${first.iyzico_payment_id}` : "",
+          ].filter(Boolean),
+          paymentReference: first.iyzico_payment_id ?? undefined,
+          sendMailAutomatically: true,
+        });
+        if (r.ok) {
+          console.info(`[CART-INVOICE] fatura kesildi: order=${orderKey} ettn=${r.ettn} skipped=${r.skipped ?? false}`);
+        } else {
+          console.error(`[CART-INVOICE] fatura BAŞARISIZ: order=${orderKey} err=${r.error}`);
+        }
+      } catch (e: any) {
+        console.error("[CART-INVOICE] hata:", e?.message);
       }
     })();
 
