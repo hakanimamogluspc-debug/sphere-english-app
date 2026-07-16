@@ -480,7 +480,7 @@ async function runStartupMigrations() {
       invoice_date DATE NOT NULL,
       -- Kaynak: hangi sipariş için kesildi
       source_type VARCHAR(30) NOT NULL CHECK (source_type IN ('ebook','ebook_cart','subscription','manual')),
-      source_id INTEGER,
+      source_id BIGINT,
       order_id VARCHAR(100),
       -- Alıcı (buyer) — snapshot at issue time
       buyer_email VARCHAR(200) NOT NULL,
@@ -523,6 +523,15 @@ async function runStartupMigrations() {
     `CREATE INDEX IF NOT EXISTS invoices_order_idx ON invoices(order_id) WHERE order_id IS NOT NULL`,
     `CREATE INDEX IF NOT EXISTS invoices_ettn_idx ON invoices(ettn) WHERE ettn IS NOT NULL`,
     `CREATE UNIQUE INDEX IF NOT EXISTS invoices_source_unique_idx ON invoices(source_type, source_id) WHERE source_id IS NOT NULL AND status IN ('sent','pending')`,
+    // Mevcut source_id INTEGER kolonunu BIGINT'e migrate et (Date.now() timestamp'leri INTEGER max'ı aşıyor)
+    `DO $$ BEGIN
+       IF EXISTS (
+         SELECT 1 FROM information_schema.columns
+         WHERE table_name='invoices' AND column_name='source_id' AND data_type='integer'
+       ) THEN
+         ALTER TABLE invoices ALTER COLUMN source_id TYPE BIGINT;
+       END IF;
+     END $$`,
 
     // ─── Speaking Role-Play Sahneleri ───────────────────────────────────
     // Sektör bazlı role-play sahnesi kütüphanesi
