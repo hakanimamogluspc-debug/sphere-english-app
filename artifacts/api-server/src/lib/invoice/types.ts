@@ -75,6 +75,7 @@ export interface IssueInvoiceResult {
   viewerUrl?: string;
   error?: string;
   rawResponse?: any;
+  skipped?: boolean;
 }
 
 /**

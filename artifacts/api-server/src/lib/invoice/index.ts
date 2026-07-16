@@ -121,27 +121,29 @@ export async function issueInvoiceForSource(input: IssueInvoiceInput): Promise<I
         updated_at = NOW()
       WHERE id = ${invoiceId}
     `);
-    // Viewer URL'i asenkron al (best-effort, fatura başarılı sayılır)
+    // Viewer URL'i SYNC al — mail tetiklenene kadar hazır olmalı
+    // 2-3 sn ekstra ama garanti timing
+    let viewerUrl: string | undefined;
     if (result.ettn) {
-      void (async () => {
-        try {
-          const v = await provider.getViewerUrl(result.ettn!, invoiceType);
-          if (v?.url) {
-            await db.execute(sql`
-              UPDATE invoices SET viewer_url = ${v.url}, viewer_url_expires_at = ${v.expiresAt.toISOString()}::TIMESTAMPTZ
-              WHERE id = ${invoiceId}
-            `);
-          }
-        } catch (e: any) {
-          console.warn("[invoice] viewer URL hata:", e?.message);
+      try {
+        const v = await provider.getViewerUrl(result.ettn, invoiceType);
+        if (v?.url) {
+          viewerUrl = v.url;
+          await db.execute(sql`
+            UPDATE invoices SET viewer_url = ${v.url}, viewer_url_expires_at = ${v.expiresAt.toISOString()}::TIMESTAMPTZ
+            WHERE id = ${invoiceId}
+          `);
         }
-      })();
+      } catch (e: any) {
+        console.warn("[invoice] viewer URL hata:", e?.message);
+      }
     }
     return {
       ok: true,
       invoiceId,
       ettn: result.ettn,
       externalInvoiceCode: result.externalInvoiceCode,
+      viewerUrl,
     };
   }
 

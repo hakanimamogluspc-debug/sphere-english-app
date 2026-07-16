@@ -439,8 +439,11 @@ router.post("/internal/cart/activate", async (req: Request, res: Response) => {
       `[CART] activate: order_id=${orderKey} ${activatedPurchaseIds.length} ebook satırı hazır`,
     );
 
-    // Mail — 8 sn gecikme ile (fatura viewer URL hazır olsun)
-    setTimeout(() => void (async () => {
+    // Mail — fatura hook'unun tamamlanmasını bekle
+    void (async () => {
+      // Fatura kesme + viewer URL alma yaklaşık 5-8 sn sürüyor.
+      // Bu bekleme mail atılırken viewer URL DB'de hazır olması için.
+      await new Promise((r) => setTimeout(r, 9000));
       try {
         const detailRows = await db.execute(sql`
           SELECT p.id, p.buyer_email, p.buyer_name, p.invoice_type,
@@ -517,7 +520,7 @@ router.post("/internal/cart/activate", async (req: Request, res: Response) => {
       } catch (e: any) {
         console.error("[CART] mail fire-forget HATA:", e?.message);
       }
-    })(), 8000);
+    })();
 
     // Admin bildirim
     void (async () => {
