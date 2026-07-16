@@ -513,6 +513,16 @@ ${notesXml}
     const vat = Math.round((lineExt * it.vatRate) / 100);
     const discountRate = grossKurus > 0 ? (discountKurus / grossKurus) * 100 : 0;
 
+    // Luca ProductCode katı — sadece alfanumerik + max 20 karakter (SQL insert için)
+    const productCodeClean = it.productCode
+      .replace(/[^a-zA-Z0-9]/g, "")
+      .slice(0, 20)
+      .toUpperCase() || "SPH000000000000000001";
+    // ExternalProductCode bizim iç kod, sanitize + max 50 char
+    const externalCodeClean = it.productCode.replace(/[^a-zA-Z0-9-]/g, "").slice(0, 50);
+    // ProductName max 300 char + xmlEscape
+    const productName = String(it.productName).slice(0, 300);
+
     return `              <ein:ArchiveInvoiceDetail>
                 <ein:CurrencyCode>TRY</ein:CurrencyCode>
                 <ein:DiscountAmount>${kurus2str(discountKurus)}</ein:DiscountAmount>
@@ -520,10 +530,10 @@ ${notesXml}
                 <ein:LineExtensionAmount>${kurus2str(lineExt)}</ein:LineExtensionAmount>
                 <ein:Note>${xmlEscape(it.note ?? "")}</ein:Note>
                 <ein:Product>
-                  <ein:ExternalProductCode>${xmlEscape(it.productCode)}</ein:ExternalProductCode>
+                  <ein:ExternalProductCode>${xmlEscape(externalCodeClean)}</ein:ExternalProductCode>
                   <ein:MeasureUnit>${it.measureUnit ?? "NIU"}</ein:MeasureUnit>
-                  <ein:ProductCode>${xmlEscape(it.productCode.slice(0, 20))}</ein:ProductCode>
-                  <ein:ProductName>${xmlEscape(it.productName)}</ein:ProductName>
+                  <ein:ProductCode>${xmlEscape(productCodeClean)}</ein:ProductCode>
+                  <ein:ProductName>${xmlEscape(productName)}</ein:ProductName>
                   <ein:UnitPrice>${kurus2str(it.unitPriceKurus)}</ein:UnitPrice>
                 </ein:Product>
                 <ein:Quantity>${it.quantity}</ein:Quantity>
@@ -539,6 +549,14 @@ ${notesXml}
     const vat = Math.round((lineExt * it.vatRate) / 100);
     const discountRate = grossKurus > 0 ? (discountKurus / grossKurus) * 100 : 0;
 
+    // Luca ProductCode katı — alfanumerik + max 20 karakter
+    const productCodeClean = it.productCode
+      .replace(/[^a-zA-Z0-9]/g, "")
+      .slice(0, 20)
+      .toUpperCase() || "SPH000000000000000001";
+    const externalCodeClean = it.productCode.replace(/[^a-zA-Z0-9-]/g, "").slice(0, 50);
+    const productName = String(it.productName).slice(0, 300);
+
     return `              <ein:InvoiceDetail>
                 <ein:CurrencyCode>TRY</ein:CurrencyCode>
                 <ein:DiscountRate>${discountRate.toFixed(10)}</ein:DiscountRate>
@@ -546,11 +564,11 @@ ${notesXml}
                 <ein:LineExtensionAmount>${kurus2str(lineExt)}</ein:LineExtensionAmount>
                 <ein:Note>${xmlEscape(it.note ?? "")}</ein:Note>
                 <ein:Product>
-                  <ein:ExternalProductCode>${xmlEscape(it.productCode)}</ein:ExternalProductCode>
+                  <ein:ExternalProductCode>${xmlEscape(externalCodeClean)}</ein:ExternalProductCode>
                   <ein:MeasureUnit>${it.measureUnit ?? "NIU"}</ein:MeasureUnit>
-                  <ein:ProductName>${xmlEscape(it.productName)}</ein:ProductName>
-                  <ein:ProductCode>${xmlEscape(it.productCode.slice(0, 20))}</ein:ProductCode>
-                  <ein:ReceiverProductCode>${xmlEscape(it.productCode.slice(0, 20))}</ein:ReceiverProductCode>
+                  <ein:ProductName>${xmlEscape(productName)}</ein:ProductName>
+                  <ein:ProductCode>${xmlEscape(productCodeClean)}</ein:ProductCode>
+                  <ein:ReceiverProductCode>${xmlEscape(productCodeClean)}</ein:ReceiverProductCode>
                   <ein:UnitPrice>${kurus2str(it.unitPriceKurus)}</ein:UnitPrice>
                 </ein:Product>
                 <ein:Quantity>${it.quantity}</ein:Quantity>
