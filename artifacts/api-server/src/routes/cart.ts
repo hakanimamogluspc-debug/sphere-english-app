@@ -439,8 +439,8 @@ router.post("/internal/cart/activate", async (req: Request, res: Response) => {
       `[CART] activate: order_id=${orderKey} ${activatedPurchaseIds.length} ebook satırı hazır`,
     );
 
-    // Mail (fire-and-forget)
-    void (async () => {
+    // Mail — 8 sn gecikme ile (fatura viewer URL hazır olsun)
+    setTimeout(() => void (async () => {
       try {
         const detailRows = await db.execute(sql`
           SELECT p.id, p.buyer_email, p.buyer_name, p.invoice_type,
@@ -462,6 +462,19 @@ router.post("/internal/cart/activate", async (req: Request, res: Response) => {
           WHERE order_id = ${orderKey}
         `);
 
+        // Sepet için fatura viewer URL — order_id ile invoices tablosundan çek
+        let invoiceViewerUrl: string | null = null;
+        try {
+          const invRows = await db.execute(sql`
+            SELECT viewer_url FROM invoices
+            WHERE order_id = ${orderKey} AND status = 'sent'
+            ORDER BY id DESC LIMIT 1
+          `);
+          invoiceViewerUrl = ((invRows.rows ?? invRows)[0] as any)?.viewer_url ?? null;
+        } catch (e: any) {
+          console.warn("[CART] invoice viewer URL çekilirken hata:", e?.message);
+        }
+
         const totalAmount = details.reduce((s, d) => s + Number(d.amount_paid), 0);
         const first = details[0];
         const mailResult = await sendCartDownloadMail({
@@ -478,6 +491,7 @@ router.post("/internal/cart/activate", async (req: Request, res: Response) => {
             downloadExpiresAt: new Date(d.download_expires_at),
             bundleTitle: d.bundle_title ?? null,
           })),
+          invoiceViewerUrl,
         });
 
         if (mailResult.ok) {
@@ -503,7 +517,7 @@ router.post("/internal/cart/activate", async (req: Request, res: Response) => {
       } catch (e: any) {
         console.error("[CART] mail fire-forget HATA:", e?.message);
       }
-    })();
+    })(), 8000);
 
     // Admin bildirim
     void (async () => {

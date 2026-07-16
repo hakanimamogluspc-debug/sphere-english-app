@@ -25,6 +25,8 @@ interface EbookMailOptions {
   downloadExpiresAt: Date;
   /** Fatura tipi — mailde "e-Arşiv faturanız ayrıca gönderilecek" mesajı için */
   invoiceType: "individual" | "corporate";
+  /** Luca fatura viewer URL — kesildiyse mail'e "Faturayı Görüntüle" butonu eklenir */
+  invoiceViewerUrl?: string | null;
 }
 
 function formatTRY(amount: number | string): string {
@@ -142,11 +144,22 @@ export async function sendEbookDownloadMail(opts: EbookMailOptions): Promise<{
             <!-- Fatura bilgisi -->
             <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;margin:16px 0;">
               <tr>
-                <td style="padding:14px 18px;">
-                  <div style="font-size:12px;font-weight:700;color:#1e40af;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">🧾 Fatura</div>
-                  <div style="font-size:13px;color:#1e3a8a;line-height:1.6;">
-                    ${invoiceMsg}
-                  </div>
+                <td style="padding:16px 20px;">
+                  <div style="font-size:12px;font-weight:700;color:#1e40af;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">🧾 Fatura</div>
+                  ${opts.invoiceViewerUrl
+                    ? `<div style="font-size:13px;color:#1e3a8a;line-height:1.6;margin-bottom:12px;">
+                        e-Arşiv faturanız hazır. Aşağıdaki butondan görüntüleyebilir veya PDF olarak indirebilirsiniz.
+                      </div>
+                      <a href="${opts.invoiceViewerUrl}" style="display:inline-block;background:#1e40af;color:#ffffff;font-size:14px;font-weight:700;text-decoration:none;padding:12px 24px;border-radius:10px;box-shadow:0 2px 8px rgba(30,64,175,0.25);">
+                        📄 Faturayı Görüntüle
+                      </a>
+                      <div style="font-size:11px;color:#64748b;margin-top:8px;">
+                        Ayrıca resmi e-Arşiv fatura PDF'i e-posta adresinize ayrıca ulaşacaktır.
+                      </div>`
+                    : `<div style="font-size:13px;color:#1e3a8a;line-height:1.6;">
+                        ${invoiceMsg}
+                      </div>`
+                  }
                 </td>
               </tr>
             </table>
@@ -365,6 +378,8 @@ interface CartMailOptions {
     downloadExpiresAt: Date;
     bundleTitle: string | null;
   }>;
+  /** Luca fatura viewer URL — kesildiyse mail'e "Faturayı Görüntüle" butonu */
+  invoiceViewerUrl?: string | null;
 }
 
 /**
@@ -483,11 +498,22 @@ export async function sendCartDownloadMail(opts: CartMailOptions): Promise<{
             <!-- Fatura -->
             <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;margin:16px 0;">
               <tr>
-                <td style="padding:14px 18px;">
-                  <div style="font-size:12px;font-weight:700;color:#1e40af;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">🧾 Fatura</div>
-                  <div style="font-size:13px;color:#1e3a8a;line-height:1.6;">
-                    ${invoiceMsg}
-                  </div>
+                <td style="padding:16px 20px;">
+                  <div style="font-size:12px;font-weight:700;color:#1e40af;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">🧾 Fatura</div>
+                  ${opts.invoiceViewerUrl
+                    ? `<div style="font-size:13px;color:#1e3a8a;line-height:1.6;margin-bottom:12px;">
+                        Sipariş faturanız hazır. Aşağıdaki butondan görüntüleyebilir veya PDF olarak indirebilirsiniz.
+                      </div>
+                      <a href="${opts.invoiceViewerUrl}" style="display:inline-block;background:#1e40af;color:#ffffff;font-size:14px;font-weight:700;text-decoration:none;padding:12px 24px;border-radius:10px;box-shadow:0 2px 8px rgba(30,64,175,0.25);">
+                        📄 Faturayı Görüntüle
+                      </a>
+                      <div style="font-size:11px;color:#64748b;margin-top:8px;">
+                        Ayrıca resmi e-Arşiv fatura PDF'i e-posta adresinize ayrıca ulaşacaktır.
+                      </div>`
+                    : `<div style="font-size:13px;color:#1e3a8a;line-height:1.6;">
+                        ${invoiceMsg}
+                      </div>`
+                  }
                 </td>
               </tr>
             </table>

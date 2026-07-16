@@ -431,10 +431,13 @@ router.post("/internal/ebook-purchase/activate", async (req: Request, res: Respo
             console.error("[EBOOK-PURCHASE] affiliate attr HATA:", affErr?.message);
           }
         }
-        // Mail gönder (fire-and-forget — response'u bloklamasın)
-        sendPurchaseEmailFireForget(updatedRow.id).catch((e) => {
-          console.error("[EBOOK-PURCHASE] mail fire-forget HATA:", e?.message);
-        });
+        // Mail gönder — 8 sn gecikme ile (fatura kesim + viewer URL alma tamamlansın)
+        // Fire-and-forget — response'u bloklamasın
+        setTimeout(() => {
+          sendPurchaseEmailFireForget(updatedRow.id).catch((e) => {
+            console.error("[EBOOK-PURCHASE] mail fire-forget HATA:", e?.message);
+          });
+        }, 8000);
         // Admin'lere yeni satış bildirimi
         notifyAdminOfEbookPurchase(updatedRow.id);
         // Otomatik e-Fatura/e-Arşiv (fire-and-forget)
@@ -481,9 +484,12 @@ router.post("/internal/ebook-purchase/activate", async (req: Request, res: Respo
       }
     }
     if (newId) {
-      sendPurchaseEmailFireForget(newId).catch((e) => {
-        console.error("[EBOOK-PURCHASE] mail fire-forget HATA:", e?.message);
-      });
+      // Mail 8 sn gecikme ile — fatura viewer URL hazır olsun
+      setTimeout(() => {
+        sendPurchaseEmailFireForget(newId).catch((e) => {
+          console.error("[EBOOK-PURCHASE] mail fire-forget HATA:", e?.message);
+        });
+      }, 8000);
       // Admin'lere yeni satış bildirimi
       notifyAdminOfEbookPurchase(Number(newId));
       // Otomatik e-Fatura/e-Arşiv (fire-and-forget)
@@ -660,6 +666,20 @@ async function sendPurchaseEmailFireForget(purchaseId: number): Promise<void> {
       WHERE id = ${purchaseId}
     `);
 
+    // Fatura viewer URL'i (varsa) — fatura kesim ~3-5 sn sürdüğü için bu fonksiyon
+    // activate handler'da 8 sn gecikme ile çağrılıyor, viewer URL genelde hazır olur.
+    let invoiceViewerUrl: string | null = null;
+    try {
+      const invRows = await db.execute(sql`
+        SELECT viewer_url FROM invoices
+        WHERE source_type = 'ebook' AND source_id = ${purchaseId} AND status = 'sent'
+        ORDER BY id DESC LIMIT 1
+      `);
+      invoiceViewerUrl = ((invRows.rows ?? invRows)[0] as any)?.viewer_url ?? null;
+    } catch (e: any) {
+      console.warn("[EBOOK-PURCHASE/mail] invoice viewer URL çekilirken hata:", e?.message);
+    }
+
     const result = await sendEbookDownloadMail({
       buyerEmail: p.buyer_email,
       buyerName: p.buyer_name ?? null,
@@ -670,6 +690,7 @@ async function sendPurchaseEmailFireForget(purchaseId: number): Promise<void> {
       downloadToken: p.download_token,
       downloadExpiresAt: new Date(p.download_expires_at),
       invoiceType: p.invoice_type === "corporate" ? "corporate" : "individual",
+      invoiceViewerUrl,
     });
 
     if (result.ok) {
