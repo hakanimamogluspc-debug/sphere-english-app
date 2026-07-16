@@ -73,10 +73,16 @@ function kurus2str(kurus: number): string {
   return (kurus / 100).toFixed(2);
 }
 
-/** "SPH20260001" gibi belge no üret */
+/** Türkiye e-fatura standardı: {3 harf}{4 yıl}{9 sıra} = 16 karakter
+ *  Örn: SPH2026000012345
+ */
 function generateExternalCode(prefix: string, sequence: number): string {
   const year = new Date().getFullYear();
-  return `${prefix}${year}${String(sequence).padStart(7, "0")}`;
+  // 3 karaktere sabitle (Luca standardı)
+  const prefix3 = prefix.padEnd(3, "X").slice(0, 3);
+  // Sequence 9 haneli — Date.now() (13 hane) → mod 10^9
+  const seq = Math.abs(sequence % 1000000000);
+  return `${prefix3}${year}${String(seq).padStart(9, "0")}`;
 }
 
 interface LucaConfig {
@@ -241,7 +247,7 @@ export class LucaProvider implements InvoiceProvider {
 
   async issueInvoice(input: IssueInvoiceInput): Promise<IssueInvoiceResult> {
     const invoiceType = decideInvoiceType(input.buyer);
-    const externalCode = generateExternalCode(this.cfg.invoicePrefix, Date.now() % 10000000);
+    const externalCode = generateExternalCode(this.cfg.invoicePrefix, Date.now());
     const ettn = randomUUID();
     const today = new Date().toISOString().slice(0, 10);
 
