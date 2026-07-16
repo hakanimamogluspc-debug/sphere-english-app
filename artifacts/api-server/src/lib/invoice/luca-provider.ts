@@ -347,6 +347,7 @@ ${paymentNote}
                 <ein:TownName>${xmlEscape(buyer.district ?? "")}</ein:TownName>
                 <ein:EMail>${xmlEscape(buyer.email)}</ein:EMail>
               </ein:Address>
+              <ein:EMail>${xmlEscape(buyer.email)}</ein:EMail>
               <ein:ReceiverName>${xmlEscape(receiverName)}</ein:ReceiverName>
               <ein:ReceiverTaxCode>${xmlEscape(receiverTaxCode)}</ein:ReceiverTaxCode>
               <ein:SendingType>ELEKTRONIK</ein:SendingType>
