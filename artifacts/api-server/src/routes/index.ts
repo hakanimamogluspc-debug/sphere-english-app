@@ -72,6 +72,7 @@ import adminEbookHealthRouter from "./admin-ebook-health";
 import bundlesRouter from "./bundles";
 import adminBundlesRouter from "./admin-bundles";
 import adminInvoicesRouter from "./admin-invoices";
+import metaCatalogFeedRouter from "./meta-catalog-feed";
 import { requireSubscription } from "../middlewares/require-subscription";
 import { authMiddleware } from "../middlewares/auth";
 
@@ -125,6 +126,7 @@ router.use(adminEbookHealthRouter);
 router.use(bundlesRouter);
 router.use(adminBundlesRouter);
 router.use(adminInvoicesRouter);
+router.use(metaCatalogFeedRouter);
 router.use(adminEbooksRouter);
 router.use(adminEbookPurchasesRouter);
 router.use(webAnalyticsRouter);
