@@ -70,7 +70,7 @@ router.post(
   requireAdmin,
   async (req: Request, res: Response) => {
     try {
-      const { companyTaxCode, userTaxCode, userPassword, env } = (req.body ?? {}) as any;
+      const { companyTaxCode, userTaxCode, userPassword, env, companyVendorNumber } = (req.body ?? {}) as any;
       if (!companyTaxCode || !userTaxCode || !userPassword) {
         return res.status(400).json({ error: "companyTaxCode, userTaxCode, userPassword gerekli" });
       }
