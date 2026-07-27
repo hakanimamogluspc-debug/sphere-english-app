@@ -119,6 +119,14 @@ function loadConfig(): LucaConfig {
 }
 
 function endpointFor(env: InvoiceEnv, svc: "InvoiceService" | "AddressBookService"): string {
+  // Env variable ile override — Luca'nın test endpoint'i mail'de HTTP olarak
+  // verilmiş, HTTPS 16 Tem'de çalıştı ama sonradan sorun çıkabilir.
+  // LUCA_SOAP_BASE_URL_TEST=http://einvoiceserviceturmobtest.luca.com.tr gibi.
+  const overrideKey = env === "prod" ? "LUCA_SOAP_BASE_URL_PROD" : "LUCA_SOAP_BASE_URL_TEST";
+  const override = process.env[overrideKey];
+  if (override) {
+    return `${override.replace(/\/$/, "")}/${svc}/ServiceContract/${svc}.svc`;
+  }
   const host =
     env === "prod"
       ? "einvoiceserviceturmob.luca.com.tr"
