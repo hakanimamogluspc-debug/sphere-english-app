@@ -59,6 +59,8 @@ export default function AdminMailTemplates() {
   const [previewText, setPreviewText] = useState("");
   const [html, setHtml] = useState("");
   const [previewMode, setPreviewMode] = useState<"desktop" | "mobile">("desktop");
+  // Editor tab'a başlangıç HTML'i olarak mevcut çalışılan template'i geçir
+  const [editorSeedHtml, setEditorSeedHtml] = useState("");
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -81,44 +83,59 @@ export default function AdminMailTemplates() {
           <TabButton icon={LayoutDashboard} label="Görsel Editor" active={tab === "editor"} onClick={() => setTab("editor")} />
         </div>
 
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-          {/* Sol — Tab içeriği */}
-          <div className="lg:col-span-5">
-            {tab === "ai" && (
-              <AiGenerateTab
-                onGenerated={(r) => {
-                  setSubject(r.subject);
-                  setPreviewText(r.previewText);
-                  setHtml(r.html);
-                }}
-              />
-            )}
-            {tab === "library" && (
-              <LibraryTab
-                onSelect={(t) => {
-                  setSubject(t.subject);
-                  setPreviewText(t.previewText);
-                  setHtml(t.html);
-                }}
-              />
-            )}
-            {tab === "editor" && <EditorPlaceholder />}
-          </div>
+        {/* Editor tab full-width, diğerleri 5/7 grid */}
+        {tab === "editor" ? (
+          <VisualEditorTab
+            seedHtml={editorSeedHtml || html}
+            initialSubject={subject}
+            initialPreviewText={previewText}
+            onExport={({ html: h, subject: s, previewText: pt }) => {
+              setHtml(h);
+              if (s) setSubject(s);
+              if (pt) setPreviewText(pt);
+            }}
+          />
+        ) : (
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+            {/* Sol — Tab içeriği */}
+            <div className="lg:col-span-5">
+              {tab === "ai" && (
+                <AiGenerateTab
+                  onGenerated={(r) => {
+                    setSubject(r.subject);
+                    setPreviewText(r.previewText);
+                    setHtml(r.html);
+                    setEditorSeedHtml(r.html);
+                  }}
+                />
+              )}
+              {tab === "library" && (
+                <LibraryTab
+                  onSelect={(t) => {
+                    setSubject(t.subject);
+                    setPreviewText(t.previewText);
+                    setHtml(t.html);
+                    setEditorSeedHtml(t.html);
+                  }}
+                />
+              )}
+            </div>
 
-          {/* Sağ — Preview + kopyala */}
-          <div className="lg:col-span-7">
-            <PreviewPanel
-              subject={subject}
-              previewText={previewText}
-              html={html}
-              onSubjectChange={setSubject}
-              onPreviewTextChange={setPreviewText}
-              onHtmlChange={setHtml}
-              previewMode={previewMode}
-              setPreviewMode={setPreviewMode}
-            />
+            {/* Sağ — Preview + kopyala */}
+            <div className="lg:col-span-7">
+              <PreviewPanel
+                subject={subject}
+                previewText={previewText}
+                html={html}
+                onSubjectChange={setSubject}
+                onPreviewTextChange={setPreviewText}
+                onHtmlChange={setHtml}
+                previewMode={previewMode}
+                setPreviewMode={setPreviewMode}
+              />
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
@@ -333,20 +350,214 @@ function LibraryTab({ onSelect }: { onSelect: (t: LibTemplate) => void }) {
   );
 }
 
-// ─── Tab 3: Görsel Editor placeholder ─────────────────────────────────
-function EditorPlaceholder() {
+// ─── Tab 3: Görsel Editor (GrapesJS + Newsletter preset) ──────────────
+function VisualEditorTab(props: {
+  seedHtml: string;
+  initialSubject: string;
+  initialPreviewText: string;
+  onExport: (r: { html: string; subject?: string; previewText?: string }) => void;
+}) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const editorRef = useRef<any>(null);
+  const [ready, setReady] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [subject, setSubject] = useState(props.initialSubject);
+  const [previewText, setPreviewText] = useState(props.initialPreviewText);
+
+  useEffect(() => {
+    let destroyed = false;
+
+    async function init() {
+      try {
+        // Dynamic import — bundle'a sadece bu tab açıldığında yüklensin
+        const [{ default: grapesjs }, { default: newsletterPreset }] = await Promise.all([
+          import("grapesjs"),
+          import("grapesjs-preset-newsletter"),
+          import("grapesjs/dist/css/grapes.min.css"),
+        ]);
+
+        if (destroyed || !containerRef.current) return;
+
+        const editor = grapesjs.init({
+          container: containerRef.current,
+          height: "700px",
+          width: "auto",
+          storageManager: false,
+          fromElement: false,
+          plugins: [newsletterPreset as any],
+          pluginsOpts: {
+            [newsletterPreset as any]: {
+              modalTitleImport: "Mevcut HTML'i içe aktar",
+              modalTitleExport: "Dışa aktar",
+              codeViewerTheme: "material",
+              importPlaceholder: '<table class="table"><tr><td>Örnek HTML</td></tr></table>',
+              cellStyle: {
+                "font-size": "14px",
+                "font-weight": "400",
+                "vertical-align": "top",
+                color: "#1e293b",
+                margin: 0,
+                padding: 0,
+              },
+            },
+          },
+          canvas: {
+            styles: [],
+          },
+        });
+
+        editorRef.current = editor;
+
+        // Seed HTML — mevcut çalışılan template varsa yükle
+        if (props.seedHtml) {
+          try {
+            editor.setComponents(props.seedHtml);
+          } catch (e) {
+            console.warn("[gjs] seed html hatası:", e);
+          }
+        }
+
+        setReady(true);
+      } catch (e: any) {
+        console.error("[gjs] init hatası:", e);
+        setError(e?.message ?? "Editor yüklenemedi");
+      }
+    }
+
+    init();
+
+    return () => {
+      destroyed = true;
+      try {
+        editorRef.current?.destroy();
+      } catch {
+        /* ignore */
+      }
+      editorRef.current = null;
+    };
+    // seedHtml değişince re-init ETME — kullanıcı editor'da çalışıyor olabilir
+    // Sadece explicit "yeniden yükle" butonu ile seed edilebilir
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function handleExport() {
+    const editor = editorRef.current;
+    if (!editor) return;
+    try {
+      // GrapesJS'in body HTML'i + inline stiller
+      const bodyHtml = editor.getHtml();
+      const inlineCss = editor.getCss({ avoidProtected: true });
+
+      // Newsletter preset zaten table-based mail HTML üretiyor
+      // Ama tam bir belge lazım — DOCTYPE + head sarmalayıp döndür
+      const fullHtml = wrapAsFullMailHtml(bodyHtml, inlineCss, subject, previewText);
+
+      props.onExport({
+        html: fullHtml,
+        subject: subject || undefined,
+        previewText: previewText || undefined,
+      });
+    } catch (e: any) {
+      alert("Dışa aktarma hatası: " + e?.message);
+    }
+  }
+
+  function reloadFromSeed() {
+    const editor = editorRef.current;
+    if (!editor || !props.seedHtml) return;
+    if (!confirm("Editordeki değişiklikler kaybolacak, devam edilsin mi?")) return;
+    editor.setComponents(props.seedHtml);
+  }
+
   return (
-    <div className="rounded-lg bg-white p-8 shadow ring-1 ring-gray-200 text-center">
-      <LayoutDashboard className="mx-auto mb-3 h-10 w-10 text-gray-300" />
-      <h3 className="mb-2 font-semibold text-gray-900">Görsel Editor — Yakında</h3>
-      <p className="text-sm text-gray-500">
-        Drag-drop WYSIWYG editor (GrapesJS) sonraki güncellemede eklenecek. Şu anda AI Üret veya Şablon Kütüphanesi yeterli.
-      </p>
-      <p className="mt-3 text-xs text-gray-400">
-        Bu arada: Sağdaki preview kısmında HTML'i manuel düzenleyebilirsin (Ham HTML sekmesi).
-      </p>
+    <div className="rounded-lg bg-white shadow ring-1 ring-gray-200 overflow-hidden">
+      <div className="flex flex-wrap items-center gap-3 border-b bg-gray-50 px-4 py-3">
+        <div className="flex items-center gap-2">
+          <LayoutDashboard className="h-4 w-4 text-indigo-600" />
+          <span className="text-sm font-semibold text-gray-900">Görsel Editor</span>
+        </div>
+
+        {/* Subject + Preview text inline */}
+        <div className="flex flex-1 flex-wrap gap-2 min-w-0">
+          <input
+            type="text"
+            value={subject}
+            onChange={(e) => setSubject(e.target.value)}
+            placeholder="Konu (subject)"
+            className="flex-1 min-w-[180px] rounded border border-gray-300 px-2.5 py-1 text-xs focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+          />
+          <input
+            type="text"
+            value={previewText}
+            onChange={(e) => setPreviewText(e.target.value)}
+            placeholder="Preview text"
+            className="flex-1 min-w-[180px] rounded border border-gray-300 px-2.5 py-1 text-xs focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+          />
+        </div>
+
+        <div className="flex gap-2">
+          {props.seedHtml && (
+            <button
+              onClick={reloadFromSeed}
+              className="inline-flex items-center gap-1 rounded border border-gray-300 bg-white px-2.5 py-1 text-xs text-gray-700 hover:bg-gray-50"
+              title="AI/Kütüphaneden gelen orijinal HTML'e döner"
+            >
+              <RefreshCw className="h-3 w-3" /> Yeniden Yükle
+            </button>
+          )}
+          <button
+            onClick={handleExport}
+            disabled={!ready}
+            className="inline-flex items-center gap-1 rounded bg-indigo-600 px-3 py-1 text-xs font-medium text-white hover:bg-indigo-500 disabled:opacity-50"
+          >
+            <ExternalLink className="h-3 w-3" /> HTML'e Aktar
+          </button>
+        </div>
+      </div>
+
+      {error && (
+        <div className="bg-red-50 border-b border-red-200 px-4 py-2 text-sm text-red-800">
+          {error}
+        </div>
+      )}
+
+      <div className="relative bg-gray-100" style={{ minHeight: 720 }}>
+        {!ready && !error && (
+          <div className="absolute inset-0 flex items-center justify-center bg-white/80 z-10">
+            <div className="text-center">
+              <Loader2 className="mx-auto h-6 w-6 animate-spin text-indigo-600 mb-2" />
+              <p className="text-sm text-gray-600">Editor yükleniyor…</p>
+            </div>
+          </div>
+        )}
+        <div ref={containerRef} className="gjs-editor-container" style={{ minHeight: 720 }} />
+      </div>
+
+      <div className="border-t bg-blue-50 px-4 py-2.5 text-xs text-blue-900">
+        💡 <strong>Nasıl kullanılır:</strong> Sol paneldeki blokları sağa sürükle (button, text, image, divider vs). Tık-düzenle. Bitince yukarıdaki <strong>"HTML'e Aktar"</strong> butonuna bas → sağda kopyalayabilirsin. <strong>Yeniden Yükle</strong> ile AI/Kütüphaneden geleni tekrar getirebilirsin.
+      </div>
     </div>
   );
+}
+
+/** GrapesJS newsletter preset body HTML + CSS → tam mail belgesine sar */
+function wrapAsFullMailHtml(bodyHtml: string, css: string, subject: string, previewText: string): string {
+  const safeTitle = subject || "Sphere English";
+  const safePreview = previewText || "";
+  return `<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<title>${safeTitle.replace(/[<>&"]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;" }[c] || c))}</title>
+<style>${css}</style>
+</head>
+<body style="margin:0;padding:0;background:#f1f5f9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#1e293b;">
+${safePreview ? `<span style="display:none;font-size:0;line-height:0;max-height:0;overflow:hidden;">${safePreview.replace(/[<>&"]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;" }[c] || c))}</span>` : ""}
+${bodyHtml}
+</body>
+</html>`;
 }
 
 // ─── Preview panel (sağ taraf) ────────────────────────────────────────

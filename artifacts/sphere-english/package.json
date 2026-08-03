@@ -75,6 +75,8 @@
     "zod": "catalog:"
   },
   "dependencies": {
-    "@sentry/react": "^8.45.0"
+    "@sentry/react": "^8.45.0",
+    "grapesjs": "^0.22.7",
+    "grapesjs-preset-newsletter": "^1.0.2"
   }
 }
