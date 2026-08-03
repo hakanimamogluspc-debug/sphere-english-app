@@ -102,8 +102,23 @@ router.post(
         tone = "profesyonel_sicak", // 'profesyonel_sicak', 'formal', 'samimi', 'aciliyet'
         ctaText = "",
         ctaUrl = "",
-        includeImage = false,
+        includeImage = false, // legacy — placeholder image
+        images = [], // yeni: [{url, description, filename?}] — mail asset'ler
       } = (req.body ?? {}) as any;
+
+      // images validation
+      const validImages: Array<{ url: string; description: string; filename?: string }> = [];
+      if (Array.isArray(images)) {
+        for (const img of images) {
+          if (img && typeof img.url === "string" && img.url.startsWith("http")) {
+            validImages.push({
+              url: img.url,
+              description: String(img.description ?? "").slice(0, 500),
+              filename: img.filename ? String(img.filename).slice(0, 200) : undefined,
+            });
+          }
+        }
+      }
 
       if (!brief.trim()) {
         return res.status(400).json({ error: "Brief boş olamaz" });
@@ -139,18 +154,31 @@ Response formatı — SADECE aşağıdaki JSON, başka hiçbir şey yazma:
   "html": "Tam HTML belgesi — DOCTYPE'dan </html>'e"
 }`;
 
+      // Görsel açıklamalarını prompt'a hazırla
+      const imagesSection =
+        validImages.length > 0
+          ? `\n\nKullanıcı şu görselleri yükledi — MUTLAKA bu URL'leri <img src="URL" alt="ACIKLAMA" style="display:block;width:100%;max-width:536px;height:auto;border-radius:8px;"> olarak mail'e YERLEŞTİR. Görselleri kaynak URL değiştirmeden aynen kullan. Her görseli açıklamasına en uygun yerde konumlandır (banner en başta, ürün görseli detayın yanında, testimonyal görseli alıntının yanında vb):\n\n${validImages
+              .map(
+                (img, i) =>
+                  `${i + 1}. URL: ${img.url}\n   Açıklama: ${img.description || "(açıklama yok — uygun yerde kullan)"}${img.filename ? `\n   Dosya: ${img.filename}` : ""}`,
+              )
+              .join("\n\n")}`
+          : includeImage
+            ? "\n\nBir görsel yer tutucusu ekle (https://placehold.co/600x200/1B365D/ffffff?text=Görsel+Placeholder)."
+            : "";
+
       const userPrompt = `
 Mail türü: ${mailTypeMap[mailType] ?? mailTypeMap.generic}
 Ton: ${toneMap[tone] ?? toneMap.profesyonel_sicak}
 ${ctaText ? `CTA buton metni: "${ctaText}"` : ""}
-${ctaUrl ? `CTA buton URL'si: ${ctaUrl}` : ""}
-${includeImage ? "Bir görsel yer tutucusu ekle (https://placehold.co/600x200/1B365D/ffffff?text=Görsel+Placeholder)." : ""}
+${ctaUrl ? `CTA buton URL'si: ${ctaUrl}` : ""}${imagesSection}
 
 Brief:
 ${brief}
 
 Yukarıdaki brief için Sphere marka stilinde profesyonel bir HTML mail template üret.
 Marka renklerini kullan, inline CSS, table-based layout, mobil responsive, preview text ile.
+${validImages.length > 0 ? "Verilen görsel URL'lerini MUTLAKA mail'e yerleştir — atlama." : ""}
 JSON dışında hiçbir şey yazma.
 `.trim();
 

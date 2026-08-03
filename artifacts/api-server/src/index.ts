@@ -453,6 +453,21 @@ async function runStartupMigrations() {
     `ALTER TABLE ebook_bundles ADD COLUMN IF NOT EXISTS cover_mime VARCHAR(100)`,
     `ALTER TABLE ebook_bundles ADD COLUMN IF NOT EXISTS cover_size INTEGER`,
 
+    // Mail asset yönetimi — admin mail şablonlarında kullanılan görseller
+    // Absolute URL: https://app.sphereenglish.com/api/mail-assets/:id (public, no auth)
+    `CREATE TABLE IF NOT EXISTS mail_assets (
+      id SERIAL PRIMARY KEY,
+      filename VARCHAR(255) NOT NULL,
+      description VARCHAR(500),
+      mime VARCHAR(100) NOT NULL,
+      size INTEGER NOT NULL,
+      data BYTEA NOT NULL,
+      uploaded_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`,
+    `CREATE INDEX IF NOT EXISTS mail_assets_created_idx ON mail_assets(created_at DESC)`,
+    `CREATE INDEX IF NOT EXISTS mail_assets_uploaded_by_idx ON mail_assets(uploaded_by)`,
+
     // ebook_purchases'a bundle bağlantısı — bundle satışlarında her item için kayıt açılır,
     // aynı order_id ile gruplanır, bundle_id ile hangi paketten geldiği izlenir.
     `ALTER TABLE ebook_purchases ADD COLUMN IF NOT EXISTS bundle_id INTEGER REFERENCES ebook_bundles(id) ON DELETE SET NULL`,
