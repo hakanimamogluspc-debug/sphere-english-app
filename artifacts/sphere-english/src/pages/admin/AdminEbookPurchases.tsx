@@ -39,6 +39,26 @@ async function apiFetch(path: string, opts: RequestInit = {}) {
   return res.json();
 }
 
+interface PurchaseItem {
+  id: number;
+  ebook_id: number;
+  ebook_title: string;
+  ebook_slug: string;
+  ebook_cover_url: string | null;
+  amount_paid: string;
+  currency: string;
+  download_token: string | null;
+  download_count: number;
+  download_expires_at: string | null;
+  invoice_status: string;
+  invoice_number: string | null;
+  invoice_notes: string | null;
+  payment_status: string;
+  payment_error: string | null;
+  created_at: string;
+  paid_at: string | null;
+}
+
 interface Purchase {
   id: number;
   ebook_id: number;
@@ -59,9 +79,9 @@ interface Purchase {
   currency: string;
   iyzico_payment_id: string | null;
   iyzico_conversation_id: string | null;
-  payment_status: "pending" | "success" | "failed" | "expired";
+  payment_status: "pending" | "success" | "failed" | "expired" | "mixed";
   payment_error: string | null;
-  invoice_status: "pending" | "issued" | "sent" | "cancelled";
+  invoice_status: "pending" | "issued" | "sent" | "cancelled" | "partial";
   invoice_number: string | null;
   invoice_issued_at: string | null;
   invoice_notes: string | null;
@@ -75,6 +95,12 @@ interface Purchase {
   paid_at: string | null;
   created_at: string;
   updated_at: string;
+  // ─── Order-level grouping (yeni) ─────
+  order_id?: string | null;
+  order_key?: string;
+  first_purchase_id?: number;
+  item_count?: number;
+  items?: PurchaseItem[];
 }
 
 interface Stats {
@@ -380,8 +406,32 @@ export default function AdminEbookPurchases() {
                     <div className="text-xs text-slate-500">{p.buyer_email}</div>
                   </td>
                   <td className="p-3 text-sm text-slate-700">
-                    <div className="font-semibold">{p.ebook_title}</div>
-                    <div className="text-[11px] text-slate-400">/{p.ebook_slug}</div>
+                    {p.item_count && p.item_count > 1 ? (
+                      <>
+                        <div className="flex items-center gap-1.5">
+                          <span className="inline-flex items-center gap-1 rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-800">
+                            🛒 Sepet · {p.item_count} kitap
+                          </span>
+                        </div>
+                        <div className="mt-1 space-y-0.5">
+                          {(p.items ?? []).slice(0, 3).map((it) => (
+                            <div key={it.id} className="text-[11px] text-slate-600 truncate max-w-[280px]" title={it.ebook_title}>
+                              • {it.ebook_title}
+                            </div>
+                          ))}
+                          {(p.items?.length ?? 0) > 3 && (
+                            <div className="text-[10px] text-slate-400 italic">
+                              +{(p.items!.length - 3)} kitap daha
+                            </div>
+                          )}
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="font-semibold">{p.ebook_title}</div>
+                        <div className="text-[11px] text-slate-400">/{p.ebook_slug}</div>
+                      </>
+                    )}
                   </td>
                   <td className="p-3">
                     <div className="flex items-center gap-1.5">

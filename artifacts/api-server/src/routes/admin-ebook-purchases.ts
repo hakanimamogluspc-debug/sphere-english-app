@@ -82,34 +82,123 @@ router.get(
           ? sql`WHERE ${sql.join(conditions, sql` AND `)}`
           : sql``;
 
-      // Toplam sayım
-      const countRes = await db.execute(
-        sql`SELECT COUNT(*)::INT AS total FROM ebook_purchases ${whereClause}`,
-      );
+      // ─── Order-level gruplama ────────────────────────────────────────
+      // Aynı order_id'ye sahip birden fazla ebook_purchases satırı = 1 sipariş
+      // (sepet/bundle satışı). order_id NULL olan eski tekil e-kitap satışları
+      // kendi id'siyle unique order olarak sayılır.
+      //
+      // "order_key" = order_id veya "single-{id}"
+      //
+      // Toplam: SİPARİŞ sayısı (item değil)
+
+      // Sipariş sayısı için distinct count
+      const countRes = await db.execute(sql`
+        SELECT COUNT(DISTINCT COALESCE(order_id, 'single-' || id::TEXT))::INT AS total
+        FROM ebook_purchases
+        ${whereClause}
+      `);
       const total = ((countRes.rows ?? countRes)[0] as any)?.total ?? 0;
 
-      // Veriler — ebook bilgisi join
+      // Order-level query — CTE ile filter'lı rows'u al, sonra grupla
       const rows = await db.execute(sql`
+        WITH filtered AS (
+          SELECT
+            p.*,
+            e.title AS ebook_title,
+            e.slug AS ebook_slug,
+            e.cover_image_url AS ebook_cover_url,
+            COALESCE(p.order_id, 'single-' || p.id::TEXT) AS order_key
+          FROM ebook_purchases p
+          LEFT JOIN ebooks e ON e.id = p.ebook_id
+          ${whereClause}
+        )
         SELECT
-          p.id, p.ebook_id, p.user_id,
-          p.buyer_email, p.buyer_name, p.buyer_phone,
-          p.invoice_type, p.tax_id, p.tax_office, p.company_name,
-          p.billing_address, p.billing_city, p.billing_district, p.billing_postal_code,
-          p.amount_paid, p.currency,
-          p.iyzico_payment_id, p.iyzico_conversation_id,
-          p.payment_status, p.payment_error,
-          p.invoice_status, p.invoice_number, p.invoice_issued_at, p.invoice_notes,
-          p.download_token, p.download_count, p.download_expires_at,
-          p.paid_at, p.created_at, p.updated_at,
-          e.title AS ebook_title, e.slug AS ebook_slug
-        FROM ebook_purchases p
-        LEFT JOIN ebooks e ON e.id = p.ebook_id
-        ${whereClause}
-        ORDER BY p.created_at DESC
+          order_key,
+          MAX(order_id) AS order_id,
+          -- Frontend'in kullandığı `id` — ilk item'ın id'si (detay endpoint burayla çalışır)
+          MIN(id) AS id,
+          MIN(id) AS first_purchase_id,
+          -- Multi-item için ebook_id/title = "Sepet (N kitap)", tek-item için gerçek değer
+          (array_agg(ebook_id ORDER BY id))[1] AS ebook_id,
+          CASE
+            WHEN COUNT(*) > 1 THEN 'Sepet: ' || COUNT(*)::TEXT || ' kitap'
+            ELSE (array_agg(ebook_title ORDER BY id))[1]
+          END AS ebook_title,
+          (array_agg(ebook_slug ORDER BY id))[1] AS ebook_slug,
+          MAX(bundle_id) AS bundle_id,
+          MIN(buyer_email) AS buyer_email,
+          MIN(buyer_name) AS buyer_name,
+          MIN(buyer_phone) AS buyer_phone,
+          MIN(invoice_type) AS invoice_type,
+          MIN(tax_id) AS tax_id,
+          MIN(tax_office) AS tax_office,
+          MIN(company_name) AS company_name,
+          MIN(billing_address) AS billing_address,
+          MIN(billing_city) AS billing_city,
+          MIN(billing_district) AS billing_district,
+          MIN(billing_postal_code) AS billing_postal_code,
+          -- Payment status: eğer hepsi success ise success, yoksa mixed
+          CASE
+            WHEN BOOL_AND(payment_status = 'success') THEN 'success'
+            WHEN BOOL_AND(payment_status = 'failed') THEN 'failed'
+            WHEN BOOL_AND(payment_status = 'pending') THEN 'pending'
+            ELSE 'mixed'
+          END AS payment_status,
+          -- Invoice status: hepsi issued mı
+          CASE
+            WHEN BOOL_AND(invoice_status = 'issued') THEN 'issued'
+            WHEN BOOL_AND(invoice_status = 'sent') THEN 'sent'
+            WHEN BOOL_AND(invoice_status = 'pending') THEN 'pending'
+            ELSE 'partial'
+          END AS invoice_status,
+          -- İlk item'ın diğer alanları (detay için)
+          (array_agg(invoice_number ORDER BY id))[1] AS invoice_number,
+          (array_agg(invoice_issued_at ORDER BY id))[1] AS invoice_issued_at,
+          (array_agg(invoice_notes ORDER BY id))[1] AS invoice_notes,
+          (array_agg(download_token ORDER BY id))[1] AS download_token,
+          (array_agg(download_count ORDER BY id))[1] AS download_count,
+          (array_agg(download_expires_at ORDER BY id))[1] AS download_expires_at,
+          (array_agg(payment_error ORDER BY id))[1] AS payment_error,
+          MAX(iyzico_payment_id) AS iyzico_payment_id,
+          MAX(iyzico_conversation_id) AS iyzico_conversation_id,
+          -- amount_paid = sepet ise toplam, tek item ise item tutarı
+          SUM(amount_paid)::NUMERIC AS amount_paid,
+          SUM(amount_paid)::NUMERIC AS total_amount,
+          MIN(currency) AS currency,
+          COUNT(*)::INT AS item_count,
+          MIN(created_at) AS created_at,
+          MAX(paid_at) AS paid_at,
+          MAX(updated_at) AS updated_at,
+          -- Items array — order içindeki tüm kitaplar
+          json_agg(json_build_object(
+            'id', id,
+            'ebook_id', ebook_id,
+            'ebook_title', ebook_title,
+            'ebook_slug', ebook_slug,
+            'ebook_cover_url', ebook_cover_url,
+            'amount_paid', amount_paid,
+            'currency', currency,
+            'download_token', download_token,
+            'download_count', download_count,
+            'download_expires_at', download_expires_at,
+            'invoice_status', invoice_status,
+            'invoice_number', invoice_number,
+            'invoice_notes', invoice_notes,
+            'payment_status', payment_status,
+            'payment_error', payment_error,
+            'created_at', created_at,
+            'paid_at', paid_at
+          ) ORDER BY id) AS items
+        FROM filtered
+        GROUP BY order_key
+        ORDER BY MIN(created_at) DESC
         LIMIT ${limit} OFFSET ${offset}
       `);
 
       return res.json({
+        orders: rows.rows ?? rows,
+        // Geriye uyumluluk — eski clients purchases key'ini bekliyorsa
+        // orders'ın flatten'ı yerine boş array gönder (frontend güncelleniyor zaten)
         purchases: rows.rows ?? rows,
         total,
         limit,
