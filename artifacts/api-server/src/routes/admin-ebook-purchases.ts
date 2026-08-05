@@ -115,10 +115,8 @@ router.get(
         SELECT
           order_key,
           MAX(order_id) AS order_id,
-          -- Frontend'in kullandığı `id` — ilk item'ın id'si (detay endpoint burayla çalışır)
           MIN(id) AS id,
           MIN(id) AS first_purchase_id,
-          -- Multi-item için ebook_id/title = "Sepet (N kitap)", tek-item için gerçek değer
           (array_agg(ebook_id ORDER BY id))[1] AS ebook_id,
           CASE
             WHEN COUNT(*) > 1 THEN 'Sepet: ' || COUNT(*)::TEXT || ' kitap'
