@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   BookOpen, LayoutDashboard, Video, FileQuestion, LineChart,
   Award, MessageSquare, Users, Megaphone, LogOut, Menu, Building2, BarChart3, GraduationCap, Mic, MessageCircle, FolderOpen, PenLine, TrendingUp, Settings2, Gamepad2, Crown, Lock,
-  Sparkles, ChevronDown, Brain, Briefcase, Presentation, Wand2, Compass, Bot, Activity, UserPlus, ShoppingBag, Phone, UserCircle, Ticket, HardDrive, Package, Receipt, Mail
+  Sparkles, ChevronDown, Brain, Briefcase, Presentation, Wand2, Compass, Bot, Activity, UserPlus, ShoppingBag, Phone, UserCircle, Ticket, HardDrive, Package, Receipt, Mail, ChevronLeft, ChevronRight
 } from "lucide-react";
 import { Avatar } from "../ui/core";
 import { NotificationBell } from "../NotificationBell";
@@ -27,6 +27,14 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [featureSettings, setFeatureSettings] = useState<FeatureSetting[]>([]);
+  // Sidebar collapse — desktop için
+  const [isCollapsed, setIsCollapsed] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return localStorage.getItem('sphere_sidebar_collapsed') === '1';
+  });
+  useEffect(() => {
+    localStorage.setItem('sphere_sidebar_collapsed', isCollapsed ? '1' : '0');
+  }, [isCollapsed]);
 
   const AI_STUDIO_HREFS = [
     '/student/pronunciation-coach',
@@ -172,36 +180,45 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const preGroupItems  = firstAiIdx === -1 ? currentNav : currentNav.slice(0, firstAiIdx);
   const postGroupItems = firstAiIdx === -1 ? [] : currentNav.slice(lastAiIdx + 1);
 
-  const NavLink = ({ item }: { item: NavItem }) => {
+  const NavLink = ({ item, collapsed = false }: { item: NavItem; collapsed?: boolean }) => {
     const isActive = location === item.href || (location.startsWith(item.href) && item.href !== '/dashboard' && item.href !== '/corporate/dashboard');
     return (
       <Link
         key={item.name}
         href={item.href}
-        className={`group flex items-center rounded-xl px-3 py-3 text-sm font-medium transition-all ${
+        title={collapsed ? item.name : undefined}
+        className={`group flex items-center rounded-xl text-sm font-medium transition-all ${
+          collapsed ? 'justify-center px-2 py-3' : 'px-3 py-3'
+        } ${
           isActive
             ? 'bg-sidebar-accent text-white shadow-inner'
             : 'text-sidebar-foreground/80 hover:bg-sidebar-accent/50 hover:text-white'
         }`}
         onClick={() => setIsMobileOpen(false)}
       >
-        <item.icon className={`mr-3 h-5 w-5 flex-shrink-0 transition-colors ${isActive ? 'text-accent' : 'text-sidebar-foreground/50 group-hover:text-sidebar-foreground/80'}`} />
-        {item.name}
+        <item.icon className={`${collapsed ? '' : 'mr-3'} h-5 w-5 flex-shrink-0 transition-colors ${isActive ? 'text-accent' : 'text-sidebar-foreground/50 group-hover:text-sidebar-foreground/80'}`} />
+        {!collapsed && item.name}
       </Link>
     );
   };
 
-  const SidebarContent = () => (
+  const SidebarContent = ({ collapsed = false }: { collapsed?: boolean }) => (
     <>
-      <div className="flex h-16 shrink-0 items-center px-5">
-        <img
-          src={`${import.meta.env.BASE_URL}images/logo-full.png`}
-          alt="Sphere English"
-          className="h-16 w-auto object-contain brightness-0 invert"
-        />
+      <div className={`flex h-16 shrink-0 items-center ${collapsed ? 'justify-center px-2' : 'px-5'}`}>
+        {collapsed ? (
+          <div className="h-9 w-9 rounded-lg bg-sidebar-accent flex items-center justify-center">
+            <span className="text-white font-bold text-lg">S</span>
+          </div>
+        ) : (
+          <img
+            src={`${import.meta.env.BASE_URL}images/logo-full.png`}
+            alt="Sphere English"
+            className="h-16 w-auto object-contain brightness-0 invert"
+          />
+        )}
       </div>
 
-      {user?.role === 'corporate' && (user as any).company && (
+      {!collapsed && user?.role === 'corporate' && (user as any).company && (
         <div className="mx-4 mb-2 px-3 py-2 rounded-xl bg-sidebar-accent/30 border border-sidebar-border">
           <div className="flex items-center gap-2">
             <Building2 className="h-4 w-4 text-accent shrink-0" />
@@ -213,64 +230,88 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         </div>
       )}
 
-      <div className="flex flex-1 flex-col overflow-y-auto px-4 py-4">
+      <div className={`flex flex-1 flex-col overflow-y-auto py-4 ${collapsed ? 'px-2' : 'px-4'}`}>
         <nav className="flex-1 space-y-1.5">
-          {preGroupItems.map(item => <NavLink key={item.href} item={item} />)}
+          {preGroupItems.map(item => <NavLink key={item.href} item={item} collapsed={collapsed} />)}
 
           {aiStudioItems.length > 0 && (
             <div>
-              <button
-                onClick={() => setIsAiStudioOpen(o => !o)}
-                className={`w-full group flex items-center rounded-xl px-3 py-3 text-sm font-medium transition-all ${
-                  isAiStudioPage && !isAiStudioOpen
-                    ? 'bg-sidebar-accent text-white shadow-inner'
-                    : 'text-sidebar-foreground/80 hover:bg-sidebar-accent/50 hover:text-white'
-                }`}
-              >
-                <Sparkles className={`mr-3 h-5 w-5 flex-shrink-0 transition-colors ${isAiStudioPage ? 'text-accent' : 'text-sidebar-foreground/50 group-hover:text-sidebar-foreground/80'}`} />
-                <span className="flex-1 text-left">Sphere AI Studio</span>
-                <motion.div
-                  animate={{ rotate: isAiStudioOpen ? 180 : 0 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <ChevronDown className="h-4 w-4 opacity-60" />
-                </motion.div>
-              </button>
-
-              <AnimatePresence initial={false}>
-                {isAiStudioOpen && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: 'auto', opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.22, ease: 'easeInOut' }}
-                    className="overflow-hidden"
+              {collapsed ? (
+                // Collapsed modda dropdown yerine sadece Sparkles ikonu
+                // Alt item'lar da ayrı ikonlar olarak listelenir
+                <>
+                  <div className="flex justify-center py-2" title="Sphere AI Studio">
+                    <Sparkles className={`h-5 w-5 ${isAiStudioPage ? 'text-accent' : 'text-sidebar-foreground/40'}`} />
+                  </div>
+                  {aiStudioItems.map(item => <NavLink key={item.href} item={item} collapsed />)}
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={() => setIsAiStudioOpen(o => !o)}
+                    className={`w-full group flex items-center rounded-xl px-3 py-3 text-sm font-medium transition-all ${
+                      isAiStudioPage && !isAiStudioOpen
+                        ? 'bg-sidebar-accent text-white shadow-inner'
+                        : 'text-sidebar-foreground/80 hover:bg-sidebar-accent/50 hover:text-white'
+                    }`}
                   >
-                    <div className="mt-1 ml-3 pl-3 border-l border-sidebar-border/50 space-y-1">
-                      {aiStudioItems.map(item => <NavLink key={item.href} item={item} />)}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+                    <Sparkles className={`mr-3 h-5 w-5 flex-shrink-0 transition-colors ${isAiStudioPage ? 'text-accent' : 'text-sidebar-foreground/50 group-hover:text-sidebar-foreground/80'}`} />
+                    <span className="flex-1 text-left">Sphere AI Studio</span>
+                    <motion.div
+                      animate={{ rotate: isAiStudioOpen ? 180 : 0 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <ChevronDown className="h-4 w-4 opacity-60" />
+                    </motion.div>
+                  </button>
+
+                  <AnimatePresence initial={false}>
+                    {isAiStudioOpen && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.22, ease: 'easeInOut' }}
+                        className="overflow-hidden"
+                      >
+                        <div className="mt-1 ml-3 pl-3 border-l border-sidebar-border/50 space-y-1">
+                          {aiStudioItems.map(item => <NavLink key={item.href} item={item} />)}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </>
+              )}
             </div>
           )}
 
-          {postGroupItems.map(item => <NavLink key={item.href} item={item} />)}
+          {postGroupItems.map(item => <NavLink key={item.href} item={item} collapsed={collapsed} />)}
         </nav>
       </div>
 
-      <div className="flex shrink-0 border-t border-sidebar-border p-4">
+      <div className={`flex shrink-0 border-t border-sidebar-border ${collapsed ? 'p-2' : 'p-4'}`}>
         <div className="group block w-full shrink-0">
-          <div className="flex items-center">
-            <Avatar name={`${user?.firstName} ${user?.lastName}`} src={user?.avatar} />
-            <div className="ml-3">
-              <p className="text-sm font-medium text-sidebar-foreground">{user?.firstName} {user?.lastName}</p>
-              <p className="text-xs font-medium text-sidebar-foreground/50 capitalize">{roleLabel[user?.role || ''] || user?.role} {user?.currentLevel ? `• ${user.currentLevel}` : ''}</p>
+          {collapsed ? (
+            <div className="flex flex-col items-center gap-2">
+              <div title={`${user?.firstName} ${user?.lastName}`}>
+                <Avatar name={`${user?.firstName} ${user?.lastName}`} src={user?.avatar} />
+              </div>
+              <button onClick={logout} className="p-2 rounded-lg text-sidebar-foreground/50 hover:text-white hover:bg-sidebar-accent transition-colors" title="Çıkış Yap">
+                <LogOut size={18} />
+              </button>
             </div>
-            <button onClick={logout} className="ml-auto p-2 rounded-lg text-sidebar-foreground/50 hover:text-white hover:bg-sidebar-accent transition-colors" title="Çıkış Yap">
-              <LogOut size={18} />
-            </button>
-          </div>
+          ) : (
+            <div className="flex items-center">
+              <Avatar name={`${user?.firstName} ${user?.lastName}`} src={user?.avatar} />
+              <div className="ml-3">
+                <p className="text-sm font-medium text-sidebar-foreground">{user?.firstName} {user?.lastName}</p>
+                <p className="text-xs font-medium text-sidebar-foreground/50 capitalize">{roleLabel[user?.role || ''] || user?.role} {user?.currentLevel ? `• ${user.currentLevel}` : ''}</p>
+              </div>
+              <button onClick={logout} className="ml-auto p-2 rounded-lg text-sidebar-foreground/50 hover:text-white hover:bg-sidebar-accent transition-colors" title="Çıkış Yap">
+                <LogOut size={18} />
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </>
@@ -289,14 +330,23 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         )}
       </AnimatePresence>
 
-      <div className="hidden lg:flex lg:w-72 lg:flex-col lg:fixed lg:inset-y-0 bg-sidebar shadow-xl">
-        <SidebarContent />
+      <div className={`hidden lg:flex lg:flex-col lg:fixed lg:inset-y-0 bg-sidebar shadow-xl transition-[width] duration-200 ease-in-out ${isCollapsed ? 'lg:w-16' : 'lg:w-72'}`}>
+        <SidebarContent collapsed={isCollapsed} />
       </div>
 
-      <div className="flex flex-1 flex-col lg:pl-72 w-full">
+      <div className={`flex flex-1 flex-col w-full transition-[padding] duration-200 ease-in-out ${isCollapsed ? 'lg:pl-16' : 'lg:pl-72'}`}>
         <header className="sticky top-0 z-10 flex h-16 flex-shrink-0 items-center gap-x-4 border-b border-border/50 bg-background/80 backdrop-blur-md px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8">
           <button type="button" className="-m-2.5 p-2.5 text-foreground lg:hidden" onClick={() => setIsMobileOpen(true)}>
             <Menu className="h-6 w-6" aria-hidden="true" />
+          </button>
+          {/* Desktop collapse toggle */}
+          <button
+            type="button"
+            onClick={() => setIsCollapsed(c => !c)}
+            className="hidden lg:inline-flex p-2 rounded-lg text-foreground/60 hover:text-foreground hover:bg-secondary/50 transition-colors"
+            title={isCollapsed ? 'Menüyü aç' : 'Menüyü daralt'}
+          >
+            {isCollapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
           </button>
           <div className="flex flex-1 gap-x-4 self-stretch lg:gap-x-6 items-center justify-between">
             <h1 className="text-xl font-bold font-display text-foreground hidden sm:block">
