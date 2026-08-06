@@ -46,9 +46,17 @@ interface Stats {
 }
 
 interface Lead {
-  id: number; name: string; email: string; phone?: string;
-  company?: string; message?: string; source: string; status: string;
-  notes?: string; createdAt: string;
+  id: number | string;
+  rawId?: number | string;
+  name: string;
+  email: string;
+  phone?: string;
+  company?: string;
+  message?: string;
+  source: string; // 'contact_form' | 'ebook_purchase' | eski değerler
+  status: string;
+  notes?: string;
+  createdAt: string;
 }
 
 interface Campaign {
@@ -92,7 +100,10 @@ interface ChatbotConversation {
 }
 
 const RECIPIENT_OPTIONS = [
-  { value: "all", label: "Tüm Kullanıcılar" },
+  { value: "everyone", label: "🌍 Herkes (Kayıtlı + E-Kitap + Lead)" },
+  { value: "all", label: "Kayıtlı Tüm Kullanıcılar" },
+  { value: "ebook_buyers", label: "🛒 E-Kitap Alıcıları (tüm)" },
+  { value: "contact_leads", label: "📝 İletişim Formu Lead'leri" },
   { value: "role:student", label: "Tüm Öğrenciler" },
   { value: "role:teacher", label: "Tüm Öğretmenler" },
   { value: "role:corporate", label: "Kurumsal Yöneticiler" },
@@ -165,6 +176,7 @@ export default function AdminMarketing() {
   // Lead filters
   const [leadSearch, setLeadSearch] = useState("");
   const [leadStatus, setLeadStatus] = useState("all");
+  const [leadSource, setLeadSource] = useState<"all" | "contact_form" | "ebook_purchase">("all");
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [leadNote, setLeadNote] = useState("");
   const [leadStatusEdit, setLeadStatusEdit] = useState("new");
@@ -418,10 +430,24 @@ export default function AdminMarketing() {
   };
 
   const filteredLeads = leads.filter(l => {
-    const matchSearch = !leadSearch || l.name.toLowerCase().includes(leadSearch.toLowerCase()) || l.email.toLowerCase().includes(leadSearch.toLowerCase());
+    const nm = (l.name || "").toLowerCase();
+    const em = (l.email || "").toLowerCase();
+    const q = leadSearch.toLowerCase();
+    const matchSearch = !q || nm.includes(q) || em.includes(q);
     const matchStatus = leadStatus === "all" || l.status === leadStatus;
-    return matchSearch && matchStatus;
+    const matchSource = leadSource === "all" || l.source === leadSource;
+    return matchSearch && matchStatus && matchSource;
   });
+
+  const sourceLabels: Record<string, { label: string; color: string; emoji: string }> = {
+    contact_form: { label: "İletişim Formu", color: "bg-blue-100 text-blue-800", emoji: "📝" },
+    ebook_purchase: { label: "E-Kitap Alıcısı", color: "bg-emerald-100 text-emerald-800", emoji: "🛒" },
+  };
+  const sourceCounts = {
+    all: leads.length,
+    contact_form: leads.filter(l => l.source === "contact_form").length,
+    ebook_purchase: leads.filter(l => l.source === "ebook_purchase").length,
+  };
 
   const levelColors: Record<string, string> = {
     A1: "bg-green-400", A2: "bg-teal-400", B1: "bg-blue-400",
@@ -595,6 +621,15 @@ export default function AdminMarketing() {
               />
             </div>
             <select
+              value={leadSource}
+              onChange={e => setLeadSource(e.target.value as any)}
+              className="bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 outline-none"
+            >
+              <option value="all">Tüm Kaynaklar ({sourceCounts.all})</option>
+              <option value="contact_form">📝 İletişim Formu ({sourceCounts.contact_form})</option>
+              <option value="ebook_purchase">🛒 E-Kitap Alıcısı ({sourceCounts.ebook_purchase})</option>
+            </select>
+            <select
               value={leadStatus}
               onChange={e => setLeadStatus(e.target.value)}
               className="bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 outline-none"
@@ -617,6 +652,7 @@ export default function AdminMarketing() {
                   <tr className="border-b border-gray-100 bg-gray-50">
                     <th className="px-4 py-3 text-left font-medium text-gray-600">Ad Soyad</th>
                     <th className="px-4 py-3 text-left font-medium text-gray-600">E-posta</th>
+                    <th className="px-4 py-3 text-left font-medium text-gray-600">Kaynak</th>
                     <th className="px-4 py-3 text-left font-medium text-gray-600 hidden md:table-cell">Şirket</th>
                     <th className="px-4 py-3 text-left font-medium text-gray-600">Durum</th>
                     <th className="px-4 py-3 text-left font-medium text-gray-600 hidden md:table-cell">Tarih</th>
@@ -624,29 +660,42 @@ export default function AdminMarketing() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
-                  {filteredLeads.map(lead => (
-                    <tr key={lead.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-3 font-medium text-gray-800">{lead.name}</td>
-                      <td className="px-4 py-3 text-gray-500">{lead.email}</td>
-                      <td className="px-4 py-3 text-gray-500 hidden md:table-cell">{lead.company || "—"}</td>
-                      <td className="px-4 py-3">
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_LABELS[lead.status]?.color || "bg-gray-100 text-gray-500"}`}>
-                          {STATUS_LABELS[lead.status]?.label || lead.status}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-gray-400 hidden md:table-cell text-xs">
-                        {new Date(lead.createdAt).toLocaleDateString("tr-TR")}
-                      </td>
-                      <td className="px-4 py-3">
-                        <button
-                          onClick={() => { setSelectedLead(lead); setLeadStatusEdit(lead.status); setLeadNote(lead.notes || ""); }}
-                          className="text-blue-500 hover:text-blue-700 text-xs underline"
-                        >
-                          Detay
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
+                  {filteredLeads.map(lead => {
+                    const src = sourceLabels[lead.source];
+                    return (
+                      <tr key={lead.id} className="hover:bg-gray-50">
+                        <td className="px-4 py-3 font-medium text-gray-800">{lead.name || "—"}</td>
+                        <td className="px-4 py-3 text-gray-500">{lead.email}</td>
+                        <td className="px-4 py-3">
+                          {src ? (
+                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium ${src.color}`}>
+                              <span>{src.emoji}</span>
+                              {src.label}
+                            </span>
+                          ) : (
+                            <span className="text-gray-400 text-xs">{lead.source || "—"}</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-gray-500 hidden md:table-cell">{lead.company || "—"}</td>
+                        <td className="px-4 py-3">
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_LABELS[lead.status]?.color || "bg-gray-100 text-gray-500"}`}>
+                            {STATUS_LABELS[lead.status]?.label || lead.status}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-gray-400 hidden md:table-cell text-xs">
+                          {new Date(lead.createdAt).toLocaleDateString("tr-TR")}
+                        </td>
+                        <td className="px-4 py-3">
+                          <button
+                            onClick={() => { setSelectedLead(lead); setLeadStatusEdit(lead.status); setLeadNote(lead.notes || ""); }}
+                            className="text-blue-500 hover:text-blue-700 text-xs underline"
+                          >
+                            Detay
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -668,21 +717,29 @@ export default function AdminMarketing() {
                   <p><span className="text-gray-400">Kaynak:</span> {selectedLead.source}</p>
                   <p><span className="text-gray-400">Tarih:</span> {new Date(selectedLead.createdAt).toLocaleString("tr-TR")}</p>
                 </div>
-                <div className="space-y-3">
-                  <div>
-                    <label className="text-xs font-medium text-gray-600 mb-1 block">Durum</label>
-                    <select value={leadStatusEdit} onChange={e => setLeadStatusEdit(e.target.value)} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none">
-                      {Object.entries(STATUS_LABELS).map(([v, { label }]) => <option key={v} value={v}>{label}</option>)}
-                    </select>
+                {selectedLead.source === "ebook_purchase" ? (
+                  <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-3 text-xs text-emerald-900">
+                    🛒 <strong>E-Kitap Alıcısı</strong> — bu bir satın alma kaydından türetildi.
+                    Durum/not güncellenemez. Bu müşteriye e-posta göndermek için sağ üstteki "E-posta" sekmesinden
+                    <strong> "E-Kitap Alıcıları"</strong> segmentini kullanın.
                   </div>
-                  <div>
-                    <label className="text-xs font-medium text-gray-600 mb-1 block">Notlar</label>
-                    <textarea value={leadNote} onChange={e => setLeadNote(e.target.value)} rows={3} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none resize-none" placeholder="Dahili not ekle..." />
+                ) : (
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-xs font-medium text-gray-600 mb-1 block">Durum</label>
+                      <select value={leadStatusEdit} onChange={e => setLeadStatusEdit(e.target.value)} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none">
+                        {Object.entries(STATUS_LABELS).map(([v, { label }]) => <option key={v} value={v}>{label}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-gray-600 mb-1 block">Notlar</label>
+                      <textarea value={leadNote} onChange={e => setLeadNote(e.target.value)} rows={3} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none resize-none" placeholder="Dahili not ekle..." />
+                    </div>
+                    <button onClick={updateLead} className="w-full bg-blue-600 text-white rounded-lg py-2 text-sm font-medium hover:bg-blue-700 transition">
+                      Kaydet
+                    </button>
                   </div>
-                  <button onClick={updateLead} className="w-full bg-blue-600 text-white rounded-lg py-2 text-sm font-medium hover:bg-blue-700 transition">
-                    Kaydet
-                  </button>
-                </div>
+                )}
               </div>
             </div>
           )}

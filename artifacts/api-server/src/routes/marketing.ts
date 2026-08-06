@@ -243,9 +243,77 @@ router.get(
   requireRole("admin"),
   async (req: AuthRequest, res: Response) => {
     try {
-      const leads = await db.select().from(contactLeadsTable).orderBy(desc(contactLeadsTable.createdAt)).limit(200);
-      return res.json(leads);
-    } catch {
+      // ?source=contact_form | ebook_purchase | all (default: all)
+      const source = String((req.query.source ?? "all")).toLowerCase();
+
+      // Contact form lead'leri
+      const contactLeads =
+        source === "ebook_purchase"
+          ? []
+          : (await db
+              .select()
+              .from(contactLeadsTable)
+              .orderBy(desc(contactLeadsTable.createdAt))
+              .limit(500)
+            ).map((l: any) => ({
+              id: `contact-${l.id}`,
+              rawId: l.id,
+              source: "contact_form" as const,
+              email: l.email,
+              name: l.name,
+              phone: l.phone ?? null,
+              company: l.company ?? null,
+              message: l.message ?? null,
+              status: l.status ?? "new",
+              notes: l.notes ?? null,
+              createdAt: l.createdAt,
+            }));
+
+      // E-kitap alıcıları — success statülü satın alanlar, unique email
+      let ebookLeads: any[] = [];
+      if (source !== "contact_form") {
+        const rows = await db.execute(sql`
+          SELECT DISTINCT ON (buyer_email)
+            buyer_email, buyer_name, buyer_phone, created_at
+          FROM ebook_purchases
+          WHERE payment_status = 'success' AND buyer_email IS NOT NULL AND buyer_email != ''
+          ORDER BY buyer_email, created_at DESC
+          LIMIT 1000
+        `);
+        ebookLeads = ((rows.rows ?? rows) as any[]).map((r: any) => ({
+          id: `ebook-${r.buyer_email}`,
+          rawId: r.buyer_email,
+          source: "ebook_purchase" as const,
+          email: r.buyer_email,
+          name: r.buyer_name || null,
+          phone: r.buyer_phone || null,
+          company: null,
+          message: null,
+          status: "customer",
+          notes: null,
+          createdAt: r.created_at,
+        }));
+      }
+
+      // Birleştir + email bazında deduplicate (contact form önce, ebook alıcı ikinci)
+      const seen = new Set<string>();
+      const merged: any[] = [];
+      for (const l of [...contactLeads, ...ebookLeads]) {
+        const key = String(l.email || "").toLowerCase();
+        if (!key || seen.has(key)) continue;
+        seen.add(key);
+        merged.push(l);
+      }
+      // Tarihe göre sırala (yeni önce)
+      merged.sort((a, b) => {
+        const at = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const bt = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return bt - at;
+      });
+
+      return res.json(merged.slice(0, 500));
+    } catch (e: any) {
+      console.error("[marketing/leads] HATA:", e?.message);
       return res.status(500).json({ error: "Leadler alınamadı." });
     }
   }
@@ -306,18 +374,103 @@ function extractNameFromEmail(email: string): string {
   return first.charAt(0).toUpperCase() + first.slice(1).toLowerCase();
 }
 
+/** Synthetic user object from an email (not registered in usersTable) */
+function syntheticUser(email: string, name?: string | null) {
+  const first = name ? name.split(" ")[0] : "";
+  const last = name && name.split(" ").length > 1 ? name.split(" ").slice(1).join(" ") : "";
+  return {
+    email: email.trim().toLowerCase(),
+    firstName: first,
+    lastName: last,
+    role: "student" as any,
+    id: 0,
+    passwordHash: "",
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    currentLevel: null as any,
+    profilePicture: null,
+    isActive: true,
+    lastLoginAt: null,
+  };
+}
+
+async function getEbookBuyerEmails(): Promise<Array<{ email: string; name: string | null }>> {
+  const rows = await db.execute(sql`
+    SELECT DISTINCT ON (buyer_email) buyer_email AS email, buyer_name AS name
+    FROM ebook_purchases
+    WHERE payment_status = 'success' AND buyer_email IS NOT NULL AND buyer_email != ''
+    ORDER BY buyer_email, created_at DESC
+  `);
+  return ((rows.rows ?? rows) as any[]).map((r) => ({
+    email: String(r.email).toLowerCase(),
+    name: r.name || null,
+  }));
+}
+
+async function getContactLeadEmails(): Promise<Array<{ email: string; name: string | null }>> {
+  const rows = await db
+    .select({ email: contactLeadsTable.email, name: contactLeadsTable.name })
+    .from(contactLeadsTable);
+  return rows
+    .filter((r) => r.email)
+    .map((r) => ({ email: r.email.toLowerCase(), name: r.name ?? null }));
+}
+
 async function getFilteredUsers(filter: string, customEmails?: string[]) {
   if (filter === "custom" && customEmails && customEmails.length > 0) {
     const emails = customEmails.map(e => e.trim().toLowerCase()).filter(Boolean);
-    // Return synthetic user objects for custom emails (may or may not be in DB)
     const dbUsers = await db.select().from(usersTable).where(inArray(usersTable.email, emails));
     const dbEmails = dbUsers.map(u => u.email.toLowerCase());
-    // Add any emails not found in DB as minimal user objects
     const extraUsers = emails
       .filter(e => !dbEmails.includes(e))
-      .map(e => ({ email: e, firstName: "", lastName: "", role: "student" as any, id: 0, passwordHash: "", createdAt: new Date(), updatedAt: new Date(), currentLevel: null as any, profilePicture: null, isActive: true, lastLoginAt: null }));
+      .map(e => syntheticUser(e));
     return [...dbUsers, ...extraUsers];
   }
+
+  // ─── Ebook buyers — sadece e-kitap alanlar ─────────────────────────────
+  if (filter === "ebook_buyers") {
+    const buyers = await getEbookBuyerEmails();
+    const emails = buyers.map(b => b.email);
+    if (emails.length === 0) return [];
+    const dbUsers = await db.select().from(usersTable).where(inArray(usersTable.email, emails));
+    const dbEmails = new Set(dbUsers.map(u => u.email.toLowerCase()));
+    const extraUsers = buyers
+      .filter(b => !dbEmails.has(b.email))
+      .map(b => syntheticUser(b.email, b.name));
+    return [...dbUsers, ...extraUsers];
+  }
+
+  // ─── Contact form lead'leri ────────────────────────────────────────────
+  if (filter === "contact_leads") {
+    const leads = await getContactLeadEmails();
+    const emails = leads.map(l => l.email);
+    if (emails.length === 0) return [];
+    const dbUsers = await db.select().from(usersTable).where(inArray(usersTable.email, emails));
+    const dbEmails = new Set(dbUsers.map(u => u.email.toLowerCase()));
+    const extraUsers = leads
+      .filter(l => !dbEmails.has(l.email))
+      .map(l => syntheticUser(l.email, l.name));
+    return [...dbUsers, ...extraUsers];
+  }
+
+  // ─── Herkes — kayıtlı users + ebook buyers + contact leads (dedupe) ────
+  if (filter === "everyone") {
+    const [users, buyers, leads] = await Promise.all([
+      db.select().from(usersTable),
+      getEbookBuyerEmails(),
+      getContactLeadEmails(),
+    ]);
+    const seen = new Set(users.map(u => u.email.toLowerCase()));
+    const extras: any[] = [];
+    for (const b of buyers) {
+      if (!seen.has(b.email)) { seen.add(b.email); extras.push(syntheticUser(b.email, b.name)); }
+    }
+    for (const l of leads) {
+      if (!seen.has(l.email)) { seen.add(l.email); extras.push(syntheticUser(l.email, l.name)); }
+    }
+    return [...users, ...extras];
+  }
+
   if (filter === "all") {
     return db.select().from(usersTable);
   }
