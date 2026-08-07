@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   RefreshCw, FileText, ExternalLink, RotateCw, XCircle, CheckCircle2,
   AlertTriangle, Clock, Ban, PlayCircle, X, ClipboardCopy, Loader2,
-  Search, ShoppingBag, Package, ShieldCheck,
+  Search, ShoppingBag, Package, ShieldCheck, FileCheck2, AlertCircle,
 } from "lucide-react";
 import { API } from "@/lib/api-url";
 
@@ -293,6 +293,10 @@ export default function AdminInvoices() {
           <StatTile label="Başarısız"  count={counts.failed} color="red" icon={XCircle} />
           <StatTile label="İptal"      count={counts.canceled} color="gray" icon={Ban} />
         </div>
+
+        {/* Faturalanmamış Siparişler paneli */}
+        <UnbilledOrdersPanel onIssued={load} />
+
 
         {/* Filters */}
         <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -783,6 +787,208 @@ function Row({ label, value, bold }: { label: string; value: string; bold?: bool
     <div className={`flex justify-between text-sm ${bold ? "font-bold text-gray-900" : "text-gray-700"}`}>
       <span>{label}</span>
       <span>{value}</span>
+    </div>
+  );
+}
+
+// ─── Faturalanmamış Siparişler paneli ─────────────────────────────────
+type UnbilledOrder = {
+  order_key: string;
+  order_id: string | null;
+  first_id: number;
+  buyer_email: string;
+  buyer_name: string | null;
+  invoice_type: string | null;
+  tax_id: string | null;
+  company_name: string | null;
+  total_amount: string;
+  currency: string;
+  item_count: number;
+  created_at: string;
+  paid_at: string | null;
+};
+
+function UnbilledOrdersPanel({ onIssued }: { onIssued: () => void }) {
+  const [orders, setOrders] = useState<UnbilledOrder[]>([]);
+  const [env, setEnv] = useState<string>("");
+  const [loading, setLoading] = useState(true);
+  const [issuing, setIssuing] = useState<Set<number>>(new Set());
+  const [expanded, setExpanded] = useState(true);
+
+  async function load() {
+    setLoading(true);
+    try {
+      const d = await apiFetch("/admin/invoices/unbilled");
+      setOrders(d.orders ?? []);
+      setEnv(d.env ?? "");
+    } catch (e: any) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  }
+  useEffect(() => { load(); }, []);
+
+  async function issue(order: UnbilledOrder) {
+    if (!confirm(`${order.buyer_email} için ${formatTRY(Number(order.total_amount) * 100)} tutarında fatura kesilsin mi?\n\nOrtam: ${env.toUpperCase()}`)) {
+      return;
+    }
+    setIssuing(prev => new Set(prev).add(order.first_id));
+    try {
+      const r = await apiFetch("/admin/invoices/issue-for-purchase", {
+        method: "POST",
+        body: JSON.stringify({
+          purchaseId: order.first_id,
+          orderId: order.order_id || undefined,
+        }),
+      });
+      if (r.ok) {
+        alert(`✓ Fatura kesildi\nKod: ${r.externalInvoiceCode}\nETTN: ${r.ettn}`);
+        load();
+        onIssued();
+      } else {
+        alert(`Hata: ${r.error || "Bilinmeyen"}`);
+      }
+    } catch (e: any) {
+      alert(`Hata: ${e?.message}`);
+    } finally {
+      setIssuing(prev => {
+        const n = new Set(prev);
+        n.delete(order.first_id);
+        return n;
+      });
+    }
+  }
+
+  async function issueAll() {
+    if (!confirm(`${orders.length} sipariş için toplu fatura kesilsin mi?\n\nOrtam: ${env.toUpperCase()}\n\nBu işlem birkaç dakika sürebilir, sayfayı kapatmayın.`)) {
+      return;
+    }
+    for (const order of orders) {
+      // Sırayla — paralel yaparsak Luca rate limit yiyebilir
+      try {
+        setIssuing(prev => new Set(prev).add(order.first_id));
+        await apiFetch("/admin/invoices/issue-for-purchase", {
+          method: "POST",
+          body: JSON.stringify({
+            purchaseId: order.first_id,
+            orderId: order.order_id || undefined,
+          }),
+        });
+      } catch (e) {
+        console.warn("issue failed for", order.first_id, e);
+      } finally {
+        setIssuing(prev => {
+          const n = new Set(prev);
+          n.delete(order.first_id);
+          return n;
+        });
+      }
+      // 500ms bekle — Luca'yı yormayalım
+      await new Promise(r => setTimeout(r, 500));
+    }
+    load();
+    onIssued();
+    alert("Toplu kesme tamamlandı");
+  }
+
+  if (loading) {
+    return (
+      <div className="mb-6 rounded-lg bg-white p-4 shadow ring-1 ring-gray-200">
+        <Loader2 className="h-4 w-4 animate-spin text-gray-400 mx-auto" />
+      </div>
+    );
+  }
+
+  if (orders.length === 0) return null;
+
+  return (
+    <div className="mb-6 rounded-lg border-2 border-amber-300 bg-amber-50 shadow-sm overflow-hidden">
+      <button
+        onClick={() => setExpanded(e => !e)}
+        className="w-full flex items-center justify-between px-4 py-3 hover:bg-amber-100/50 transition"
+      >
+        <div className="flex items-center gap-2">
+          <AlertCircle className="h-5 w-5 text-amber-600" />
+          <div className="text-left">
+            <div className="font-semibold text-amber-900">
+              {orders.length} sipariş faturalanmamış
+            </div>
+            <div className="text-xs text-amber-700">
+              {env.toUpperCase()} ortamında bu siparişlerin faturası yok — tıkla kes
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          {expanded && (
+            <button
+              onClick={(e) => { e.stopPropagation(); issueAll(); }}
+              disabled={issuing.size > 0}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 px-3 py-1.5 text-xs font-bold text-white shadow-sm disabled:opacity-50"
+            >
+              {issuing.size > 0 ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileCheck2 className="h-3.5 w-3.5" />}
+              Hepsini Kes ({orders.length})
+            </button>
+          )}
+          <span className="text-amber-600 text-xs">{expanded ? '▲' : '▼'}</span>
+        </div>
+      </button>
+
+      {expanded && (
+        <div className="border-t border-amber-200 max-h-[400px] overflow-y-auto">
+          <table className="min-w-full text-sm">
+            <thead className="bg-amber-100/50 sticky top-0">
+              <tr>
+                <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wider text-amber-900">Alıcı</th>
+                <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wider text-amber-900">Ürün</th>
+                <th className="px-3 py-2 text-right text-[11px] font-semibold uppercase tracking-wider text-amber-900">Tutar</th>
+                <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wider text-amber-900">Tarih</th>
+                <th className="px-3 py-2"></th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-amber-200/50 bg-white">
+              {orders.map((o) => {
+                const isIssuing = issuing.has(o.first_id);
+                return (
+                  <tr key={o.order_key} className="hover:bg-amber-50/30">
+                    <td className="px-3 py-2">
+                      <div className="font-medium text-gray-900 text-sm">{o.buyer_name || "—"}</div>
+                      <div className="text-xs text-gray-500">{o.buyer_email}</div>
+                      {o.invoice_type === "corporate" && (
+                        <div className="text-[10px] text-indigo-700 mt-0.5">
+                          🏢 {o.company_name || "Kurumsal"} · VKN: {o.tax_id || "—"}
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-3 py-2 text-xs text-gray-600">
+                      {o.item_count > 1 ? `🛒 Sepet · ${o.item_count} kitap` : "📚 1 kitap"}
+                    </td>
+                    <td className="px-3 py-2 text-right font-semibold text-gray-900">
+                      {formatTRY(Number(o.total_amount) * 100)}
+                    </td>
+                    <td className="px-3 py-2 text-xs text-gray-500">
+                      {formatDate(o.paid_at ?? o.created_at)}
+                    </td>
+                    <td className="px-3 py-2 text-right">
+                      <button
+                        onClick={() => issue(o)}
+                        disabled={isIssuing}
+                        className="inline-flex items-center gap-1 rounded bg-emerald-600 hover:bg-emerald-700 px-2.5 py-1 text-xs font-semibold text-white disabled:opacity-50"
+                      >
+                        {isIssuing ? (
+                          <><Loader2 className="h-3 w-3 animate-spin" /> Kesiliyor…</>
+                        ) : (
+                          <><FileCheck2 className="h-3 w-3" /> Kes</>
+                        )}
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }

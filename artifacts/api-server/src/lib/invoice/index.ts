@@ -37,11 +37,14 @@ function getProvider(): InvoiceProvider {
  *   if (r.ok) console.log(r.ettn);
  */
 export async function issueInvoiceForSource(input: IssueInvoiceInput): Promise<IssueInvoiceResult & { skipped?: boolean }> {
-  // Idempotency: aynı kaynak için sent/pending kayıt varsa skip
+  const provider = getProvider();
+  // Idempotency: aynı kaynak için AYNI env'de sent/pending kayıt varsa skip
+  // (test env'de kesilen fatura prod'da yeniden kesilebilsin)
   try {
     const existing = await db.execute(sql`
       SELECT id, ettn, status, viewer_url FROM invoices
       WHERE source_type = ${input.source.type} AND source_id = ${input.source.id}
+        AND env = ${provider.env}
         AND status IN ('sent','pending')
       LIMIT 1
     `);
@@ -74,7 +77,7 @@ export async function issueInvoiceForSource(input: IssueInvoiceInput): Promise<I
   }
   const totalKurus = subtotalKurus + vatKurus;
 
-  const provider = getProvider();
+  // provider zaten yukarıda tanımlandı (idempotency check için)
   const invoiceType = decideInvoiceType(input.buyer);
 
   // Pending DB kaydı — provider çağrısı öncesi
