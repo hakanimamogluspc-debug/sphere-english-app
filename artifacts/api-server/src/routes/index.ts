@@ -75,6 +75,7 @@ import adminInvoicesRouter from "./admin-invoices";
 import metaCatalogFeedRouter from "./meta-catalog-feed";
 import adminMailTemplatesRouter from "./admin-mail-templates";
 import mailAssetsRouter from "./mail-assets";
+import demoRouter from "./demo";
 import { requireSubscription } from "../middlewares/require-subscription";
 import { authMiddleware } from "../middlewares/auth";
 
@@ -131,6 +132,7 @@ router.use(adminInvoicesRouter);
 router.use(metaCatalogFeedRouter);
 router.use(adminMailTemplatesRouter);
 router.use(mailAssetsRouter);
+router.use(demoRouter);
 router.use(adminEbooksRouter);
 router.use(adminEbookPurchasesRouter);
 router.use(webAnalyticsRouter);

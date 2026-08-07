@@ -571,6 +571,66 @@ async function runStartupMigrations() {
          AND i.env = 'prod'
          AND p.id = i.source_id
          AND (p.invoice_status IS NULL OR p.invoice_status = 'pending')`,
+
+    // ─── Demo Randevu Sistemi ────────────────────────────────────────
+    // Haftalık recurring mesai saatleri (day_of_week: 0=Pzr, 1=Pzt, ..., 6=Cts)
+    `CREATE TABLE IF NOT EXISTS demo_availability (
+      id SERIAL PRIMARY KEY,
+      day_of_week INTEGER NOT NULL CHECK (day_of_week BETWEEN 0 AND 6),
+      start_time TIME NOT NULL,
+      end_time TIME NOT NULL,
+      is_active BOOLEAN NOT NULL DEFAULT TRUE,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      UNIQUE(day_of_week)
+    )`,
+    // Default: Pzt-Cts 09:00-18:00, Pazar kapalı
+    `INSERT INTO demo_availability (day_of_week, start_time, end_time, is_active) VALUES
+       (0, '09:00', '18:00', FALSE),
+       (1, '09:00', '18:00', TRUE),
+       (2, '09:00', '18:00', TRUE),
+       (3, '09:00', '18:00', TRUE),
+       (4, '09:00', '18:00', TRUE),
+       (5, '09:00', '18:00', TRUE),
+       (6, '09:00', '18:00', TRUE)
+     ON CONFLICT (day_of_week) DO NOTHING`,
+
+    // Spesifik tarih engellemeleri (izin, tatil, meeting)
+    `CREATE TABLE IF NOT EXISTS demo_blocks (
+      id SERIAL PRIMARY KEY,
+      block_date DATE NOT NULL,
+      start_time TIME,
+      end_time TIME,
+      reason VARCHAR(200),
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`,
+    `CREATE INDEX IF NOT EXISTS demo_blocks_date_idx ON demo_blocks(block_date)`,
+
+    // Rezervasyonlar
+    `CREATE TABLE IF NOT EXISTS demo_bookings (
+      id SERIAL PRIMARY KEY,
+      booking_date DATE NOT NULL,
+      start_time TIME NOT NULL,
+      end_time TIME NOT NULL,
+      duration_min INTEGER NOT NULL DEFAULT 30,
+      customer_name VARCHAR(200) NOT NULL,
+      customer_email VARCHAR(200) NOT NULL,
+      customer_phone VARCHAR(50),
+      customer_company VARCHAR(300),
+      message TEXT,
+      status VARCHAR(20) NOT NULL DEFAULT 'confirmed',
+      admin_notes TEXT,
+      meeting_link VARCHAR(500),
+      reminded_at TIMESTAMPTZ,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`,
+    `CREATE UNIQUE INDEX IF NOT EXISTS demo_bookings_slot_unique
+       ON demo_bookings(booking_date, start_time)
+       WHERE status = 'confirmed'`,
+    `CREATE INDEX IF NOT EXISTS demo_bookings_date_idx ON demo_bookings(booking_date DESC)`,
+    `CREATE INDEX IF NOT EXISTS demo_bookings_email_idx ON demo_bookings(customer_email)`,
+
     // Mevcut source_id INTEGER kolonunu BIGINT'e migrate et (Date.now() timestamp'leri INTEGER max'ı aşıyor)
     `DO $$ BEGIN
        IF EXISTS (
