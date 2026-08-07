@@ -335,6 +335,10 @@ export class LucaProvider implements InvoiceProvider {
               <ein:BoulevardAveneuStreetName>${xmlEscape(this.cfg.companyAddress)}</ein:BoulevardAveneuStreetName>
               <ein:CityCode>${xmlEscape(this.cfg.companyCityCode)}</ein:CityCode>
               <ein:CityName>${xmlEscape(this.cfg.companyCity)}</ein:CityName>
+              <ein:TaxOfficeCode>0</ein:TaxOfficeCode>
+              <ein:TaxOfficeName>${xmlEscape(this.cfg.companyTaxOffice)}</ein:TaxOfficeName>
+              <ein:TownCode>0</ein:TownCode>
+              <ein:TownName>${xmlEscape(this.cfg.companyDistrict)}</ein:TownName>
               <ein:EMail>info@sphereenglish.com</ein:EMail>
             </ein:CompanyBranchAddress>
             <ein:CrossRate>0</ein:CrossRate>
@@ -358,7 +362,9 @@ ${paymentNote}
                 <ein:BoulevardAveneuStreetName>${xmlEscape(buyer.address ?? "")}</ein:BoulevardAveneuStreetName>
                 <ein:CityCode>0</ein:CityCode>
                 <ein:CityName>${xmlEscape(buyer.city ?? "")}</ein:CityName>
+                <ein:TownCode>0</ein:TownCode>
                 <ein:TownName>${xmlEscape(buyer.district ?? "")}</ein:TownName>
+                <ein:PostalCode>${xmlEscape(buyer.postalCode ?? "")}</ein:PostalCode>
                 <ein:EMail>${xmlEscape(buyer.email)}</ein:EMail>
               </ein:Address>
               <ein:ReceiverName>${xmlEscape(receiverName)}</ein:ReceiverName>
@@ -366,8 +372,14 @@ ${paymentNote}
               <ein:SendingType>KAGIT</ein:SendingType>
             </ein:Receiver>
             <ein:ReceiverBranchAddress>
+              <ein:BoulevardAveneuStreetName>${xmlEscape(buyer.address ?? "")}</ein:BoulevardAveneuStreetName>
               <ein:CityCode>0</ein:CityCode>
               <ein:CityName>${xmlEscape(buyer.city ?? "")}</ein:CityName>
+              <ein:TownCode>0</ein:TownCode>
+              <ein:TownName>${xmlEscape(buyer.district ?? "")}</ein:TownName>
+              <ein:PostalCode>${xmlEscape(buyer.postalCode ?? "")}</ein:PostalCode>
+              <ein:TaxOfficeCode>0</ein:TaxOfficeCode>
+              <ein:TaxOfficeName>${xmlEscape(buyer.taxOffice ?? "")}</ein:TaxOfficeName>
               <ein:EMail>${xmlEscape(buyer.email)}</ein:EMail>
             </ein:ReceiverBranchAddress>
             <ein:SendMailAutomatically>${input.sendMailAutomatically !== false ? "true" : "false"}</ein:SendMailAutomatically>
