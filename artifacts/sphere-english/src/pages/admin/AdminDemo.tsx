@@ -79,7 +79,7 @@ function fmtDateTime(iso: string) {
 
 // ─── Ana bileşen ──────────────────────────────────────────────────────
 export default function AdminDemo() {
-  const [tab, setTab] = useState<"bookings" | "hours" | "blocks">("bookings");
+  const [tab, setTab] = useState<"calendar" | "bookings" | "hours" | "blocks">("calendar");
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -90,16 +90,18 @@ export default function AdminDemo() {
             Demo Randevu Sistemi
           </h1>
           <p className="mt-1 text-sm text-gray-500">
-            Rezervasyonları yönet, mesai saatlerini ayarla, izin günlerini blockla.
+            Takvimden randevu ekle, rezervasyonları yönet, mesai saatlerini ayarla.
           </p>
         </div>
 
         <div className="mb-4 flex gap-1 rounded-lg bg-white p-1 shadow-sm ring-1 ring-gray-200 w-fit">
+          <TabBtn icon={Calendar} label="Takvim" active={tab === "calendar"} onClick={() => setTab("calendar")} />
           <TabBtn icon={Users} label="Rezervasyonlar" active={tab === "bookings"} onClick={() => setTab("bookings")} />
           <TabBtn icon={Clock} label="Mesai Saatleri" active={tab === "hours"} onClick={() => setTab("hours")} />
           <TabBtn icon={Ban} label="İzin & Blok" active={tab === "blocks"} onClick={() => setTab("blocks")} />
         </div>
 
+        {tab === "calendar" && <CalendarTab />}
         {tab === "bookings" && <BookingsTab />}
         {tab === "hours" && <HoursTab />}
         {tab === "blocks" && <BlocksTab />}
@@ -576,6 +578,423 @@ function AddBlockModal({ onClose, onAdded }: { onClose: () => void; onAdded: () 
             </button>
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── TAB 0: Takvim (admin görünümü) ───────────────────────────────────
+const MONTH_LABELS = [
+  "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran",
+  "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık",
+];
+
+function fmtMonthKey(y: number, m: number): string {
+  return `${y}-${String(m + 1).padStart(2, "0")}`;
+}
+function fmtDateKey(y: number, m: number, d: number): string {
+  return `${y}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+}
+
+type CalSlot = {
+  start: string;
+  end: string;
+  available: boolean;
+  reason?: string;
+  booking?: Booking;
+  isBlocked?: boolean;
+};
+
+function CalendarTab() {
+  const today = useMemo(() => new Date(), []);
+  const [year, setYear] = useState(today.getFullYear());
+  const [month, setMonth] = useState(today.getMonth());
+  const [days, setDays] = useState<Record<string, string>>({});
+  const [loadingMonth, setLoadingMonth] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [slots, setSlots] = useState<CalSlot[]>([]);
+  const [loadingSlots, setLoadingSlots] = useState(false);
+  const [slotAction, setSlotAction] = useState<{ slot: CalSlot; date: string } | null>(null);
+
+  async function loadMonth() {
+    setLoadingMonth(true);
+    try {
+      const key = fmtMonthKey(year, month);
+      const d = await apiFetch(`/demo/availability?month=${key}`);
+      setDays(d.days ?? {});
+    } finally { setLoadingMonth(false); }
+  }
+  useEffect(() => { loadMonth(); }, [year, month]);
+
+  async function loadSlotsForDate(date: string) {
+    setLoadingSlots(true);
+    try {
+      const [slotsRes, bookRes] = await Promise.all([
+        apiFetch(`/demo/slots?date=${date}`),
+        apiFetch(`/admin/demo/bookings?status=confirmed`).catch(() => ({ bookings: [] })),
+      ]);
+      const rawSlots: CalSlot[] = slotsRes.slots ?? [];
+      const bookings: Booking[] = (bookRes.bookings ?? []).filter((b: Booking) => b.booking_date === date);
+
+      const enriched: CalSlot[] = rawSlots.map((s) => {
+        const booking = bookings.find((b) => fmtTime(b.start_time) === s.start);
+        return {
+          ...s,
+          booking,
+          isBlocked: !s.available && !booking && s.reason !== "too-soon",
+        };
+      });
+      setSlots(enriched);
+    } finally { setLoadingSlots(false); }
+  }
+
+  useEffect(() => {
+    if (selectedDate) loadSlotsForDate(selectedDate);
+    else setSlots([]);
+  }, [selectedDate]);
+
+  function prevMonth() {
+    const d = new Date(year, month - 1, 1);
+    setYear(d.getFullYear()); setMonth(d.getMonth());
+    setSelectedDate(null); setSlots([]);
+  }
+  function nextMonth() {
+    const d = new Date(year, month + 1, 1);
+    setYear(d.getFullYear()); setMonth(d.getMonth());
+    setSelectedDate(null); setSlots([]);
+  }
+
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const firstDayOfMonth = new Date(year, month, 1).getDay();
+  const startOffset = (firstDayOfMonth + 6) % 7;
+
+  const cells: Array<{ day: number | null; date?: string; status?: string }> = [];
+  for (let i = 0; i < startOffset; i++) cells.push({ day: null });
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = fmtDateKey(year, month, d);
+    cells.push({ day: d, date: dateStr, status: days[dateStr] });
+  }
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="bg-white rounded-lg shadow ring-1 ring-gray-200 p-5">
+        <div className="flex items-center justify-between mb-4">
+          <button onClick={prevMonth} className="p-2 rounded-lg hover:bg-gray-100 text-gray-600">‹</button>
+          <div className="text-lg font-bold text-gray-900">{MONTH_LABELS[month]} {year}</div>
+          <button onClick={nextMonth} className="p-2 rounded-lg hover:bg-gray-100 text-gray-600">›</button>
+        </div>
+
+        <div className="grid grid-cols-7 gap-1 mb-2 text-center text-[11px] font-semibold text-gray-500">
+          {["Pzt", "Sal", "Çar", "Per", "Cum", "Cts", "Pzr"].map((d) => <div key={d}>{d}</div>)}
+        </div>
+
+        <div className="grid grid-cols-7 gap-1 relative">
+          {loadingMonth && <div className="absolute inset-0 bg-white/60 flex items-center justify-center z-10 text-xs text-gray-500">Yükleniyor…</div>}
+          {cells.map((c, i) => {
+            if (c.day === null) return <div key={i} className="aspect-square" />;
+            const isSelected = selectedDate === c.date;
+            const status = c.status;
+
+            let cls = "aspect-square rounded-lg flex items-center justify-center text-sm cursor-pointer transition ";
+            if (isSelected) cls += "bg-indigo-600 text-white font-bold shadow-md";
+            else if (status === "available") cls += "bg-emerald-50 text-emerald-800 hover:bg-emerald-100 font-semibold";
+            else if (status === "full") cls += "bg-amber-100 text-amber-700 hover:bg-amber-200 font-semibold";
+            else if (status === "blocked") cls += "bg-red-50 text-red-600 hover:bg-red-100";
+            else if (status === "closed") cls += "bg-gray-50 text-gray-400 hover:bg-gray-100";
+            else if (status === "past") cls += "bg-gray-100 text-gray-400 hover:bg-gray-200 italic";
+            else cls += "text-gray-400";
+
+            return (
+              <button key={i} onClick={() => setSelectedDate(c.date!)} className={cls}>{c.day}</button>
+            );
+          })}
+        </div>
+
+        <div className="mt-4 flex flex-wrap gap-3 text-[11px]">
+          <div className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-emerald-100 border border-emerald-300"></span>Müsait</div>
+          <div className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-amber-200"></span>Dolu</div>
+          <div className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-red-100"></span>Engelli</div>
+          <div className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-gray-100"></span>Mesai dışı</div>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-lg shadow ring-1 ring-gray-200 p-5">
+        {!selectedDate ? (
+          <div className="text-center py-16 text-gray-400 text-sm">
+            <Calendar className="mx-auto h-10 w-10 mb-2 opacity-40" />
+            <p>Takvimden bir gün seçin</p>
+          </div>
+        ) : (
+          <>
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-wider text-indigo-600">Seçili gün</p>
+                <h3 className="text-lg font-bold text-gray-900">{fmtDate(selectedDate)}</h3>
+              </div>
+            </div>
+
+            {loadingSlots ? (
+              <div className="text-center py-8"><Loader2 className="mx-auto h-5 w-5 animate-spin text-gray-400" /></div>
+            ) : slots.length === 0 ? (
+              <div className="text-center py-8 text-sm text-gray-500">
+                Bu gün için mesai tanımlı değil. Yine de manuel randevu eklemek için aşağıdaki butonu kullanabilirsin.
+                <button
+                  onClick={() => setSlotAction({ slot: { start: "10:00", end: "10:30", available: true }, date: selectedDate })}
+                  className="mt-3 inline-flex items-center gap-1 rounded bg-emerald-600 hover:bg-emerald-700 px-3 py-1.5 text-xs font-medium text-white"
+                >
+                  <Plus className="h-3.5 w-3.5" /> Manuel Randevu Ekle
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-3 gap-2">
+                {slots.map((slot) => {
+                  let cls = "py-2 px-2 rounded border-2 text-xs font-semibold text-center transition cursor-pointer ";
+                  let label = slot.start;
+                  let title = "";
+                  if (slot.booking) {
+                    cls += "border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100";
+                    label = `${slot.start} · ${slot.booking.customer_name.split(" ")[0]}`;
+                    title = `${slot.booking.customer_name} — ${slot.booking.customer_email}`;
+                  } else if (slot.isBlocked) {
+                    cls += "border-red-200 bg-red-50 text-red-700 hover:bg-red-100";
+                    title = "Engelli / mesai dışı";
+                  } else if (slot.reason === "too-soon") {
+                    cls += "border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 opacity-70";
+                    title = "24 saatten yakın — public'e görünmez ama admin manuel ekleyebilir";
+                  } else {
+                    cls += "border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100";
+                    title = "Boş — tıklayıp manuel randevu ekle veya engelleyebilirsin";
+                  }
+                  return (
+                    <button
+                      key={slot.start}
+                      onClick={() => setSlotAction({ slot, date: selectedDate })}
+                      className={cls}
+                      title={title}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            <div className="mt-4 flex flex-wrap gap-3 text-[11px] text-gray-600">
+              <div className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-emerald-50 border border-emerald-300"></span>Boş</div>
+              <div className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-amber-50 border border-amber-300"></span>Randevu var</div>
+              <div className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-red-50 border border-red-300"></span>Engelli</div>
+            </div>
+          </>
+        )}
+      </div>
+
+      {slotAction && (
+        <SlotActionModal
+          date={slotAction.date}
+          slot={slotAction.slot}
+          onClose={() => setSlotAction(null)}
+          onChanged={() => { setSlotAction(null); loadMonth(); if (selectedDate) loadSlotsForDate(selectedDate); }}
+        />
+      )}
+    </div>
+  );
+}
+
+function SlotActionModal({
+  date, slot, onClose, onChanged,
+}: { date: string; slot: CalSlot; onClose: () => void; onChanged: () => void }) {
+  const [mode, setMode] = useState<"select" | "add" | "block" | "view">(slot.booking ? "view" : "select");
+  const [addName, setAddName] = useState("");
+  const [addEmail, setAddEmail] = useState("");
+  const [addPhone, setAddPhone] = useState("");
+  const [addCompany, setAddCompany] = useState("");
+  const [addMessage, setAddMessage] = useState("");
+  const [addTime, setAddTime] = useState(slot.start);
+  const [addNotes, setAddNotes] = useState("Sistem dışı — telefon/WhatsApp");
+  const [sendMail, setSendMail] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [blockReason, setBlockReason] = useState("");
+  const [blockStart, setBlockStart] = useState(slot.start);
+  const [blockEnd, setBlockEnd] = useState(slot.end);
+
+  async function addBooking() {
+    if (!addName.trim()) { alert("İsim gerekli"); return; }
+    setSaving(true);
+    try {
+      await apiFetch("/admin/demo/bookings", {
+        method: "POST",
+        body: JSON.stringify({
+          date, time: addTime, name: addName, email: addEmail, phone: addPhone,
+          company: addCompany, message: addMessage, admin_notes: addNotes,
+          skip_email: !sendMail, force: !!slot.booking,
+        }),
+      });
+      onChanged();
+    } catch (e: any) { alert(e?.message); }
+    finally { setSaving(false); }
+  }
+
+  async function addBlock() {
+    setSaving(true);
+    try {
+      await apiFetch("/admin/demo/blocks", {
+        method: "POST",
+        body: JSON.stringify({
+          block_date: date, start_time: blockStart, end_time: blockEnd,
+          reason: blockReason || "Admin engel",
+        }),
+      });
+      onChanged();
+    } catch (e: any) { alert(e?.message); }
+    finally { setSaving(false); }
+  }
+
+  async function cancelBooking() {
+    if (!slot.booking) return;
+    if (!confirm(`${slot.booking.customer_name} — bu randevu iptal edilsin mi?`)) return;
+    setSaving(true);
+    try {
+      await apiFetch(`/admin/demo/bookings/${slot.booking.id}`, { method: "DELETE" });
+      onChanged();
+    } catch (e: any) { alert(e?.message); }
+    finally { setSaving(false); }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
+      <div className="w-full max-w-md rounded-lg bg-white shadow-xl" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between border-b px-5 py-3">
+          <div>
+            <h3 className="text-lg font-semibold">
+              {mode === "add" ? "Manuel Randevu Ekle"
+                : mode === "block" ? "Zaman Engelle"
+                : mode === "view" ? "Rezervasyon Detayı"
+                : "Slot İşlemi"}
+            </h3>
+            <p className="text-xs text-gray-500">{fmtDate(date)} · {slot.start}</p>
+          </div>
+          <button onClick={onClose}><X className="h-5 w-5 text-gray-400" /></button>
+        </div>
+
+        {mode === "select" && (
+          <div className="p-5 space-y-3">
+            <p className="text-sm text-gray-600 mb-2"><strong>{slot.start} – {slot.end}</strong> için ne yapmak istersin?</p>
+            <button onClick={() => setMode("add")} className="w-full flex items-center gap-3 p-3 rounded-lg border-2 border-emerald-200 hover:bg-emerald-50 text-left">
+              <div className="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center"><Plus className="h-5 w-5 text-emerald-700" /></div>
+              <div>
+                <div className="font-semibold text-gray-900">Manuel Randevu Ekle</div>
+                <div className="text-xs text-gray-500">Sistem dışı (telefon, WhatsApp) alınan randevu</div>
+              </div>
+            </button>
+            <button onClick={() => setMode("block")} className="w-full flex items-center gap-3 p-3 rounded-lg border-2 border-red-200 hover:bg-red-50 text-left">
+              <div className="w-10 h-10 rounded-lg bg-red-100 flex items-center justify-center"><Ban className="h-5 w-5 text-red-700" /></div>
+              <div>
+                <div className="font-semibold text-gray-900">Bu Saati Engelle</div>
+                <div className="text-xs text-gray-500">Kimse rezervasyon alamasın (izin/toplantı)</div>
+              </div>
+            </button>
+          </div>
+        )}
+
+        {mode === "add" && (
+          <div className="p-5 space-y-3">
+            <div>
+              <label className="text-xs font-semibold text-gray-500 block mb-1">Saat</label>
+              <input type="time" value={addTime} onChange={(e) => setAddTime(e.target.value)} className="rounded border-gray-300 px-3 py-2 text-sm font-mono" />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-gray-500 block mb-1">Müşteri Adı *</label>
+              <input type="text" required value={addName} onChange={(e) => setAddName(e.target.value)} className="w-full rounded border-gray-300 px-3 py-2 text-sm" placeholder="Ad Soyad" />
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-xs font-semibold text-gray-500 block mb-1">E-posta</label>
+                <input type="email" value={addEmail} onChange={(e) => setAddEmail(e.target.value)} className="w-full rounded border-gray-300 px-3 py-2 text-sm" placeholder="opsiyonel" />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-gray-500 block mb-1">Telefon</label>
+                <input type="tel" value={addPhone} onChange={(e) => setAddPhone(e.target.value)} className="w-full rounded border-gray-300 px-3 py-2 text-sm" placeholder="+90 5XX..." />
+              </div>
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-gray-500 block mb-1">Şirket (opsiyonel)</label>
+              <input type="text" value={addCompany} onChange={(e) => setAddCompany(e.target.value)} className="w-full rounded border-gray-300 px-3 py-2 text-sm" />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-gray-500 block mb-1">Mesaj / Not</label>
+              <textarea rows={2} value={addMessage} onChange={(e) => setAddMessage(e.target.value)} className="w-full rounded border-gray-300 px-3 py-2 text-sm" placeholder="Müşterinin talebi" />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-gray-500 block mb-1">Dahili Not (Müşteri Görmez)</label>
+              <input type="text" value={addNotes} onChange={(e) => setAddNotes(e.target.value)} className="w-full rounded border-gray-300 px-3 py-2 text-sm" />
+            </div>
+            {addEmail && (
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" checked={sendMail} onChange={(e) => setSendMail(e.target.checked)} />
+                Müşteriye onay maili gönder
+              </label>
+            )}
+            <div className="flex gap-2 border-t pt-3">
+              <button onClick={() => setMode("select")} className="rounded border border-gray-300 px-3 py-1.5 text-sm">Geri</button>
+              <button onClick={addBooking} disabled={saving} className="ml-auto rounded bg-emerald-600 hover:bg-emerald-700 px-4 py-1.5 text-sm font-medium text-white disabled:opacity-50">
+                {saving ? <Loader2 className="h-4 w-4 animate-spin inline" /> : "Randevuyu Ekle"}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {mode === "block" && (
+          <div className="p-5 space-y-3">
+            <p className="text-sm text-gray-600 mb-2">Bu saat aralığını public rezervasyona kapat.</p>
+            <div className="flex items-center gap-2">
+              <input type="time" value={blockStart} onChange={(e) => setBlockStart(e.target.value)} className="rounded border-gray-300 px-2 py-1 text-sm font-mono" />
+              <span>–</span>
+              <input type="time" value={blockEnd} onChange={(e) => setBlockEnd(e.target.value)} className="rounded border-gray-300 px-2 py-1 text-sm font-mono" />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-gray-500 block mb-1">Sebep (opsiyonel)</label>
+              <input type="text" value={blockReason} onChange={(e) => setBlockReason(e.target.value)} className="w-full rounded border-gray-300 px-3 py-2 text-sm" placeholder="Örn: Toplantı, doktor, dış görüşme" />
+            </div>
+            <div className="flex gap-2 border-t pt-3">
+              <button onClick={() => setMode("select")} className="rounded border border-gray-300 px-3 py-1.5 text-sm">Geri</button>
+              <button onClick={addBlock} disabled={saving} className="ml-auto rounded bg-red-600 hover:bg-red-700 px-4 py-1.5 text-sm font-medium text-white disabled:opacity-50">
+                {saving ? <Loader2 className="h-4 w-4 animate-spin inline" /> : "Engelle"}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {mode === "view" && slot.booking && (
+          <div className="p-5 space-y-3">
+            <div className="rounded-lg bg-amber-50 border border-amber-200 p-3">
+              <div className="text-xs text-amber-700 font-semibold uppercase tracking-wide mb-1">Rezervasyon</div>
+              <div className="font-bold text-gray-900">{slot.booking.customer_name}</div>
+              {slot.booking.customer_company && <div className="text-xs text-gray-600">{slot.booking.customer_company}</div>}
+            </div>
+            <Field label="E-posta" value={<a href={`mailto:${slot.booking.customer_email}`} className="text-indigo-600 hover:underline">{slot.booking.customer_email}</a>} />
+            {slot.booking.customer_phone && (
+              <Field label="Telefon" value={<>
+                <a href={`tel:${slot.booking.customer_phone.replace(/[^\d+]/g, "")}`} className="text-indigo-600 hover:underline">{slot.booking.customer_phone}</a>
+                {" · "}
+                <a href={`https://wa.me/${slot.booking.customer_phone.replace(/[^\d]/g, "")}`} target="_blank" rel="noreferrer" className="text-emerald-600 hover:underline">WhatsApp</a>
+              </>} />
+            )}
+            {slot.booking.message && (
+              <div className="rounded border-l-4 border-indigo-500 bg-gray-50 p-3 text-sm">{slot.booking.message}</div>
+            )}
+            {slot.booking.admin_notes && (
+              <div className="rounded bg-yellow-50 border border-yellow-200 p-2 text-xs text-yellow-900">
+                <strong>Dahili not:</strong> {slot.booking.admin_notes}
+              </div>
+            )}
+            <div className="flex gap-2 border-t pt-3">
+              <button onClick={cancelBooking} disabled={saving} className="rounded bg-red-50 hover:bg-red-100 px-3 py-1.5 text-sm font-medium text-red-700 disabled:opacity-50">
+                Randevuyu İptal Et
+              </button>
+              <button onClick={onClose} className="ml-auto rounded border border-gray-300 px-3 py-1.5 text-sm">Kapat</button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
