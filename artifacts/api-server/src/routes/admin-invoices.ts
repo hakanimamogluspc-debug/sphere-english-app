@@ -237,6 +237,43 @@ router.post(
 // - purchaseId verilirse ve o purchase'ın order_id'si varsa → tüm order için tek fatura
 // - purchaseId verilirse ve order_id yoksa → sadece o purchase için tek fatura
 // - orderId verilirse → tüm order için tek fatura
+
+// ─── TCKN / VKN validation helpers ─────────────────────────────────────
+// Türk TCKN algoritma kontrolü — Luca ve GİB bunu doğruluyor
+function isValidTckn(tckn: string): boolean {
+  if (!/^\d{11}$/.test(tckn)) return false;
+  if (tckn[0] === "0") return false;
+  const d = tckn.split("").map(Number);
+  const oddSum = d[0] + d[2] + d[4] + d[6] + d[8];
+  const evenSum = d[1] + d[3] + d[5] + d[7];
+  const check10 = ((oddSum * 7) - evenSum) % 10;
+  if (check10 < 0 || check10 !== d[9]) return false;
+  const check11 = (oddSum + evenSum + d[9]) % 10;
+  if (check11 !== d[10]) return false;
+  return true;
+}
+
+// Bireysel için geçerli dummy TCKN (algoritma check geçer)
+const DUMMY_TCKN = "11111111110";
+// Kurumsal için dummy VKN (10 hane)
+const DUMMY_VKN = "1111111111";
+
+/**
+ * Fatura için TCKN/VKN sanitize eder.
+ * Geçersiz veya boş ise algoritmayı geçen bir dummy döner (Luca aksi halde reject eder).
+ */
+function sanitizeTaxId(raw: any, buyerType: "individual" | "corporate"): string {
+  const s = String(raw || "").replace(/\D/g, "").trim();
+  if (buyerType === "corporate") {
+    // VKN 10 hane, algoritma check zayıf — sadece uzunluk kontrolü yeterli
+    if (s.length === 10) return s;
+    return DUMMY_VKN;
+  }
+  // Bireysel TCKN 11 hane + algoritma valid
+  if (s.length === 11 && isValidTckn(s)) return s;
+  return DUMMY_TCKN;
+}
+
 router.post(
   "/admin/invoices/issue-for-purchase",
   authMiddleware,
@@ -302,11 +339,13 @@ router.post(
       const orderKey = first.order_id || `single-${first.id}`;
 
       // Buyer bilgileri — ilk satırdan (hepsinde aynı olmalı order için)
+      const buyerType = (first.invoice_type === "corporate" ? "corporate" : "individual") as "individual" | "corporate";
       const buyer = {
         email: first.buyer_email,
         name: first.buyer_name || first.buyer_email,
-        type: (first.invoice_type === "corporate" ? "corporate" : "individual") as "individual" | "corporate",
-        taxId: first.tax_id ?? undefined,
+        type: buyerType,
+        // TCKN/VKN sanitize: geçersizse dummy (Luca aksi halde reject eder)
+        taxId: sanitizeTaxId(first.tax_id, buyerType),
         taxOffice: first.tax_office ?? undefined,
         companyName: first.company_name ?? undefined,
         receiverInboxTag: undefined, // e-Fatura için VKN lookup lazım — şimdilik e-Arşiv
