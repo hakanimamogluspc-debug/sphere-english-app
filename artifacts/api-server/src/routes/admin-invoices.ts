@@ -447,6 +447,58 @@ router.post(
   },
 );
 
+// ─── POST /admin/invoices/sync-purchases ─────────────────────────────
+// invoices tablosundan ebook_purchases.invoice_status'i backfill et
+// Manuel Luca portal'ında kesilen faturalar için de kullanılabilir (belge no elle girilir)
+router.post(
+  "/admin/invoices/sync-purchases",
+  authMiddleware,
+  requireAdmin,
+  async (_req: Request, res: Response) => {
+    try {
+      // Sepet (ebook_cart): order_id ile match
+      const cartResult = await db.execute(sql`
+        UPDATE ebook_purchases p
+        SET invoice_status = 'issued',
+            invoice_number = i.external_invoice_code,
+            invoice_issued_at = i.sent_at,
+            updated_at = NOW()
+        FROM invoices i
+        WHERE i.source_type = 'ebook_cart'
+          AND i.status = 'sent'
+          AND i.env = 'prod'
+          AND i.order_id IS NOT NULL
+          AND p.order_id = i.order_id
+          AND (p.invoice_status IS NULL OR p.invoice_status = 'pending')
+      `);
+
+      // Tek e-kitap (ebook): source_id = purchase.id
+      const singleResult = await db.execute(sql`
+        UPDATE ebook_purchases p
+        SET invoice_status = 'issued',
+            invoice_number = i.external_invoice_code,
+            invoice_issued_at = i.sent_at,
+            updated_at = NOW()
+        FROM invoices i
+        WHERE i.source_type = 'ebook'
+          AND i.status = 'sent'
+          AND i.env = 'prod'
+          AND p.id = i.source_id
+          AND (p.invoice_status IS NULL OR p.invoice_status = 'pending')
+      `);
+
+      return res.json({
+        ok: true,
+        cartUpdated: (cartResult as any).rowCount ?? 0,
+        singleUpdated: (singleResult as any).rowCount ?? 0,
+      });
+    } catch (e: any) {
+      console.error("[admin-invoices/sync-purchases] HATA:", e?.message);
+      return res.status(500).json({ ok: false, error: e?.message });
+    }
+  },
+);
+
 // ─── GET /admin/invoices/unbilled — fatura kesilmemiş satın almalar ──
 // Prod env'de fatura kaydı olmayan başarılı satın almalar
 router.get(

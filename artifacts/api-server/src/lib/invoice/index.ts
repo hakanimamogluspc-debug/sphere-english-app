@@ -124,6 +124,37 @@ export async function issueInvoiceForSource(input: IssueInvoiceInput): Promise<I
         updated_at = NOW()
       WHERE id = ${invoiceId}
     `);
+
+    // ─── ebook_purchases sync — legacy invoice_status alanını güncelle ───
+    // E-Kitap Satışları sayfası bu field'ı okur; artık gerçek fatura durumunu yansıtsın
+    if (input.source.type === "ebook" || input.source.type === "ebook_cart") {
+      try {
+        if (input.source.type === "ebook_cart" && input.source.orderId) {
+          // Sepet siparişi — tüm order_id kayıtlarını update
+          await db.execute(sql`
+            UPDATE ebook_purchases
+            SET invoice_status = 'issued',
+                invoice_number = ${result.externalInvoiceCode ?? null},
+                invoice_issued_at = NOW(),
+                updated_at = NOW()
+            WHERE order_id = ${input.source.orderId}
+          `);
+        } else if (input.source.type === "ebook") {
+          // Tek e-kitap — spesifik purchase.id
+          await db.execute(sql`
+            UPDATE ebook_purchases
+            SET invoice_status = 'issued',
+                invoice_number = ${result.externalInvoiceCode ?? null},
+                invoice_issued_at = NOW(),
+                updated_at = NOW()
+            WHERE id = ${input.source.id}
+          `);
+        }
+      } catch (e: any) {
+        console.warn("[invoice] ebook_purchases sync hata:", e?.message);
+      }
+    }
+
     // Viewer URL'i SYNC al — mail tetiklenene kadar hazır olmalı
     // 2-3 sn ekstra ama garanti timing
     let viewerUrl: string | undefined;

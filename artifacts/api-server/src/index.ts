@@ -544,6 +544,33 @@ async function runStartupMigrations() {
     `CREATE UNIQUE INDEX IF NOT EXISTS invoices_source_env_unique_idx
        ON invoices(source_type, source_id, env)
        WHERE source_id IS NOT NULL AND status IN ('sent','pending')`,
+
+    // Backfill: mevcut sent invoices'tan ebook_purchases invoice_status sync
+    // Sepet (ebook_cart): order_id ile match
+    `UPDATE ebook_purchases p
+       SET invoice_status = 'issued',
+           invoice_number = i.external_invoice_code,
+           invoice_issued_at = i.sent_at,
+           updated_at = NOW()
+       FROM invoices i
+       WHERE i.source_type = 'ebook_cart'
+         AND i.status = 'sent'
+         AND i.env = 'prod'
+         AND i.order_id IS NOT NULL
+         AND p.order_id = i.order_id
+         AND (p.invoice_status IS NULL OR p.invoice_status = 'pending')`,
+    // Tek e-kitap (ebook): source_id = purchase.id ile match
+    `UPDATE ebook_purchases p
+       SET invoice_status = 'issued',
+           invoice_number = i.external_invoice_code,
+           invoice_issued_at = i.sent_at,
+           updated_at = NOW()
+       FROM invoices i
+       WHERE i.source_type = 'ebook'
+         AND i.status = 'sent'
+         AND i.env = 'prod'
+         AND p.id = i.source_id
+         AND (p.invoice_status IS NULL OR p.invoice_status = 'pending')`,
     // Mevcut source_id INTEGER kolonunu BIGINT'e migrate et (Date.now() timestamp'leri INTEGER max'ı aşıyor)
     `DO $$ BEGIN
        IF EXISTS (
