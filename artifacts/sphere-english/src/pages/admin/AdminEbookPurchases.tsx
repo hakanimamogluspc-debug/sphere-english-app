@@ -248,6 +248,7 @@ export default function AdminEbookPurchases() {
         </div>
         <div className="flex items-center gap-2">
           <TestMailButton />
+          <ExportButton />
           <button
             onClick={() => {
               loadList();
@@ -500,6 +501,92 @@ export default function AdminEbookPurchases() {
           }}
         />
       )}
+    </div>
+  );
+}
+
+function ExportButton() {
+  const [busy, setBusy] = useState(false);
+  const [status, setStatus] = useState<"success" | "all">("success");
+  const [open, setOpen] = useState(false);
+
+  async function download() {
+    setBusy(true);
+    try {
+      const token = localStorage.getItem("sphere_token");
+      const params = new URLSearchParams({ status });
+      const res = await fetch(`${API}/admin/ebook-purchases/export.csv?${params}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) {
+        const t = await res.text().catch(() => "");
+        alert("Export başarısız: " + (t || res.status));
+        return;
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      const dateStr = new Date().toISOString().slice(0, 10);
+      a.download = `sphere-e-kitap-satislari-${dateStr}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      setOpen(false);
+    } catch (e: any) {
+      alert("Hata: " + e?.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (!open) {
+    return (
+      <button
+        onClick={() => setOpen(true)}
+        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold border border-emerald-200"
+        title="Fatura için Excel/CSV indir"
+      >
+        <Download size={14} /> Excel İndir
+      </button>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-2 bg-white border border-emerald-200 rounded-lg px-3 py-1.5 shadow-sm">
+      <label className="text-xs text-slate-600">
+        Kapsam:
+        <select
+          value={status}
+          onChange={(e) => setStatus(e.target.value as any)}
+          className="ml-1.5 text-xs border-0 outline-0 font-medium"
+        >
+          <option value="success">Sadece Başarılı</option>
+          <option value="all">Tümü (pending + failed dahil)</option>
+        </select>
+      </label>
+      <button
+        onClick={download}
+        disabled={busy}
+        className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold disabled:opacity-50"
+      >
+        {busy ? (
+          <>
+            <RefreshCw size={12} className="animate-spin" /> İndiriliyor…
+          </>
+        ) : (
+          <>
+            <Download size={12} /> İndir
+          </>
+        )}
+      </button>
+      <button
+        onClick={() => setOpen(false)}
+        className="text-xs text-slate-400 hover:text-slate-600 px-1"
+      >
+        Kapat
+      </button>
     </div>
   );
 }

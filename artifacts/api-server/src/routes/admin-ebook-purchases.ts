@@ -209,6 +209,191 @@ router.get(
   },
 );
 
+// ─── CSV EXPORT (fatura kesme için) ────────────────────────────────────
+// Item-level satırlar — sepet siparişleri her kitap için ayrı satır (aynı order_id)
+router.get(
+  "/admin/ebook-purchases/export.csv",
+  authMiddleware,
+  requireRole("admin"),
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const status = String(req.query?.status ?? "success").trim(); // default: sadece başarılı
+      const dateFrom = req.query?.dateFrom ? String(req.query.dateFrom) : null;
+      const dateTo = req.query?.dateTo ? String(req.query.dateTo) : null;
+
+      const conditions: any[] = [];
+      if (status && status !== "all") conditions.push(sql`payment_status = ${status}`);
+      if (dateFrom) conditions.push(sql`created_at >= ${dateFrom}::TIMESTAMPTZ`);
+      if (dateTo) conditions.push(sql`created_at <= ${dateTo}::TIMESTAMPTZ`);
+
+      const whereClause =
+        conditions.length > 0
+          ? sql`WHERE ${sql.join(conditions, sql` AND `)}`
+          : sql``;
+
+      const rows = await db.execute(sql`
+        SELECT
+          p.id,
+          p.order_id,
+          p.bundle_id,
+          p.paid_at,
+          p.created_at,
+          p.buyer_name,
+          p.buyer_email,
+          p.buyer_phone,
+          p.invoice_type,
+          p.tax_id,
+          p.tax_office,
+          p.company_name,
+          p.billing_address,
+          p.billing_city,
+          p.billing_district,
+          p.billing_postal_code,
+          p.amount_paid,
+          p.currency,
+          p.payment_status,
+          p.iyzico_payment_id,
+          p.iyzico_conversation_id,
+          p.invoice_status,
+          p.invoice_number,
+          p.invoice_issued_at,
+          p.invoice_notes,
+          e.title AS ebook_title,
+          e.slug AS ebook_slug,
+          e.author AS ebook_author,
+          b.title AS bundle_title
+        FROM ebook_purchases p
+        LEFT JOIN ebooks e ON e.id = p.ebook_id
+        LEFT JOIN ebook_bundles b ON b.id = p.bundle_id
+        ${whereClause}
+        ORDER BY p.paid_at DESC NULLS LAST, p.created_at DESC
+      `);
+
+      const data = (rows.rows ?? rows) as any[];
+
+      // CSV kolonları — Excel'de fatura kesme için tam bilgi
+      const headers = [
+        "Satın Alma ID",
+        "Sipariş No",
+        "Ödeme Tarihi",
+        "Oluşturma Tarihi",
+        "Alıcı Adı",
+        "Alıcı E-posta",
+        "Alıcı Telefon",
+        "Fatura Tipi",
+        "TC/VKN",
+        "Vergi Dairesi",
+        "Firma Adı",
+        "Adres",
+        "Şehir",
+        "İlçe",
+        "Posta Kodu",
+        "Ürün Adı",
+        "Ürün Slug",
+        "Yazar",
+        "Paket (varsa)",
+        "Tutar",
+        "Para Birimi",
+        "Ödeme Durumu",
+        "Iyzico Payment ID",
+        "Fatura Durumu",
+        "Fatura Numarası",
+        "Fatura Kesildi",
+        "Fatura Notları",
+      ];
+
+      function esc(v: any): string {
+        if (v == null) return "";
+        const s = String(v);
+        // Excel için Türkçe tarih formatı — ISO date yerine dd.MM.yyyy HH:mm
+        return `"${s.replace(/"/g, '""').replace(/\r?\n/g, " ")}"`;
+      }
+      function fmtDate(v: any): string {
+        if (!v) return "";
+        try {
+          const d = new Date(v);
+          if (isNaN(d.getTime())) return "";
+          const dd = String(d.getDate()).padStart(2, "0");
+          const mm = String(d.getMonth() + 1).padStart(2, "0");
+          const yyyy = d.getFullYear();
+          const hh = String(d.getHours()).padStart(2, "0");
+          const mi = String(d.getMinutes()).padStart(2, "0");
+          return `${dd}.${mm}.${yyyy} ${hh}:${mi}`;
+        } catch {
+          return "";
+        }
+      }
+      function fmtInvoiceType(t: any): string {
+        if (t === "corporate") return "Kurumsal";
+        if (t === "individual") return "Bireysel";
+        return t || "";
+      }
+      function fmtPaymentStatus(s: any): string {
+        return { success: "Başarılı", pending: "Beklemede", failed: "Başarısız", expired: "Süresi Doldu" }[s as string] ?? String(s ?? "");
+      }
+      function fmtInvoiceStatus(s: any): string {
+        return { pending: "Kesilmedi", issued: "Kesildi", sent: "Gönderildi", cancelled: "İptal" }[s as string] ?? String(s ?? "");
+      }
+      function fmtAmount(v: any): string {
+        if (v == null) return "";
+        const n = typeof v === "string" ? parseFloat(v) : Number(v);
+        if (!Number.isFinite(n)) return "";
+        // Excel Türkçe locale için virgüllü decimal
+        return n.toFixed(2).replace(".", ",");
+      }
+
+      const lines: string[] = [];
+      // Header
+      lines.push(headers.map(esc).join(";"));
+
+      for (const r of data) {
+        lines.push([
+          r.id,
+          r.order_id ?? "",
+          fmtDate(r.paid_at),
+          fmtDate(r.created_at),
+          r.buyer_name ?? "",
+          r.buyer_email ?? "",
+          r.buyer_phone ?? "",
+          fmtInvoiceType(r.invoice_type),
+          r.tax_id ?? "",
+          r.tax_office ?? "",
+          r.company_name ?? "",
+          r.billing_address ?? "",
+          r.billing_city ?? "",
+          r.billing_district ?? "",
+          r.billing_postal_code ?? "",
+          r.ebook_title ?? "",
+          r.ebook_slug ?? "",
+          r.ebook_author ?? "",
+          r.bundle_title ?? "",
+          fmtAmount(r.amount_paid),
+          r.currency ?? "TRY",
+          fmtPaymentStatus(r.payment_status),
+          r.iyzico_payment_id ?? "",
+          fmtInvoiceStatus(r.invoice_status),
+          r.invoice_number ?? "",
+          fmtDate(r.invoice_issued_at),
+          r.invoice_notes ?? "",
+        ].map(esc).join(";"));
+      }
+
+      const csv = lines.join("\n");
+      // UTF-8 BOM — Excel Türkçe karakterleri doğru gösterir
+      const bom = "﻿";
+
+      const filename = `sphere-e-kitap-satislari-${new Date().toISOString().slice(0, 10)}.csv`;
+      res.setHeader("Content-Type", "text/csv; charset=utf-8");
+      res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+      res.setHeader("Cache-Control", "no-store");
+      return res.send(bom + csv);
+    } catch (e: any) {
+      console.error("[admin-ebook-purchases/export.csv] HATA:", e?.message);
+      return res.status(500).send("Export başarısız: " + e?.message);
+    }
+  },
+);
+
 // ─── TEK SATIN ALMA DETAYI ──────────────────────────────────────────────
 router.get(
   "/admin/ebook-purchases/:id",
