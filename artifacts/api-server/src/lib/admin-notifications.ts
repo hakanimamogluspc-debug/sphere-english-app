@@ -245,6 +245,45 @@ export async function notifyNewContactMessage(opts: {
   await notifyAll(`[Sphere] İletişim formu — ${opts.name}`, html);
 }
 
+export async function notifyNewDemoBooking(opts: {
+  bookingId: number;
+  dateFormatted: string;
+  startTime: string;
+  endTime: string;
+  customerName: string;
+  customerEmail: string;
+  customerPhone?: string | null;
+  customerCompany?: string | null;
+  message?: string | null;
+}): Promise<void> {
+  const url = `${getAppUrl()}/admin/demo`;
+  const fields: Array<{ label: string; value: string }> = [
+    { label: "Tarih", value: opts.dateFormatted },
+    { label: "Saat", value: `${opts.startTime} – ${opts.endTime}` },
+    { label: "Müşteri", value: opts.customerName },
+    { label: "E-posta", value: `<a href="mailto:${opts.customerEmail}" style="color:#0ea5e9;text-decoration:none">${opts.customerEmail}</a>` },
+  ];
+  if (opts.customerPhone) {
+    const clean = opts.customerPhone.replace(/[^\d+]/g, "");
+    const waNum = clean.replace(/^\+/, "");
+    fields.push({
+      label: "Telefon",
+      value: `<a href="tel:${clean}" style="color:#0ea5e9;text-decoration:none">${opts.customerPhone}</a> · <a href="https://wa.me/${waNum}" style="color:#25D366;text-decoration:none">WhatsApp</a>`,
+    });
+  }
+  if (opts.customerCompany) fields.push({ label: "Şirket", value: opts.customerCompany });
+
+  const html = wrapHtml(
+    "Yeni Demo Randevusu 📅",
+    `<strong>${opts.customerName}</strong> yeni bir demo randevusu aldı.<br><br>${fieldList(fields)}
+    ${opts.message ? `<div style="margin-top:16px;padding:12px;background:#f9fafb;border-left:3px solid #0ea5e9;border-radius:4px"><div style="color:#6b7280;font-size:12px;margin-bottom:4px">Müşterinin Mesajı:</div><div style="white-space:pre-wrap;color:#111827">${opts.message.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</div></div>` : ""}
+    <p style="margin-top:16px;font-size:13px;color:#64748b">Görüşme linki eklemeyi unutmayın.</p>`,
+    url,
+    "Admin Panelde Aç",
+  );
+  await notifyAll(`[Sphere] Yeni demo randevusu — ${opts.customerName} · ${opts.dateFormatted} ${opts.startTime}`, html);
+}
+
 export async function notifyAffiliateCommission(opts: {
   affiliateEmail: string;
   affiliateName: string;

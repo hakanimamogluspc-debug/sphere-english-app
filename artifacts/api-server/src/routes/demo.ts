@@ -23,7 +23,7 @@ import { db } from "@workspace/db";
 import { usersTable } from "@workspace/db/schema";
 import { authMiddleware } from "../middlewares/auth.js";
 import { sendEmail } from "../lib/email.js";
-import { notifyAll } from "../lib/admin-notifications.js";
+import { notifyNewDemoBooking } from "../lib/admin-notifications.js";
 
 const router = Router();
 
@@ -470,30 +470,20 @@ async function sendBookingConfirmationEmails(opts: {
 </table>
 </body></html>`;
 
-  await sendEmail({
-    to: opts.email,
-    subject: `Randevu Onayı — ${dateFmt} ${opts.time}`,
-    html: customerHtml,
+  await sendEmail(opts.email, `Randevu Onayı — ${dateFmt} ${opts.time}`, customerHtml);
+
+  // ─── Admin bildirim (paylaşılan helper) ─────
+  await notifyNewDemoBooking({
+    bookingId: opts.bookingId,
+    dateFormatted: dateFmt,
+    startTime: opts.time,
+    endTime: opts.endTime,
+    customerName: opts.name,
+    customerEmail: opts.email,
+    customerPhone: opts.phone ?? null,
+    customerCompany: opts.company ?? null,
+    message: opts.message ?? null,
   });
-
-  // ─── Admin bildirim ─────
-  const adminHtml = `<!DOCTYPE html><html><body style="font-family:sans-serif;padding:20px;background:#f9fafb;">
-<h2 style="color:#1B365D;">Yeni Demo Randevusu 📅</h2>
-<div style="background:#fff;border-radius:8px;padding:16px;border-left:4px solid #0ea5e9;">
-  <p><strong>${opts.name}</strong> yeni bir demo randevusu aldı.</p>
-  <ul style="line-height:1.8;color:#334155;">
-    <li><strong>Tarih:</strong> ${dateFmt}</li>
-    <li><strong>Saat:</strong> ${opts.time} – ${opts.endTime}</li>
-    <li><strong>E-posta:</strong> <a href="mailto:${opts.email}">${opts.email}</a></li>
-    ${opts.phone ? `<li><strong>Telefon:</strong> <a href="tel:${opts.phone.replace(/[^\d+]/g, "")}">${opts.phone}</a> · <a href="https://wa.me/${opts.phone.replace(/[^\d]/g, "")}">WhatsApp</a></li>` : ""}
-    ${opts.company ? `<li><strong>Şirket:</strong> ${opts.company}</li>` : ""}
-  </ul>
-  ${opts.message ? `<div style="margin-top:12px;padding:12px;background:#f9fafb;border-radius:4px;"><strong>Mesaj:</strong><br>${opts.message.replace(/</g, "&lt;")}</div>` : ""}
-  <p style="margin-top:16px;font-size:13px;color:#64748b;">Görüşme linki eklemeyi unutmayın — <a href="https://app.sphereenglish.com/admin/demo" style="color:#0ea5e9;">Admin Panel</a></p>
-</div>
-</body></html>`;
-
-  await notifyAll(`[Sphere] Yeni demo randevusu — ${opts.name} · ${dateFmt} ${opts.time}`, adminHtml);
 }
 
 export default router;
