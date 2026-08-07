@@ -281,6 +281,75 @@ router.post("/demo/book", async (req: Request, res: Response) => {
 });
 
 // ─── ADMIN — bookings list ────────────────────────────────────────────
+// ─── ADMIN — manuel randevu ekleme ───────────────────────────────────
+// Sistem dışı alınan randevular (telefonla, WhatsApp'ta) için
+// 24 saat kuralı yok, geçmiş tarih dahil her tarih kabul edilir
+router.post("/admin/demo/bookings", authMiddleware, requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const {
+      date, time, duration_min, name, email, phone, company, message,
+      admin_notes, meeting_link, skip_email,
+    } = (req.body ?? {}) as any;
+
+    if (!isValidDate(String(date ?? ""))) return res.status(400).json({ error: "date geçersiz (YYYY-MM-DD)" });
+    if (!/^\d{2}:\d{2}$/.test(String(time ?? ""))) return res.status(400).json({ error: "time geçersiz (HH:MM)" });
+    const cleanName = String(name ?? "").trim();
+    if (!cleanName) return res.status(400).json({ error: "İsim gerekli" });
+    const cleanEmail = String(email ?? "").trim().toLowerCase();
+
+    const duration = Number.isFinite(Number(duration_min)) ? Number(duration_min) : SLOT_MINUTES;
+    const endMin = toMinutes(String(time)) + duration;
+    const endTime = fromMinutes(endMin);
+
+    // Slot çakışması kontrolü (aynı slot varsa uyarı ver — admin override edebilir)
+    const overlapRes = await db.execute(sql`
+      SELECT id, customer_name FROM demo_bookings
+      WHERE booking_date = ${date}::DATE
+        AND start_time = ${time}::TIME
+        AND status = 'confirmed'
+      LIMIT 1
+    `);
+    if (((overlapRes.rows ?? overlapRes) as any[]).length > 0 && !(req.body?.force)) {
+      const existing = ((overlapRes.rows ?? overlapRes) as any[])[0];
+      return res.status(409).json({
+        error: `Bu saatte zaten randevu var: ${existing.customer_name}. force=true ile üstüne yazabilirsiniz.`,
+        existingId: existing.id,
+      });
+    }
+
+    const insertRes = await db.execute(sql`
+      INSERT INTO demo_bookings (
+        booking_date, start_time, end_time, duration_min,
+        customer_name, customer_email, customer_phone, customer_company,
+        message, admin_notes, meeting_link
+      ) VALUES (
+        ${date}::DATE, ${time}::TIME, ${endTime}::TIME, ${duration},
+        ${cleanName}, ${cleanEmail || "admin-eklendi@sphereenglish.com"},
+        ${(phone && String(phone).trim()) || null},
+        ${(company && String(company).trim()) || null},
+        ${(message && String(message).trim()) || null},
+        ${(admin_notes && String(admin_notes).trim()) || null},
+        ${(meeting_link && String(meeting_link).trim()) || null}
+      )
+      RETURNING id
+    `);
+    const bookingId = Number(((insertRes.rows ?? insertRes) as any[])[0]?.id);
+
+    // Müşteri maili sadece skip_email=false ise (admin uygulaması dışında zaten iletişime geçtiyse mail atmayabilir)
+    if (!skip_email && cleanEmail && cleanEmail !== "admin-eklendi@sphereenglish.com") {
+      sendBookingConfirmationEmails({
+        bookingId, date: String(date), time: String(time), endTime,
+        name: cleanName, email: cleanEmail, phone, company, message,
+      }).catch((e) => console.warn("[demo/admin-book] mail hata:", e?.message));
+    }
+
+    return res.json({ ok: true, bookingId, date: String(date), time: String(time), endTime });
+  } catch (e: any) {
+    console.error("[demo/admin-book] HATA:", e?.message);
+    return res.status(500).json({ error: e?.message });
+  }
+});
+
 router.get("/admin/demo/bookings", authMiddleware, requireAdmin, async (req: Request, res: Response) => {
   try {
     const status = String(req.query?.status ?? "all");
@@ -327,6 +396,85 @@ router.delete("/admin/demo/bookings/:id", authMiddleware, requireAdmin, async (r
     await db.execute(sql`UPDATE demo_bookings SET status = 'cancelled', updated_at = NOW() WHERE id = ${id}`);
     return res.json({ ok: true });
   } catch (e: any) {
+    return res.status(500).json({ error: e?.message });
+  }
+});
+
+// ─── ADMIN — görüşme linkini müşteriye maille gönder ──────────────────
+router.post("/admin/demo/bookings/:id/send-meeting-link", authMiddleware, requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const id = parseInt(String(req.params.id ?? ""), 10);
+    if (!Number.isFinite(id)) return res.status(400).json({ error: "id" });
+
+    // Body'de yeni link verilirse önce kaydet, yoksa DB'dekini kullan
+    const overrideLink = (req.body?.meeting_link ?? "").toString().trim();
+    if (overrideLink) {
+      await db.execute(sql`UPDATE demo_bookings SET meeting_link = ${overrideLink}, updated_at = NOW() WHERE id = ${id}`);
+    }
+
+    const r: any = await db.execute(sql`
+      SELECT id, booking_date, start_time, end_time,
+             customer_name, customer_email, meeting_link
+      FROM demo_bookings WHERE id = ${id}
+    `);
+    const b = (r.rows ?? r)[0];
+    if (!b) return res.status(404).json({ error: "randevu bulunamadı" });
+    if (!b.meeting_link) return res.status(400).json({ error: "önce görüşme linki girmelisin" });
+    if (!b.customer_email || String(b.customer_email).includes("admin-eklendi@")) {
+      return res.status(400).json({ error: "müşteri e-postası yok — linki manuel WhatsApp/telefon ile ilet" });
+    }
+
+    const dateStr = String(b.booking_date).slice(0, 10);
+    const startStr = String(b.start_time).slice(0, 5);
+    const endStr = String(b.end_time).slice(0, 5);
+    const dateFmt = fmtDateTr(dateStr);
+
+    const html = `<!DOCTYPE html>
+<html lang="tr"><head><meta charset="utf-8"></head>
+<body style="margin:0;padding:0;background:#f1f5f9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#1e293b;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="padding:32px 16px;">
+  <tr><td align="center">
+    <table role="presentation" width="600" style="max-width:600px;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.05);">
+      <tr><td style="padding:32px;background:#1B365D;text-align:center;">
+        <h1 style="margin:0;color:#fff;font-size:22px;">Görüşme Linkiniz Hazır 🎥</h1>
+      </td></tr>
+      <tr><td style="padding:32px;">
+        <p style="margin:0 0 16px;font-size:15px;">Merhaba <strong>${b.customer_name}</strong>,</p>
+        <p style="margin:0 0 16px;font-size:15px;line-height:1.6;">
+          Sphere English demo görüşmemiz için katılım linkiniz aşağıda. Randevu saatinde tıklayarak bağlanabilirsiniz.
+        </p>
+        <div style="background:#f0f9ff;border:2px solid #0ea5e9;border-radius:8px;padding:20px;margin:20px 0;">
+          <p style="margin:0 0 8px;font-size:13px;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:.05em;">Tarih & Saat</p>
+          <p style="margin:0;font-size:18px;font-weight:700;color:#1B365D;">${dateFmt}</p>
+          <p style="margin:4px 0 0;font-size:16px;color:#0ea5e9;font-weight:600;">${startStr} – ${endStr}</p>
+        </div>
+        <div style="text-align:center;margin:28px 0;">
+          <a href="${b.meeting_link}" style="display:inline-block;background:#0ea5e9;color:#fff;padding:14px 32px;border-radius:8px;font-weight:700;text-decoration:none;font-size:16px;">
+            Görüşmeye Katıl
+          </a>
+        </div>
+        <p style="margin:16px 0 0;font-size:13px;color:#64748b;line-height:1.6;word-break:break-all;">
+          Buton çalışmıyorsa bu bağlantıyı kopyalayabilirsiniz:<br>
+          <a href="${b.meeting_link}" style="color:#0ea5e9;">${b.meeting_link}</a>
+        </p>
+        <p style="margin:24px 0 0;font-size:13px;color:#64748b;line-height:1.6;">
+          Öneri: Görüşmeden birkaç dakika önce ekipmanınızı (mikrofon, kamera) kontrol edin.
+          Değişiklik veya iptal için:
+          <a href="mailto:info@sphereenglish.com" style="color:#0ea5e9;">info@sphereenglish.com</a>
+        </p>
+      </td></tr>
+      <tr><td style="padding:20px 32px;background:#f8fafc;border-top:1px solid #e2e8f0;text-align:center;font-size:12px;color:#64748b;">
+        Sphere English · <a href="https://www.sphereenglish.com" style="color:#0ea5e9;text-decoration:none;">sphereenglish.com</a>
+      </td></tr>
+    </table>
+  </td></tr>
+</table>
+</body></html>`;
+
+    await sendEmail(b.customer_email, `Görüşme Linkiniz — ${dateFmt} ${startStr}`, html);
+    return res.json({ ok: true, sent_to: b.customer_email });
+  } catch (e: any) {
+    console.error("[demo/send-meeting-link] HATA:", e?.message);
     return res.status(500).json({ error: e?.message });
   }
 });

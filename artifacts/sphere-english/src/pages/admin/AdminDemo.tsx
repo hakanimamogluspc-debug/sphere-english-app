@@ -260,6 +260,28 @@ function BookingDetailModal({ booking, onClose, onChanged }: { booking: Booking;
     finally { setSaving(false); }
   }
 
+  async function saveAndSendLink() {
+    if (!link.trim()) { alert("Önce görüşme linkini gir"); return; }
+    if (!confirm(`Görüşme linki ${booking.customer_email} adresine mail olarak gönderilsin mi?`)) return;
+    setSaving(true);
+    try {
+      // Önce kaydet (status/notes değişmiş olabilir)
+      await apiFetch(`/admin/demo/bookings/${booking.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ status, admin_notes: notes, meeting_link: link }),
+      });
+      // Sonra maille
+      const r = await apiFetch(`/admin/demo/bookings/${booking.id}/send-meeting-link`, {
+        method: "POST",
+        body: JSON.stringify({ meeting_link: link }),
+      });
+      alert(`Link gönderildi: ${r.sent_to}`);
+      onChanged();
+      onClose();
+    } catch (e: any) { alert(e?.message); }
+    finally { setSaving(false); }
+  }
+
   async function cancel() {
     if (!confirm("Bu randevu iptal edilsin mi?")) return;
     setSaving(true);
@@ -328,12 +350,20 @@ function BookingDetailModal({ booking, onClose, onChanged }: { booking: Booking;
             </div>
           </div>
 
-          <div className="flex gap-2 border-t pt-4">
+          <div className="flex flex-wrap gap-2 border-t pt-4">
             <button onClick={cancel} disabled={saving} className="rounded bg-red-50 hover:bg-red-100 px-3 py-2 text-sm font-medium text-red-700 disabled:opacity-50">
               İptal Et
             </button>
-            <button onClick={save} disabled={saving} className="ml-auto rounded bg-indigo-600 hover:bg-indigo-500 px-4 py-2 text-sm font-medium text-white disabled:opacity-50">
-              {saving ? <Loader2 className="h-4 w-4 animate-spin inline" /> : "Kaydet"}
+            <button
+              onClick={saveAndSendLink}
+              disabled={saving || !link.trim()}
+              title={!link.trim() ? "Önce Zoom/Meet linkini gir" : "Kaydet + linki müşteriye maille"}
+              className="ml-auto rounded bg-emerald-600 hover:bg-emerald-500 px-4 py-2 text-sm font-medium text-white disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-1.5"
+            >
+              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <>📧 Kaydet + Linki Gönder</>}
+            </button>
+            <button onClick={save} disabled={saving} className="rounded bg-indigo-600 hover:bg-indigo-500 px-4 py-2 text-sm font-medium text-white disabled:opacity-50">
+              {saving ? <Loader2 className="h-4 w-4 animate-spin inline" /> : "Sadece Kaydet"}
             </button>
           </div>
           <div className="text-[11px] text-gray-400 text-center">
