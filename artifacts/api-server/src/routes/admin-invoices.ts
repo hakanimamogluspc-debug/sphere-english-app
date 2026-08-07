@@ -374,8 +374,27 @@ router.post(
         orderKey,
       });
     } catch (e: any) {
-      console.error("[admin-invoices/issue-for-purchase] HATA:", e?.message);
-      return res.status(500).json({ ok: false, error: e?.message });
+      const details = {
+        message: e?.message,
+        detail: e?.detail,
+        hint: e?.hint,
+        code: e?.code,
+        constraint: e?.constraint,
+        table: e?.table,
+        column: e?.column,
+        dataType: e?.dataType,
+        routine: e?.routine,
+        where: e?.where,
+      };
+      console.error("[admin-invoices/issue-for-purchase] HATA DETAY:", details);
+      // Kısa özet mesajı Postgres kodu + detail ile
+      const shortMsg = [
+        e?.code ? `[${e.code}]` : null,
+        e?.message?.split("\n")[0] || "Bilinmeyen hata",
+        e?.detail ? `→ ${e.detail}` : null,
+        e?.column ? `(kolon: ${e.column})` : null,
+      ].filter(Boolean).join(" ");
+      return res.status(500).json({ ok: false, error: shortMsg, details });
     }
   },
 );
