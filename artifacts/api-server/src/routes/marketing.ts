@@ -143,6 +143,7 @@ router.post("/marketing/contact", async (req: Request, res: Response) => {
       m.notifyNewContactMessage({
         name,
         email,
+        phone: phone || undefined,
         subject: company ? `${company} (${source ?? "website"})` : (source ?? "website"),
         message: message ?? "(Mesaj boş)",
       }),

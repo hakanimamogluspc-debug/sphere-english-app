@@ -216,16 +216,27 @@ export async function notifyNewCartPurchase(opts: {
 export async function notifyNewContactMessage(opts: {
   name: string;
   email: string;
+  phone?: string;
   subject?: string;
   message: string;
 }): Promise<void> {
+  const fields: Array<{ label: string; value: string }> = [
+    { label: "Ad", value: opts.name },
+    { label: "E-posta", value: opts.email },
+  ];
+  if (opts.phone) {
+    // Telefon tıklanabilir olsun
+    const cleanPhone = opts.phone.replace(/[^\d+]/g, "");
+    fields.push({
+      label: "Telefon",
+      value: `<a href="tel:${cleanPhone}" style="color:#0ea5e9;text-decoration:none">${opts.phone}</a> · <a href="https://wa.me/${cleanPhone.replace(/^\+?/, "")}" style="color:#25D366;text-decoration:none">WhatsApp</a>`,
+    });
+  }
+  fields.push({ label: "Konu", value: opts.subject ?? "Belirtilmemiş" });
+
   const html = wrapHtml(
     "Yeni İletişim Mesajı",
-    `Web sitesinden yeni bir mesaj geldi.<br><br>${fieldList([
-      { label: "Ad", value: opts.name },
-      { label: "E-posta", value: opts.email },
-      { label: "Konu", value: opts.subject ?? "Belirtilmemiş" },
-    ])}
+    `Web sitesinden yeni bir mesaj geldi.<br><br>${fieldList(fields)}
     <div style="margin-top:16px;padding:12px;background:#f9fafb;border-left:3px solid #0ea5e9;border-radius:4px">
       <div style="color:#6b7280;font-size:12px;margin-bottom:4px">Mesaj:</div>
       <div style="white-space:pre-wrap;color:#111827">${opts.message.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</div>
