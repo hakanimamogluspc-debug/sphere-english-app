@@ -374,25 +374,34 @@ router.post(
         orderKey,
       });
     } catch (e: any) {
+      // Drizzle Postgres error'u e.cause içinde saklar
+      const cause = e?.cause;
       const details = {
-        message: e?.message,
-        detail: e?.detail,
-        hint: e?.hint,
-        code: e?.code,
-        constraint: e?.constraint,
-        table: e?.table,
-        column: e?.column,
-        dataType: e?.dataType,
-        routine: e?.routine,
-        where: e?.where,
+        // Ana error
+        errorName: e?.name,
+        errorMessage: e?.message?.split("\n")[0],
+        // Postgres asıl hatası (cause)
+        pgCode: e?.code || cause?.code,
+        pgDetail: e?.detail || cause?.detail,
+        pgHint: e?.hint || cause?.hint,
+        pgConstraint: e?.constraint || cause?.constraint,
+        pgTable: e?.table || cause?.table,
+        pgColumn: e?.column || cause?.column,
+        pgDataType: e?.dataType || cause?.dataType,
+        pgSeverity: e?.severity || cause?.severity,
+        pgRoutine: e?.routine || cause?.routine,
+        pgWhere: e?.where || cause?.where,
+        pgPosition: e?.position || cause?.position,
+        // Cause'un tüm özellikleri (fallback)
+        causeName: cause?.name,
+        causeMessage: cause?.message,
       };
-      console.error("[admin-invoices/issue-for-purchase] HATA DETAY:", details);
-      // Kısa özet mesajı Postgres kodu + detail ile
+      console.error("[admin-invoices/issue-for-purchase] HATA:", details);
       const shortMsg = [
-        e?.code ? `[${e.code}]` : null,
-        e?.message?.split("\n")[0] || "Bilinmeyen hata",
-        e?.detail ? `→ ${e.detail}` : null,
-        e?.column ? `(kolon: ${e.column})` : null,
+        details.pgCode ? `[${details.pgCode}]` : null,
+        details.pgDetail || details.causeMessage || details.errorMessage || "Bilinmeyen hata",
+        details.pgColumn ? `(kolon: ${details.pgColumn})` : null,
+        details.pgConstraint ? `(constraint: ${details.pgConstraint})` : null,
       ].filter(Boolean).join(" ");
       return res.status(500).json({ ok: false, error: shortMsg, details });
     }
