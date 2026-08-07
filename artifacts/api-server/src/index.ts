@@ -538,6 +538,12 @@ async function runStartupMigrations() {
     `CREATE INDEX IF NOT EXISTS invoices_order_idx ON invoices(order_id) WHERE order_id IS NOT NULL`,
     `CREATE INDEX IF NOT EXISTS invoices_ettn_idx ON invoices(ettn) WHERE ettn IS NOT NULL`,
     `CREATE UNIQUE INDEX IF NOT EXISTS invoices_source_unique_idx ON invoices(source_type, source_id) WHERE source_id IS NOT NULL AND status IN ('sent','pending')`,
+    // Env-aware unique — test ve prod aynı kaynak için ayrı fatura tutabilsin
+    // (Eski index sadece source_type+source_id — test'te kesilmiş fatura prod'da yeniden kesilmesin sanıyordu)
+    `DROP INDEX IF EXISTS invoices_source_unique_idx`,
+    `CREATE UNIQUE INDEX IF NOT EXISTS invoices_source_env_unique_idx
+       ON invoices(source_type, source_id, env)
+       WHERE source_id IS NOT NULL AND status IN ('sent','pending')`,
     // Mevcut source_id INTEGER kolonunu BIGINT'e migrate et (Date.now() timestamp'leri INTEGER max'ı aşıyor)
     `DO $$ BEGIN
        IF EXISTS (
