@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useGetUsers, useDeleteUser } from "@workspace/api-client-react";
 import { Card, CardContent, Button, Input, Badge, Modal, Label } from "@/components/ui/core";
-import { Search, Plus, Trash2, Edit, KeyRound, Mail } from "lucide-react";
+import { Search, Plus, Trash2, Edit, KeyRound, Mail, ChevronLeft, ChevronRight } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -58,7 +58,11 @@ const LEVELS = ["A1", "A2", "B1", "B2", "C1", "C2"];
 export default function AdminUsers() {
   const { toast } = useToast();
   const [search, setSearch] = useState("");
-  const { data: usersData, isLoading } = useGetUsers({ search });
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(50);
+  const { data: usersData, isLoading } = useGetUsers({ search, page, limit });
+  const totalUsers = (usersData as any)?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(totalUsers / limit));
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editUser, setEditUser] = useState<User | null>(null);
   const [passwordUser, setPasswordUser] = useState<User | null>(null);
@@ -204,7 +208,10 @@ export default function AdminUsers() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold font-display text-foreground">Kullanıcı Yönetimi</h1>
-          <p className="text-muted-foreground mt-1">Platform kullanıcılarını, öğretmenleri ve yöneticileri yönetin.</p>
+          <p className="text-muted-foreground mt-1">
+            Platform kullanıcılarını, öğretmenleri ve yöneticileri yönetin.
+            {totalUsers > 0 && <span className="ml-2 font-semibold text-foreground">· Toplam {totalUsers} kullanıcı</span>}
+          </p>
         </div>
         <Button onClick={() => setIsCreateOpen(true)} className="gap-2">
           <Plus size={18} /> Kullanıcı Ekle
@@ -213,14 +220,25 @@ export default function AdminUsers() {
 
       <Card>
         <CardContent className="p-0">
-          <div className="p-4 border-b border-border">
+          <div className="p-4 border-b border-border flex items-center gap-3 flex-wrap">
             <Input
               icon={<Search size={18} />}
               placeholder="Ad veya e-posta ile ara..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="max-w-md"
+              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+              className="max-w-md flex-1"
             />
+            <select
+              value={limit}
+              onChange={(e) => { setLimit(Number(e.target.value)); setPage(1); }}
+              className="rounded border border-border bg-background px-3 py-2 text-sm"
+              title="Sayfa başına"
+            >
+              <option value={20}>20 / sayfa</option>
+              <option value={50}>50 / sayfa</option>
+              <option value={100}>100 / sayfa</option>
+              <option value={500}>500 / sayfa</option>
+            </select>
           </div>
 
           <div className="overflow-x-auto">
@@ -298,6 +316,22 @@ export default function AdminUsers() {
               </tbody>
             </table>
           </div>
+
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between border-t border-border px-4 py-3 text-sm">
+              <div className="text-muted-foreground">
+                Sayfa <strong>{page}</strong> / {totalPages} · Gösterilen: {usersData?.users?.length ?? 0} / {totalUsers}
+              </div>
+              <div className="flex gap-2">
+                <Button variant="ghost" size="sm" disabled={page <= 1} onClick={() => setPage(p => Math.max(1, p - 1))}>
+                  <ChevronLeft size={16} /> Önceki
+                </Button>
+                <Button variant="ghost" size="sm" disabled={page >= totalPages} onClick={() => setPage(p => Math.min(totalPages, p + 1))}>
+                  Sonraki <ChevronRight size={16} />
+                </Button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
