@@ -1515,6 +1515,8 @@ if (cluster.isPrimary) {
       startCartAbandonedCron();
       // Speaking scenes seed (idempotent — sadece yoksa ekler)
       void seedSpeakingScenes();
+      // Learning cron'ları (content ingest + weekly report) — primary'de tek instance
+      void import("./lib/scheduler.js").then(m => m.startScheduler()).catch(e => logger.warn({ err: e?.message }, "scheduler import fail"));
     })
     .then(() => {
       const numWorkers = Math.max(1, Math.min(os.cpus().length, 8));
