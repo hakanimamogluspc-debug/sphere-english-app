@@ -56,6 +56,12 @@ function StudentDashboard() {
         </div>
       )}
 
+      {/* Hızlı Erişim */}
+      <QuickAccessGrid />
+
+      {/* Bu hafta odaklan (hata bazlı) */}
+      <FocusThisWeekCard />
+
       {/* İstatistik Kartları */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card className="bg-gradient-to-br from-primary to-primary/80 text-white border-0">
@@ -218,6 +224,106 @@ function StudentDashboard() {
       {/* Bugün için önerilen makaleler */}
       <RecommendedArticlesWidget />
     </div>
+  );
+}
+
+// ─── Hızlı Erişim ─────────────────────────────────────────────────────
+type QuickAction = {
+  label: string;
+  href: string;
+  icon: any;
+  color: string;
+  bg: string;
+  featureKey?: string;
+};
+
+const QUICK_ACTIONS: QuickAction[] = [
+  { label: "AI Öğretmen",       href: "/student/ai-tutor",           icon: GraduationCap, color: "text-white", bg: "from-indigo-600 to-blue-600",     featureKey: "student-ai-tutor" },
+  { label: "Konuşma Sahneleri", href: "/student/speaking-scenes",    icon: Cpu,           color: "text-white", bg: "from-teal-600 to-emerald-600",    featureKey: "student-speaking-scenes" },
+  { label: "Yazma Koçu",        href: "/student/writing-coach",      icon: BookMarked,    color: "text-white", bg: "from-orange-500 to-rose-500",     featureKey: "student-writing-coach" },
+  { label: "Dilbilgisi Koçu",   href: "/student/grammar-coach",      icon: Cpu,           color: "text-white", bg: "from-purple-600 to-fuchsia-600",  featureKey: "student-grammar-coach" },
+  { label: "Kelime Oyunu",      href: "/student/vocab-game",         icon: Trophy,        color: "text-white", bg: "from-amber-500 to-orange-500",    featureKey: "student-vocab-game" },
+  { label: "Keşfet",            href: "/kesfet",                     icon: Newspaper,     color: "text-white", bg: "from-sky-600 to-cyan-600" },
+];
+
+function QuickAccessGrid() {
+  // Feature flag'lere göre filtre — her item için useFeature çağrısı hook kural gereği
+  const flags = QUICK_ACTIONS.map(a => useFeature(a.featureKey));
+  const visible = QUICK_ACTIONS.filter((_, i) => flags[i]);
+  if (visible.length === 0) return null;
+  return (
+    <div>
+      <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
+        <Sparkles className="h-4 w-4" /> Hızlı Erişim
+      </h2>
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        {visible.map(a => (
+          <Link key={a.href} href={a.href}>
+            <div className={`rounded-xl p-4 bg-gradient-to-br ${a.bg} ${a.color} cursor-pointer hover:shadow-lg hover:scale-105 transition-transform`}>
+              <a.icon className="h-6 w-6 mb-2 opacity-95" />
+              <div className="text-sm font-semibold leading-tight">{a.label}</div>
+            </div>
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── Bu Hafta Odaklan (mistake bazlı öneri) ────────────────────────────
+const MISTAKE_TYPE_LABEL: Record<string, string> = {
+  grammar: "Dilbilgisi", vocab: "Kelime", collocation: "Kalıp",
+  spelling: "Yazım", register: "Ton/Register", pronunciation: "Telaffuz", other: "Diğer",
+};
+
+function FocusThisWeekCard() {
+  const [data, setData] = useState<{ mistakes: any[]; stats: any[] } | null>(null);
+  useEffect(() => {
+    const token = localStorage.getItem("sphere_token");
+    fetch(`${API}/my/mistakes?unresolved=1&limit=3`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.ok ? r.json() : null)
+      .then(setData)
+      .catch(() => setData(null));
+  }, []);
+
+  if (!data || data.mistakes.length === 0) return null;
+
+  const topType = data.stats?.sort((a, b) => b.n - a.n)[0];
+  return (
+    <Card className="border-l-4 border-l-red-400">
+      <CardHeader className="flex flex-row items-center justify-between pb-3">
+        <div className="flex items-center gap-2">
+          <AlertCircle className="h-5 w-5 text-red-500" />
+          <CardTitle>Bu Hafta Odaklan</CardTitle>
+        </div>
+        <Link href="/raporum" className="text-xs text-primary hover:underline font-medium flex items-center gap-1">
+          Hata Defterim <ChevronRight className="h-3 w-3" />
+        </Link>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {topType && (
+          <p className="text-sm text-muted-foreground">
+            En çok <strong className="text-foreground">{MISTAKE_TYPE_LABEL[topType.mistake_type] || topType.mistake_type}</strong> kategorisinde
+            zorlanıyorsun ({topType.n} açık hata). İşte tekrar eden 3 hata:
+          </p>
+        )}
+        {data.mistakes.map((m: any) => (
+          <div key={m.id} className="rounded-lg bg-red-50 border border-red-200 p-3">
+            <div className="text-sm flex flex-wrap items-baseline gap-2">
+              <span className="line-through text-red-800 font-semibold">{m.wrong_text}</span>
+              {m.correct_text && <>
+                <span className="text-gray-400">→</span>
+                <span className="text-emerald-800 font-bold">{m.correct_text}</span>
+              </>}
+              {m.occurrence_count > 1 && (
+                <span className="text-[10px] font-semibold text-red-600 ml-1">{m.occurrence_count}× tekrar</span>
+              )}
+            </div>
+            {m.explanation && <p className="text-xs text-gray-600 mt-1.5">{m.explanation}</p>}
+          </div>
+        ))}
+      </CardContent>
+    </Card>
   );
 }
 
