@@ -2,7 +2,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useGetDashboardStats, useGetMyProgress, useGetAdminDashboard } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle, Badge, Button } from "@/components/ui/core";
 import { formatDateTime, getLevelColor } from "@/lib/utils";
-import { Trophy, Flame, BookOpen, Video, Users, CheckCircle, TrendingUp, DollarSign, Megaphone, AlertCircle, Info, ChevronRight, Wifi, BookMarked, Cpu, LayoutDashboard, GraduationCap } from "lucide-react";
+import { Trophy, Flame, BookOpen, Video, Users, CheckCircle, TrendingUp, DollarSign, Megaphone, AlertCircle, Info, ChevronRight, Wifi, BookMarked, Cpu, LayoutDashboard, GraduationCap, Newspaper, Compass } from "lucide-react";
 import { Link, useLocation, Redirect } from "wouter";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useEffect, useState } from "react";
@@ -210,7 +210,67 @@ function StudentDashboard() {
           </Card>
         </div>
       </div>
+
+      {/* Bugün için önerilen makaleler */}
+      <RecommendedArticlesWidget />
     </div>
+  );
+}
+
+function RecommendedArticlesWidget() {
+  const [items, setItems] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    const token = localStorage.getItem("sphere_token");
+    fetch(`${API}/content/recommended?limit=3`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json())
+      .then(d => setItems(Array.isArray(d.items) ? d.items : []))
+      .catch(() => setItems([]))
+      .finally(() => setLoading(false));
+  }, []);
+  if (loading || items.length === 0) return null;
+  const catLabel: Record<string, string> = {
+    finance: "Finans", tech: "Teknoloji", leadership: "Liderlik", negotiation: "Müzakere", general: "Genel",
+  };
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between pb-3">
+        <div className="flex items-center gap-2">
+          <Compass className="h-5 w-5 text-primary" />
+          <CardTitle>Bugün İçin Öneriler</CardTitle>
+        </div>
+        <Link href="/kesfet" className="text-xs text-primary hover:underline font-medium flex items-center gap-1">
+          Tümünü Keşfet <ChevronRight className="h-3 w-3" />
+        </Link>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {items.map((a: any) => (
+            <Link key={a.id} href="/kesfet"
+              className="rounded-lg border hover:border-primary/50 hover:shadow transition overflow-hidden group flex flex-col cursor-pointer bg-card"
+            >
+              {a.image_url ? (
+                <div className="aspect-video bg-gray-100 overflow-hidden">
+                  <img src={a.image_url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition" />
+                </div>
+              ) : (
+                <div className="aspect-video bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center">
+                  <Newspaper className="h-8 w-8 text-primary/40" />
+                </div>
+              )}
+              <div className="p-3 space-y-1.5 flex-1 flex flex-col">
+                <div className="flex items-center gap-1 text-[10px] font-semibold">
+                  {a.category && <span className="px-1.5 py-0.5 rounded bg-primary/10 text-primary">{catLabel[a.category] || a.category}</span>}
+                  {a.cefr_level && <span className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground">{a.cefr_level}</span>}
+                </div>
+                <h4 className="text-sm font-semibold text-foreground line-clamp-2 leading-snug">{a.title}</h4>
+                {a.tr_summary && <p className="text-xs text-muted-foreground line-clamp-2">{a.tr_summary}</p>}
+              </div>
+            </Link>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
