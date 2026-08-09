@@ -54,6 +54,7 @@ const AdminInvoices       = lazy(() => import("./pages/admin/AdminInvoices"));
 const AdminMailTemplates  = lazy(() => import("./pages/admin/AdminMailTemplates"));
 const AdminDemo           = lazy(() => import("./pages/admin/AdminDemo"));
 const AdminContent        = lazy(() => import("./pages/admin/AdminContent"));
+const AdminScenes         = lazy(() => import("./pages/admin/AdminScenes"));
 const Partner             = lazy(() => import("./pages/Partner"));
 const PartnerApply        = lazy(() => import("./pages/PartnerApply"));
 const AdminChatbotFaqs    = lazy(() => import("./pages/admin/ChatbotFaqs"));
@@ -308,6 +309,7 @@ function Router() {
         <Route path="/admin/mail-sablonlari"><LayoutWrapper component={AdminMailTemplates} allowedRoles={['admin']} /></Route>
         <Route path="/admin/demo"><LayoutWrapper component={AdminDemo} allowedRoles={['admin']} /></Route>
         <Route path="/admin/content"><LayoutWrapper component={AdminContent} allowedRoles={['admin']} /></Route>
+        <Route path="/admin/scenes"><LayoutWrapper component={AdminScenes} allowedRoles={['admin']} /></Route>
         <Route path="/partner/apply"><LayoutWrapper component={PartnerApply} /></Route>
         <Route path="/partner"><LayoutWrapper component={Partner} /></Route>
         <Route path="/admin/chatbot"><LayoutWrapper component={AdminChatbotFaqs} allowedRoles={['admin']} /></Route>

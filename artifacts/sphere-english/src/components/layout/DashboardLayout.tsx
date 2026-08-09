@@ -119,6 +119,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       { name: 'Mail Şablonları',     href: '/admin/mail-sablonlari',          icon: Mail },
       { name: 'Demo Randevular',     href: '/admin/demo',                     icon: Calendar },
       { name: 'İçerik Kütüphanesi',  href: '/admin/content',                  icon: Newspaper },
+      { name: 'Konuşma Sahneleri',   href: '/admin/scenes',                   icon: Mic },
       { name: 'Eğitmen Başvuruları', href: '/admin/teacher-applications',     icon: UserPlus },
       { name: 'E-Kitap Yönetimi',    href: '/admin/ebooks',                   icon: BookOpen },
       { name: 'E-Kitap Paketleri',   href: '/admin/bundles',                  icon: Package },
