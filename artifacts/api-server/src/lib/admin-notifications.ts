@@ -213,6 +213,57 @@ export async function notifyNewCartPurchase(opts: {
   );
 }
 
+export async function notifyNewUserRegistration(opts: {
+  userId: number;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone?: string | null;
+  role: string;
+  accountType?: string | null;
+  companyName?: string | null;
+  studentNumber?: string | null;
+}): Promise<void> {
+  const roleLabel: Record<string, string> = {
+    student: "Öğrenci",
+    corporate: "Kurumsal Yetkili",
+    partner: "Partner",
+    teacher: "Öğretmen",
+    admin: "Yönetici",
+  };
+  const accountLabel: Record<string, string> = {
+    bireysel: "Bireysel",
+    kurumsal: "Kurumsal",
+  };
+
+  const fields: Array<{ label: string; value: string }> = [
+    { label: "Ad Soyad", value: `${opts.firstName} ${opts.lastName}` },
+    { label: "E-posta", value: `<a href="mailto:${opts.email}" style="color:#0ea5e9;text-decoration:none">${opts.email}</a>` },
+  ];
+  if (opts.phone) {
+    const cleanPhone = opts.phone.replace(/[^\d+]/g, "");
+    fields.push({
+      label: "Telefon",
+      value: `<a href="tel:${cleanPhone}" style="color:#0ea5e9;text-decoration:none">${opts.phone}</a> · <a href="https://wa.me/${cleanPhone.replace(/^\+?/, "")}" style="color:#25D366;text-decoration:none">WhatsApp</a>`,
+    });
+  }
+  fields.push({ label: "Rol", value: roleLabel[opts.role] ?? opts.role });
+  if (opts.accountType) fields.push({ label: "Hesap Tipi", value: accountLabel[opts.accountType] ?? opts.accountType });
+  if (opts.companyName) fields.push({ label: "Kurum", value: opts.companyName });
+  if (opts.studentNumber) fields.push({ label: "Öğrenci No", value: opts.studentNumber });
+  fields.push({ label: "Kullanıcı ID", value: `#${opts.userId}` });
+
+  const url = `${getAppUrl()}/admin/users`;
+  const html = wrapHtml(
+    "Yeni Kullanıcı Kaydı 🎉",
+    `Uygulamaya yeni bir kullanıcı kayıt oldu.<br><br>${fieldList(fields)}
+    <div style="margin-top:20px;text-align:center">
+      <a href="${url}" style="display:inline-block;background:#0ea5e9;color:#fff;padding:10px 22px;border-radius:6px;text-decoration:none;font-weight:600">Kullanıcıyı Görüntüle</a>
+    </div>`,
+  );
+  await notifyAll(`[Sphere] Yeni kayıt — ${opts.firstName} ${opts.lastName}`, html);
+}
+
 export async function notifyNewContactMessage(opts: {
   name: string;
   email: string;

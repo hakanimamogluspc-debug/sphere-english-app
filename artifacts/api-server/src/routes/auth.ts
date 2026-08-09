@@ -6,6 +6,7 @@ import { eq, and, count, sql } from "drizzle-orm";
 import { authMiddleware, generateToken, type AuthRequest } from "../middlewares/auth.js";
 import { sendMetaEvent } from "../services/metaConversions.js";
 import { validateBody, schemas } from "../middlewares/validate.js";
+import { notifyNewUserRegistration } from "../lib/admin-notifications.js";
 
 const router = Router();
 
@@ -124,6 +125,17 @@ router.post("/auth/register", validateBody(registerSchema), async (req, res) => 
       sourceUrl: "https://app.sphereenglish.com/register",
     }).catch(() => {});
 
+    notifyNewUserRegistration({
+      userId: updatedUser.id,
+      firstName: updatedUser.firstName,
+      lastName: updatedUser.lastName,
+      email: updatedUser.email,
+      phone: updatedUser.phone,
+      role: updatedUser.role,
+      accountType: "bireysel",
+      studentNumber: (updatedUser as any).studentNumber ?? null,
+    }).catch((e) => console.warn("[auth/register] admin bildirim hata:", e?.message));
+
     res.status(201).json({ user: { ...userWithoutPassword, company: null }, token });
     return;
   }
@@ -214,6 +226,18 @@ router.post("/auth/register", validateBody(registerSchema), async (req, res) => 
     fbp: req.cookies?.["_fbp"],
     sourceUrl: "https://app.sphereenglish.com/register",
   }).catch(() => {});
+
+  notifyNewUserRegistration({
+    userId: updatedUser.id,
+    firstName: updatedUser.firstName,
+    lastName: updatedUser.lastName,
+    email: updatedUser.email,
+    phone: updatedUser.phone,
+    role: updatedUser.role,
+    accountType: "kurumsal",
+    companyName: company.name,
+    studentNumber: (updatedUser as any).studentNumber ?? null,
+  }).catch((e) => console.warn("[auth/register] admin bildirim hata:", e?.message));
 
   res.status(201).json({ user: { ...userWithoutPassword, company: companyInfo }, token });
 });
