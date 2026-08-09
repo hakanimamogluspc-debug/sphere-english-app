@@ -78,6 +78,7 @@ import mailAssetsRouter from "./mail-assets";
 import demoRouter from "./demo";
 import adminContentArticlesRouter from "./admin-content-articles";
 import contentArticlesRouter from "./content-articles";
+import myReportRouter from "./my-report";
 import { requireSubscription } from "../middlewares/require-subscription";
 import { authMiddleware } from "../middlewares/auth";
 
@@ -137,6 +138,7 @@ router.use(mailAssetsRouter);
 router.use(demoRouter);
 router.use(adminContentArticlesRouter);
 router.use(contentArticlesRouter);
+router.use(myReportRouter);
 router.use(adminEbooksRouter);
 router.use(adminEbookPurchasesRouter);
 router.use(webAnalyticsRouter);

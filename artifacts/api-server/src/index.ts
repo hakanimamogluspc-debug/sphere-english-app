@@ -1406,6 +1406,44 @@ async function runStartupMigrations() {
     )`,
     `CREATE INDEX IF NOT EXISTS article_interactions_user_idx ON article_interactions (user_id, created_at DESC)`,
     `CREATE INDEX IF NOT EXISTS article_interactions_article_idx ON article_interactions (article_id, action)`,
+
+    // ─── User Mistakes (merkezi hata hafızası) ───────────────────────────────
+    `CREATE TABLE IF NOT EXISTS user_mistakes (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      mistake_type VARCHAR(30) NOT NULL,         -- grammar/vocab/pronunciation/collocation/spelling/register/other
+      wrong_text TEXT NOT NULL,                  -- kullanıcının söylediği/yazdığı yanlış
+      correct_text TEXT,                         -- doğrusu (biliniyorsa)
+      explanation TEXT,                          -- Türkçe kısa açıklama (kural + neden)
+      context TEXT,                              -- hatanın geçtiği cümle/durum
+      source_module VARCHAR(40) NOT NULL,        -- placement_test / ai_tutor / grammar_coach / writing_coach / pronunciation / quiz / speaking_scene
+      source_ref VARCHAR(100),                   -- ilgili record id/slug
+      cefr_tag VARCHAR(4),                       -- hangi seviyeye ait (A2..C2)
+      tags TEXT[] DEFAULT '{}',                  -- ['past-simple','articles','collocation-verb-noun']
+      occurrence_count INTEGER NOT NULL DEFAULT 1,
+      first_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      last_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      resolved_at TIMESTAMPTZ,                   -- kullanıcı bunu "anladım" işaretledi
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`,
+    `CREATE INDEX IF NOT EXISTS user_mistakes_user_idx ON user_mistakes (user_id, last_seen_at DESC)`,
+    `CREATE INDEX IF NOT EXISTS user_mistakes_user_type_idx ON user_mistakes (user_id, mistake_type, resolved_at)`,
+    `CREATE INDEX IF NOT EXISTS user_mistakes_source_idx ON user_mistakes (user_id, source_module, source_ref)`,
+
+    // AI Tutor konuşmalarında mistake extraction işlendi mi işareti
+    `ALTER TABLE ai_tutor_conversations ADD COLUMN IF NOT EXISTS mistakes_extracted_at TIMESTAMPTZ`,
+
+    // Haftalık rapor log — kime, ne zaman gönderildi
+    `CREATE TABLE IF NOT EXISTS weekly_reports_sent (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      week_start DATE NOT NULL,                  -- pazartesi
+      sent_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      summary JSONB NOT NULL,                    -- rendered data (frontend'de tekrar göstermek için)
+      email_sent BOOLEAN NOT NULL DEFAULT FALSE,
+      UNIQUE (user_id, week_start)
+    )`,
+    `CREATE INDEX IF NOT EXISTS weekly_reports_user_idx ON weekly_reports_sent (user_id, week_start DESC)`,
   ];
   for (const sql of migrations) {
     try {

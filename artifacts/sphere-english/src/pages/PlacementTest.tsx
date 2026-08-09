@@ -247,7 +247,13 @@ export default function PlacementTest() {
   const [answers, setAnswers] = useState<Record<number, string>>(initial?.answers ?? {});
   const [currentPage, setCurrentPage] = useState(initial?.currentPage ?? 0);
   const [submitting, setSubmitting] = useState(false);
-  const [result, setResult] = useState<{ score: number; level: string } | null>(null);
+  const [result, setResult] = useState<{
+    score: number;
+    level: string;
+    wrong?: Array<{ id: number; question: string; userAnswer: string; userAnswerText: string; correctAnswer: string; correctAnswerText: string }>;
+    total?: number;
+  } | null>(null);
+  const [showReview, setShowReview] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
@@ -306,14 +312,14 @@ export default function PlacementTest() {
           "Content-Type": "application/json",
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify({ answers }),
+        body: JSON.stringify({ answers, questions: QUESTIONS }),
       });
       if (!res.ok) {
         const data = await res.json();
         throw new Error(data.error || "Gönderim sırasında hata oluştu");
       }
       const data = await res.json();
-      setResult({ score: data.score, level: data.level });
+      setResult({ score: data.score, level: data.level, wrong: data.wrong, total: data.total });
       // Başarılı submit sonrası kaydedilmiş progress'i temizle
       clearProgress();
     } catch (e: any) {
@@ -417,6 +423,50 @@ export default function PlacementTest() {
               ))}
             </div>
           </div>
+
+          {/* Yanlış Cevaplar Review */}
+          {result.wrong && result.wrong.length > 0 && (
+            <div className="bg-white rounded-2xl shadow-xl p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider">Yanlış Cevapların</h2>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    {result.wrong.length} soruda yanıldın — hepsi kişisel hata defterine eklendi
+                  </p>
+                </div>
+                <Button
+                  onClick={() => setShowReview(v => !v)}
+                  variant="outline"
+                  className="text-sm"
+                >
+                  {showReview ? "Gizle" : "Cevapları Gör"}
+                </Button>
+              </div>
+              {showReview && (
+                <div className="space-y-3 mt-4 max-h-96 overflow-y-auto">
+                  {result.wrong.map((w) => (
+                    <div key={w.id} className="rounded-xl border border-slate-200 p-4 bg-slate-50">
+                      <div className="text-xs text-slate-400 mb-1">Soru {w.id}</div>
+                      <div className="text-sm text-slate-800 mb-3 font-medium">{w.question}</div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                        <div className="rounded-lg bg-red-50 border border-red-200 p-3">
+                          <div className="text-[10px] text-red-600 font-bold uppercase tracking-wide mb-1">Senin cevabın</div>
+                          <div className="text-red-900 font-medium line-through decoration-red-300">{w.userAnswerText}</div>
+                        </div>
+                        <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-3">
+                          <div className="text-[10px] text-emerald-700 font-bold uppercase tracking-wide mb-1">Doğrusu</div>
+                          <div className="text-emerald-900 font-bold">{w.correctAnswerText}</div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <p className="text-[11px] text-slate-400 mt-4 italic">
+                Bu hatalar "Raporum" sayfasında haftalık olarak sana özet olarak sunulacak.
+              </p>
+            </div>
+          )}
 
           {/* CTA */}
           <div className="bg-white rounded-2xl shadow-xl p-6 text-center">

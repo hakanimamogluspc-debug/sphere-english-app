@@ -1,7 +1,8 @@
 import { Router } from "express";
-import { db, usersTable } from "@workspace/db";
+import { db, usersTable, pool } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { authMiddleware, type AuthRequest } from "../middlewares/auth.js";
+import { recordPlacementMistakes } from "../lib/mistake-extractor.js";
 
 const router = Router();
 
@@ -46,15 +47,40 @@ router.post("/placement-test/submit", authMiddleware, async (req: AuthRequest, r
     return;
   }
 
-  const { answers } = req.body as { answers: Record<string, string> };
+  const { answers, questions } = req.body as {
+    answers: Record<string, string>;
+    // Frontend soruları da gönderiyorsa (opsiyonel) — mistake tablosuna text ile kaydedebilelim
+    questions?: Array<{ id: number; text: string; options: Record<string, string>; }>;
+  };
   if (!answers || typeof answers !== "object") {
     res.status(400).json({ error: "Cevaplar eksik veya geçersiz" });
     return;
   }
 
   let score = 0;
+  const wrongList: Array<{
+    id: number; question: string; userAnswer: string; userAnswerText: string;
+    correctAnswer: string; correctAnswerText: string;
+  }> = [];
+  const qMap = new Map<number, any>();
+  (questions ?? []).forEach(q => qMap.set(q.id, q));
+
   for (let q = 1; q <= 60; q++) {
-    if (answers[String(q)] === ANSWER_KEY[q]) score++;
+    const userAns = answers[String(q)];
+    const correctAns = ANSWER_KEY[q];
+    if (userAns === correctAns) {
+      score++;
+    } else if (userAns) {
+      const qDetail = qMap.get(q);
+      wrongList.push({
+        id: q,
+        question: qDetail?.text ?? `Soru ${q}`,
+        userAnswer: userAns,
+        userAnswerText: qDetail?.options?.[userAns] ?? userAns,
+        correctAnswer: correctAns,
+        correctAnswerText: qDetail?.options?.[correctAns] ?? correctAns,
+      });
+    }
   }
 
   const level = scoreToLevel(score);
@@ -68,8 +94,34 @@ router.post("/placement-test/submit", authMiddleware, async (req: AuthRequest, r
     .where(eq(usersTable.id, req.userId!))
     .returning();
 
+  // Cevapları level_exam_attempts'e persiste et (mevcut tablo — placement için de kullanıyoruz)
+  try {
+    await pool.query(
+      `INSERT INTO level_exam_attempts (user_id, cefr_level, score, total, percent, passed, answers)
+       VALUES ($1, $2, $3, 60, $4, true, $5::jsonb)`,
+      [req.userId, level, score, Math.round((score / 60) * 100),
+       JSON.stringify({ source: "placement_test", answers, wrong: wrongList })],
+    );
+  } catch (e: any) {
+    console.warn("[placement-test/submit] level_exam_attempts insert warn:", e?.message);
+  }
+
+  // Yanlış cevapları user_mistakes'e ekle (async — response'u geciktirmesin)
+  if (wrongList.length > 0) {
+    recordPlacementMistakes(
+      req.userId!,
+      wrongList.map(w => ({
+        questionId: w.id,
+        question: w.question,
+        userAnswer: `${w.userAnswer}: ${w.userAnswerText}`,
+        correctAnswer: `${w.correctAnswer}: ${w.correctAnswerText}`,
+      })),
+      level,
+    ).catch((e) => console.warn("[placement-test/submit] mistake insert warn:", e?.message));
+  }
+
   const { password: _, ...userWithoutPassword } = updated;
-  res.json({ score, level, user: userWithoutPassword });
+  res.json({ score, level, user: userWithoutPassword, wrong: wrongList, total: 60 });
 });
 
 export default router;
