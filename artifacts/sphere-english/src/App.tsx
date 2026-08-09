@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "./hooks/use-auth";
+import { useFeature } from "./hooks/use-feature";
 import "./lib/fetch-interceptor";
 import { useEffect, lazy, Suspense, type ReactNode, type ComponentType } from "react";
 import { API } from "@/lib/api-url";
@@ -139,13 +140,19 @@ function PageLoader() {
   );
 }
 
-function ProtectedRoute({ component: Component, allowedRoles, skipPlacementCheck }: { component: any, allowedRoles?: string[], skipPlacementCheck?: boolean }) {
+function ProtectedRoute({ component: Component, allowedRoles, skipPlacementCheck, featureKey }: { component: any, allowedRoles?: string[], skipPlacementCheck?: boolean, featureKey?: string }) {
   const { user, isLoading, isAuthenticated } = useAuth();
   const [location] = useLocation();
+  const featureEnabled = useFeature(featureKey);
 
   if (isLoading) return <PageLoader />;
   if (!isAuthenticated) return <Redirect to="/login" />;
   if (allowedRoles && user && !allowedRoles.includes(user.role)) return <Redirect to="/dashboard" />;
+
+  // Modül admin panelinden kapatıldıysa route'a direkt erişim de engelli
+  if (featureKey && !featureEnabled && user?.role !== "admin") {
+    return <Redirect to="/dashboard" />;
+  }
 
   if (
     !skipPlacementCheck &&
@@ -160,10 +167,11 @@ function ProtectedRoute({ component: Component, allowedRoles, skipPlacementCheck
   return <Component />;
 }
 
-function LayoutWrapper({ component: Component, allowedRoles }: { component: any, allowedRoles?: string[] }) {
+function LayoutWrapper({ component: Component, allowedRoles, featureKey }: { component: any, allowedRoles?: string[], featureKey?: string }) {
   return (
     <ProtectedRoute
       allowedRoles={allowedRoles}
+      featureKey={featureKey}
       component={() => (
         <DashboardLayout>
           <Component />
@@ -226,36 +234,36 @@ function Router() {
         <Route path="/profile"><LayoutWrapper component={Profile} /></Route>
 
         {/* Student Routes */}
-        <Route path="/courses"><LayoutWrapper component={CourseList} /></Route>
-        <Route path="/courses/:courseId/lessons/:lessonId"><LayoutWrapper component={LessonPlayer} /></Route>
-        <Route path="/courses/:id"><LayoutWrapper component={CourseDetail} /></Route>
-        <Route path="/progress"><LayoutWrapper component={ProgressPage} /></Route>
-        <Route path="/live-classes"><LayoutWrapper component={LiveClasses} /></Route>
-        <Route path="/quizzes"><LayoutWrapper component={Quizzes} /></Route>
-        <Route path="/leaderboard"><LayoutWrapper component={Leaderboard} /></Route>
-        <Route path="/certificates"><LayoutWrapper component={Certificates} /></Route>
-        <Route path="/student/speaking-club"><LayoutWrapper component={StudentSpeakingClub} allowedRoles={['student']} /></Route>
-        <Route path="/student/materials"><LayoutWrapper component={StudentMaterials} allowedRoles={['student']} /></Route>
-        <Route path="/student/subscription"><LayoutWrapper component={Subscription} allowedRoles={['student', 'admin']} /></Route>
-        <Route path="/student/pronunciation-coach"><LayoutWrapper component={PronunciationCoachPro} allowedRoles={['student', 'admin']} /></Route>
-        <Route path="/student/writing-coach"><LayoutWrapper component={WritingCoachPro} allowedRoles={['student', 'admin']} /></Route>
-        <Route path="/student/vocab-game"><LayoutWrapper component={VocabGamePro} allowedRoles={['student', 'admin']} /></Route>
-        <Route path="/student/grammar-coach"><LayoutWrapper component={GrammarCoachPro} allowedRoles={['student', 'admin']} /></Route>
-        <Route path="/student/simulation-mode"><LayoutWrapper component={SimulationModePro} allowedRoles={['student', 'admin']} /></Route>
+        <Route path="/courses"><LayoutWrapper component={CourseList} featureKey="student-courses" /></Route>
+        <Route path="/courses/:courseId/lessons/:lessonId"><LayoutWrapper component={LessonPlayer} featureKey="student-courses" /></Route>
+        <Route path="/courses/:id"><LayoutWrapper component={CourseDetail} featureKey="student-courses" /></Route>
+        <Route path="/progress"><LayoutWrapper component={ProgressPage} featureKey="student-progress" /></Route>
+        <Route path="/live-classes"><LayoutWrapper component={LiveClasses} featureKey="student-live-classes" /></Route>
+        <Route path="/quizzes"><LayoutWrapper component={Quizzes} featureKey="student-quizzes" /></Route>
+        <Route path="/leaderboard"><LayoutWrapper component={Leaderboard} featureKey="student-leaderboard" /></Route>
+        <Route path="/certificates"><LayoutWrapper component={Certificates} featureKey="student-certificates" /></Route>
+        <Route path="/student/speaking-club"><LayoutWrapper component={StudentSpeakingClub} allowedRoles={['student']} featureKey="student-speaking-club" /></Route>
+        <Route path="/student/materials"><LayoutWrapper component={StudentMaterials} allowedRoles={['student']} featureKey="student-materials" /></Route>
+        <Route path="/student/subscription"><LayoutWrapper component={Subscription} allowedRoles={['student', 'admin']} featureKey="student-subscription" /></Route>
+        <Route path="/student/pronunciation-coach"><LayoutWrapper component={PronunciationCoachPro} allowedRoles={['student', 'admin']} featureKey="student-pronunciation-coach" /></Route>
+        <Route path="/student/writing-coach"><LayoutWrapper component={WritingCoachPro} allowedRoles={['student', 'admin']} featureKey="student-writing-coach" /></Route>
+        <Route path="/student/vocab-game"><LayoutWrapper component={VocabGamePro} allowedRoles={['student', 'admin']} featureKey="student-vocab-game" /></Route>
+        <Route path="/student/grammar-coach"><LayoutWrapper component={GrammarCoachPro} allowedRoles={['student', 'admin']} featureKey="student-grammar-coach" /></Route>
+        <Route path="/student/simulation-mode"><LayoutWrapper component={SimulationModePro} allowedRoles={['student', 'admin']} featureKey="student-simulation-mode" /></Route>
         <Route path="/student/settings"><LayoutWrapper component={StudentSettings} allowedRoles={['student']} /></Route>
-        <Route path="/student/interview-sim"><LayoutWrapper component={InterviewSimulatorPro} allowedRoles={['student', 'admin']} /></Route>
-        <Route path="/student/presentation-sim"><LayoutWrapper component={PresentationSimulatorPro} allowedRoles={['student', 'admin']} /></Route>
-        <Route path="/student/ai-quiz"><LayoutWrapper component={AIQuizGeneratorPro} allowedRoles={['student', 'admin']} /></Route>
-        <Route path="/student/ai-tutor"><LayoutWrapper component={AITutorPro} allowedRoles={['student', 'admin']} /></Route>
-        <Route path="/student/learning-path"><LayoutWrapper component={LearningPathPro} allowedRoles={['student', 'admin']} /></Route>
+        <Route path="/student/interview-sim"><LayoutWrapper component={InterviewSimulatorPro} allowedRoles={['student', 'admin']} featureKey="student-interview-sim" /></Route>
+        <Route path="/student/presentation-sim"><LayoutWrapper component={PresentationSimulatorPro} allowedRoles={['student', 'admin']} featureKey="student-presentation-sim" /></Route>
+        <Route path="/student/ai-quiz"><LayoutWrapper component={AIQuizGeneratorPro} allowedRoles={['student', 'admin']} featureKey="student-ai-quiz" /></Route>
+        <Route path="/student/ai-tutor"><LayoutWrapper component={AITutorPro} allowedRoles={['student', 'admin']} featureKey="student-ai-tutor" /></Route>
+        <Route path="/student/learning-path"><LayoutWrapper component={LearningPathPro} allowedRoles={['student', 'admin']} featureKey="student-learning-path" /></Route>
         {/* Speaking role-play sahneleri — free tier de erişebilir (endpoint içinde quota kontrolü) */}
-        <Route path="/student/speaking-scenes"><LayoutWrapper component={SpeakingScenes} allowedRoles={['student', 'admin']} /></Route>
+        <Route path="/student/speaking-scenes"><LayoutWrapper component={SpeakingScenes} allowedRoles={['student', 'admin']} featureKey="student-speaking-scenes" /></Route>
         <Route path="/kesfet"><LayoutWrapper component={Discover} allowedRoles={['student', 'admin', 'corporate']} /></Route>
         <Route path="/raporum"><LayoutWrapper component={MyReport} allowedRoles={['student', 'admin', 'corporate']} /></Route>
-        <Route path="/student/speaking-scenes/:slug"><LayoutWrapper component={SpeakingSceneRunner} allowedRoles={['student', 'admin']} /></Route>
-        <Route path="/student/level-exams"><LayoutWrapper component={LevelExams} allowedRoles={['student', 'admin']} /></Route>
+        <Route path="/student/speaking-scenes/:slug"><LayoutWrapper component={SpeakingSceneRunner} allowedRoles={['student', 'admin']} featureKey="student-speaking-scenes" /></Route>
+        <Route path="/student/level-exams"><LayoutWrapper component={LevelExams} allowedRoles={['student', 'admin']} featureKey="student-level-exams" /></Route>
         <Route path="/student/level-exams/:level"><LayoutWrapper component={LevelExamTaking} allowedRoles={['student', 'admin']} /></Route>
-        <Route path="/forum"><LayoutWrapper component={Forum} /></Route>
+        <Route path="/forum"><LayoutWrapper component={Forum} featureKey="student-forum" /></Route>
 
         {/* Teacher Routes */}
         <Route path="/teacher/courses"><LayoutWrapper component={TeacherCourses} allowedRoles={['teacher', 'admin']} /></Route>

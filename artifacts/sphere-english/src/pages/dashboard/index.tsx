@@ -1,4 +1,5 @@
 import { useAuth } from "@/hooks/use-auth";
+import { useFeature } from "@/hooks/use-feature";
 import { useGetDashboardStats, useGetMyProgress, useGetAdminDashboard } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle, Badge, Button } from "@/components/ui/core";
 import { formatDateTime, getLevelColor } from "@/lib/utils";
@@ -29,6 +30,7 @@ function StudentDashboard() {
   const { data: stats } = useGetDashboardStats();
   const { data: progress } = useGetMyProgress();
   const { user } = useAuth();
+  const showCourses = useFeature("student-courses");
 
   return (
     <div className="space-y-8">
@@ -129,38 +131,40 @@ function StudentDashboard() {
             </CardContent>
           </Card>
 
-          {/* Kayıtlı Kurslar İlerlemesi */}
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>Kurslarım</CardTitle>
-              <Link href="/courses" className="text-sm font-medium text-primary hover:underline">Tümünü gör</Link>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {progress?.courseProgress?.map(course => (
-                <div key={course.courseId}>
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="font-semibold text-foreground">{course.courseTitle}</span>
-                    <span className="text-sm font-medium text-muted-foreground">%{Math.round(course.percentage)}</span>
+          {/* Kayıtlı Kurslar İlerlemesi — Kurslar modülü kapalıysa gizli */}
+          {showCourses && (
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle>Kurslarım</CardTitle>
+                <Link href="/courses" className="text-sm font-medium text-primary hover:underline">Tümünü gör</Link>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {progress?.courseProgress?.map(course => (
+                  <div key={course.courseId}>
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="font-semibold text-foreground">{course.courseTitle}</span>
+                      <span className="text-sm font-medium text-muted-foreground">%{Math.round(course.percentage)}</span>
+                    </div>
+                    <div className="w-full bg-secondary rounded-full h-3 overflow-hidden border border-border/50">
+                      <div
+                        className="bg-gradient-to-r from-primary to-accent h-full rounded-full transition-all duration-1000"
+                        style={{ width: `${course.percentage}%` }}
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-2">{course.completedLessons} / {course.totalLessons} ders tamamlandı</p>
                   </div>
-                  <div className="w-full bg-secondary rounded-full h-3 overflow-hidden border border-border/50">
-                    <div 
-                      className="bg-gradient-to-r from-primary to-accent h-full rounded-full transition-all duration-1000" 
-                      style={{ width: `${course.percentage}%` }}
-                    />
+                ))}
+                {(!progress?.courseProgress || progress.courseProgress.length === 0) && (
+                  <div className="text-center py-6">
+                    <p className="text-muted-foreground mb-4">Henüz herhangi bir kursa kayıt olmadınız.</p>
+                    <Link href="/courses">
+                      <Button>Kurslara Göz At</Button>
+                    </Link>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-2">{course.completedLessons} / {course.totalLessons} ders tamamlandı</p>
-                </div>
-              ))}
-              {(!progress?.courseProgress || progress.courseProgress.length === 0) && (
-                <div className="text-center py-6">
-                  <p className="text-muted-foreground mb-4">Henüz herhangi bir kursa kayıt olmadınız.</p>
-                  <Link href="/courses">
-                    <Button>Kurslara Göz At</Button>
-                  </Link>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                )}
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         <div className="space-y-8">
