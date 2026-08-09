@@ -12,7 +12,7 @@ export function renderWelcomeEmail(opts: {
   firstName: string;
 }): { subject: string; html: string; preheader: string } {
   const name = (opts.firstName || "").trim() || "hoş geldin";
-  const subject = `Sphere English ailesine hoş geldin, ${name}! 🎉`;
+  const subject = `Sphere English ailesine hoş geldin, ${name}!`;
   const preheader = "İngilizce yolculuğun burada başlıyor — canlı dersler, 7/24 AI koçlar ve daha fazlası seni bekliyor.";
 
   const html = `<!DOCTYPE html>
@@ -30,7 +30,7 @@ export function renderWelcomeEmail(opts: {
 
         <!-- Header -->
         <tr><td style="padding:36px 32px;background:linear-gradient(135deg,#1B365D 0%,#0ea5e9 100%);text-align:center;">
-          <h1 style="margin:0;color:#fff;font-size:26px;font-weight:700;letter-spacing:-0.5px;">Sphere English'e Hoş Geldin! 🎉</h1>
+          <h1 style="margin:0;color:#fff;font-size:26px;font-weight:700;letter-spacing:-0.5px;">Sphere English'e Hoş Geldin</h1>
           <p style="margin:12px 0 0;color:rgba(255,255,255,.9);font-size:15px;">Yolculuğun burada başlıyor</p>
         </td></tr>
 
@@ -38,7 +38,7 @@ export function renderWelcomeEmail(opts: {
         <tr><td style="padding:32px 32px 8px;">
           <p style="margin:0 0 16px;font-size:16px;">Merhaba <strong>${escapeHtml(name)}</strong>,</p>
           <p style="margin:0 0 20px;font-size:15px;line-height:1.7;color:#334155;">
-            Sphere English'e hoş geldin! Aramızda olduğun için çok mutluyuz. 🌟
+            Sphere English'e hoş geldin. Aramızda olduğun için çok mutluyuz.
           </p>
           <p style="margin:0 0 20px;font-size:15px;line-height:1.7;color:#334155;">
             Artık sadece bir uygulamayla değil, seni hedefine götürecek <strong>komple bir öğrenme sistemiyle</strong> tanışıyorsun.
@@ -48,26 +48,26 @@ export function renderWelcomeEmail(opts: {
 
         <!-- Feature 1 -->
         <tr><td style="padding:0 32px 4px;">
-          ${featureRow("🎓", "Canlı Dersler", "Uzman eğitmenlerimizle birebir veya küçük grup canlı derslerde konuş, pratik yap, anlık geri bildirim al. Ezber değil, gerçek iletişim.")}
+          ${featureRow("▶", "Canlı Dersler", "Uzman eğitmenlerimizle birebir veya küçük grup canlı derslerde konuş, pratik yap, anlık geri bildirim al. Ezber değil, gerçek iletişim.")}
         </td></tr>
         <tr><td style="padding:0 32px 4px;">
-          ${featureRow("🤖", "7/24 Yapay Zeka Koçları", "Ders dışında da yalnız değilsin. AI koçlarımızla dilediğin zaman konuşma pratiği yap, kelime çalış, yazdıklarını düzelt.")}
+          ${featureRow("◆", "7/24 Yapay Zeka Koçları", "Ders dışında da yalnız değilsin. AI koçlarımızla dilediğin zaman konuşma pratiği yap, kelime çalış, yazdıklarını düzelt.")}
         </td></tr>
         <tr><td style="padding:0 32px 4px;">
-          ${featureRow("🎯", "Sana Özel Program", "Seviye testin ve hedeflerinle sana özel bir yol haritası çıkarıyoruz. İş İngilizcesi mi, günlük konuşma mı, sınav hazırlığı mı — sana göre.")}
+          ${featureRow("★", "Sana Özel Program", "Seviye testin ve hedeflerinle sana özel bir yol haritası çıkarıyoruz. İş İngilizcesi mi, günlük konuşma mı, sınav hazırlığı mı — sana göre.")}
         </td></tr>
         <tr><td style="padding:0 32px 4px;">
-          ${featureRow("📚", "Zengin İçerik Kütüphanesi", "İnteraktif alıştırmalar, kelime oyunları, dinleme etkinlikleri, okuma pratikleri ve daha fazlası. Her öğrenme stiline uygun.")}
+          ${featureRow("■", "Zengin İçerik Kütüphanesi", "İnteraktif alıştırmalar, kelime oyunları, dinleme etkinlikleri, okuma pratikleri ve daha fazlası. Her öğrenme stiline uygun.")}
         </td></tr>
         <tr><td style="padding:0 32px 20px;">
-          ${featureRow("📊", "İlerlemeni Takip Et", "Ne kadar ilerleme kaydettiğini gör, günlük çalışma serini büyüt, rozetlerini topla. Öğrenmek keyifli olsun.")}
+          ${featureRow("▲", "İlerlemeni Takip Et", "Ne kadar ilerleme kaydettiğini gör, günlük çalışma serini büyüt, rozetlerini topla. Öğrenmek keyifli olsun.")}
         </td></tr>
 
         <!-- CTA -->
         <tr><td style="padding:8px 32px 32px;">
           <div style="background:#f0f9ff;border:2px solid #0ea5e9;border-radius:10px;padding:24px;text-align:center;">
             <p style="margin:0 0 8px;font-size:13px;color:#0369a1;font-weight:700;text-transform:uppercase;letter-spacing:.05em;">İlk Adım</p>
-            <p style="margin:0 0 16px;font-size:18px;font-weight:700;color:#0c4a6e;">Seviye Tesitini Tamamla 👇</p>
+            <p style="margin:0 0 16px;font-size:18px;font-weight:700;color:#0c4a6e;">Seviye Tesitini Tamamla</p>
             <p style="margin:0 0 20px;font-size:14px;color:#334155;line-height:1.6;">
               Yolculuğuna doğru noktadan başlamak için sadece <strong>5 dakikanı</strong> ayır. Sistem sana en uygun modülleri açacak.
             </p>
@@ -83,8 +83,8 @@ export function renderWelcomeEmail(opts: {
             <p style="margin:0 0 12px;font-size:15px;font-weight:600;color:#1e293b;">Sorun mu var? Yardıma ihtiyacın mı var?</p>
             <p style="margin:0;font-size:14px;color:#64748b;line-height:1.7;">
               Bize her zaman ulaşabilirsin:<br>
-              📧 <a href="mailto:${SUPPORT_EMAIL}" style="color:#0ea5e9;text-decoration:none;">${SUPPORT_EMAIL}</a><br>
-              💬 <a href="https://wa.me/${SUPPORT_WHATSAPP}" style="color:#25D366;text-decoration:none;">WhatsApp: ${SUPPORT_WHATSAPP_DISPLAY}</a>
+              <span style="color:#0ea5e9;font-weight:700;">E-posta:</span> <a href="mailto:${SUPPORT_EMAIL}" style="color:#0ea5e9;text-decoration:none;">${SUPPORT_EMAIL}</a><br>
+              <span style="color:#0ea5e9;font-weight:700;">WhatsApp:</span> <a href="https://wa.me/${SUPPORT_WHATSAPP}" style="color:#0ea5e9;text-decoration:none;">${SUPPORT_WHATSAPP_DISPLAY}</a>
             </p>
           </div>
         </td></tr>
@@ -93,7 +93,7 @@ export function renderWelcomeEmail(opts: {
         <tr><td style="padding:0 32px 32px;">
           <p style="margin:0;font-size:15px;color:#334155;">
             Başarılar dileriz,<br>
-            <strong>Sphere English Ekibi</strong> 💙
+            <strong style="color:#1B365D;">Sphere English Ekibi</strong>
           </p>
         </td></tr>
 
@@ -111,12 +111,18 @@ export function renderWelcomeEmail(opts: {
   return { subject, html, preheader };
 }
 
-function featureRow(emoji: string, title: string, body: string): string {
+function featureRow(icon: string, title: string, body: string): string {
   return `
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:16px;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:18px;">
       <tr>
-        <td style="width:44px;vertical-align:top;font-size:24px;line-height:1;padding-top:2px;">${emoji}</td>
-        <td style="vertical-align:top;">
+        <td style="width:56px;vertical-align:top;padding-top:2px;">
+          <table role="presentation" cellpadding="0" cellspacing="0" width="42" height="42" style="background:#0ea5e9;border-radius:21px;">
+            <tr>
+              <td align="center" valign="middle" width="42" height="42" style="color:#ffffff;font-size:18px;line-height:42px;font-family:Arial,Helvetica,sans-serif;">${icon}</td>
+            </tr>
+          </table>
+        </td>
+        <td style="vertical-align:top;padding-top:6px;">
           <p style="margin:0 0 4px;font-size:15px;font-weight:700;color:#1B365D;">${escapeHtml(title)}</p>
           <p style="margin:0;font-size:14px;line-height:1.6;color:#475569;">${escapeHtml(body)}</p>
         </td>
