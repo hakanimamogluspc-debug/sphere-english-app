@@ -183,6 +183,18 @@ if (fs.existsSync(vocabGameDir)) {
   logger.info({ vocabGameDir }, "Serving vocab game static files");
 }
 
+// Serve email icons (public, mail'lerde inline PNG olarak kullanılıyor)
+const emailIconsDir = path.join(process.cwd(), "artifacts/api-server/public/email-icons");
+if (fs.existsSync(emailIconsDir)) {
+  app.use("/email-icons", express.static(emailIconsDir, {
+    setHeaders(res) {
+      res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+      res.setHeader("Access-Control-Allow-Origin", "*");
+    },
+  }));
+  logger.info({ emailIconsDir }, "Serving email icons");
+}
+
 // Resend webhook — /api prefix'i yok, ham JSON gerekiyor
 app.use(webhooksRouter);
 
