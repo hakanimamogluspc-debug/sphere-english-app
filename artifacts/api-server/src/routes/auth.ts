@@ -7,6 +7,8 @@ import { authMiddleware, generateToken, type AuthRequest } from "../middlewares/
 import { sendMetaEvent } from "../services/metaConversions.js";
 import { validateBody, schemas } from "../middlewares/validate.js";
 import { notifyNewUserRegistration } from "../lib/admin-notifications.js";
+import { sendEmail } from "../lib/email.js";
+import { renderWelcomeEmail } from "../lib/welcome-email.js";
 
 const router = Router();
 
@@ -136,6 +138,16 @@ router.post("/auth/register", validateBody(registerSchema), async (req, res) => 
       studentNumber: (updatedUser as any).studentNumber ?? null,
     }).catch((e) => console.warn("[auth/register] admin bildirim hata:", e?.message));
 
+    // Hoş geldin maili
+    (async () => {
+      try {
+        const { subject, html } = renderWelcomeEmail({ firstName: updatedUser.firstName });
+        await sendEmail(updatedUser.email, subject, html);
+      } catch (e: any) {
+        console.warn("[auth/register] welcome mail hata:", e?.message);
+      }
+    })();
+
     res.status(201).json({ user: { ...userWithoutPassword, company: null }, token });
     return;
   }
@@ -238,6 +250,16 @@ router.post("/auth/register", validateBody(registerSchema), async (req, res) => 
     companyName: company.name,
     studentNumber: (updatedUser as any).studentNumber ?? null,
   }).catch((e) => console.warn("[auth/register] admin bildirim hata:", e?.message));
+
+  // Hoş geldin maili
+  (async () => {
+    try {
+      const { subject, html } = renderWelcomeEmail({ firstName: updatedUser.firstName });
+      await sendEmail(updatedUser.email, subject, html);
+    } catch (e: any) {
+      console.warn("[auth/register] welcome mail hata:", e?.message);
+    }
+  })();
 
   res.status(201).json({ user: { ...userWithoutPassword, company: companyInfo }, token });
 });
