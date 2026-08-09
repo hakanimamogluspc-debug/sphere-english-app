@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   BookOpen, LayoutDashboard, Video, FileQuestion, LineChart,
   Award, MessageSquare, Users, Megaphone, LogOut, Menu, Building2, BarChart3, GraduationCap, Mic, MessageCircle, FolderOpen, PenLine, TrendingUp, Settings2, Gamepad2, Crown, Lock,
-  Sparkles, ChevronDown, Brain, Briefcase, Presentation, Wand2, Compass, Bot, Activity, UserPlus, ShoppingBag, Phone, UserCircle, Ticket, HardDrive, Package, Receipt, Mail, ChevronLeft, ChevronRight, Calendar
+  Sparkles, ChevronDown, Brain, Briefcase, Presentation, Wand2, Compass, Bot, Activity, UserPlus, ShoppingBag, Phone, UserCircle, Ticket, HardDrive, Package, Receipt, Mail, ChevronLeft, ChevronRight, Calendar, Newspaper
 } from "lucide-react";
 import { Avatar } from "../ui/core";
 import { NotificationBell } from "../NotificationBell";
@@ -116,6 +116,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       { name: 'Aktivite Analizi',    href: '/admin/analytics',                icon: Activity },
       { name: 'Mail Şablonları',     href: '/admin/mail-sablonlari',          icon: Mail },
       { name: 'Demo Randevular',     href: '/admin/demo',                     icon: Calendar },
+      { name: 'İçerik Kütüphanesi',  href: '/admin/content',                  icon: Newspaper },
       { name: 'Eğitmen Başvuruları', href: '/admin/teacher-applications',     icon: UserPlus },
       { name: 'E-Kitap Yönetimi',    href: '/admin/ebooks',                   icon: BookOpen },
       { name: 'E-Kitap Paketleri',   href: '/admin/bundles',                  icon: Package },

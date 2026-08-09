@@ -1334,6 +1334,78 @@ async function runStartupMigrations() {
     `ALTER TABLE chatbot_conversations ADD COLUMN IF NOT EXISTS started_at TIMESTAMP NOT NULL DEFAULT NOW()`,
     `ALTER TABLE chatbot_conversations ADD COLUMN IF NOT EXISTS is_resolved BOOLEAN NOT NULL DEFAULT false`,
     `ALTER TABLE chatbot_conversations ADD COLUMN IF NOT EXISTS message_count INTEGER NOT NULL DEFAULT 0`,
+
+    // ─── Content Articles (Guardian + manuel makale beslemeleri) ─────────────
+    `CREATE TABLE IF NOT EXISTS content_articles (
+      id SERIAL PRIMARY KEY,
+      source VARCHAR(50) NOT NULL,               -- 'guardian', 'hbr', 'manual', ...
+      external_id VARCHAR(500),                  -- Guardian article id (nullable manuel için)
+      url TEXT NOT NULL,
+      title TEXT NOT NULL,
+      subtitle TEXT,
+      snippet TEXT,                              -- API'den gelen trail/standfirst
+      body_html TEXT,                            -- makale gövdesi (mümkünse)
+      body_text TEXT,                            -- düz metin (aramalar için)
+      word_count INTEGER,
+      image_url TEXT,
+      author VARCHAR(300),
+      original_section VARCHAR(100),             -- Guardian section (business/technology)
+      published_at TIMESTAMPTZ,
+
+      -- LLM enrichment
+      tr_summary TEXT,                           -- 3 satır Türkçe özet
+      cefr_level VARCHAR(4),                     -- A2, B1, B2, C1, C2
+      category VARCHAR(30),                      -- finance/tech/leadership/negotiation/general
+      key_vocab JSONB,                           -- [{"word":"...", "meaning_tr":"...", "context":"..."}]
+      tags TEXT[] DEFAULT '{}',
+
+      status VARCHAR(20) NOT NULL DEFAULT 'draft', -- draft / published / archived / failed
+      admin_notes TEXT,
+      enriched_at TIMESTAMPTZ,
+      published_admin_at TIMESTAMPTZ,            -- admin publish tarihi
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`,
+    `CREATE UNIQUE INDEX IF NOT EXISTS content_articles_source_ext_unique
+       ON content_articles (source, external_id) WHERE external_id IS NOT NULL`,
+    `CREATE INDEX IF NOT EXISTS content_articles_status_idx ON content_articles (status, published_admin_at DESC)`,
+    `CREATE INDEX IF NOT EXISTS content_articles_category_level_idx ON content_articles (category, cefr_level, status)`,
+    `CREATE INDEX IF NOT EXISTS content_articles_published_idx ON content_articles (published_at DESC)`,
+
+    // Ingestion log — her cron run için özet
+    `CREATE TABLE IF NOT EXISTS content_ingestion_log (
+      id SERIAL PRIMARY KEY,
+      source VARCHAR(50) NOT NULL,
+      run_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      fetched_count INTEGER DEFAULT 0,
+      new_count INTEGER DEFAULT 0,
+      enriched_count INTEGER DEFAULT 0,
+      error_count INTEGER DEFAULT 0,
+      duration_ms INTEGER,
+      details JSONB
+    )`,
+    `CREATE INDEX IF NOT EXISTS content_ingestion_log_source_idx ON content_ingestion_log (source, run_at DESC)`,
+
+    // Kullanıcı save + interaction (Faz 2 için de hazır)
+    `CREATE TABLE IF NOT EXISTS user_saved_articles (
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      article_id INTEGER NOT NULL REFERENCES content_articles(id) ON DELETE CASCADE,
+      saved_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      note TEXT,
+      PRIMARY KEY (user_id, article_id)
+    )`,
+    `CREATE INDEX IF NOT EXISTS user_saved_articles_user_idx ON user_saved_articles (user_id, saved_at DESC)`,
+
+    `CREATE TABLE IF NOT EXISTS article_interactions (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      article_id INTEGER NOT NULL REFERENCES content_articles(id) ON DELETE CASCADE,
+      action VARCHAR(20) NOT NULL,               -- view / like / save / dismiss / complete_read
+      metadata JSONB,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`,
+    `CREATE INDEX IF NOT EXISTS article_interactions_user_idx ON article_interactions (user_id, created_at DESC)`,
+    `CREATE INDEX IF NOT EXISTS article_interactions_article_idx ON article_interactions (article_id, action)`,
   ];
   for (const sql of migrations) {
     try {
