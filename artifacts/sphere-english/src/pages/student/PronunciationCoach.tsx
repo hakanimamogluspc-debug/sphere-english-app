@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { Mic, MicOff, Volume2, ChevronLeft, ChevronDown, ChevronUp, AlertCircle, BookOpen, Mic2, RotateCcw, Languages, PhoneOff, Award, Clock, MessageSquare, TrendingUp, CheckCircle2, Sparkles, Target, Zap, Loader2, History } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useBeforeUnload } from "@/hooks/use-before-unload";
+import { ClickableText } from "@/components/ClickableText";
 
 const TOKEN_KEY = "sphere_token";
 
@@ -906,8 +907,8 @@ function TeacherBubble({ message, teacher, onPlay, getApiBase }: { message: Mess
       <img src={`/images/${teacher.image}`} alt={teacher.name}
         className="w-7 h-7 rounded-full object-cover flex-shrink-0 shadow ring-2 ring-white" />
       <div className="max-w-[80%]">
-        <div className="rounded-2xl rounded-bl-sm px-3.5 py-2.5 text-sm shadow-sm bg-white border border-gray-100 text-gray-800 leading-relaxed">
-          {message.text}
+        <div className="rounded-2xl rounded-bl-sm px-3.5 py-2.5 text-sm shadow-sm bg-white border border-gray-100 text-gray-800 leading-relaxed relative">
+          <ClickableText text={message.text} inline />
         </div>
         {translation !== null && (
           <div className="mt-1.5 mx-0.5 px-3 py-2 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900 leading-relaxed">

@@ -18,6 +18,7 @@ import {
   Award,
   Type,
 } from "lucide-react";
+import { DictionaryHost } from "@/components/ClickableText";
 
 const TOKEN_KEY = "sphere_token";
 const API = import.meta.env.BASE_URL.replace(/\/$/, "") + "/api";
@@ -483,7 +484,13 @@ export default function AITutor() {
                   <div className={`max-w-[80%] rounded-2xl px-4 py-2.5 shadow-sm ${
                     m.role === "user" ? "bg-emerald-500 text-white" : "bg-white border border-gray-100 text-gray-900"
                   }`}>
-                    <MessageBody content={m.content} role={m.role} />
+                    {m.role === "assistant" ? (
+                      <DictionaryHost>
+                        <MessageBody content={m.content} role={m.role} />
+                      </DictionaryHost>
+                    ) : (
+                      <MessageBody content={m.content} role={m.role} />
+                    )}
                   </div>
                 </motion.div>
               ))}

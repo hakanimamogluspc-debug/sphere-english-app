@@ -5,6 +5,7 @@ import {
   Loader2, Mic, Square, ArrowLeft, Volume2, Sparkles,
   ChevronRight, RefreshCw, Play, Award, MessageSquare,
 } from "lucide-react";
+import { ClickableText } from "@/components/ClickableText";
 
 /**
  * Speaking sahne çalıştırıcı.
@@ -395,7 +396,9 @@ export default function SpeakingSceneRunner() {
               <Volume2 className="w-4 h-4" />
             </button>
           </div>
-          <p className="text-slate-900 text-lg leading-relaxed">{currentAi.text}</p>
+          <p className="text-slate-900 text-lg leading-relaxed relative">
+            <ClickableText text={currentAi.text} inline />
+          </p>
           {currentAi.textTr && (
             <p className="text-slate-500 text-sm mt-2 italic">{currentAi.textTr}</p>
           )}
@@ -426,8 +429,8 @@ export default function SpeakingSceneRunner() {
           </div>
 
           <div className="mb-4">
-            <p className="text-2xl font-semibold text-slate-900 leading-relaxed">
-              {currentUser.text}
+            <p className="text-2xl font-semibold text-slate-900 leading-relaxed relative">
+              <ClickableText text={currentUser.text} inline />
             </p>
             {currentUser.textTr && (
               <p className="text-slate-500 text-sm mt-2 italic">{currentUser.textTr}</p>
