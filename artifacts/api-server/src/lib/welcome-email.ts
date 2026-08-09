@@ -3,10 +3,12 @@
  */
 
 const APP_URL = process.env.APP_URL || "https://app.sphereenglish.com";
+const API_URL = process.env.PUBLIC_API_URL || "https://api.sphereenglish.com";
 const WWW_URL = process.env.WWW_URL || "https://www.sphereenglish.com";
 const SUPPORT_EMAIL = "info@sphereenglish.com";
 const SUPPORT_WHATSAPP = "905066085810"; // +90 506 608 58 10
 const SUPPORT_WHATSAPP_DISPLAY = "+90 506 608 58 10";
+const ICON_BASE = `${API_URL}/email-icons`;
 
 export function renderWelcomeEmail(opts: {
   firstName: string;
@@ -48,19 +50,19 @@ export function renderWelcomeEmail(opts: {
 
         <!-- Feature 1 -->
         <tr><td style="padding:0 32px 4px;">
-          ${featureRow("▶", "Canlı Dersler", "Uzman eğitmenlerimizle birebir veya küçük grup canlı derslerde konuş, pratik yap, anlık geri bildirim al. Ezber değil, gerçek iletişim.")}
+          ${featureRow("live-lessons.svg", "Canlı Dersler", "Uzman eğitmenlerimizle birebir veya küçük grup canlı derslerde konuş, pratik yap, anlık geri bildirim al. Ezber değil, gerçek iletişim.")}
         </td></tr>
         <tr><td style="padding:0 32px 4px;">
-          ${featureRow("◆", "7/24 Yapay Zeka Koçları", "Ders dışında da yalnız değilsin. AI koçlarımızla dilediğin zaman konuşma pratiği yap, kelime çalış, yazdıklarını düzelt.")}
+          ${featureRow("ai-coach.svg", "7/24 Yapay Zeka Koçları", "Ders dışında da yalnız değilsin. AI koçlarımızla dilediğin zaman konuşma pratiği yap, kelime çalış, yazdıklarını düzelt.")}
         </td></tr>
         <tr><td style="padding:0 32px 4px;">
-          ${featureRow("★", "Sana Özel Program", "Seviye testin ve hedeflerinle sana özel bir yol haritası çıkarıyoruz. İş İngilizcesi mi, günlük konuşma mı, sınav hazırlığı mı — sana göre.")}
+          ${featureRow("target.svg", "Sana Özel Program", "Seviye testin ve hedeflerinle sana özel bir yol haritası çıkarıyoruz. İş İngilizcesi mi, günlük konuşma mı, sınav hazırlığı mı — sana göre.")}
         </td></tr>
         <tr><td style="padding:0 32px 4px;">
-          ${featureRow("■", "Zengin İçerik Kütüphanesi", "İnteraktif alıştırmalar, kelime oyunları, dinleme etkinlikleri, okuma pratikleri ve daha fazlası. Her öğrenme stiline uygun.")}
+          ${featureRow("book.svg", "Zengin İçerik Kütüphanesi", "İnteraktif alıştırmalar, kelime oyunları, dinleme etkinlikleri, okuma pratikleri ve daha fazlası. Her öğrenme stiline uygun.")}
         </td></tr>
         <tr><td style="padding:0 32px 20px;">
-          ${featureRow("▲", "İlerlemeni Takip Et", "Ne kadar ilerleme kaydettiğini gör, günlük çalışma serini büyüt, rozetlerini topla. Öğrenmek keyifli olsun.")}
+          ${featureRow("chart.svg", "İlerlemeni Takip Et", "Ne kadar ilerleme kaydettiğini gör, günlük çalışma serini büyüt, rozetlerini topla. Öğrenmek keyifli olsun.")}
         </td></tr>
 
         <!-- CTA -->
@@ -111,16 +113,12 @@ export function renderWelcomeEmail(opts: {
   return { subject, html, preheader };
 }
 
-function featureRow(icon: string, title: string, body: string): string {
+function featureRow(iconFile: string, title: string, body: string): string {
   return `
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:18px;">
       <tr>
         <td style="width:56px;vertical-align:top;padding-top:2px;">
-          <table role="presentation" cellpadding="0" cellspacing="0" width="42" height="42" style="background:#0ea5e9;border-radius:21px;">
-            <tr>
-              <td align="center" valign="middle" width="42" height="42" style="color:#ffffff;font-size:18px;line-height:42px;font-family:Arial,Helvetica,sans-serif;">${icon}</td>
-            </tr>
-          </table>
+          <img src="${ICON_BASE}/${iconFile}" width="42" height="42" alt="" style="display:block;width:42px;height:42px;border:0;outline:none;">
         </td>
         <td style="vertical-align:top;padding-top:6px;">
           <p style="margin:0 0 4px;font-size:15px;font-weight:700;color:#1B365D;">${escapeHtml(title)}</p>
