@@ -177,7 +177,7 @@ function StudentDashboard() {
               <h3 className="text-xl font-bold text-white">Mevcut Seviye</h3>
             </div>
             <CardContent className="p-0">
-              <Link href="/courses">
+              <Link href="/student/level-exams">
                 <div className="p-4 flex items-center justify-center text-sm font-medium text-primary hover:bg-primary/5 transition-colors cursor-pointer">
                   Seviye atlama testini al &rarr;
                 </div>
