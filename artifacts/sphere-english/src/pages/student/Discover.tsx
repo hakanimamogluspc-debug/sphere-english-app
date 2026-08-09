@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import {
   Newspaper, Search, Bookmark, BookmarkCheck, Loader2, X, ExternalLink,
-  Sparkles, Clock, RefreshCw, Compass, Save,
+  Sparkles, Clock, RefreshCw, Compass, Save, Volume2,
 } from "lucide-react";
 import { API } from "@/lib/api-url";
 
@@ -318,43 +318,11 @@ function ArticleModal({ articleId, onClose, onSavedChange }: {
     finally { setSaving(false); }
   }
 
-  // Body text'i key_vocab kelimeleriyle enrich et — inline popover
-  const enrichedBody = useMemo(() => {
-    if (!article) return null;
-    const bodyText = article.body_text;
-    if (!bodyText) return null;
-    if (!article.key_vocab?.length) return bodyText;
-
-    // Kelimeleri regex ile bul, span'e sar
-    const parts: Array<{ text: string; vocab?: typeof article.key_vocab[0] }> = [];
-    let remaining = bodyText;
-
-    // Vocab kelimelerini uzunluğa göre sırala (uzun eşleşmeler önce)
-    const sortedVocab = [...article.key_vocab].sort((a, b) => b.word.length - a.word.length);
-
-    // Basit yaklaşım: her vocab için ilk match'i vurgula
-    const marked = new Set<number>();
-    while (remaining.length > 0) {
-      let earliest = { idx: -1, vocab: null as any };
-      for (const v of sortedVocab) {
-        if (marked.has(sortedVocab.indexOf(v))) continue;
-        const re = new RegExp(`\\b${v.word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i");
-        const m = remaining.match(re);
-        if (m && m.index !== undefined && (earliest.idx === -1 || m.index < earliest.idx)) {
-          earliest = { idx: m.index, vocab: v };
-        }
-      }
-      if (earliest.idx === -1) {
-        parts.push({ text: remaining });
-        break;
-      }
-      parts.push({ text: remaining.slice(0, earliest.idx) });
-      const matched = remaining.slice(earliest.idx, earliest.idx + earliest.vocab.word.length);
-      parts.push({ text: matched, vocab: earliest.vocab });
-      remaining = remaining.slice(earliest.idx + earliest.vocab.word.length);
-      marked.add(sortedVocab.indexOf(earliest.vocab));
-    }
-    return parts;
+  // key_vocab kelimelerini lookup için map'e al
+  const vocabMap = useMemo(() => {
+    const m = new Map<string, { meaning_tr: string; context: string }>();
+    (article?.key_vocab ?? []).forEach(v => m.set(v.word.toLowerCase(), { meaning_tr: v.meaning_tr, context: v.context }));
+    return m;
   }, [article]);
 
   return (
@@ -450,23 +418,17 @@ function ArticleModal({ articleId, onClose, onSavedChange }: {
               </div>
             )}
 
-            {/* Full body (İngilizce, inline vocab popover) */}
+            {/* Full body (İngilizce, tıklanabilir kelime sözlüğü) */}
             {article.body_text && (
               <details className="rounded-xl border border-gray-200 group" open>
                 <summary className="cursor-pointer px-5 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 flex items-center gap-2">
                   <Clock className="h-4 w-4" /> Makalenin Tamamı (İngilizce)
                   <span className="text-xs font-normal text-gray-500 ml-auto">
-                    kelimelerin üstüne gelince anlam görünür
+                    kelimeye tıkla → Türkçe anlam + telaffuz
                   </span>
                 </summary>
                 <div className="px-5 py-4 text-gray-800 leading-relaxed whitespace-pre-wrap text-sm md:text-base border-t">
-                  {Array.isArray(enrichedBody) ? enrichedBody.map((part, i) =>
-                    part.vocab ? (
-                      <VocabTerm key={i} word={part.text} meaning={part.vocab.meaning_tr} />
-                    ) : (
-                      <span key={i}>{part.text}</span>
-                    )
-                  ) : article.body_text}
+                  <ClickableText text={article.body_text} vocabMap={vocabMap} />
                 </div>
               </details>
             )}
@@ -508,23 +470,176 @@ function ArticleModal({ articleId, onClose, onSavedChange }: {
   );
 }
 
-function VocabTerm({ word, meaning }: { word: string; meaning: string }) {
-  const [open, setOpen] = useState(false);
+// ─── Tıklanabilir metin — her kelime sözlük popover'ı açar ────────────
+type DictResult = {
+  word: string;
+  tr: string | null;
+  phonetic: string | null;
+  audio_url: string | null;
+  definitions: Array<{ pos: string; meaning: string; example: string | null }>;
+} | null;
+
+// Component-instance cache (aynı kelime tekrar fetch etmesin)
+function ClickableText({ text, vocabMap }: {
+  text: string;
+  vocabMap: Map<string, { meaning_tr: string; context: string }>;
+}) {
+  const [openWord, setOpenWord] = useState<string | null>(null);
+  const [openRef, setOpenRef] = useState<HTMLElement | null>(null);
+
+  // Kelime + non-kelime tokenlere böl
+  const tokens = useMemo(() => {
+    const parts: Array<{ type: "word" | "text"; value: string }> = [];
+    const re = /([A-Za-z][A-Za-z'\-]*)/g;
+    let lastIdx = 0;
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(text)) !== null) {
+      if (m.index > lastIdx) parts.push({ type: "text", value: text.slice(lastIdx, m.index) });
+      parts.push({ type: "word", value: m[1] });
+      lastIdx = m.index + m[1].length;
+    }
+    if (lastIdx < text.length) parts.push({ type: "text", value: text.slice(lastIdx) });
+    return parts;
+  }, [text]);
+
+  // Popover dışına tıklayınca kapat
+  useEffect(() => {
+    if (!openWord) return;
+    const h = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest("[data-dict-popover]") && !target.closest("[data-dict-word]")) {
+        setOpenWord(null);
+      }
+    };
+    document.addEventListener("mousedown", h);
+    return () => document.removeEventListener("mousedown", h);
+  }, [openWord]);
+
   return (
-    <span className="relative inline-block">
-      <span
-        onClick={() => setOpen(o => !o)}
-        onMouseEnter={() => setOpen(true)}
-        onMouseLeave={() => setOpen(false)}
-        className="border-b-2 border-dotted border-violet-400 cursor-help bg-violet-50/60 rounded px-0.5"
-      >
-        {word}
-      </span>
-      {open && (
-        <span className="absolute left-1/2 -translate-x-1/2 -top-1 -translate-y-full z-20 whitespace-nowrap max-w-[240px] rounded-md bg-gray-900 text-white text-xs px-2 py-1 shadow-lg">
-          {meaning}
-        </span>
+    <>
+      {tokens.map((t, i) => {
+        if (t.type === "text") return <span key={i}>{t.value}</span>;
+        const isVocab = vocabMap.has(t.value.toLowerCase());
+        return (
+          <span
+            key={i}
+            data-dict-word
+            onClick={(e) => {
+              e.stopPropagation();
+              setOpenRef(e.currentTarget);
+              setOpenWord(openWord === `${i}-${t.value}` ? null : `${i}-${t.value}`);
+            }}
+            className={`cursor-pointer transition ${
+              isVocab
+                ? "border-b-2 border-dotted border-violet-400 bg-violet-50/60 rounded px-0.5 hover:bg-violet-100"
+                : "hover:bg-yellow-100 rounded px-0.5"
+            }`}
+          >
+            {t.value}
+          </span>
+        );
+      })}
+      {openWord && openRef && (
+        <DictPopover
+          word={openWord.replace(/^\d+-/, "")}
+          anchor={openRef}
+          context={text.slice(0, 300)}
+          vocab={vocabMap.get(openWord.replace(/^\d+-/, "").toLowerCase())}
+          onClose={() => setOpenWord(null)}
+        />
       )}
-    </span>
+    </>
+  );
+}
+
+// Aynı kelimenin fetch'i cache'lensin (sayfa açıkken)
+const dictCache = new Map<string, DictResult>();
+
+function DictPopover({ word, anchor, context, vocab, onClose }: {
+  word: string;
+  anchor: HTMLElement;
+  context: string;
+  vocab?: { meaning_tr: string; context: string };
+  onClose: () => void;
+}) {
+  const [data, setData] = useState<DictResult>(null);
+  const [loading, setLoading] = useState(false);
+  const [notFound, setNotFound] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const key = word.toLowerCase();
+
+  useEffect(() => {
+    if (dictCache.has(key)) { setData(dictCache.get(key)!); return; }
+    setLoading(true);
+    setNotFound(false);
+    const params = new URLSearchParams({ context: context.slice(0, 250) });
+    apiFetch(`/dictionary/${encodeURIComponent(key)}?${params}`)
+      .then(d => { dictCache.set(key, d); setData(d); })
+      .catch(() => { dictCache.set(key, null); setNotFound(true); })
+      .finally(() => setLoading(false));
+  }, [key, context]);
+
+  // Anchor'a göre pozisyon
+  const rect = anchor.getBoundingClientRect();
+  const top = rect.bottom + window.scrollY + 4;
+  const left = Math.min(rect.left + window.scrollX, window.innerWidth - 320);
+
+  function playAudio() {
+    if (!data?.audio_url) return;
+    if (audioRef.current) { audioRef.current.pause(); audioRef.current.currentTime = 0; }
+    audioRef.current = new Audio(data.audio_url);
+    audioRef.current.play().catch(() => {});
+  }
+
+  return (
+    <div
+      data-dict-popover
+      onClick={(e) => e.stopPropagation()}
+      style={{ position: "absolute", top, left, zIndex: 60 }}
+      className="w-80 rounded-lg bg-white border border-gray-200 shadow-xl overflow-hidden"
+    >
+      <div className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-indigo-50 to-blue-50 border-b border-indigo-100">
+        <div className="font-bold text-gray-900">{word}</div>
+        {data?.phonetic && <span className="text-xs text-gray-500 font-mono">{data.phonetic}</span>}
+        {data?.audio_url && (
+          <button onClick={playAudio} className="ml-auto rounded p-1 hover:bg-white text-indigo-600" title="Telaffuz">
+            <Volume2 className="h-4 w-4" />
+          </button>
+        )}
+        <button onClick={onClose} className="rounded p-1 hover:bg-white text-gray-400">
+          <X className="h-3.5 w-3.5" />
+        </button>
+      </div>
+      <div className="p-4 space-y-3">
+        {loading && <div className="text-center py-2"><Loader2 className="mx-auto h-4 w-4 animate-spin text-gray-400" /></div>}
+        {notFound && (
+          <div className="text-xs text-gray-500 italic">Bu kelime bulunamadı.</div>
+        )}
+        {data?.tr && (
+          <div>
+            <div className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 mb-0.5">Türkçe</div>
+            <div className="text-sm font-semibold text-emerald-900">{data.tr}</div>
+          </div>
+        )}
+        {vocab && (
+          <div className="rounded bg-violet-50 border border-violet-200 p-2">
+            <div className="text-[10px] font-bold uppercase tracking-wider text-violet-700 mb-0.5">Makale Bağlamı</div>
+            <div className="text-xs italic text-violet-900">"{vocab.context}"</div>
+          </div>
+        )}
+        {data?.definitions && data.definitions.length > 0 && (
+          <div>
+            <div className="text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1">İngilizce Tanım</div>
+            {data.definitions.slice(0, 2).map((d, i) => (
+              <div key={i} className="text-xs text-gray-700 mb-1.5">
+                <span className="italic text-gray-400 mr-1">{d.pos}.</span>
+                {d.meaning}
+                {d.example && <div className="text-[11px] italic text-gray-500 mt-0.5">e.g. "{d.example}"</div>}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
   );
 }

@@ -1444,6 +1444,22 @@ async function runStartupMigrations() {
       UNIQUE (user_id, week_start)
     )`,
     `CREATE INDEX IF NOT EXISTS weekly_reports_user_idx ON weekly_reports_sent (user_id, week_start DESC)`,
+
+    // ─── Dictionary Cache (Free Dictionary + GPT TR çevirisi) ────────────────
+    `CREATE TABLE IF NOT EXISTS dictionary_cache (
+      id SERIAL PRIMARY KEY,
+      word VARCHAR(200) NOT NULL,                -- normalize: lowercase
+      tr_translation TEXT,                       -- GPT'den TR (kısa, 1-3 kelime)
+      phonetic VARCHAR(120),                     -- /ˈsɜːkəl/
+      audio_url TEXT,
+      definitions JSONB,                         -- [{"pos":"noun","meaning":"...","example":"..."}]
+      source VARCHAR(30) NOT NULL,               -- 'free_dict' | 'gpt' | 'both' | 'not_found'
+      fetch_count INTEGER NOT NULL DEFAULT 1,
+      last_used_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`,
+    `CREATE UNIQUE INDEX IF NOT EXISTS dictionary_cache_word_unique ON dictionary_cache (word)`,
+    `CREATE INDEX IF NOT EXISTS dictionary_cache_used_idx ON dictionary_cache (last_used_at DESC)`,
   ];
   for (const sql of migrations) {
     try {
