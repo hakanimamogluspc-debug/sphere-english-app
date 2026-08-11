@@ -10,7 +10,11 @@
 import OpenAI from "openai";
 import { pool } from "@workspace/db";
 
-const RSS_URL = "https://www.merriam-webster.com/wotd/feed/rss2";
+// Merriam-Webster bazı bölgelerde Cloudflare 403 verebiliyor → Wordsmith fallback
+const RSS_SOURCES = [
+  { url: "https://wordsmith.org/awad/rss1.xml",           slug: "wordsmith" },
+  { url: "https://www.merriam-webster.com/wotd/feed/rss2", slug: "merriam-webster" },
+];
 
 let _openai: OpenAI | null = null;
 function getOpenAI(): OpenAI {
@@ -41,11 +45,17 @@ type RawWord = {
   description: string;
   link: string;
   pubDate: string;
+  source: string;
 };
 
-async function fetchRss(): Promise<RawWord | null> {
-  const res = await fetch(RSS_URL, { headers: { "User-Agent": "SphereEnglish/1.0" } });
-  if (!res.ok) throw new Error(`WOTD RSS HTTP ${res.status}`);
+async function fetchOneRss(url: string, slug: string): Promise<RawWord | null> {
+  const res = await fetch(url, {
+    headers: {
+      "User-Agent": "Mozilla/5.0 (compatible; SphereEnglish/1.0; +https://www.sphereenglish.com)",
+      "Accept": "application/rss+xml, application/xml, text/xml, */*",
+    },
+  });
+  if (!res.ok) throw new Error(`${slug}: HTTP ${res.status}`);
   const xml = await res.text();
 
   const itemRe = /<item\b[^>]*>([\s\S]*?)<\/item>/i;
@@ -58,9 +68,9 @@ async function fetchRss(): Promise<RawWord | null> {
   const link = firstMatch(block, /<link[^>]*>([\s\S]*?)<\/link>/i) ?? "";
   const pubDate = firstMatch(block, /<pubDate[^>]*>([\s\S]*?)<\/pubDate>/i) ?? "";
 
-  // Title format: "Word of the Day: WORD" veya sadece "WORD"
   const cleanTitle = stripTags(title);
   const word = cleanTitle.replace(/^word of the day\s*:\s*/i, "").trim().split(/\s+/)[0];
+  if (!word) return null;
 
   return {
     word,
@@ -68,7 +78,20 @@ async function fetchRss(): Promise<RawWord | null> {
     description: stripTags(description).slice(0, 4000),
     link: stripTags(link),
     pubDate: stripTags(pubDate),
+    source: slug,
   };
+}
+
+async function fetchRss(): Promise<RawWord | null> {
+  const errors: string[] = [];
+  for (const src of RSS_SOURCES) {
+    try {
+      const r = await fetchOneRss(src.url, src.slug);
+      if (r) return r;
+    } catch (e: any) { errors.push(`${src.slug}: ${e?.message}`); }
+  }
+  if (errors.length) console.warn("[wotd] tüm kaynaklar hata:", errors.join(" | "));
+  return null;
 }
 
 type Parsed = {
@@ -79,21 +102,27 @@ type Parsed = {
   exampleEn: string | null;
 };
 
-/** Description'dan structured bilgi çıkar (Merriam-Webster formatına uygun) */
+/** Description'dan structured bilgi çıkar — Wordsmith ve Merriam-Webster formatlarına uyar */
 function parseWordDescription(word: string, description: string): Parsed {
-  // Merriam-Webster format örneği:
-  // "Merriam-Webster's Word of the Day for August 12, 2026 is: apocryphal • \\uh-PAH-kruh-ful\\ • adjective..."
-  // Genelde phonetic \\...\\ arasında olur
-  const phonetic = firstMatch(description, /\\([^\\]+)\\/);
-  const pos = firstMatch(description, /\\[^\\]+\\\s*[•‧\-]\s*(noun|verb|adjective|adverb|preposition|conjunction|pronoun|interjection)/i);
+  // Merriam-Webster: phonetic \\...\\ arasında
+  let phonetic = firstMatch(description, /\\([^\\]+)\\/);
+  if (!phonetic) phonetic = firstMatch(description, /\/([^/]+)\//); // bazı feed'lerde /../
 
-  // "is: WORD • pron • POS : DEFINITION" tarzı — pos'tan sonrasını al
+  // POS bulmaya çalış (her iki formatta da geçer)
+  // Wordsmith: "noun: 1. A state..." / "verb tr.: 1. To fill..."
+  // MW:        "\\uh-PAH-kruh-ful\\ • adjective : ..."
+  const pos = firstMatch(description, /\b(noun|verb|adjective|adverb|preposition|conjunction|pronoun|interjection)\b/i);
+
+  // Tanımı çıkar
   let definitionEn: string | null = null;
   if (pos) {
-    const posIdx = description.indexOf(pos);
-    const rest = description.slice(posIdx + pos.length).replace(/^[\s•‧\-:]+/, "");
-    // İlk cümleyi tanım kabul et
-    definitionEn = rest.split(/\/\//)[0].trim().split(/\.\s+/)[0].slice(0, 400) || null;
+    const posRe = new RegExp(`\\b${pos}\\b[^:]*:\\s*([^\\r\\n]+)`, "i");
+    const m = description.match(posRe);
+    if (m) definitionEn = m[1].trim().replace(/^1\.\s*/, "").split(/\s+2\./)[0].split(/\.\s+[A-Z]/)[0].slice(0, 400) || null;
+  }
+  if (!definitionEn) {
+    // Fallback: ilk cümle
+    definitionEn = description.replace(/^[^:]+:\s*/, "").split(/\.\s+/)[0].slice(0, 400) || null;
   }
 
   return {
@@ -101,7 +130,7 @@ function parseWordDescription(word: string, description: string): Parsed {
     phonetic: phonetic ?? null,
     partOfSpeech: pos ? pos.toLowerCase() : null,
     definitionEn,
-    exampleEn: null, // Merriam-Webster genelde description'da örnek vermez
+    exampleEn: null,
   };
 }
 
@@ -156,10 +185,10 @@ export async function fetchTodaysWord(): Promise<{ ok: boolean; word?: string; s
     await pool.query(
       `INSERT INTO daily_words
          (word, phonetic, part_of_speech, definition_en, example_en, tr_meaning, tr_note, source, source_url, published_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, 'merriam-webster', $8, $9::date)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::date)
        ON CONFLICT (published_at) DO NOTHING`,
       [parsed.word, parsed.phonetic, parsed.partOfSpeech, parsed.definitionEn,
-       parsed.exampleEn, tr.tr_meaning || null, tr.tr_note || null, raw.link, dateStr],
+       parsed.exampleEn, tr.tr_meaning || null, tr.tr_note || null, raw.source, raw.link, dateStr],
     );
     return { ok: true, word: parsed.word };
   } catch (e: any) {
