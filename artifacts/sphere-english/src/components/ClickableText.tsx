@@ -217,8 +217,14 @@ function DictPopoverAtRect(props: { word: string; rect: DOMRect; context: string
       .finally(() => setLoading(false));
   }, [key]);
 
-  const top = props.rect.bottom + window.scrollY + 4;
-  const left = Math.min(props.rect.left + window.scrollX, window.innerWidth - 340);
+  const rect = props.rect;
+  const popoverW = 320;
+  const popoverH = 220;
+  let top = rect.bottom + 6;
+  let left = rect.left + rect.width / 2 - popoverW / 2;
+  if (left + popoverW > window.innerWidth - 8) left = window.innerWidth - popoverW - 8;
+  if (left < 8) left = 8;
+  if (top + popoverH > window.innerHeight - 8) top = rect.top - popoverH - 6;
 
   function playAudio() {
     if (!data?.audio_url) return;
@@ -231,7 +237,7 @@ function DictPopoverAtRect(props: { word: string; rect: DOMRect; context: string
     <div
       data-dict-popover
       onClick={(e) => e.stopPropagation()}
-      style={{ position: "absolute", top, left, zIndex: 60 }}
+      style={{ position: "fixed", top, left, zIndex: 60 }}
       className="w-80 rounded-lg bg-white border border-gray-200 shadow-xl overflow-hidden"
     >
       <div className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-indigo-50 to-blue-50 border-b border-indigo-100">
@@ -295,9 +301,18 @@ function DictPopover({ word, anchor, context, vocab, onClose }: {
       .finally(() => setLoading(false));
   }, [key, context]);
 
+  // Viewport coords + position:fixed → hangi container'da olursa olsun doğru yer
   const rect = anchor.getBoundingClientRect();
-  const top = rect.bottom + window.scrollY + 4;
-  const left = Math.min(rect.left + window.scrollX, window.innerWidth - 340);
+  const popoverW = 320;
+  const popoverH = 220; // yaklaşık, ekran taşarsa üste al
+  let top = rect.bottom + 6;
+  let left = rect.left + rect.width / 2 - popoverW / 2;
+  // Sağ taşma
+  if (left + popoverW > window.innerWidth - 8) left = window.innerWidth - popoverW - 8;
+  // Sol taşma
+  if (left < 8) left = 8;
+  // Alt taşma → üstte göster
+  if (top + popoverH > window.innerHeight - 8) top = rect.top - popoverH - 6;
 
   function playAudio() {
     if (!data?.audio_url) return;
@@ -310,7 +325,7 @@ function DictPopover({ word, anchor, context, vocab, onClose }: {
     <div
       data-dict-popover
       onClick={(e) => e.stopPropagation()}
-      style={{ position: "absolute", top, left, zIndex: 60 }}
+      style={{ position: "fixed", top, left, zIndex: 60 }}
       className="w-80 rounded-lg bg-white border border-gray-200 shadow-xl overflow-hidden"
     >
       <div className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-indigo-50 to-blue-50 border-b border-indigo-100">
