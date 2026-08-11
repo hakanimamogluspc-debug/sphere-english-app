@@ -223,6 +223,7 @@ function StudentDashboard() {
 
       {/* Bugün için önerilen makaleler */}
       <RecommendedArticlesWidget />
+      <CareerRecommendedWidget />
     </div>
   );
 }
@@ -409,6 +410,66 @@ function RecommendedArticlesWidget() {
                 {a.tr_summary && <p className="text-xs text-muted-foreground line-clamp-2">{a.tr_summary}</p>}
               </div>
             </Link>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function CareerRecommendedWidget() {
+  const [items, setItems] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    const token = localStorage.getItem("sphere_token");
+    fetch(`${API}/career/recommended?limit=3`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json())
+      .then(d => setItems(Array.isArray(d.items) ? d.items : []))
+      .catch(() => setItems([]))
+      .finally(() => setLoading(false));
+  }, []);
+  if (loading || items.length === 0) return null;
+  const catLabel: Record<string, string> = {
+    career: "Kariyer", motivation: "Motivasyon", entrepreneurship: "Girişimcilik",
+    leadership: "Liderlik", productivity: "Verimlilik",
+  };
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between pb-3">
+        <div className="flex items-center gap-2">
+          <Compass className="h-5 w-5 text-primary" />
+          <CardTitle>Bu Hafta İzle & Dinle</CardTitle>
+        </div>
+        <Link href="/kariyer" className="text-xs text-primary hover:underline font-medium flex items-center gap-1">
+          Tümünü Gör <ChevronRight className="h-3 w-3" />
+        </Link>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {items.map((it: any) => (
+            <a key={it.id} href={it.url} target="_blank" rel="noreferrer"
+              className="rounded-lg border hover:border-primary/50 hover:shadow transition overflow-hidden group flex flex-col bg-card">
+              {it.thumbnail_url ? (
+                <div className="aspect-video bg-gray-100 overflow-hidden relative">
+                  <img src={it.thumbnail_url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition" />
+                  <div className="absolute top-2 left-2 bg-black/70 text-white text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase">
+                    {it.source_type}
+                  </div>
+                </div>
+              ) : (
+                <div className="aspect-video bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center">
+                  <Compass className="h-8 w-8 text-primary/40" />
+                </div>
+              )}
+              <div className="p-3 space-y-1.5 flex-1 flex flex-col">
+                <div className="flex items-center gap-1 text-[10px] font-semibold">
+                  {it.category && <span className="px-1.5 py-0.5 rounded bg-primary/10 text-primary">{catLabel[it.category] || it.category}</span>}
+                  <span className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground uppercase">{it.language}</span>
+                </div>
+                <h4 className="text-sm font-semibold text-foreground line-clamp-2 leading-snug">{it.title}</h4>
+                {it.tr_summary && <p className="text-xs text-muted-foreground line-clamp-2">{it.tr_summary}</p>}
+              </div>
+            </a>
           ))}
         </div>
       </CardContent>

@@ -1460,6 +1460,84 @@ async function runStartupMigrations() {
     )`,
     `CREATE UNIQUE INDEX IF NOT EXISTS dictionary_cache_word_unique ON dictionary_cache (word)`,
     `CREATE INDEX IF NOT EXISTS dictionary_cache_used_idx ON dictionary_cache (last_used_at DESC)`,
+
+    // ─── Kariyer & Motivasyon Content (Video + Podcast) ─────────────────────
+    // Kaynak listesi (admin panelden yönetilir — RSS URL)
+    `CREATE TABLE IF NOT EXISTS career_sources (
+      id SERIAL PRIMARY KEY,
+      slug VARCHAR(120) NOT NULL UNIQUE,        -- 'ted', 'hbr-ideacast', ...
+      name VARCHAR(200) NOT NULL,               -- 'TED', 'HBR IdeaCast'
+      source_type VARCHAR(20) NOT NULL,         -- 'video' | 'podcast'
+      language VARCHAR(4) NOT NULL DEFAULT 'en',
+      feed_url TEXT NOT NULL,                   -- RSS/Atom URL
+      site_url TEXT,                            -- kanal/show ana sayfası
+      is_active BOOLEAN NOT NULL DEFAULT TRUE,
+      last_fetched_at TIMESTAMPTZ,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`,
+
+    // İçerik itemları (video/podcast episode)
+    `CREATE TABLE IF NOT EXISTS career_content (
+      id SERIAL PRIMARY KEY,
+      source_id INTEGER REFERENCES career_sources(id) ON DELETE SET NULL,
+      source_slug VARCHAR(120),                 -- redundant ama admin filter için
+      source_type VARCHAR(20) NOT NULL,         -- 'video' | 'podcast'
+      external_id VARCHAR(500),                 -- RSS guid / video id
+      url TEXT NOT NULL,
+      audio_url TEXT,                           -- podcast enclosure (mp3)
+      title TEXT NOT NULL,
+      description TEXT,
+      thumbnail_url TEXT,
+      author VARCHAR(300),                      -- kanal/show adı
+      duration_sec INTEGER,
+      language VARCHAR(4) NOT NULL DEFAULT 'en',
+      published_at TIMESTAMPTZ,
+
+      -- LLM enrichment
+      tr_summary TEXT,                          -- 2-3 satır Türkçe özet
+      category VARCHAR(40),                     -- career/motivation/entrepreneurship/leadership/productivity
+      tags TEXT[] DEFAULT '{}',
+
+      status VARCHAR(20) NOT NULL DEFAULT 'draft',
+      admin_notes TEXT,
+      enriched_at TIMESTAMPTZ,
+      published_admin_at TIMESTAMPTZ,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`,
+    `CREATE UNIQUE INDEX IF NOT EXISTS career_content_source_ext_uniq
+       ON career_content (source_id, external_id) WHERE external_id IS NOT NULL`,
+    `CREATE INDEX IF NOT EXISTS career_content_status_idx ON career_content (status, published_at DESC)`,
+    `CREATE INDEX IF NOT EXISTS career_content_type_lang_idx ON career_content (source_type, language, status)`,
+
+    // Ingestion log
+    `CREATE TABLE IF NOT EXISTS career_ingestion_log (
+      id SERIAL PRIMARY KEY,
+      run_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      fetched_count INTEGER DEFAULT 0,
+      new_count INTEGER DEFAULT 0,
+      enriched_count INTEGER DEFAULT 0,
+      error_count INTEGER DEFAULT 0,
+      duration_ms INTEGER,
+      details JSONB
+    )`,
+
+    // ─── Seed kaynaklar ────────────────────────────────────────────
+    `INSERT INTO career_sources (slug, name, source_type, language, feed_url, site_url) VALUES
+      ('ted-talks',        'TED',                        'video',   'en', 'https://www.youtube.com/feeds/videos.xml?channel_id=UCAuUUnT6oDeKwE6v1NGQxug', 'https://www.youtube.com/@TED'),
+      ('ted-ed',           'TED-Ed',                     'video',   'en', 'https://www.youtube.com/feeds/videos.xml?channel_id=UCsooa4yRKGN_zEE8iknghZA', 'https://www.youtube.com/@TEDEd'),
+      ('hbr-youtube',      'Harvard Business Review',    'video',   'en', 'https://www.youtube.com/feeds/videos.xml?channel_id=UCw2GRGY0qeTMzP2acy9wong', 'https://www.youtube.com/@harvardbusinessreview'),
+      ('yc',               'Y Combinator',               'video',   'en', 'https://www.youtube.com/feeds/videos.xml?channel_id=UCcefcZRL2oaA_uBNeo5UOWg', 'https://www.youtube.com/@ycombinator'),
+      ('talks-at-google',  'Talks at Google',            'video',   'en', 'https://www.youtube.com/feeds/videos.xml?channel_id=UCbmNph6atAoGfqLoCL_duAg', 'https://www.youtube.com/@TalksAtGoogle'),
+      ('simon-sinek',      'Simon Sinek',                'video',   'en', 'https://www.youtube.com/feeds/videos.xml?channel_id=UCPHz3ynqIcQK5ByPuXKI7wg', 'https://www.youtube.com/@simonsinek'),
+      ('ali-abdaal',       'Ali Abdaal',                 'video',   'en', 'https://www.youtube.com/feeds/videos.xml?channel_id=UCoOae5nYA7VqaXzerajD0lg', 'https://www.youtube.com/@aliabdaal'),
+      ('baris-ozcan',      'Barış Özcan',                'video',   'tr', 'https://www.youtube.com/feeds/videos.xml?channel_id=UCzo9pWtNaFxxxNVLXVJmedg', 'https://www.youtube.com/@BarisOzcan'),
+      ('hbr-ideacast',     'HBR IdeaCast',               'podcast', 'en', 'https://feeds.harvardbusiness.org/harvardbusiness/ideacast', 'https://hbr.org/podcasts/ideacast'),
+      ('how-i-built-this', 'How I Built This',           'podcast', 'en', 'https://feeds.npr.org/510313/podcast.xml', 'https://www.npr.org/podcasts/510313/how-i-built-this'),
+      ('diary-of-a-ceo',   'The Diary Of A CEO',         'podcast', 'en', 'https://feeds.megaphone.fm/thediaryofaceo', 'https://stevenbartlett.com/the-diary-of-a-ceo/'),
+      ('worklife',         'WorkLife with Adam Grant',   'podcast', 'en', 'https://feeds.simplecast.com/xL3nlBnj', 'https://www.adamgrant.net/podcast/'),
+      ('masters-of-scale', 'Masters of Scale',           'podcast', 'en', 'https://feeds.megaphone.fm/mastersofscale', 'https://mastersofscale.com/')
+    ON CONFLICT (slug) DO NOTHING`,
   ];
   for (const sql of migrations) {
     try {

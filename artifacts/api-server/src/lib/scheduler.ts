@@ -18,6 +18,7 @@ import { runWeeklyReportForAllUsers } from "./weekly-report.js";
 import { extractPending } from "./mistake-extractor.js";
 import { fetchGuardianArticles } from "./content-ingest/guardian.js";
 import { enrichArticle } from "./content-ingest/enrich.js";
+import { fetchAllSources as fetchCareerAll, enrichCareerItem } from "./career-ingest.js";
 
 const TZ_OFFSET_MIN = 3 * 60; // Türkiye UTC+3
 
@@ -71,6 +72,38 @@ async function tryContentIngest(t: ReturnType<typeof nowTr>) {
   }
 }
 
+/** Career content ingest — her sabah 09:15 TR */
+async function tryCareerIngest(t: ReturnType<typeof nowTr>) {
+  if (!(t.hour === 9 && t.minute >= 15 && t.minute < 20)) return;
+  if (!process.env.OPENAI_API_KEY) return;
+
+  const check: any = await pool.query(
+    `SELECT id FROM career_ingestion_log WHERE run_at::date = CURRENT_DATE LIMIT 1`,
+  );
+  if (check.rows[0]) return;
+
+  log(`Career ingest başlıyor (${t.iso})`);
+  const startedAt = Date.now();
+  try {
+    const result = await fetchCareerAll(5);
+    let enriched = 0, enrichFailed = 0;
+    for (const id of result.articleIds) {
+      const r = await enrichCareerItem(id);
+      if (r.ok) enriched++; else enrichFailed++;
+    }
+    await pool.query(
+      `INSERT INTO career_ingestion_log (fetched_count, new_count, enriched_count, error_count, duration_ms, details)
+       VALUES ($1, $2, $3, $4, $5, $6::jsonb)`,
+      [result.fetched, result.inserted, enriched,
+       result.errors.length + enrichFailed, Date.now() - startedAt,
+       JSON.stringify({ errors: result.errors, skipped: result.skipped, source: "scheduler" })],
+    );
+    log(`Career ingest OK: ${result.fetched} fetch, ${result.inserted} yeni, ${enriched} enrich`);
+  } catch (e: any) {
+    log(`Career ingest HATA: ${e?.message}`);
+  }
+}
+
 /** Weekly report — Pazartesi 08:00 TR */
 async function tryWeeklyReport(t: ReturnType<typeof nowTr>) {
   if (!(t.day === 1 && t.hour === 8 && t.minute < 5)) return;
@@ -111,6 +144,7 @@ export function startScheduler() {
   const tick = async () => {
     const t = nowTr();
     try { await tryContentIngest(t); } catch (e: any) { log(`ingest tick err: ${e?.message}`); }
+    try { await tryCareerIngest(t); } catch (e: any) { log(`career tick err: ${e?.message}`); }
     try { await tryWeeklyReport(t); } catch (e: any) { log(`weekly tick err: ${e?.message}`); }
   };
 
