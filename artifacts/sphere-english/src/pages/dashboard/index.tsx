@@ -521,86 +521,69 @@ function WordOfDayWidget() {
         &ldquo;
       </div>
 
-      <div className="relative grid grid-cols-1 md:grid-cols-[1fr,auto] gap-6 p-7 md:p-8">
-        <div className="min-w-0">
-          {/* Üst şerit — kaynak & tarih */}
-          <div className="flex items-center gap-3 text-[10px] uppercase tracking-[0.18em] font-semibold text-slate-500 mb-5">
-            <span className="inline-flex items-center gap-1.5">
-              <span className="w-6 h-px bg-slate-400" />
-              Bugünün Kelimesi
+      <div className="relative p-5 md:p-6">
+        {/* Üst şerit — kaynak & tarih */}
+        <div className="flex items-center gap-3 text-[10px] uppercase tracking-[0.18em] font-semibold text-slate-500 mb-3">
+          <span className="inline-flex items-center gap-1.5">
+            <span className="w-6 h-px bg-slate-400" />
+            Bugünün Kelimesi
+          </span>
+          <span className="text-slate-300">·</span>
+          <span className="text-slate-400 normal-case tracking-normal font-normal">{dateLabel}</span>
+        </div>
+
+        {/* Kelime + fonetik + POS + sesli tell */}
+        <div className="flex items-end gap-3 flex-wrap">
+          <h2 className="font-display font-extrabold text-4xl md:text-5xl leading-[1] text-[#1B365D] tracking-tight" style={{ letterSpacing: "-0.03em" }}>
+            {word.word}
+          </h2>
+          {word.phonetic && (
+            <span className="italic text-base text-slate-500 font-medium mb-1">/{word.phonetic}/</span>
+          )}
+          {word.part_of_speech && (
+            <span className="text-[10px] font-semibold uppercase tracking-widest text-[#0ea5e9] border border-[#0ea5e9]/30 bg-[#0ea5e9]/5 px-2 py-0.5 rounded mb-1">
+              {word.part_of_speech}
             </span>
-            <span className="text-slate-300">·</span>
-            <span className="text-slate-400 normal-case tracking-normal font-normal">{dateLabel}</span>
-          </div>
+          )}
+          <button
+            onClick={speak}
+            title="Kelimeyi dinle"
+            className="ml-auto flex-shrink-0 w-9 h-9 rounded-full bg-slate-50 hover:bg-[#1B365D] hover:text-white text-[#1B365D] flex items-center justify-center border border-slate-200 transition-all group"
+          >
+            <svg className="w-4 h-4 group-hover:scale-110 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+              <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+              <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+            </svg>
+          </button>
+        </div>
 
-          {/* Kelime + fonetik + POS + sesli tell */}
-          <div className="flex items-end gap-4 flex-wrap">
-            <h2 className="font-display font-extrabold text-5xl md:text-6xl leading-[1] text-[#1B365D] tracking-tight" style={{ letterSpacing: "-0.03em" }}>
-              {word.word}
-            </h2>
-            <button
-              onClick={speak}
-              title="Kelimeyi dinle"
-              className="mb-2 flex-shrink-0 w-10 h-10 rounded-full bg-slate-50 hover:bg-[#1B365D] hover:text-white text-[#1B365D] flex items-center justify-center border border-slate-200 transition-all group"
-            >
-              <svg className="w-4 h-4 group-hover:scale-110 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-                <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
-                <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
-              </svg>
-            </button>
-          </div>
+        {/* Ayırıcı ince çizgi */}
+        <div className="h-px bg-gradient-to-r from-slate-200 via-slate-200/50 to-transparent my-4" />
 
-          <div className="mt-2 flex items-center gap-3 flex-wrap">
-            {word.phonetic && (
-              <span className="italic text-lg text-slate-500 font-medium">/{word.phonetic}/</span>
-            )}
-            {word.part_of_speech && (
-              <span className="text-[10px] font-semibold uppercase tracking-widest text-[#0ea5e9] border border-[#0ea5e9]/30 bg-[#0ea5e9]/5 px-2 py-0.5 rounded">
-                {word.part_of_speech}
-              </span>
-            )}
-          </div>
-
-          {/* Ayırıcı ince çizgi */}
-          <div className="h-px bg-gradient-to-r from-slate-200 via-slate-200/50 to-transparent my-5" />
-
-          {/* İki sütunlu tanım bloğu (mobile'da stack) */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {word.tr_meaning && (
-              <div>
-                <div className="text-[9px] uppercase tracking-[0.22em] font-bold text-emerald-700 mb-1.5">Türkçe</div>
-                <div className="text-lg font-semibold text-slate-900 leading-snug">{word.tr_meaning}</div>
-              </div>
-            )}
-            {word.definition_en && (
-              <div>
-                <div className="text-[9px] uppercase tracking-[0.22em] font-bold text-slate-500 mb-1.5">Meaning</div>
-                <p className="text-sm text-slate-700 leading-relaxed italic">{word.definition_en}</p>
-              </div>
-            )}
-          </div>
-
-          {/* Kullanım notu */}
-          {word.tr_note && (
-            <div className="mt-5 pl-4 border-l-2 border-[#1B365D]/20 py-1">
-              <div className="text-[9px] uppercase tracking-[0.22em] font-bold text-slate-500 mb-1">Kullanım</div>
-              <p className="text-xs text-slate-600 leading-relaxed">{word.tr_note}</p>
+        {/* İki sütunlu tanım bloğu (mobile'da stack) */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          {word.tr_meaning && (
+            <div>
+              <div className="text-[9px] uppercase tracking-[0.22em] font-bold text-emerald-700 mb-1">Türkçe</div>
+              <div className="text-base font-semibold text-slate-900 leading-snug">{word.tr_meaning}</div>
+            </div>
+          )}
+          {word.definition_en && (
+            <div>
+              <div className="text-[9px] uppercase tracking-[0.22em] font-bold text-slate-500 mb-1">Meaning</div>
+              <p className="text-sm text-slate-700 leading-snug italic">{word.definition_en}</p>
             </div>
           )}
         </div>
 
-        {/* Sağ dikey blok — büyük dekoratif harf + kaynak */}
-        <div className="hidden md:flex flex-col items-center justify-between border-l border-slate-100 pl-6 min-w-[110px]">
-          <div className="font-serif text-[110px] leading-none text-[#1B365D]/10 select-none font-bold" style={{ marginTop: "-8px" }}>
-            {word.word.charAt(0).toUpperCase()}
+        {/* Kullanım notu */}
+        {word.tr_note && (
+          <div className="mt-4 pl-3 border-l-2 border-[#1B365D]/20">
+            <div className="text-[9px] uppercase tracking-[0.22em] font-bold text-slate-500 mb-0.5">Kullanım</div>
+            <p className="text-xs text-slate-600 leading-relaxed">{word.tr_note}</p>
           </div>
-          <div className="text-center">
-            <div className="w-8 h-px bg-slate-200 mx-auto mb-2" />
-            <div className="text-[9px] uppercase tracking-[0.2em] text-slate-400 font-semibold">Sphere</div>
-            <div className="text-[9px] uppercase tracking-[0.2em] text-slate-400 font-semibold">Daily</div>
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );
