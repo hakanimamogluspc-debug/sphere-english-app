@@ -19,6 +19,7 @@ import { pool } from "@workspace/db";
 import { authMiddleware, requireRole, type AuthRequest } from "../middlewares/auth";
 import { fetchGuardianArticles } from "../lib/content-ingest/guardian";
 import { enrichArticle, enrichPending } from "../lib/content-ingest/enrich";
+import { fetchLearningEnglish } from "../lib/content-ingest/learning-english";
 
 const router = Router();
 
@@ -189,6 +190,39 @@ router.post("/admin/content-ingest/run", authMiddleware, requireRole("admin"), a
        JSON.stringify({ errors: fetchResult.errors, skipped: fetchResult.skipped, enrichFailed })],
     );
 
+    return res.json({
+      ok: true,
+      fetched: fetchResult.fetched,
+      inserted: fetchResult.inserted,
+      skipped: fetchResult.skipped,
+      enriched,
+      enrichFailed,
+      errors: fetchResult.errors,
+      durationMs,
+    });
+  } catch (e: any) {
+    return res.status(500).json({ error: e?.message });
+  }
+});
+
+// BBC Learning English + VOA Learning English manuel tetikleme
+router.post("/admin/content-ingest/learning-english", authMiddleware, requireRole("admin"), async (_req: AuthRequest, res: Response) => {
+  const startedAt = Date.now();
+  try {
+    const fetchResult = await fetchLearningEnglish(5);
+    let enriched = 0, enrichFailed = 0;
+    for (const id of fetchResult.articleIds) {
+      const r = await enrichArticle(id);
+      if (r.ok) enriched++; else enrichFailed++;
+    }
+    const durationMs = Date.now() - startedAt;
+    await pool.query(
+      `INSERT INTO content_ingestion_log (source, fetched_count, new_count, enriched_count, error_count, duration_ms, details)
+       VALUES ('learning_english', $1, $2, $3, $4, $5, $6::jsonb)`,
+      [fetchResult.fetched, fetchResult.inserted, enriched,
+       fetchResult.errors.length + enrichFailed, durationMs,
+       JSON.stringify({ errors: fetchResult.errors, skipped: fetchResult.skipped, enrichFailed })],
+    );
     return res.json({
       ok: true,
       fetched: fetchResult.fetched,

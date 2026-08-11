@@ -149,6 +149,17 @@ function LibraryTab() {
     finally { setIngesting(false); }
   }
 
+  async function runLearningIngest() {
+    if (!confirm("BBC Learning English + VOA Learning English'ten seviye-uyumlu makaleler çekilsin mi?")) return;
+    setIngesting(true);
+    try {
+      const r = await apiFetch("/admin/content-ingest/learning-english", { method: "POST" });
+      alert(`Fetch: ${r.fetched} · Yeni: ${r.inserted} · Enrich: ${r.enriched}/${r.enrichFailed} hata`);
+      load();
+    } catch (e: any) { alert(e?.message); }
+    finally { setIngesting(false); }
+  }
+
   return (
     <div className="space-y-4">
       {/* Toolbar */}
@@ -189,6 +200,14 @@ function LibraryTab() {
           className="rounded bg-white border border-gray-300 hover:bg-gray-50 px-3 py-2 text-sm inline-flex items-center gap-1"
         >
           <Plus className="h-4 w-4" /> Manuel Ekle
+        </button>
+        <button
+          onClick={runLearningIngest}
+          disabled={ingesting}
+          className="rounded bg-teal-600 hover:bg-teal-500 text-white px-4 py-2 text-sm font-medium disabled:opacity-50 inline-flex items-center gap-1.5"
+        >
+          {ingesting ? <Loader2 className="h-4 w-4 animate-spin" /> : <PlayCircle className="h-4 w-4" />}
+          BBC + VOA Çek
         </button>
         <button
           onClick={runIngest}
