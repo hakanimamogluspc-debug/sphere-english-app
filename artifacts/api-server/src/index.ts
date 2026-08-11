@@ -1531,6 +1531,18 @@ async function runStartupMigrations() {
     // ─── User Sector (kişiselleştirme) ─────────────────────────────────────
     `ALTER TABLE users ADD COLUMN IF NOT EXISTS sector VARCHAR(60)`,
 
+    // ─── Points Events (audit log + daily cap) ─────────────────────────
+    `CREATE TABLE IF NOT EXISTS points_events (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      source VARCHAR(60) NOT NULL,               -- login/article_view/scene_turn/dictionary_click/...
+      amount INTEGER NOT NULL,
+      ref_id VARCHAR(120),                       -- ilgili record id (article_id, scene_id, vs)
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`,
+    `CREATE INDEX IF NOT EXISTS points_events_user_date_idx ON points_events (user_id, created_at DESC)`,
+    `CREATE INDEX IF NOT EXISTS points_events_user_source_daily_idx ON points_events (user_id, source, (created_at::date))`,
+
     // Ingestion log
     `CREATE TABLE IF NOT EXISTS career_ingestion_log (
       id SERIAL PRIMARY KEY,

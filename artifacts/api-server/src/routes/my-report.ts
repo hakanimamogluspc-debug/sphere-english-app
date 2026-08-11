@@ -14,8 +14,36 @@ import { pool } from "@workspace/db";
 import { authMiddleware, requireRole, type AuthRequest } from "../middlewares/auth";
 import { generateWeeklyReport, sendWeeklyReportToUser, runWeeklyReportForAllUsers } from "../lib/weekly-report";
 import { extractPending } from "../lib/mistake-extractor";
+import { awardPoints } from "../lib/points";
 
 const router = Router();
+
+router.get("/my/points/summary", authMiddleware, async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.userId!;
+    const weekly: any = await pool.query(
+      `SELECT COALESCE(SUM(amount),0)::int AS total FROM points_events
+         WHERE user_id = $1 AND created_at > NOW() - INTERVAL '7 days'`,
+      [userId],
+    );
+    const today: any = await pool.query(
+      `SELECT COALESCE(SUM(amount),0)::int AS total FROM points_events
+         WHERE user_id = $1 AND created_at::date = CURRENT_DATE`,
+      [userId],
+    );
+    const breakdown: any = await pool.query(
+      `SELECT source, SUM(amount)::int AS total FROM points_events
+         WHERE user_id = $1 AND created_at > NOW() - INTERVAL '7 days'
+         GROUP BY source ORDER BY total DESC LIMIT 5`,
+      [userId],
+    );
+    return res.json({
+      today: today.rows[0]?.total ?? 0,
+      weekly: weekly.rows[0]?.total ?? 0,
+      breakdown: breakdown.rows,
+    });
+  } catch (e: any) { return res.status(500).json({ error: e?.message }); }
+});
 
 router.get("/my/report/latest", authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
@@ -95,11 +123,15 @@ router.post("/my/mistakes/:id/resolve", authMiddleware, async (req: AuthRequest,
   try {
     const userId = req.userId!;
     const id = parseInt(req.params.id, 10);
-    await pool.query(
+    const r: any = await pool.query(
       `UPDATE user_mistakes SET resolved_at = NOW()
-         WHERE id = $1 AND user_id = $2 AND resolved_at IS NULL`,
+         WHERE id = $1 AND user_id = $2 AND resolved_at IS NULL
+         RETURNING id`,
       [id, userId],
     );
+    if (r.rows[0]) {
+      awardPoints(userId, "mistake_resolve", { onceEverForRef: true, refId: `m:${id}`, silent: true }).catch(() => {});
+    }
     return res.json({ ok: true });
   } catch (e: any) {
     return res.status(500).json({ error: e?.message });

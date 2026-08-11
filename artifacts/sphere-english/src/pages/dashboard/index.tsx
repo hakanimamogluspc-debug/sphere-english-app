@@ -71,6 +71,7 @@ function StudentDashboard() {
               <div>
                 <p className="text-white/80 font-medium mb-1">Toplam Puan</p>
                 <h3 className="text-4xl font-bold font-display text-white">{stats?.totalPoints || 0}</h3>
+                <WeeklyPointsSubtitle />
               </div>
               <div className="h-12 w-12 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-md">
                 <Trophy className="h-6 w-6 text-yellow-300" />
@@ -417,6 +418,19 @@ function RecommendedArticlesWidget() {
       </CardContent>
     </Card>
   );
+}
+
+function WeeklyPointsSubtitle() {
+  const [weekly, setWeekly] = useState<number | null>(null);
+  useEffect(() => {
+    const token = localStorage.getItem("sphere_token");
+    fetch(`${API}/my/points/summary`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json())
+      .then(d => setWeekly(d.weekly ?? 0))
+      .catch(() => setWeekly(null));
+  }, []);
+  if (weekly === null || weekly === 0) return null;
+  return <p className="text-xs text-white/70 mt-1">Bu hafta <strong className="text-yellow-200">+{weekly}</strong> puan kazandın</p>;
 }
 
 function SectorHintBanner() {

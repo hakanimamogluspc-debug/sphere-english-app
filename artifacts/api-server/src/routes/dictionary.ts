@@ -11,6 +11,7 @@
 import { Router, type Response } from "express";
 import { pool } from "@workspace/db";
 import { authMiddleware, type AuthRequest } from "../middlewares/auth";
+import { awardPoints } from "../lib/points";
 import OpenAI from "openai";
 
 const router = Router();
@@ -132,6 +133,7 @@ router.get("/dictionary/:word", authMiddleware, async (req: AuthRequest, res: Re
         `UPDATE dictionary_cache SET fetch_count = fetch_count + 1, last_used_at = NOW() WHERE word = $1`,
         [word],
       ).catch(() => {});
+      awardPoints((req as any).userId, "dictionary_click", { dailyCap: 10, refId: word, silent: true }).catch(() => {});
       return res.json({
         word,
         tr: c.tr_translation,
@@ -176,6 +178,7 @@ router.get("/dictionary/:word", authMiddleware, async (req: AuthRequest, res: Re
        JSON.stringify(fd?.definitions ?? []), source],
     );
 
+    awardPoints((req as any).userId, "dictionary_click", { dailyCap: 10, refId: word, silent: true }).catch(() => {});
     return res.json({
       word,
       tr,

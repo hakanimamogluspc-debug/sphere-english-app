@@ -14,6 +14,7 @@
 import { Router, type Response } from "express";
 import { pool } from "@workspace/db";
 import { authMiddleware, type AuthRequest } from "../middlewares/auth";
+import { awardPoints } from "../lib/points";
 
 const router = Router();
 
@@ -137,6 +138,11 @@ router.get("/content/:id", authMiddleware, async (req: AuthRequest, res: Respons
       [userId, id],
     ).catch(() => {});
 
+    // Puan ver — günde max 10 puan makale görüntülemekten
+    awardPoints(userId, "article_view", { dailyCap: 10, refId: id, silent: true }).catch(() => {});
+    // İlk kez makale okuma bonusu
+    awardPoints(userId, "first_article_read", { onceEverForRef: true, refId: "any", silent: true }).catch(() => {});
+
     return res.json({ article });
   } catch (e: any) {
     return res.status(500).json({ error: e?.message });
@@ -159,6 +165,8 @@ router.post("/content/:id/save", authMiddleware, async (req: AuthRequest, res: R
       `INSERT INTO article_interactions (user_id, article_id, action) VALUES ($1, $2, 'save')`,
       [userId, id],
     ).catch(() => {});
+    // Save puan (aynı makale 1 kere)
+    awardPoints(userId, "article_save", { onceEverForRef: true, refId: `save:${id}`, silent: true }).catch(() => {});
     return res.json({ ok: true });
   } catch (e: any) {
     return res.status(500).json({ error: e?.message });
@@ -189,6 +197,10 @@ router.post("/content/:id/interact", authMiddleware, async (req: AuthRequest, re
        VALUES ($1, $2, $3, $4::jsonb)`,
       [userId, id, action, JSON.stringify(req.body?.metadata ?? null)],
     );
+    // Complete read puan (aynı makale bir kez)
+    if (action === "complete_read") {
+      awardPoints(userId, "article_complete_read", { onceEverForRef: true, refId: `complete:${id}`, silent: true }).catch(() => {});
+    }
     return res.json({ ok: true });
   } catch (e: any) {
     return res.status(500).json({ error: e?.message });

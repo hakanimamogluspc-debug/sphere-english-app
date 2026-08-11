@@ -9,6 +9,7 @@ import { validateBody, schemas } from "../middlewares/validate.js";
 import { notifyNewUserRegistration } from "../lib/admin-notifications.js";
 import { sendEmail } from "../lib/email.js";
 import { renderWelcomeEmail } from "../lib/welcome-email.js";
+import { awardPoints } from "../lib/points.js";
 
 const router = Router();
 
@@ -69,6 +70,9 @@ router.post("/auth/login", validateBody(loginSchema), async (req, res) => {
     fbp: req.cookies?.["_fbp"],
     sourceUrl: "https://app.sphereenglish.com/login",
   }).catch(() => {});
+
+  // Günlük giriş puanı — dailyCap ile aynı gün 2. login tekrar sayılmaz
+  awardPoints(user.id, "daily_login", { dailyCap: 2, silent: true }).catch(() => {});
 
   res.json({ user: { ...userWithoutPassword, company: companyInfo }, token });
 });

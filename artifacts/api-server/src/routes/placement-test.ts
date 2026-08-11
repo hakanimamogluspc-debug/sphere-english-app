@@ -3,6 +3,7 @@ import { db, usersTable, pool } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { authMiddleware, type AuthRequest } from "../middlewares/auth.js";
 import { recordPlacementMistakes } from "../lib/mistake-extractor.js";
+import { awardPoints } from "../lib/points.js";
 
 const router = Router();
 
@@ -119,6 +120,9 @@ router.post("/placement-test/submit", authMiddleware, async (req: AuthRequest, r
       level,
     ).catch((e) => console.warn("[placement-test/submit] mistake insert warn:", e?.message));
   }
+
+  // Milestone puan (bir kereye mahsus)
+  awardPoints(req.userId!, "placement_test_complete", { onceEverForRef: true, refId: "any", silent: true }).catch(() => {});
 
   const { password: _, ...userWithoutPassword } = updated;
   res.json({ score, level, user: userWithoutPassword, wrong: wrongList, total: 60 });
