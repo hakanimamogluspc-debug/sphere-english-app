@@ -21,6 +21,7 @@ export const usersTable = pgTable("users", {
   placementTestCompleted: boolean("placement_test_completed").notNull().default(false),
   studentNumber: varchar("student_number", { length: 20 }),
   accountType: varchar("account_type", { length: 20 }),
+  sector: varchar("sector", { length: 60 }),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });

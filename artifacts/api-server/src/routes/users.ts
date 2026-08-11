@@ -186,7 +186,7 @@ router.patch("/users/:id", authMiddleware, async (req: AuthRequest, res) => {
   if (phone !== undefined) updates.phone = phone;
   if (avatar !== undefined) updates.avatar = avatar;
   if (currentLevel !== undefined) updates.currentLevel = currentLevel;
-  if (sector !== undefined) (updates as any).sector = sector;
+  if (sector !== undefined) updates.sector = sector;
   if (role !== undefined && req.userRole === "admin") updates.role = role;
   if (email !== undefined && req.userRole === "admin") updates.email = email.toLowerCase();
 
