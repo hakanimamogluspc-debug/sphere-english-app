@@ -43,72 +43,181 @@ export const CATEGORY_LABEL: Record<string, string> = {
 const DIFFICULTIES = ["A2", "B1", "B2", "C1"] as const;
 const VOICES = ["nova", "onyx", "shimmer", "echo", "alloy", "fable"] as const;
 
+// Konu havuzları — Türk profesyonellerin gerçek dünyada yaşadığı senaryolar
 const SCENE_TOPICS: Record<string, string[]> = {
   general_business: [
-    "Yeni iş arkadaşıyla tanışma", "Kahve molasında small talk", "Ekibe yeni katılan birini tanıştırma",
-    "Ofiste yön tarifi verme", "Öğle yemeği daveti", "Doğum günü kutlaması organizasyonu",
-    "İş yerinde küçük bir ricayı iletme", "Eşyayı ödünç alma", "Toplantı odası ayırtma",
-    "Kişisel gelişim hedefini paylaşma", "İzin talebi hakkında konuşma", "Yaklaşan tatil planlarını paylaşma",
+    "Yeni katılan expat manager ile tanışma toplantısı",
+    "Yurt dışı ofisten gelen misafiri havaalanından karşılama",
+    "İstanbul ofisini yabancı bir mühendise tanıtma",
+    "Uluslararası bir konferansta iletişim bilgisi alma (LinkedIn ekleme)",
+    "Yabancı iş arkadaşına Türk yemek kültürünü kısaca anlatma (öğle yemeği)",
+    "Global ekibe Türkiye tatil takvimini açıklama (bayram, resmi tatiller)",
+    "Yabancı iş ortağını Boğaz turuna davet etme",
+    "Yıllık kick-off toplantısında Türkiye ekibi olarak kısa update",
+    "HQ'dan gelen ziyaretçi için toplantı odası hazırlığı",
+    "Yeni gelen expat'e Türkiye'de yaşam ipuçları (banka, sim kart, oturma izni)",
+    "Global şirket etkinliğinde Türkiye ofisini temsil etme",
+    "Ofiste kahve makinesinin bozulduğunu bildirme (havadan sudan sohbet)",
   ],
   meetings: [
-    "Toplantıyı açma ve gündemi paylaşma", "Fikri kibarca reddetme", "Söz alma ve fikir sunma",
-    "Anlamadığın bir noktayı sorma", "Toplantıyı özetleme ve action item'lar", "Zamanı yönetme (konuya dönme)",
-    "Farklı görüşleri uzlaştırma", "Karar alma (oylama)", "Sonraki adımları netleştirme",
-    "Toplantıyı erteleme", "Bir konuyu bir sonraki toplantıya erteleme", "Toplantıya geç kalma özrü",
+    "Alman HQ ile weekly sync — Türkiye ofisi update'i",
+    "Timeline gecikmesini expat direktöre açıklama",
+    "Amerikan client'e proje status raporu",
+    "İngiliz iş ortağının fikrini kibarca reddetme (kültürel hassasiyet)",
+    "Global ürün toplantısında yerel Türk pazar dinamiklerini açıklama",
+    "Yabancı yöneticiye Türkiye'deki regülasyon farkını anlatma",
+    "Toplantı gündeminde konu sapması — konuya döndürme",
+    "Çok saatler ötesindeki takıma zaman uygunluğu belirleme",
+    "Zoom'da bağlantı sorunu — konuyu tekrarlatma",
+    "Bir sonraki adımları netleştirme (action item'lar)",
+    "Toplantıyı özetleme ve karar noktalarını doğrulama",
+    "Trafikte kaldığın için toplantıya geç kalma özrü (İstanbul!)",
   ],
   sales: [
-    "Cold call — ilk temas", "Discovery call — ihtiyaç analizi", "Demo yapma",
-    "Fiyat sunma ve gerekçelendirme", "İtirazları karşılama (fiyat pahalı)", "Rakip karşılaştırması",
-    "ROI sunumu", "Kapama denemesi (close)", "Follow-up email yerine telefon",
-    "Referans arama", "Yeni kararverici bulma", "Kaybedilen fırsat için son teklif",
+    "İngiliz alıcıya Türkiye'den tekstil ihracatı için cold call",
+    "Alman otomotiv tedarikçisine ürün demo",
+    "Amerikan turist grubuna İstanbul otel satışı",
+    "Rus/Ukrayna müşteriye sağlık turizmi paketi sunma",
+    "Ortadoğulu iş adamına kurumsal danışmanlık pitch",
+    "Yurt dışı fuarında ürününüzü tanıtma (Milano/Frankfurt/Dubai fair)",
+    "'Türkiye pahalı değil mi?' itirazına karşılık verme",
+    "Rakip Uzak Doğu tedarikçilerine karşı kalite avantajını sunma",
+    "Yurt dışı e-ticaret müşterisiyle whatsapp'ta satış görüşmesi",
+    "Discovery call — enterprise SaaS müşterisi",
+    "Follow-up: 3 hafta önce demo yapan alıcıya geri dönüş",
+    "Kaybedilen fırsatı yeniden açmaya çalışma",
   ],
   negotiation: [
-    "Fiyat müzakeresi — indirim isteme", "Sözleşme şartlarını müzakere etme", "Teslim tarihi uzatma talebi",
-    "Kapsam değişikliği için ek ücret", "Ödeme koşulu müzakeresi", "Erken kapama teklifi",
-    "İki tarafın çıkarını dengeleme", "Sınırı belirtme (walk away)", "Kazanılan konsesyonlar",
-    "Alternatif teklifler önerme", "Sözlü mutabakatı yazıya döktürme", "Uzlaşmayı bitiriş cümlesi",
+    "İngiliz alıcı ile ödeme vadesi müzakeresi (60 gün → 30 gün)",
+    "Alman tedarikçisiyle fiyat indirimi görüşmesi",
+    "İhracat sözleşmesinde teslim tarihi uzatma talebi",
+    "Kur farkı riskini müşteriyle paylaşma önerisi (TL vs EUR)",
+    "Uzak Doğu tedarikçisiyle MOQ (minimum sipariş) müzakeresi",
+    "Sözleşme yenileme — otomatik %5 zam maddesini kaldırma",
+    "Uluslararası fuar stand yerini pazarlık",
+    "SLA (service level agreement) şartlarını revize etme",
+    "Erken ödeme karşılığı %2 indirim önerme",
+    "Anlaşmadan çekilme (walk away) — sınırı belirtme",
+    "Ortak yatırım (joint venture) ilk temas",
+    "Sözlü mutabakatı email ile teyit etme",
   ],
   presentations: [
-    "Sunumu açma — dikkat çekme", "Gündem paylaşma", "Grafik anlatma",
-    "Veriyi hikaye ile bağlama", "Zor soru geldiğinde", "Zaman aşımı — hızlanma",
-    "Sunumu kapama — call to action", "Q&A yönetimi", "Teknik sorun (proj. çalışmıyor)",
-    "İzleyicinin ilgisini geri kazanma", "Detaya inme talebi", "Sunumu birlikte yapma (co-presenting)",
+    "Global yıllık toplantıda Türkiye ekibi performans sunumu",
+    "Yabancı yatırımcıya Türk startup pitch (Series A)",
+    "Amerikan client'e proje sonuç raporu (deliverable presentation)",
+    "Almanya'daki HQ'ya Türkiye pazarı analizi",
+    "Q4 tahminlerini CEO'ya sunma",
+    "Yeni ürün özelliğini uluslararası müşteriye canlı demo",
+    "Zor soru: 'Neden hedeflere ulaşılamadı?' — diplomatik cevap",
+    "Sunum sırasında projeksiyon donunca — sözle devam etme",
+    "3 dakika executive summary — CFO'ya bütçe talebi",
+    "Bir konuyu detaylandırma isteği geldiğinde",
+    "Q&A yönetimi — cevaplayamadığın soru geldiğinde",
+    "Sunumu kapama — clear call to action",
   ],
   phone_calls: [
-    "Toplantı rezervasyonu yapma", "Rezervasyonu iptal etme", "Yanlış numaraya düşme",
-    "Sesli mesaj bırakma", "Bağlantı kötü olduğunda", "Otomatik menüde işlem",
-    "Şikayet iletme", "Randevu değiştirme", "Faturayla ilgili soru",
-    "Yeni müşteri temsilcisine transfer", "Konuşmayı kısaltma isteği", "Ödeme talimatı bilgisi alma",
+    "Yurt dışından arayan müşteriye rezervasyon yapma (otel/tur)",
+    "İngiliz müşterinin sipariş takibi araması",
+    "Alman tedarikçiye kalite şikayeti bildirme",
+    "Yurt dışı bankaya swift ödeme sorgulama",
+    "Uluslararası kargo şirketinden paket bilgisi",
+    "Yabancı sigorta şirketiyle poliçe sorgulama",
+    "Otomatik menüden gerçek insana ulaşma",
+    "Sesli mesaj bırakma — profesyonel format",
+    "Bağlantı kötü olduğunda tekrarlatma / geri aramayı önerme",
+    "Kızgın uluslararası müşteriyle sakin iletişim",
+    "Yanlış numara — nazikçe düzeltme",
+    "Konuşmayı sonlandırma — sonraki adımları özetleyerek",
   ],
   tech: [
-    "Bug raporlama (destek)", "Feature request iletme", "Deploy sonrası incident bildirme",
-    "Product roadmap tartışma", "Code review geri bildirimi verme", "Sprint planning'de tahmin verme",
-    "Retro'da açık geri bildirim", "Yeni bir teknolojiye geçiş önerme", "On-call devir teslim",
-    "Müşteri tekniği talep etti — tercüme", "Design review'da alternatif önerme", "Postmortem toplantısı",
+    "İngiliz tech lead'e code review feedback verme",
+    "Alman product manager'a bug reprodüksiyon adımlarını anlatma",
+    "Amerikan startup'ta sprint planning — story point tahmini",
+    "Slack'te asenkron olarak zor bir konsept açıklama (tools/thread)",
+    "On-call devir teslim — hangi incident'lar açık",
+    "Retro'da 'ne iyi gitmedi' geri bildirimi (kültürlerarası dikkat)",
+    "Global ekibe Türkiye'deki timezone (UTC+3) farkını hatırlatma",
+    "Yeni framework'e geçiş önerisi (React → Next.js gibi)",
+    "Design review — mimari trade-off tartışması",
+    "Customer'a teknik konsepti sade dille tercüme",
+    "Postmortem toplantısı — root cause anlatımı",
+    "Deploy sonrası incident — Slack'te durum güncellemesi",
   ],
   hr: [
-    "İş görüşmesi — kendini tanıtma", "Maaş görüşmesi", "Yıllık performans değerlendirmesi",
-    "İşe alım referans görüşmesi", "İşten ayrılma bildirimi", "Terfi görüşmesi",
-    "İş yerinde çatışma çözme", "Uzaktan çalışma talebi", "Onboarding — ilk hafta",
-    "Bir hatayı sahiplenme", "Eğitim talep etme", "İşten çıkarma toplantısı — nazik ton",
+    "Yurt dışı merkezli şirketle uzaktan iş görüşmesi",
+    "Expat manager ile yıllık performans değerlendirmesi",
+    "Terfi talebi — global manager'a case sunumu",
+    "Yurt dışı ofise transfer talebi",
+    "Onboarding — Türkiye ofisinden ilk hafta feedback (yabancı yeni işe alım)",
+    "Maaş görüşmesi — USD/EUR ödeme talebi (kur riski gerekçesi)",
+    "İstifa etme — 30 gün notice period bildirme",
+    "İş yerinde çatışma — HR'a rapor etme",
+    "Uzaktan çalışma / hybrid model müzakeresi",
+    "Eğitim bütçesi talebi (yurt dışı sertifika programı)",
+    "İşe alım için referans görüşmesi (İngilizce reference check)",
+    "Bir hatayı sahiplenme ve nasıl önleyeceğini açıklama",
   ],
   finance: [
-    "Bütçe onayı isteme", "Aylık finansal rapor sunma", "Yatırım toplantısında pitch",
-    "Nakit akış sıkıntısını CEO'ya iletme", "Denetçilerle sohbet", "Yeni banka ilişkisi başlatma",
-    "Fatura ödeme takibi", "Vergi danışmanı ile görüşme", "Riskli borçluyla telefon",
-    "Şirket satın alma müzakereleri", "Kredi başvurusu görüşmesi", "Sigorta poliçesi yenileme",
+    "Alman HQ CFO'ya Türkiye ofisi Q3 sonuçlarını sunma",
+    "Yurt dışı yatırımcıya nakit akış tablosu açıklama",
+    "Kur farkı zararını executive'e nazikçe iletme",
+    "İhracat gelirini USD/EUR olarak muhasebeleştirme müzakeresi",
+    "Yeni ERP sistemine geçişte finans süreçlerini tanıtma",
+    "Yurt dışı denetim firması ile yıllık audit görüşmesi",
+    "Vergi danışmanına Türkiye'deki KDV/stopaj rejimini anlatma (yabancı yatırımcı için)",
+    "Banka relationship manager ile kredi limit artışı görüşmesi",
+    "Uluslararası ödeme sistemi (Wise/Swift/PayPal) sorunları",
+    "Riskli tahsilat — geciken uluslararası müşteriyi arama",
+    "M&A due diligence toplantısı — finansal soru cevap",
+    "Sigorta yenileme — global broker ile pazarlık",
   ],
   healthcare: [
-    "Hasta ile randevu alma", "Şikayet dinleme", "Ağrı seviyesini sorma",
-    "İlaç yan etkilerini açıklama", "Tanı sonucunu iletme", "Cerrahi öncesi bilgilendirme",
-    "Sigorta kapsamı açıklama", "İkinci görüş önerme", "Aile üyesine bilgi verme",
-    "Randevuyu erteleme talebi", "Reçete yenileme telefonu", "Acil durum triyajı",
+    "Sağlık turizmi hastası — İstanbul havaalanından karşılama ve klinik yönlendirme",
+    "Yabancı hastaya prosedür öncesi bilgilendirme (saç ekimi, diş, estetik)",
+    "İngiliz hastaya sigorta kapsamını açıklama (özel sigorta / SGK farkı)",
+    "Alman hastaya rapor ve reçete İngilizce açıklama",
+    "Post-op follow-up — hastaneden çıkışta hasta ile telefon",
+    "Yabancı doktor ile tanı değerlendirmesi (case discussion)",
+    "Sağlık turizmi ajansı ile paket satış görüşmesi",
+    "Turizm hastanesinde hasta memnuniyet anketi görüşmesi",
+    "Acil durumda triyaj — İngilizce hızlı bilgi alma",
+    "Aile üyesine hastalık durumunu iletme (empatik ton)",
+    "Kliniğinizi uluslararası bir sağlık kongresinde tanıtma",
+    "Konsültasyon randevusu ayarlama (yurt dışından arayan hasta)",
   ],
 };
 
-const SYSTEM_PROMPT = `Sen Sphere English'in speaking role-play sahne üreticisisin. Türk profesyonelleri için iş İngilizcesi konuşma pratiği sahneleri üretiyorsun.
+const SYSTEM_PROMPT = `Sen Sphere English'in speaking role-play sahne üreticisisin. **TÜRK profesyonelleri** için iş İngilizcesi konuşma pratiği sahneleri üretiyorsun.
 
-FORMAT (JSON):
+═══ HEDEF KİTLE VE BAĞLAM ═══
+Kullanıcı: Türkiye'de çalışan bir profesyonel (Ankara, İstanbul, İzmir, Bursa vs.).
+İngilizce'yi genelde şu durumlar için öğreniyor:
+- Yabancı iş ortağı, tedarikçi, müşteri ile telefon/toplantı/email
+- Yurt dışı merkezi olan çok uluslu şirketin Türkiye şubesinde çalışma
+- Expat manager veya CEO'ya raporlama
+- İhracat / ithalat müzakereleri
+- Uluslararası konferans, fuar, teknoloji ekosistemi
+- Yurt dışı müşterilere destek / satış / danışmanlık
+- Global takımlarla remote çalışma (Slack, Zoom, Jira)
+
+═══ SAHNE OLUŞTURMA KURALLARI ═══
+1. **Sahne mutlaka bir Türk profesyonelin yabancı bir tarafla İngilizce konuştuğu durum olmalı**.
+   Örn: Türk satış müdürü → Alman müşteri; Türk yazılımcı → İngiliz tech lead; Türk otel müdürü → İngiliz turist müşteri.
+2. Türkiye'de yaygın sektörler tercih edilebilir: **finans/bankacılık, otomotiv, tekstil, turizm, sağlık turizmi, teknoloji (startup ekosistemi), inşaat, gıda, e-ticaret, lojistik, tekstil ihracatı, savunma sanayi, telekom**.
+3. Şirket / kişi isimleri: karışık kullan — Türk isimleri (Ayşe, Mehmet, Deniz, Selin) + yabancı taraf (Sarah, Michael, Klaus, Anna). Türk şirket adları uydurulabilir (ör: "Karadeniz Textiles", "Yıldız Software", "Bosphorus Logistics").
+4. **notesTr** alanında Türklerin sık düştüğü tuzaklara dikkat çek:
+   - "I am agree" → "I agree"
+   - "I have 30 years old" → "I'm 30 years old"
+   - "Turkish way of saying it" ile "how English does it" farkı
+   - Nezaket kalıpları: Türkçe direkt tercümesi kaba durur ("You must send" yerine "Could you please send")
+   - "Hocam / abi / bey" hitabının İngilizce'de karşılığı olmaması (isim + "sir/ma'am" nadir)
+5. Kültürel farklar dahil edilebilir:
+   - Türk iş kültürü: ilişki-önce (small talk uzar), hiyerarşi hassasiyeti
+   - Yabancı taraf (özellikle Alman/İngiliz/Amerikalı): time-boxed, direkt konuya
+   - Kullanıcı iki kültür arasında köprü kurmayı öğrensin
+6. Somut Türkiye referansları serpiştir (spam yapmadan): "our Istanbul office", "our HQ in Ankara", "our exports to Germany", "the Q4 numbers from our Bursa plant".
+
+═══ FORMAT (JSON) ═══
 {
   "slug": "kebab-case-english-slug",  // benzersiz, açıklayıcı (ör: "meeting-open-agenda")
   "titleEn": "English title (max 60 karakter)",
