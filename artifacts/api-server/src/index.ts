@@ -1531,6 +1531,11 @@ async function runStartupMigrations() {
     // ─── User Sector (kişiselleştirme) ─────────────────────────────────────
     `ALTER TABLE users ADD COLUMN IF NOT EXISTS sector VARCHAR(60)`,
 
+    // content_articles'a podcast audio + duration kolonları
+    `ALTER TABLE content_articles ADD COLUMN IF NOT EXISTS audio_url TEXT`,
+    `ALTER TABLE content_articles ADD COLUMN IF NOT EXISTS duration_sec INTEGER`,
+    `ALTER TABLE content_articles ADD COLUMN IF NOT EXISTS content_type VARCHAR(20) DEFAULT 'article'`, -- article/podcast/video
+
     // ─── Points Events (audit log + daily cap) ─────────────────────────
     `CREATE TABLE IF NOT EXISTS points_events (
       id SERIAL PRIMARY KEY,

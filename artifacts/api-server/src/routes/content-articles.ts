@@ -46,7 +46,7 @@ router.get("/content/feed", authMiddleware, async (req: AuthRequest, res: Respon
     const sql = `
       SELECT ca.id, ca.source, ca.url, ca.title, ca.subtitle, ca.image_url, ca.author,
              ca.published_at, ca.tr_summary, ca.cefr_level, ca.category, ca.tags,
-             ca.published_admin_at,
+             ca.published_admin_at, ca.audio_url, ca.duration_sec, ca.content_type,
              (usa.saved_at IS NOT NULL) AS saved
         FROM content_articles ca
         ${savedJoin}

@@ -37,7 +37,13 @@ type FeedItem = {
   saved?: boolean;
 };
 
-type ArticleFull = FeedItem & {
+type ArticleFullExtra = {
+  audio_url?: string | null;
+  duration_sec?: number | null;
+  content_type?: string | null;
+};
+
+type ArticleFull = FeedItem & ArticleFullExtra & {
   url: string;
   body_html?: string | null;
   body_text?: string | null;
@@ -419,8 +425,23 @@ function ArticleModal({ articleId, onClose, onSavedChange }: {
               </div>
             )}
 
-            {/* Full body (İngilizce, tıklanabilir kelime sözlüğü) */}
-            {article.body_text && (
+            {/* Podcast audio player */}
+            {article.audio_url && (
+              <div className="rounded-xl border border-teal-200 bg-teal-50/50 p-4">
+                <div className="text-[11px] font-bold uppercase tracking-wider text-teal-700 mb-2 flex items-center gap-1">
+                  🎧 Podcast Dinle
+                  {article.duration_sec && (
+                    <span className="ml-auto text-teal-600 font-mono">
+                      {Math.floor(article.duration_sec / 60)}:{String(article.duration_sec % 60).padStart(2, "0")}
+                    </span>
+                  )}
+                </div>
+                <audio controls src={article.audio_url} className="w-full" preload="none" />
+              </div>
+            )}
+
+            {/* Full body (İngilizce, tıklanabilir kelime sözlüğü) — sadece uzun body varsa */}
+            {article.body_text && article.body_text.length > 200 && (
               <details className="rounded-xl border border-gray-200 group" open>
                 <summary className="cursor-pointer px-5 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 flex items-center gap-2">
                   <Clock className="h-4 w-4" /> Makalenin Tamamı (İngilizce)
@@ -432,6 +453,21 @@ function ArticleModal({ articleId, onClose, onSavedChange }: {
                   <ClickableText text={article.body_text} vocab={vocabMap} />
                 </div>
               </details>
+            )}
+
+            {/* Orijinalde oku/dinle CTA — özellikle podcast + kısa body için */}
+            {(article.content_type === "podcast" || !article.body_text || article.body_text.length < 200) && article.url && (
+              <a href={article.url} target="_blank" rel="noreferrer"
+                className="block rounded-xl bg-gradient-to-br from-indigo-600 to-blue-700 hover:from-indigo-500 hover:to-blue-600 text-white p-5 text-center shadow-md transition"
+              >
+                <div className="text-[11px] uppercase tracking-wider opacity-80 font-bold mb-1">
+                  Orijinal Kaynak
+                </div>
+                <div className="text-base font-bold flex items-center justify-center gap-2">
+                  {article.content_type === "podcast" ? "Tam bölümü kaynağında dinle" : "Tam makaleyi kaynağında oku"}
+                  <ExternalLink className="h-4 w-4" />
+                </div>
+              </a>
             )}
 
             {/* Not */}

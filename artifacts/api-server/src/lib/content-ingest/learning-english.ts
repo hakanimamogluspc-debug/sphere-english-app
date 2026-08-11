@@ -36,7 +36,7 @@ function extractImage(block: string): string | null {
 }
 
 async function fetchRss(source: typeof SOURCES[number]): Promise<Array<{
-  guid: string; title: string; description: string; url: string; pubDate?: string; imageUrl?: string; bodyText?: string;
+  guid: string; title: string; description: string; url: string; pubDate?: string; imageUrl?: string; bodyText?: string; audioUrl?: string; durationSec?: number;
 }>> {
   const res = await fetch(source.url, { headers: { "User-Agent": "SphereEnglish/1.0" } });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -54,6 +54,17 @@ async function fetchRss(source: typeof SOURCES[number]): Promise<Array<{
     const pubDate = firstMatch(block, /<pubDate[^>]*>([\s\S]*?)<\/pubDate>/i);
     const image = extractImage(block);
     const contentEncoded = firstMatch(block, /<content:encoded[^>]*>([\s\S]*?)<\/content:encoded>/i);
+    const enclosureAudio = firstMatch(block, /<enclosure\s+[^>]*url="([^"]+)"[^>]*type="audio/i);
+    const durationStr = firstMatch(block, /<itunes:duration[^>]*>([\s\S]*?)<\/itunes:duration>/i);
+
+    let duration: number | undefined;
+    if (durationStr) {
+      const s = stripTags(durationStr).trim();
+      const parts = s.split(":").map(x => parseInt(x, 10)).filter(x => !isNaN(x));
+      if (parts.length === 1) duration = parts[0];
+      else if (parts.length === 2) duration = parts[0] * 60 + parts[1];
+      else if (parts.length === 3) duration = parts[0] * 3600 + parts[1] * 60 + parts[2];
+    }
 
     if (!title || !link) continue;
     items.push({
@@ -64,6 +75,8 @@ async function fetchRss(source: typeof SOURCES[number]): Promise<Array<{
       pubDate: pubDate ? stripTags(pubDate) : undefined,
       imageUrl: image ?? undefined,
       bodyText: contentEncoded ? stripTags(contentEncoded).slice(0, 8000) : undefined,
+      audioUrl: enclosureAudio ?? undefined,
+      durationSec: duration,
     });
   }
   return items;
@@ -92,13 +105,15 @@ export async function fetchLearningEnglish(perSourceLimit = 5): Promise<Learning
           const insertRes: any = await pool.query(
             `INSERT INTO content_articles
                (source, external_id, url, title, snippet, body_text, image_url, author,
-                original_section, published_at, status)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'learning_english', $9, 'draft')
+                original_section, published_at, status, audio_url, duration_sec, content_type)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'learning_english', $9, 'draft', $10, $11, $12)
              ON CONFLICT (source, external_id) WHERE external_id IS NOT NULL DO NOTHING
              RETURNING id`,
             [src.slug, item.guid, item.url, item.title.slice(0, 500),
              item.description.slice(0, 4000), item.bodyText ?? null,
-             item.imageUrl ?? null, src.name, pubIso],
+             item.imageUrl ?? null, src.name, pubIso,
+             item.audioUrl ?? null, item.durationSec ?? null,
+             item.audioUrl ? 'podcast' : 'article'],
           );
           const id = insertRes.rows[0]?.id;
           if (id) { result.inserted++; result.articleIds.push(id); }
