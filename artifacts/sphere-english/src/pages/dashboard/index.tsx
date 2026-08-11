@@ -287,7 +287,7 @@ function QuickAccessBtn({ action }: { action: QuickAction }) {
                    backgroundSize: "14px 14px", backgroundPosition: "0 0, 7px 7px" }} />
 
         {/* Sağ alt dekoratif harf */}
-        <div className="absolute -bottom-4 -right-2 font-serif text-[100px] leading-none font-bold select-none pointer-events-none opacity-[0.06] group-hover:opacity-[0.1] transition-opacity" style={{ color: action.accent }}>
+        <div className="absolute -bottom-4 -right-2 font-display text-[100px] leading-none font-extrabold select-none pointer-events-none opacity-[0.06] group-hover:opacity-[0.1] transition-opacity" style={{ color: action.accent, letterSpacing: "-0.05em" }}>
           {initial}
         </div>
 
@@ -305,7 +305,7 @@ function QuickAccessBtn({ action }: { action: QuickAction }) {
 
           {/* Title + subtitle */}
           <div className="mt-auto">
-            <div className="font-serif font-bold text-[15px] leading-tight text-[#1B365D] tracking-tight" style={{ letterSpacing: "-0.01em" }}>
+            <div className="font-display font-bold text-[15px] leading-tight text-[#1B365D] tracking-tight" style={{ letterSpacing: "-0.015em" }}>
               {action.label}
             </div>
             <div className="text-[11px] text-slate-500 mt-1 leading-snug">{action.subtitle}</div>
@@ -517,7 +517,7 @@ function WordOfDayWidget() {
                  backgroundSize: "16px 16px", backgroundPosition: "0 0, 8px 8px" }} />
 
       {/* Sağ alt köşe dekoratif quote — magazine tarzı */}
-      <div className="absolute -bottom-8 -right-4 text-[220px] leading-none font-serif text-[#1B365D]/[0.04] select-none pointer-events-none">
+      <div className="absolute -bottom-8 -right-4 text-[220px] leading-none font-display text-[#1B365D]/[0.04] select-none pointer-events-none">
         &ldquo;
       </div>
 
@@ -535,7 +535,7 @@ function WordOfDayWidget() {
 
           {/* Kelime + fonetik + POS + sesli tell */}
           <div className="flex items-end gap-4 flex-wrap">
-            <h2 className="font-serif font-bold text-5xl md:text-6xl leading-[1] text-[#1B365D] tracking-tight" style={{ letterSpacing: "-0.02em" }}>
+            <h2 className="font-display font-extrabold text-5xl md:text-6xl leading-[1] text-[#1B365D] tracking-tight" style={{ letterSpacing: "-0.03em" }}>
               {word.word}
             </h2>
             <button
@@ -553,7 +553,7 @@ function WordOfDayWidget() {
 
           <div className="mt-2 flex items-center gap-3 flex-wrap">
             {word.phonetic && (
-              <span className="font-serif italic text-lg text-slate-500">/{word.phonetic}/</span>
+              <span className="italic text-lg text-slate-500 font-medium">/{word.phonetic}/</span>
             )}
             {word.part_of_speech && (
               <span className="text-[10px] font-semibold uppercase tracking-widest text-[#0ea5e9] border border-[#0ea5e9]/30 bg-[#0ea5e9]/5 px-2 py-0.5 rounded">
@@ -576,7 +576,7 @@ function WordOfDayWidget() {
             {word.definition_en && (
               <div>
                 <div className="text-[9px] uppercase tracking-[0.22em] font-bold text-slate-500 mb-1.5">Meaning</div>
-                <p className="text-sm text-slate-700 leading-relaxed font-serif italic">{word.definition_en}</p>
+                <p className="text-sm text-slate-700 leading-relaxed italic">{word.definition_en}</p>
               </div>
             )}
           </div>
