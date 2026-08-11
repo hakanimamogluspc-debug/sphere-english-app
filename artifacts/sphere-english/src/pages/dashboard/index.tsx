@@ -477,34 +477,116 @@ function WordOfDayWidget() {
   }, []);
   if (loading || !word) return null;
 
+  const dateLabel = word.published_at
+    ? new Date(word.published_at).toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" })
+    : new Date().toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" });
+
+  function speak() {
+    try {
+      const u = new SpeechSynthesisUtterance(word.word);
+      u.lang = "en-US";
+      u.rate = 0.9;
+      window.speechSynthesis.speak(u);
+    } catch {}
+  }
+
   return (
-    <Card className="overflow-hidden bg-gradient-to-br from-indigo-600 via-blue-600 to-teal-600 text-white border-0">
-      <CardContent className="p-6 md:p-7 flex flex-col md:flex-row md:items-center gap-5">
-        <div className="flex-1">
-          <div className="text-[11px] uppercase tracking-wider opacity-80 font-bold mb-2">Bugünün Kelimesi</div>
-          <div className="flex items-baseline gap-3 flex-wrap">
-            <h2 className="text-3xl md:text-4xl font-bold leading-tight">{word.word}</h2>
-            {word.phonetic && <span className="text-white/80 font-mono text-sm">/{word.phonetic}/</span>}
-            {word.part_of_speech && <span className="bg-white/20 backdrop-blur text-xs px-2 py-0.5 rounded-full font-semibold">{word.part_of_speech}</span>}
+    <div className="relative overflow-hidden rounded-2xl bg-white ring-1 ring-slate-200/70 shadow-[0_1px_3px_rgba(15,23,42,0.05),0_10px_40px_-15px_rgba(30,58,110,0.15)]">
+      {/* Sol dikey vurgu şeridi */}
+      <div className="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-[#1B365D] via-[#0ea5e9] to-[#0d9488]" />
+
+      {/* Kağıt dokusu — çok subtle diagonal grid */}
+      <div className="absolute inset-0 opacity-[0.025] pointer-events-none"
+        style={{ backgroundImage: "linear-gradient(45deg, #1B365D 25%, transparent 25%, transparent 75%, #1B365D 75%), linear-gradient(45deg, #1B365D 25%, transparent 25%, transparent 75%, #1B365D 75%)",
+                 backgroundSize: "16px 16px", backgroundPosition: "0 0, 8px 8px" }} />
+
+      {/* Sağ alt köşe dekoratif quote — magazine tarzı */}
+      <div className="absolute -bottom-8 -right-4 text-[220px] leading-none font-serif text-[#1B365D]/[0.04] select-none pointer-events-none">
+        &ldquo;
+      </div>
+
+      <div className="relative grid grid-cols-1 md:grid-cols-[1fr,auto] gap-6 p-7 md:p-8">
+        <div className="min-w-0">
+          {/* Üst şerit — kaynak & tarih */}
+          <div className="flex items-center gap-3 text-[10px] uppercase tracking-[0.18em] font-semibold text-slate-500 mb-5">
+            <span className="inline-flex items-center gap-1.5">
+              <span className="w-6 h-px bg-slate-400" />
+              Bugünün Kelimesi
+            </span>
+            <span className="text-slate-300">·</span>
+            <span className="text-slate-400 normal-case tracking-normal font-normal">{dateLabel}</span>
           </div>
-          {word.tr_meaning && (
-            <div className="mt-3">
-              <div className="text-[10px] uppercase tracking-wider opacity-70 font-bold mb-1">Türkçe</div>
-              <div className="text-lg font-semibold">{word.tr_meaning}</div>
+
+          {/* Kelime + fonetik + POS + sesli tell */}
+          <div className="flex items-end gap-4 flex-wrap">
+            <h2 className="font-serif font-bold text-5xl md:text-6xl leading-[1] text-[#1B365D] tracking-tight" style={{ letterSpacing: "-0.02em" }}>
+              {word.word}
+            </h2>
+            <button
+              onClick={speak}
+              title="Kelimeyi dinle"
+              className="mb-2 flex-shrink-0 w-10 h-10 rounded-full bg-slate-50 hover:bg-[#1B365D] hover:text-white text-[#1B365D] flex items-center justify-center border border-slate-200 transition-all group"
+            >
+              <svg className="w-4 h-4 group-hover:scale-110 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+                <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+              </svg>
+            </button>
+          </div>
+
+          <div className="mt-2 flex items-center gap-3 flex-wrap">
+            {word.phonetic && (
+              <span className="font-serif italic text-lg text-slate-500">/{word.phonetic}/</span>
+            )}
+            {word.part_of_speech && (
+              <span className="text-[10px] font-semibold uppercase tracking-widest text-[#0ea5e9] border border-[#0ea5e9]/30 bg-[#0ea5e9]/5 px-2 py-0.5 rounded">
+                {word.part_of_speech}
+              </span>
+            )}
+          </div>
+
+          {/* Ayırıcı ince çizgi */}
+          <div className="h-px bg-gradient-to-r from-slate-200 via-slate-200/50 to-transparent my-5" />
+
+          {/* İki sütunlu tanım bloğu (mobile'da stack) */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {word.tr_meaning && (
+              <div>
+                <div className="text-[9px] uppercase tracking-[0.22em] font-bold text-emerald-700 mb-1.5">Türkçe</div>
+                <div className="text-lg font-semibold text-slate-900 leading-snug">{word.tr_meaning}</div>
+              </div>
+            )}
+            {word.definition_en && (
+              <div>
+                <div className="text-[9px] uppercase tracking-[0.22em] font-bold text-slate-500 mb-1.5">Meaning</div>
+                <p className="text-sm text-slate-700 leading-relaxed font-serif italic">{word.definition_en}</p>
+              </div>
+            )}
+          </div>
+
+          {/* Kullanım notu */}
+          {word.tr_note && (
+            <div className="mt-5 pl-4 border-l-2 border-[#1B365D]/20 py-1">
+              <div className="text-[9px] uppercase tracking-[0.22em] font-bold text-slate-500 mb-1">Kullanım</div>
+              <p className="text-xs text-slate-600 leading-relaxed">{word.tr_note}</p>
             </div>
           )}
-          {word.definition_en && (
-            <p className="mt-3 text-sm text-white/90 leading-relaxed">
-              <span className="opacity-70 text-xs mr-1">EN:</span>{word.definition_en}
-            </p>
-          )}
-          {word.tr_note && (
-            <p className="mt-2 text-xs text-white/80 italic border-l-2 border-white/30 pl-3">{word.tr_note}</p>
-          )}
         </div>
-        <div className="hidden md:block text-6xl opacity-20 select-none">📖</div>
-      </CardContent>
-    </Card>
+
+        {/* Sağ dikey blok — büyük dekoratif harf + kaynak */}
+        <div className="hidden md:flex flex-col items-center justify-between border-l border-slate-100 pl-6 min-w-[110px]">
+          <div className="font-serif text-[110px] leading-none text-[#1B365D]/10 select-none font-bold" style={{ marginTop: "-8px" }}>
+            {word.word.charAt(0).toUpperCase()}
+          </div>
+          <div className="text-center">
+            <div className="w-8 h-px bg-slate-200 mx-auto mb-2" />
+            <div className="text-[9px] uppercase tracking-[0.2em] text-slate-400 font-semibold">Sphere</div>
+            <div className="text-[9px] uppercase tracking-[0.2em] text-slate-400 font-semibold">Daily</div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
