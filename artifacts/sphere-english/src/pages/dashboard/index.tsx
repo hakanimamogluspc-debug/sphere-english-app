@@ -230,28 +230,32 @@ function StudentDashboard() {
 // ─── Hızlı Erişim ─────────────────────────────────────────────────────
 type QuickAction = {
   label: string;
+  subtitle: string;
   href: string;
   icon: any;
-  color: string;
   bg: string;
+  accent: string;    // decorative blob color
   featureKey?: string;
 };
 
 const QUICK_ACTIONS: QuickAction[] = [
-  { label: "AI Öğretmen",       href: "/student/ai-tutor",           icon: GraduationCap, color: "text-white", bg: "from-indigo-600 to-blue-600",     featureKey: "student-ai-tutor" },
-  { label: "Konuşma Sahneleri", href: "/student/speaking-scenes",    icon: Cpu,           color: "text-white", bg: "from-teal-600 to-emerald-600",    featureKey: "student-speaking-scenes" },
-  { label: "Yazma Koçu",        href: "/student/writing-coach",      icon: BookMarked,    color: "text-white", bg: "from-orange-500 to-rose-500",     featureKey: "student-writing-coach" },
-  { label: "Dilbilgisi Koçu",   href: "/student/grammar-coach",      icon: Cpu,           color: "text-white", bg: "from-purple-600 to-fuchsia-600",  featureKey: "student-grammar-coach" },
-  { label: "Kelime Oyunu",      href: "/student/vocab-game",         icon: Trophy,        color: "text-white", bg: "from-amber-500 to-orange-500",    featureKey: "student-vocab-game" },
-  { label: "Keşfet",            href: "/kesfet",                     icon: Newspaper,     color: "text-white", bg: "from-sky-600 to-cyan-600" },
+  { label: "AI Öğretmen",       subtitle: "Sohbet ederek öğren",     href: "/student/ai-tutor",           icon: GraduationCap, bg: "from-indigo-600 via-indigo-700 to-blue-800",     accent: "bg-blue-400",    featureKey: "student-ai-tutor" },
+  { label: "Konuşma Sahneleri", subtitle: "Rol yaparak konuş",       href: "/student/speaking-scenes",    icon: Cpu,           bg: "from-teal-600 via-emerald-700 to-emerald-800",    accent: "bg-teal-300",    featureKey: "student-speaking-scenes" },
+  { label: "Yazma Koçu",        subtitle: "Metnini geliştir",        href: "/student/writing-coach",      icon: BookMarked,    bg: "from-orange-500 via-rose-600 to-pink-700",        accent: "bg-orange-300",  featureKey: "student-writing-coach" },
+  { label: "Dilbilgisi Koçu",   subtitle: "Kurallara hakim ol",      href: "/student/grammar-coach",      icon: Cpu,           bg: "from-purple-600 via-fuchsia-700 to-pink-700",     accent: "bg-fuchsia-300", featureKey: "student-grammar-coach" },
+  { label: "Kelime Oyunu",      subtitle: "Kelime dağarcığını aç",   href: "/student/vocab-game",         icon: Trophy,        bg: "from-amber-500 via-orange-600 to-red-600",        accent: "bg-yellow-300",  featureKey: "student-vocab-game" },
+  { label: "Keşfet",            subtitle: "Haberler & makaleler",    href: "/kesfet",                     icon: Newspaper,     bg: "from-sky-500 via-cyan-600 to-blue-700",           accent: "bg-cyan-300" },
 ];
 
 function QuickAccessGrid() {
   return (
     <div>
-      <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
-        <Sparkles className="h-4 w-4" /> Hızlı Erişim
-      </h2>
+      <div className="flex items-baseline justify-between mb-4">
+        <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
+          <Sparkles className="h-5 w-5 text-primary" /> Hızlı Erişim
+        </h2>
+        <span className="text-xs text-muted-foreground">Öğrenme araçların tek tıkla</span>
+      </div>
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         {QUICK_ACTIONS.map(a => (
           <QuickAccessBtn key={a.href} action={a} />
@@ -262,15 +266,37 @@ function QuickAccessGrid() {
 }
 
 function QuickAccessBtn({ action }: { action: QuickAction }) {
-  // Hook her render'da tek sefer çağırılıyor (map-in-loop sorunu yok)
   const enabled = useFeature(action.featureKey);
   if (!enabled) return null;
   const Icon = action.icon;
   return (
     <Link href={action.href}>
-      <div className={`rounded-xl p-4 bg-gradient-to-br ${action.bg} ${action.color} cursor-pointer hover:shadow-lg hover:scale-105 transition-transform`}>
-        <Icon className="h-6 w-6 mb-2 opacity-95" />
-        <div className="text-sm font-semibold leading-tight">{action.label}</div>
+      <div
+        className={`group relative aspect-[4/5] rounded-2xl bg-gradient-to-br ${action.bg} text-white cursor-pointer overflow-hidden shadow-md hover:shadow-2xl hover:-translate-y-1 transition-all duration-300`}
+      >
+        {/* Decorative blob */}
+        <div className={`absolute -top-8 -right-8 w-24 h-24 rounded-full ${action.accent} opacity-30 blur-2xl group-hover:opacity-50 group-hover:scale-110 transition-all duration-500`} />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent pointer-events-none" />
+
+        {/* Corner accent line */}
+        <div className="absolute top-0 left-0 w-full h-0.5 bg-white/30" />
+
+        {/* Content */}
+        <div className="relative h-full flex flex-col p-4">
+          {/* Icon badge */}
+          <div className="w-11 h-11 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center ring-1 ring-white/30 shadow-lg group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300">
+            <Icon className="h-5 w-5 text-white" strokeWidth={2.2} />
+          </div>
+
+          {/* Title + subtitle at bottom */}
+          <div className="mt-auto">
+            <div className="text-base font-bold leading-tight tracking-tight">{action.label}</div>
+            <div className="text-[11px] font-medium text-white/80 mt-0.5 leading-snug">{action.subtitle}</div>
+          </div>
+
+          {/* Arrow icon on hover */}
+          <ChevronRight className="absolute bottom-3 right-3 h-4 w-4 text-white/0 group-hover:text-white/80 group-hover:translate-x-0.5 transition-all duration-300" />
+        </div>
       </div>
     </Link>
   );
