@@ -245,7 +245,8 @@ function Router() {
         <Route path="/certificates"><LayoutWrapper component={Certificates} featureKey="student-certificates" /></Route>
         <Route path="/student/speaking-club"><LayoutWrapper component={StudentSpeakingClub} allowedRoles={['student']} featureKey="student-speaking-club" /></Route>
         <Route path="/student/materials"><LayoutWrapper component={StudentMaterials} allowedRoles={['student']} featureKey="student-materials" /></Route>
-        <Route path="/student/subscription"><LayoutWrapper component={Subscription} allowedRoles={['student', 'admin']} featureKey="student-subscription" /></Route>
+        {/* Abonelik kaldırıldı — öğrenci erişemez, admin panelinden /admin/subscriptions'a bakabilir */}
+        <Route path="/student/subscription"><LayoutWrapper component={Subscription} allowedRoles={['admin']} /></Route>
         <Route path="/student/pronunciation-coach"><LayoutWrapper component={PronunciationCoachPro} allowedRoles={['student', 'admin']} featureKey="student-pronunciation-coach" /></Route>
         <Route path="/student/writing-coach"><LayoutWrapper component={WritingCoachPro} allowedRoles={['student', 'admin']} featureKey="student-writing-coach" /></Route>
         <Route path="/student/vocab-game"><LayoutWrapper component={VocabGamePro} allowedRoles={['student', 'admin']} featureKey="student-vocab-game" /></Route>

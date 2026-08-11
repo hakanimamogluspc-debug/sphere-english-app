@@ -123,49 +123,7 @@ export default function SpeakingScenes() {
         </p>
       </div>
 
-      {/* Tier + günlük limit banner */}
-      {data && (
-        <div
-          className={`mb-6 p-4 rounded-2xl border flex items-center justify-between gap-4 ${
-            data.tier === "pro"
-              ? "bg-gradient-to-r from-amber-50 to-orange-50 border-amber-200"
-              : "bg-cyan-50 border-cyan-200"
-          }`}
-        >
-          <div className="flex items-center gap-3">
-            {data.tier === "pro" ? (
-              <Sparkles className="w-5 h-5 text-amber-600 flex-shrink-0" />
-            ) : (
-              <Clock className="w-5 h-5 text-cyan-600 flex-shrink-0" />
-            )}
-            <div className="text-sm">
-              {data.tier === "pro" ? (
-                <>
-                  <span className="font-bold text-amber-900">Pro üyeliğin aktif — </span>
-                  <span className="text-amber-800">
-                    tüm sahnelere ve kategorilere sınırsız erişimin var.
-                  </span>
-                </>
-              ) : (
-                <>
-                  <span className="font-bold text-cyan-900">Bugünkü hakkın: </span>
-                  <span className="text-cyan-800">
-                    {data.dailyRemaining} / {data.dailyLimit} sahne kaldı.
-                  </span>
-                </>
-              )}
-            </div>
-          </div>
-          {data.tier === "free" && (
-            <Link
-              href="/student/subscription"
-              className="hidden md:inline-flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white text-sm font-semibold rounded-lg transition shadow-sm flex-shrink-0"
-            >
-              <TrendingUp className="w-4 h-4" /> Pro'ya Geç
-            </Link>
-          )}
-        </div>
-      )}
+      {/* Abonelik kaldırıldı — tier banner artık gösterilmiyor */}
 
       {/* Kategori filtresi */}
       <div className="mb-6 flex gap-2 flex-wrap">
