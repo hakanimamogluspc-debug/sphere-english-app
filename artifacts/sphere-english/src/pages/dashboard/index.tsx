@@ -3,7 +3,7 @@ import { useFeature } from "@/hooks/use-feature";
 import { useGetDashboardStats, useGetMyProgress, useGetAdminDashboard } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle, Badge, Button } from "@/components/ui/core";
 import { formatDateTime, getLevelColor } from "@/lib/utils";
-import { Trophy, Flame, BookOpen, Video, Users, CheckCircle, TrendingUp, DollarSign, Megaphone, AlertCircle, Info, ChevronRight, Wifi, BookMarked, Cpu, LayoutDashboard, GraduationCap, Newspaper, Compass, Sparkles } from "lucide-react";
+import { Trophy, Flame, BookOpen, Video, Users, CheckCircle, TrendingUp, DollarSign, Megaphone, AlertCircle, Info, ChevronRight, Wifi, BookMarked, Cpu, LayoutDashboard, GraduationCap, Newspaper, Compass, Sparkles, Briefcase, X } from "lucide-react";
 import { Link, useLocation, Redirect } from "wouter";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useEffect, useState } from "react";
@@ -35,6 +35,7 @@ function StudentDashboard() {
   return (
     <div className="space-y-8">
       <TrialBanner />
+      <SectorHintBanner />
       {/* Öğrenci Kimlik Bandı */}
       {(user as any)?.studentNumber && (
         <div className="flex items-center justify-between bg-primary/5 border border-primary/20 rounded-xl px-5 py-3">
@@ -415,6 +416,37 @@ function RecommendedArticlesWidget() {
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+function SectorHintBanner() {
+  const { user } = useAuth();
+  const [dismissed, setDismissed] = useState(() => localStorage.getItem("sector_hint_dismissed") === "1");
+  const sector = (user as any)?.sector;
+  if (dismissed || sector || (user as any)?.role !== "student") return null;
+
+  function dismiss() {
+    localStorage.setItem("sector_hint_dismissed", "1");
+    setDismissed(true);
+  }
+
+  return (
+    <div className="rounded-xl bg-gradient-to-r from-indigo-50 to-cyan-50 border border-indigo-200 p-4 flex items-center gap-4">
+      <div className="w-10 h-10 rounded-lg bg-white flex items-center justify-center shadow-sm flex-shrink-0">
+        <Briefcase className="h-5 w-5 text-indigo-600" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-semibold text-indigo-900">Sektörünü söyle, deneyimini kişiselleştirelim</p>
+        <p className="text-xs text-indigo-700/80 mt-0.5">Sektörüne göre makale, kelime örneği ve iş senaryosu öne çıkarırız.</p>
+      </div>
+      <Link href="/student/settings"
+        className="flex-shrink-0 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium px-4 py-2 inline-flex items-center gap-1">
+        Seç <ChevronRight className="h-4 w-4" />
+      </Link>
+      <button onClick={dismiss} className="text-indigo-400 hover:text-indigo-700 p-1" title="Kapat">
+        <X className="h-4 w-4" />
+      </button>
+    </div>
   );
 }
 
