@@ -10,7 +10,10 @@ interface Props {
   children: React.ReactNode;
 }
 
-export default function ProGate({ moduleKey, featureName, children }: Props) {
+export default function ProGate({ children }: Props) {
+  // Abonelik sistemi kaldırıldı — kilit yok, direkt içerik göster
+  return <>{children}</>;
+  // eslint-disable-next-line no-unreachable
   const { loading, isLockedForMe, entitlement, startTrial, refresh } = useSubscription();
   const [, setLocation] = useLocation();
   const [starting, setStarting] = useState(false);

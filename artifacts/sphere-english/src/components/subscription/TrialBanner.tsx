@@ -3,6 +3,9 @@ import { Sparkles, Clock, AlertTriangle, Crown } from "lucide-react";
 import { useSubscription } from "../../lib/subscription-context";
 
 export default function TrialBanner() {
+  // Abonelik sistemi kaldırıldı — banner hiç gösterilmez
+  return null;
+  // eslint-disable-next-line no-unreachable
   const { entitlement, loading } = useSubscription();
   if (loading || !entitlement) return null;
 

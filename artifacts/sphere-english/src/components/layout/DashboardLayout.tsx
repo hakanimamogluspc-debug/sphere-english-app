@@ -83,7 +83,8 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       { name: 'Kişisel AI Öğretmen', href: '/student/ai-tutor',              icon: GraduationCap, moduleKey: 'student-ai-tutor',             group: 'ai-studio' },
       { name: 'Adaptif Öğrenme Yolu', href: '/student/learning-path',        icon: Compass,       moduleKey: 'student-learning-path',        group: 'ai-studio' },
       { name: 'Seviye Geçme Sınavı', href: '/student/level-exams',           icon: GraduationCap, moduleKey: 'student-level-exams' },
-      { name: 'Aboneliğim',          href: '/student/subscription',           icon: Crown,         moduleKey: 'student-subscription' },
+      // Abonelik kaldırıldı — uygulama herkes için ücretsiz
+      // { name: 'Aboneliğim',          href: '/student/subscription',           icon: Crown,         moduleKey: 'student-subscription' },
       { name: 'Forum',               href: '/forum',                          icon: MessageCircle, moduleKey: 'student-forum' },
       { name: 'İlerleme Durumum',    href: '/progress',                       icon: LineChart,     moduleKey: 'student-progress' },
       { name: 'Sertifikalar',        href: '/certificates',                   icon: Award,         moduleKey: 'student-certificates' },

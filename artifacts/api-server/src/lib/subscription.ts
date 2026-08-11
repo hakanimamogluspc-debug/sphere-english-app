@@ -14,19 +14,8 @@ let enforcementCache: { value: boolean; expiresAt: number } | null = null;
 const ENFORCEMENT_TTL_MS = 30_000;
 
 export async function isEnforcementEnabled(): Promise<boolean> {
-  if (enforcementCache && Date.now() < enforcementCache.expiresAt) return enforcementCache.value;
-  try {
-    const [row] = await db
-      .select({ isEnabled: featureSettingsTable.isEnabled })
-      .from(featureSettingsTable)
-      .where(eq(featureSettingsTable.key, "subscription-enforcement"))
-      .limit(1);
-    const value = !!row?.isEnabled;
-    enforcementCache = { value, expiresAt: Date.now() + ENFORCEMENT_TTL_MS };
-    return value;
-  } catch {
-    return false; // güvenli varsayılan: kapalı (kilitsiz)
-  }
+  // Abonelik sistemi tamamen kaldırıldı — uygulama herkes için ücretsiz.
+  return false;
 }
 
 export function invalidateEnforcementCache() {

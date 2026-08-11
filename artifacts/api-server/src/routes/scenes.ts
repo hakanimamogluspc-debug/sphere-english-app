@@ -84,20 +84,23 @@ async function getTodayAttemptCount(userId: number): Promise<number> {
 }
 
 async function assertQuota(
-  userId: number,
-  sceneCategory: string,
-  sceneMinPlan: PlanTier,
+  _userId: number,
+  _sceneCategory: string,
+  _sceneMinPlan: PlanTier,
 ): Promise<{ ok: true } | { ok: false; error: string; upgrade?: boolean }> {
-  const tier = await getUserTier(userId);
+  // Abonelik sistemi kaldırıldı — herkese sınırsız erişim.
+  return { ok: true };
+  // eslint-disable-next-line no-unreachable
+  const tier = await getUserTier(_userId);
 
   // Plan tier check
-  if (sceneMinPlan === "pro" && tier === "free") {
+  if (_sceneMinPlan === "pro" && tier === "free") {
     return { ok: false, error: "Bu sahne Pro aboneler içindir.", upgrade: true };
   }
 
   if (tier === "free") {
     // Kategori limiti
-    if (!FREE_ALLOWED_CATEGORIES.includes(sceneCategory)) {
+    if (!FREE_ALLOWED_CATEGORIES.includes(_sceneCategory)) {
       return {
         ok: false,
         error: "Bu kategori Pro abonelere özel. Ücretsiz kategorilerden birini dene.",
@@ -105,7 +108,7 @@ async function assertQuota(
       };
     }
     // Günlük limit
-    const count = await getTodayAttemptCount(userId);
+    const count = await getTodayAttemptCount(_userId);
     if (count >= FREE_DAILY_LIMIT) {
       return {
         ok: false,
@@ -660,19 +663,8 @@ router.get("/scenes", authMiddleware, async (req: Request, res: Response) => {
     `);
     const scenes = (rows.rows ?? rows) as any[];
 
-    // Kullanıcının kilit durumunu ekle
-    const withLock = scenes.map((s) => ({
-      ...s,
-      locked:
-        tier === "free" &&
-        (s.min_plan === "pro" || !FREE_ALLOWED_CATEGORIES.includes(s.category)),
-      lock_reason:
-        tier === "free" && s.min_plan === "pro"
-          ? "pro_only"
-          : tier === "free" && !FREE_ALLOWED_CATEGORIES.includes(s.category)
-            ? "category_locked"
-            : null,
-    }));
+    // Abonelik kaldırıldı — hiçbir sahne kilitli değil
+    const withLock = scenes.map((s) => ({ ...s, locked: false, lock_reason: null }));
 
     // Kullanıcının bugünkü limit durumu
     let dailyRemaining: number | null = null;
