@@ -9,10 +9,12 @@
 import { pool } from "@workspace/db";
 
 const SOURCES = [
-  { slug: "bbc-6-minute-english",   name: "BBC 6 Minute English",  url: "https://feeds.bbci.co.uk/learningenglish/english/features/6-minute-english/rss.xml" },
-  { slug: "bbc-english-at-work",    name: "BBC English at Work",   url: "https://feeds.bbci.co.uk/learningenglish/english/features/english-at-work/rss.xml" },
-  { slug: "bbc-news-review",        name: "BBC News Review",       url: "https://feeds.bbci.co.uk/learningenglish/english/features/news-review/rss.xml" },
-  { slug: "voa-learning-english",   name: "VOA Learning English",  url: "https://learningenglish.voanews.com/api/zq$oqekiuq" },
+  // BBC Learning English podcast'leri (podcasts.files.bbci.co.uk formatı)
+  { slug: "bbc-6-minute-english",   name: "BBC 6 Minute English",     url: "https://podcasts.files.bbci.co.uk/p02pc9tn.rss" },
+  { slug: "bbc-english-we-speak",   name: "BBC The English We Speak", url: "https://podcasts.files.bbci.co.uk/p02pc9zn.rss" },
+  { slug: "bbc-news-review",        name: "BBC News Review",          url: "https://podcasts.files.bbci.co.uk/p07qm2f4.rss" },
+  { slug: "bbc-english-at-work",    name: "BBC English at Work",      url: "https://podcasts.files.bbci.co.uk/p02t93zh.rss" },
+  { slug: "voa-learning-english",   name: "VOA Learning English",     url: "https://learningenglish.voanews.com/api/" },
 ];
 
 function firstMatch(s: string, re: RegExp): string | null {
