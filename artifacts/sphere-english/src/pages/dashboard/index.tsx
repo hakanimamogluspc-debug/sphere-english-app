@@ -247,26 +247,32 @@ const QUICK_ACTIONS: QuickAction[] = [
 ];
 
 function QuickAccessGrid() {
-  // Feature flag'lere göre filtre — her item için useFeature çağrısı hook kural gereği
-  const flags = QUICK_ACTIONS.map(a => useFeature(a.featureKey));
-  const visible = QUICK_ACTIONS.filter((_, i) => flags[i]);
-  if (visible.length === 0) return null;
   return (
     <div>
       <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
         <Sparkles className="h-4 w-4" /> Hızlı Erişim
       </h2>
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-        {visible.map(a => (
-          <Link key={a.href} href={a.href}>
-            <div className={`rounded-xl p-4 bg-gradient-to-br ${a.bg} ${a.color} cursor-pointer hover:shadow-lg hover:scale-105 transition-transform`}>
-              <a.icon className="h-6 w-6 mb-2 opacity-95" />
-              <div className="text-sm font-semibold leading-tight">{a.label}</div>
-            </div>
-          </Link>
+        {QUICK_ACTIONS.map(a => (
+          <QuickAccessBtn key={a.href} action={a} />
         ))}
       </div>
     </div>
+  );
+}
+
+function QuickAccessBtn({ action }: { action: QuickAction }) {
+  // Hook her render'da tek sefer çağırılıyor (map-in-loop sorunu yok)
+  const enabled = useFeature(action.featureKey);
+  if (!enabled) return null;
+  const Icon = action.icon;
+  return (
+    <Link href={action.href}>
+      <div className={`rounded-xl p-4 bg-gradient-to-br ${action.bg} ${action.color} cursor-pointer hover:shadow-lg hover:scale-105 transition-transform`}>
+        <Icon className="h-6 w-6 mb-2 opacity-95" />
+        <div className="text-sm font-semibold leading-tight">{action.label}</div>
+      </div>
+    </Link>
   );
 }
 
