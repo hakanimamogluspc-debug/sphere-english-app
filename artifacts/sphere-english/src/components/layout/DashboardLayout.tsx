@@ -67,7 +67,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       { name: 'Kurslarım',           href: '/courses',                        icon: BookOpen,      moduleKey: 'student-courses' },
       { name: 'Materyallerim',       href: '/student/materials',              icon: FolderOpen,    moduleKey: 'student-materials' },
       { name: 'Keşfet',              href: '/kesfet',                         icon: Newspaper },
-      { name: 'Kariyer',             href: '/kariyer',                        icon: Compass },
+      { name: 'İzle & Dinle',        href: '/kariyer',                        icon: Compass },
       { name: 'Raporum',             href: '/raporum',                        icon: BarChart3 },
       { name: 'Ders Takvimim',       href: '/live-classes',                   icon: Video,         moduleKey: 'student-live-classes' },
       { name: 'Alıştırmalar',        href: '/quizzes',                        icon: FileQuestion,  moduleKey: 'student-quizzes' },
