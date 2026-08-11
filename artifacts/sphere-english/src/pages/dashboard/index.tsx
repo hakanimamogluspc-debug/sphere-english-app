@@ -242,23 +242,24 @@ type QuickAction = {
   featureKey?: string;
 };
 
+// Her modül için: accent (dikey şerit + ikon rengi)
 const QUICK_ACTIONS: QuickAction[] = [
-  { label: "AI Öğretmen",       subtitle: "Sohbet ederek öğren",     href: "/student/ai-tutor",           icon: GraduationCap, bg: "from-indigo-600 via-indigo-700 to-blue-800",     accent: "bg-blue-400",    featureKey: "student-ai-tutor" },
-  { label: "Konuşma Sahneleri", subtitle: "Rol yaparak konuş",       href: "/student/speaking-scenes",    icon: Cpu,           bg: "from-teal-600 via-emerald-700 to-emerald-800",    accent: "bg-teal-300",    featureKey: "student-speaking-scenes" },
-  { label: "Yazma Koçu",        subtitle: "Metnini geliştir",        href: "/student/writing-coach",      icon: BookMarked,    bg: "from-orange-500 via-rose-600 to-pink-700",        accent: "bg-orange-300",  featureKey: "student-writing-coach" },
-  { label: "Dilbilgisi Koçu",   subtitle: "Kurallara hakim ol",      href: "/student/grammar-coach",      icon: Cpu,           bg: "from-purple-600 via-fuchsia-700 to-pink-700",     accent: "bg-fuchsia-300", featureKey: "student-grammar-coach" },
-  { label: "Kelime Oyunu",      subtitle: "Kelime dağarcığını aç",   href: "/student/vocab-game",         icon: Trophy,        bg: "from-amber-500 via-orange-600 to-red-600",        accent: "bg-yellow-300",  featureKey: "student-vocab-game" },
-  { label: "Keşfet",            subtitle: "Haberler & makaleler",    href: "/kesfet",                     icon: Newspaper,     bg: "from-sky-500 via-cyan-600 to-blue-700",           accent: "bg-cyan-300" },
+  { label: "AI Öğretmen",       subtitle: "Sohbet ederek öğren",     href: "/student/ai-tutor",           icon: GraduationCap, bg: "",  accent: "#1B365D",  featureKey: "student-ai-tutor" },
+  { label: "Konuşma Sahneleri", subtitle: "Rol yaparak konuş",       href: "/student/speaking-scenes",    icon: Cpu,           bg: "",  accent: "#0d9488",  featureKey: "student-speaking-scenes" },
+  { label: "Yazma Koçu",        subtitle: "Metnini geliştir",        href: "/student/writing-coach",      icon: BookMarked,    bg: "",  accent: "#c2410c",  featureKey: "student-writing-coach" },
+  { label: "Dilbilgisi Koçu",   subtitle: "Kurallara hakim ol",      href: "/student/grammar-coach",      icon: Cpu,           bg: "",  accent: "#7c3aed",  featureKey: "student-grammar-coach" },
+  { label: "Kelime Oyunu",      subtitle: "Kelime dağarcığını aç",   href: "/student/vocab-game",         icon: Trophy,        bg: "",  accent: "#b45309",  featureKey: "student-vocab-game" },
+  { label: "Keşfet",            subtitle: "Haberler & makaleler",    href: "/kesfet",                     icon: Newspaper,     bg: "",  accent: "#0ea5e9" },
 ];
 
 function QuickAccessGrid() {
   return (
     <div>
-      <div className="flex items-baseline justify-between mb-4">
-        <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
-          <Sparkles className="h-5 w-5 text-primary" /> Hızlı Erişim
-        </h2>
-        <span className="text-xs text-muted-foreground">Öğrenme araçların tek tıkla</span>
+      <div className="flex items-center gap-3 text-[10px] uppercase tracking-[0.18em] font-semibold text-slate-500 mb-4">
+        <span className="w-6 h-px bg-slate-400" />
+        Hızlı Erişim
+        <span className="text-slate-300">·</span>
+        <span className="text-slate-400 normal-case tracking-normal font-normal">Öğrenme araçların tek tıkla</span>
       </div>
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         {QUICK_ACTIONS.map(a => (
@@ -273,33 +274,48 @@ function QuickAccessBtn({ action }: { action: QuickAction }) {
   const enabled = useFeature(action.featureKey);
   if (!enabled) return null;
   const Icon = action.icon;
+  const initial = action.label.charAt(0);
   return (
     <Link href={action.href}>
-      <div
-        className={`group relative aspect-[4/5] rounded-2xl bg-gradient-to-br ${action.bg} text-white cursor-pointer overflow-hidden shadow-md hover:shadow-2xl hover:-translate-y-1 transition-all duration-300`}
-      >
-        {/* Decorative blob */}
-        <div className={`absolute -top-8 -right-8 w-24 h-24 rounded-full ${action.accent} opacity-30 blur-2xl group-hover:opacity-50 group-hover:scale-110 transition-all duration-500`} />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent pointer-events-none" />
+      <div className="group relative aspect-[4/5] rounded-2xl bg-white ring-1 ring-slate-200/70 shadow-[0_1px_3px_rgba(15,23,42,0.05),0_8px_24px_-12px_rgba(30,58,110,0.12)] hover:shadow-[0_1px_3px_rgba(15,23,42,0.05),0_16px_40px_-12px_rgba(30,58,110,0.2)] hover:-translate-y-0.5 transition-all duration-300 overflow-hidden cursor-pointer">
+        {/* Sol dikey vurgu şeridi */}
+        <div className="absolute inset-y-0 left-0 w-[3px]" style={{ background: action.accent }} />
 
-        {/* Corner accent line */}
-        <div className="absolute top-0 left-0 w-full h-0.5 bg-white/30" />
+        {/* Diagonal grid pattern (wotd ile aynı doku) */}
+        <div className="absolute inset-0 opacity-[0.025] pointer-events-none"
+          style={{ backgroundImage: `linear-gradient(45deg, ${action.accent} 25%, transparent 25%, transparent 75%, ${action.accent} 75%), linear-gradient(45deg, ${action.accent} 25%, transparent 25%, transparent 75%, ${action.accent} 75%)`,
+                   backgroundSize: "14px 14px", backgroundPosition: "0 0, 7px 7px" }} />
 
-        {/* Content */}
+        {/* Sağ alt dekoratif harf */}
+        <div className="absolute -bottom-4 -right-2 font-serif text-[100px] leading-none font-bold select-none pointer-events-none opacity-[0.06] group-hover:opacity-[0.1] transition-opacity" style={{ color: action.accent }}>
+          {initial}
+        </div>
+
         <div className="relative h-full flex flex-col p-4">
-          {/* Icon badge */}
-          <div className="w-11 h-11 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center ring-1 ring-white/30 shadow-lg group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300">
-            <Icon className="h-5 w-5 text-white" strokeWidth={2.2} />
+          {/* Icon outlined */}
+          <div
+            className="w-10 h-10 rounded-lg flex items-center justify-center border transition-all group-hover:scale-105"
+            style={{ borderColor: `${action.accent}30`, background: `${action.accent}0d`, color: action.accent }}
+          >
+            <Icon className="h-5 w-5" strokeWidth={2} />
           </div>
 
-          {/* Title + subtitle at bottom */}
+          {/* Ayırıcı ince çizgi */}
+          <div className="h-px bg-slate-100 my-3" />
+
+          {/* Title + subtitle */}
           <div className="mt-auto">
-            <div className="text-base font-bold leading-tight tracking-tight">{action.label}</div>
-            <div className="text-[11px] font-medium text-white/80 mt-0.5 leading-snug">{action.subtitle}</div>
+            <div className="font-serif font-bold text-[15px] leading-tight text-[#1B365D] tracking-tight" style={{ letterSpacing: "-0.01em" }}>
+              {action.label}
+            </div>
+            <div className="text-[11px] text-slate-500 mt-1 leading-snug">{action.subtitle}</div>
           </div>
 
-          {/* Arrow icon on hover */}
-          <ChevronRight className="absolute bottom-3 right-3 h-4 w-4 text-white/0 group-hover:text-white/80 group-hover:translate-x-0.5 transition-all duration-300" />
+          {/* Hover'da sağ altta ok */}
+          <ChevronRight
+            className="absolute bottom-3 right-3 h-3.5 w-3.5 opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all duration-300"
+            style={{ color: action.accent }}
+          />
         </div>
       </div>
     </Link>
