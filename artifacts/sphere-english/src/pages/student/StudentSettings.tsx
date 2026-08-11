@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Bell, Mail, Flame, Calendar, Award, TrendingUp, FileQuestion, Newspaper, Loader2, Check } from "lucide-react";
+import { Bell, Mail, Flame, Calendar, Award, TrendingUp, FileQuestion, Newspaper, Loader2, Check, Briefcase } from "lucide-react";
 import { motion } from "framer-motion";
 
 const TOKEN_KEY = "sphere_token";
@@ -119,6 +119,8 @@ export default function StudentSettings() {
         <div className="bg-rose-50 border border-rose-200 rounded-xl p-3 text-sm text-rose-700">{error}</div>
       )}
 
+      <SectorPicker />
+
       {PREF_GROUPS.map((group) => (
         <section key={group.title} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
           <div className="px-5 py-4 border-b border-gray-50">
@@ -186,5 +188,95 @@ export default function StudentSettings() {
         Tercihlerin anında kaydedilir. E-posta gönderim sıklığı, hesap aktivitene bağlı olarak otomatik ayarlanır.
       </p>
     </div>
+  );
+}
+
+// ─── Sektör tercihi ──────────────────────────────────────────────────
+const SECTORS: Array<{ value: string; label: string }> = [
+  { value: "",              label: "— Seçilmedi —" },
+  { value: "finance",       label: "Finans / Bankacılık" },
+  { value: "tech",          label: "Teknoloji / Yazılım" },
+  { value: "automotive",    label: "Otomotiv" },
+  { value: "textile",       label: "Tekstil / Hazır Giyim" },
+  { value: "tourism",       label: "Turizm / Otelcilik" },
+  { value: "healthcare",    label: "Sağlık" },
+  { value: "construction",  label: "İnşaat / Gayrimenkul" },
+  { value: "food",          label: "Gıda / Perakende" },
+  { value: "ecommerce",     label: "E-ticaret" },
+  { value: "logistics",     label: "Lojistik / Tedarik" },
+  { value: "manufacturing", label: "Üretim / İmalat" },
+  { value: "marketing",     label: "Pazarlama / Reklam" },
+  { value: "hr",            label: "İnsan Kaynakları" },
+  { value: "consulting",    label: "Danışmanlık" },
+  { value: "energy",        label: "Enerji" },
+  { value: "media",         label: "Medya / Yayıncılık" },
+  { value: "education",     label: "Eğitim" },
+  { value: "legal",         label: "Hukuk" },
+  { value: "other",         label: "Diğer" },
+];
+
+function SectorPicker() {
+  const [sector, setSector] = useState<string>("");
+  const [userId, setUserId] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (!token) { setLoading(false); return; }
+    fetch(`${API}/auth/me`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json())
+      .then(d => {
+        const u = d.user ?? d;
+        setUserId(u.id);
+        setSector(u.sector ?? "");
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  async function save(newValue: string) {
+    if (!userId) return;
+    setSector(newValue);
+    setSaving(true); setSaved(false);
+    try {
+      const token = localStorage.getItem(TOKEN_KEY);
+      await fetch(`${API}/users/${userId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ sector: newValue || null }),
+      });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 1500);
+    } catch {}
+    finally { setSaving(false); }
+  }
+
+  if (loading) return null;
+
+  return (
+    <section className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      <div className="px-5 py-4 border-b border-gray-50">
+        <h2 className="font-bold text-gray-900 text-base flex items-center gap-2">
+          <Briefcase size={16} className="text-indigo-600" /> Sektörün
+        </h2>
+        <p className="text-xs text-gray-500 mt-0.5">
+          Bunu bize söylersen sana sektörünle ilgili makaleler, kelime örnekleri ve iş senaryoları öne çıkarırız.
+        </p>
+      </div>
+      <div className="px-5 py-4 flex items-center gap-3">
+        <select
+          value={sector}
+          onChange={(e) => save(e.target.value)}
+          disabled={saving}
+          className="flex-1 rounded-lg border-gray-300 px-3 py-2 text-sm disabled:opacity-50"
+        >
+          {SECTORS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+        </select>
+        {saving && <Loader2 className="h-4 w-4 animate-spin text-gray-400" />}
+        {saved && <Check className="h-4 w-4 text-emerald-500" />}
+      </div>
+    </section>
   );
 }

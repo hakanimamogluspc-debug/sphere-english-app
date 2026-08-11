@@ -1510,6 +1510,27 @@ async function runStartupMigrations() {
     `CREATE INDEX IF NOT EXISTS career_content_status_idx ON career_content (status, published_at DESC)`,
     `CREATE INDEX IF NOT EXISTS career_content_type_lang_idx ON career_content (source_type, language, status)`,
 
+    // ─── Word of the Day (Merriam-Webster RSS + GPT TR) ─────────────────────
+    `CREATE TABLE IF NOT EXISTS daily_words (
+      id SERIAL PRIMARY KEY,
+      word VARCHAR(120) NOT NULL,
+      phonetic VARCHAR(120),
+      part_of_speech VARCHAR(40),
+      definition_en TEXT,
+      example_en TEXT,
+      tr_meaning TEXT,                          -- GPT ile Türkçe çeviri
+      tr_note TEXT,                             -- kısa kullanım notu
+      source VARCHAR(60) DEFAULT 'merriam-webster',
+      source_url TEXT,
+      published_at DATE NOT NULL,               -- yayınlanma günü (YYYY-MM-DD)
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`,
+    `CREATE UNIQUE INDEX IF NOT EXISTS daily_words_date_uniq ON daily_words (published_at)`,
+    `CREATE INDEX IF NOT EXISTS daily_words_word_idx ON daily_words (LOWER(word))`,
+
+    // ─── User Sector (kişiselleştirme) ─────────────────────────────────────
+    `ALTER TABLE users ADD COLUMN IF NOT EXISTS sector VARCHAR(60)`,
+
     // Ingestion log
     `CREATE TABLE IF NOT EXISTS career_ingestion_log (
       id SERIAL PRIMARY KEY,

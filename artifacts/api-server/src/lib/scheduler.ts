@@ -19,6 +19,8 @@ import { extractPending } from "./mistake-extractor.js";
 import { fetchGuardianArticles } from "./content-ingest/guardian.js";
 import { enrichArticle } from "./content-ingest/enrich.js";
 import { fetchAllSources as fetchCareerAll, enrichCareerItem } from "./career-ingest.js";
+import { fetchTodaysWord } from "./daily-word.js";
+import { fetchLearningEnglish } from "./content-ingest/learning-english.js";
 
 const TZ_OFFSET_MIN = 3 * 60; // Türkiye UTC+3
 
@@ -36,6 +38,38 @@ function nowTr(): { day: number; hour: number; minute: number; iso: string } {
 function log(msg: string) {
   if (process.env.SCHEDULER_QUIET === "1") return;
   console.log(`[scheduler] ${msg}`);
+}
+
+/** Word of the Day — her sabah 08:30 TR */
+async function tryWordOfDay(t: ReturnType<typeof nowTr>) {
+  if (!(t.hour === 8 && t.minute >= 30 && t.minute < 35)) return;
+  if (!process.env.OPENAI_API_KEY) return;
+  const r = await fetchTodaysWord();
+  log(`WOTD: ${r.ok ? (r.skipped ? "zaten var" : `yeni: ${r.word}`) : `HATA: ${r.error}`}`);
+}
+
+/** Learning English (BBC LE + VOA LE) — her sabah 09:30 TR */
+async function tryLearningEnglish(t: ReturnType<typeof nowTr>) {
+  if (!(t.hour === 9 && t.minute >= 30 && t.minute < 35)) return;
+  if (!process.env.OPENAI_API_KEY) return;
+  log(`Learning English ingest başlıyor (${t.iso})`);
+  const startedAt = Date.now();
+  try {
+    const result = await fetchLearningEnglish(5);
+    let enriched = 0, enrichFailed = 0;
+    for (const id of result.articleIds) {
+      const r = await enrichArticle(id);
+      if (r.ok) enriched++; else enrichFailed++;
+    }
+    await pool.query(
+      `INSERT INTO content_ingestion_log (source, fetched_count, new_count, enriched_count, error_count, duration_ms, details)
+       VALUES ('learning_english', $1, $2, $3, $4, $5, $6::jsonb)`,
+      [result.fetched, result.inserted, enriched,
+       result.errors.length + enrichFailed, Date.now() - startedAt,
+       JSON.stringify({ errors: result.errors, skipped: result.skipped })],
+    );
+    log(`Learning English OK: ${result.fetched} fetch, ${result.inserted} yeni, ${enriched} enrich`);
+  } catch (e: any) { log(`Learning English HATA: ${e?.message}`); }
 }
 
 /** Content ingest — her sabah 06:00 UTC (~09:00 TR) */
@@ -143,8 +177,10 @@ export function startScheduler() {
 
   const tick = async () => {
     const t = nowTr();
+    try { await tryWordOfDay(t); } catch (e: any) { log(`wotd tick err: ${e?.message}`); }
     try { await tryContentIngest(t); } catch (e: any) { log(`ingest tick err: ${e?.message}`); }
     try { await tryCareerIngest(t); } catch (e: any) { log(`career tick err: ${e?.message}`); }
+    try { await tryLearningEnglish(t); } catch (e: any) { log(`learning-en tick err: ${e?.message}`); }
     try { await tryWeeklyReport(t); } catch (e: any) { log(`weekly tick err: ${e?.message}`); }
   };
 

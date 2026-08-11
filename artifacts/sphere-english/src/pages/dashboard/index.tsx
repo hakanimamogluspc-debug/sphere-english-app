@@ -222,6 +222,7 @@ function StudentDashboard() {
       </div>
 
       {/* Bugün için önerilen makaleler */}
+      <WordOfDayWidget />
       <RecommendedArticlesWidget />
       <CareerRecommendedWidget />
     </div>
@@ -412,6 +413,50 @@ function RecommendedArticlesWidget() {
             </Link>
           ))}
         </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function WordOfDayWidget() {
+  const [word, setWord] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    const token = localStorage.getItem("sphere_token");
+    fetch(`${API}/word-of-day/today`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json())
+      .then(d => setWord(d.word))
+      .catch(() => setWord(null))
+      .finally(() => setLoading(false));
+  }, []);
+  if (loading || !word) return null;
+
+  return (
+    <Card className="overflow-hidden bg-gradient-to-br from-indigo-600 via-blue-600 to-teal-600 text-white border-0">
+      <CardContent className="p-6 md:p-7 flex flex-col md:flex-row md:items-center gap-5">
+        <div className="flex-1">
+          <div className="text-[11px] uppercase tracking-wider opacity-80 font-bold mb-2">Bugünün Kelimesi</div>
+          <div className="flex items-baseline gap-3 flex-wrap">
+            <h2 className="text-3xl md:text-4xl font-bold leading-tight">{word.word}</h2>
+            {word.phonetic && <span className="text-white/80 font-mono text-sm">/{word.phonetic}/</span>}
+            {word.part_of_speech && <span className="bg-white/20 backdrop-blur text-xs px-2 py-0.5 rounded-full font-semibold">{word.part_of_speech}</span>}
+          </div>
+          {word.tr_meaning && (
+            <div className="mt-3">
+              <div className="text-[10px] uppercase tracking-wider opacity-70 font-bold mb-1">Türkçe</div>
+              <div className="text-lg font-semibold">{word.tr_meaning}</div>
+            </div>
+          )}
+          {word.definition_en && (
+            <p className="mt-3 text-sm text-white/90 leading-relaxed">
+              <span className="opacity-70 text-xs mr-1">EN:</span>{word.definition_en}
+            </p>
+          )}
+          {word.tr_note && (
+            <p className="mt-2 text-xs text-white/80 italic border-l-2 border-white/30 pl-3">{word.tr_note}</p>
+          )}
+        </div>
+        <div className="hidden md:block text-6xl opacity-20 select-none">📖</div>
       </CardContent>
     </Card>
   );

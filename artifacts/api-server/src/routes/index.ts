@@ -82,6 +82,7 @@ import myReportRouter from "./my-report";
 import dictionaryRouter from "./dictionary";
 import adminScenesRouter from "./admin-scenes";
 import adminCareerRouter from "./admin-career";
+import dailyWordRouter from "./daily-word";
 import { requireSubscription } from "../middlewares/require-subscription";
 import { authMiddleware } from "../middlewares/auth";
 
@@ -145,6 +146,7 @@ router.use(myReportRouter);
 router.use(dictionaryRouter);
 router.use(adminScenesRouter);
 router.use(adminCareerRouter);
+router.use(dailyWordRouter);
 router.use(adminEbooksRouter);
 router.use(adminEbookPurchasesRouter);
 router.use(webAnalyticsRouter);

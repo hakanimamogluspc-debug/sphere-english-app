@@ -179,13 +179,14 @@ router.patch("/users/:id", authMiddleware, async (req: AuthRequest, res) => {
     return;
   }
 
-  const { firstName, lastName, phone, avatar, currentLevel, role, email } = req.body;
+  const { firstName, lastName, phone, avatar, currentLevel, role, email, sector } = req.body;
   const updates: any = { updatedAt: new Date() };
   if (firstName !== undefined) updates.firstName = firstName;
   if (lastName !== undefined) updates.lastName = lastName;
   if (phone !== undefined) updates.phone = phone;
   if (avatar !== undefined) updates.avatar = avatar;
   if (currentLevel !== undefined) updates.currentLevel = currentLevel;
+  if (sector !== undefined) (updates as any).sector = sector;
   if (role !== undefined && req.userRole === "admin") updates.role = role;
   if (email !== undefined && req.userRole === "admin") updates.email = email.toLowerCase();
 
