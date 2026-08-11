@@ -11,6 +11,7 @@ import {
 } from "@workspace/db/schema";
 import { and, desc, eq, asc } from "drizzle-orm";
 import { authMiddleware } from "../middlewares/auth.js";
+import { awardPoints } from "../lib/points.js";
 import { randomUUID } from "crypto";
 
 const router = Router();
@@ -222,6 +223,8 @@ router.post("/tutor/conversations/:id/message", authMiddleware, async (req: Requ
       .values({ conversationId: convoId, role: "user", content: userMessage })
       .returning();
 
+    awardPoints(userId, "ai_tutor_message", { dailyCap: 15, silent: true }).catch(() => {});
+
     const memory = await getOrCreateMemory(userId);
     const userContext = await getUserContext(userId);
 
@@ -309,6 +312,8 @@ router.post("/tutor/conversations/:id/message-stream", authMiddleware, async (re
       .insert(aiTutorMessagesTable)
       .values({ conversationId: convoId, role: "user", content: userMessage })
       .returning();
+
+    awardPoints(userId, "ai_tutor_message", { dailyCap: 15, silent: true }).catch(() => {});
 
     const memory = await getOrCreateMemory(userId);
     const userContext = await getUserContext(userId);

@@ -15,6 +15,7 @@ import {
 } from "@workspace/db/schema";
 import { and, desc, eq } from "drizzle-orm";
 import { authMiddleware } from "../middlewares/auth.js";
+import { awardPoints } from "../lib/points.js";
 
 const execFileAsync = promisify(execFile);
 const router = Router();
@@ -263,6 +264,7 @@ router.post(
   async (req: Request, res: Response) => {
     try {
       const userId = (req as any).userId as number;
+      awardPoints(userId, "interview_turn", { dailyCap: 30, silent: true }).catch(() => {});
       const sessionId = parseInt(req.params.id, 10);
       if (!Number.isFinite(sessionId)) return res.status(400).json({ error: "Geçersiz id." });
 

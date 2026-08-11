@@ -10,6 +10,7 @@ import {
 } from "@workspace/db/schema";
 import { and, desc, eq } from "drizzle-orm";
 import { authMiddleware } from "../middlewares/auth.js";
+import { awardPoints } from "../lib/points.js";
 
 function clipStr(v: any, max: number): string {
   return String(v ?? "").slice(0, max);
@@ -47,6 +48,7 @@ function shuffle<T>(arr: T[]): T[] {
 router.post("/ai-quiz/generate", authMiddleware, async (req: Request, res: Response) => {
   try {
     const userId = (req as any).userId as number;
+    awardPoints(userId, "ai_quiz_generate", { dailyCap: 15, silent: true }).catch(() => {});
     const body = req.body as Partial<AIQuizSetup>;
 
     const sourceMode: "topic" | "text" = body.sourceMode === "text" ? "text" : "topic";

@@ -6,6 +6,8 @@ import { promisify } from "util";
 import fs from "fs";
 import os from "os";
 import path from "path";
+import { authMiddleware } from "../middlewares/auth.js";
+import { awardPoints } from "../lib/points.js";
 
 const execFileAsync = promisify(execFile);
 const router = Router();
@@ -131,9 +133,11 @@ interface HistoryMessage { role: "user" | "assistant"; content: string }
 
 router.post(
   "/simulation/chat",
+  authMiddleware,
   upload.single("audio"),
   async (req: Request, res: Response) => {
     try {
+      awardPoints((req as any).userId, "simulation_turn", { dailyCap: 30, silent: true }).catch(() => {});
       const body = (req.body as Record<string, string>) || {};
       const voice = body.voice as Voice;
       const safeVoice: Voice = ALLOWED_VOICES.includes(voice) ? voice : "nova";

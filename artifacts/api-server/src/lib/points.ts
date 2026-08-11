@@ -26,10 +26,21 @@ export const POINT_VALUES = {
 
   // AI coaches (mevcut sistemleri koruyalım — bu ekstra bonus)
   ai_tutor_message: 1,          // her mesaj — günde max 15
-  writing_submit: 3,
+  writing_submit: 3,            // günde max 15
   scene_turn: 5,                // konuşma turu — günde max 30
   scene_complete: 15,           // tam sahne bitirme
-  pronunciation_practice: 2,
+  pronunciation_practice: 2,    // günde max 20
+
+  // Diğer AI Studio modülleri
+  grammar_coach_ask: 2,         // dilbilgisi koçuna soru — günde max 20
+  grammar_topic_quiz: 3,        // dilbilgisi topic quiz cevap — günde max 15
+  vocab_game_play: 2,           // kelime tahmini — günde max 20
+  vocab_game_finish: 10,        // oyun bitirme
+  simulation_turn: 3,           // iş senaryosu turu — günde max 30
+  interview_turn: 3,            // mülakat simülatörü — günde max 30
+  presentation_turn: 3,         // sunum simülatörü — günde max 30
+  ai_quiz_generate: 5,          // AI quiz üretme — günde max 15
+  learning_path_step: 5,        // öğrenme yolu adım tamamlama
 
   // Learning (mevcut)
   quiz_correct: 3,

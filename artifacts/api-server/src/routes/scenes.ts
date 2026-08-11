@@ -31,6 +31,7 @@ import path from "path";
 import { sql } from "drizzle-orm";
 import { db } from "@workspace/db";
 import { authMiddleware } from "../middlewares/auth.js";
+import { awardPoints } from "../lib/points.js";
 import {
   analyzePronunciation as azureAnalyze,
   type AzurePronunciationResult,
@@ -817,6 +818,7 @@ router.post(
   async (req: Request, res: Response) => {
     try {
       const userId = (req as any).userId as number;
+      awardPoints(userId, "scene_turn", { dailyCap: 30, silent: true }).catch(() => {});
       const attemptId = parseInt(String(req.params.attemptId ?? ""), 10);
       const turnId = req.body?.turnId ? parseInt(String(req.body.turnId), 10) : null;
 
@@ -1112,6 +1114,7 @@ router.post(
     try {
       const userId = (req as any).userId as number;
       const attemptId = parseInt(String(req.params.attemptId ?? ""), 10);
+      awardPoints(userId, "scene_complete", { onceEverForRef: true, refId: `attempt:${attemptId}`, silent: true }).catch(() => {});
 
       const attRows = await db.execute(sql`
         SELECT id, user_id, status, started_at FROM speaking_scene_attempts

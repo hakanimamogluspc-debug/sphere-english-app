@@ -1,6 +1,7 @@
 import { Router, Request, Response } from "express";
 import OpenAI from "openai";
 import { authMiddleware } from "../middlewares/auth.js";
+import { awardPoints } from "../lib/points.js";
 
 const router = Router();
 
@@ -37,6 +38,8 @@ router.post("/writing/analyze", authMiddleware, async (req: Request, res: Respon
     if (text.trim().length > 3000) {
       return res.status(400).json({ error: "Metin en fazla 3000 karakter olabilir." });
     }
+
+    awardPoints((req as any).userId, "writing_submit", { dailyCap: 15, silent: true }).catch(() => {});
 
     const typeName = WRITING_TYPES[writingType] || WRITING_TYPES["general"];
     const topicLine = topic ? `Konu: "${topic}"` : "";

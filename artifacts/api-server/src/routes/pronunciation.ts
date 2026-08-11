@@ -2,6 +2,7 @@ import { Router, Request, Response } from "express";
 import OpenAI from "openai";
 import multer from "multer";
 import { authMiddleware } from "../middlewares/auth.js";
+import { awardPoints } from "../lib/points.js";
 import { execFile } from "child_process";
 import { promisify } from "util";
 import fs from "fs";
@@ -195,6 +196,7 @@ router.post(
   upload.single("audio"),
   async (req: Request, res: Response) => {
     try {
+      awardPoints((req as any).userId, "pronunciation_practice", { dailyCap: 20, silent: true }).catch(() => {});
       const voice = req.body.voice as Voice;
       const safeVoice: Voice = ALLOWED_VOICES.includes(voice) ? voice : "nova";
       const teacherName: string = req.body.teacherName || "Sarah";

@@ -14,6 +14,7 @@ import {
 } from "@workspace/db/schema";
 import { and, desc, eq } from "drizzle-orm";
 import { authMiddleware } from "../middlewares/auth.js";
+import { awardPoints } from "../lib/points.js";
 import { randomUUID } from "crypto";
 
 const router = Router();
@@ -337,6 +338,10 @@ router.post("/learning-path/:id/step/:stepId/toggle", authMiddleware, async (req
     const userId = (req as any).userId as number;
     const id = parseInt(req.params.id, 10);
     const stepId = String(req.params.stepId);
+    // Adım tamamlama sadece "checked" iken puan (bir kereye mahsus)
+    if (req.body?.checked === true) {
+      awardPoints(userId, "learning_path_step", { onceEverForRef: true, refId: `${id}:${stepId}`, silent: true }).catch(() => {});
+    }
     if (!Number.isFinite(id)) return res.status(400).json({ error: "Geçersiz id." });
 
     const [path] = await db

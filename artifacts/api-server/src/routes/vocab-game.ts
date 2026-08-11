@@ -3,6 +3,8 @@ import { db } from "@workspace/db";
 import { vocabWordsTable, vocabGameSessionsTable, vocabSessionWordsTable } from "@workspace/db";
 import { eq, and, sql, desc, ne, notInArray } from "drizzle-orm";
 import OpenAI from "openai";
+import { authMiddleware } from "../middlewares/auth.js";
+import { awardPoints } from "../lib/points.js";
 
 const router = Router();
 
@@ -134,8 +136,9 @@ router.get("/vocab-game/game/word", async (req, res) => {
 });
 
 /* ── POST /vocab-game/game/guess ── */
-router.post("/vocab-game/game/guess", async (req, res) => {
+router.post("/vocab-game/game/guess", authMiddleware, async (req: any, res) => {
   try {
+    awardPoints(req.userId, "vocab_game_play", { dailyCap: 20, silent: true }).catch(() => {});
     const { session_id, word_id, guess } = req.body;
     if (!session_id || !word_id || !guess) return res.status(400).json({ detail: "Eksik alan" });
 
@@ -214,8 +217,9 @@ router.get("/vocab-game/game/hint", async (req, res) => {
 });
 
 /* ── POST /vocab-game/game/finish ── */
-router.post("/vocab-game/game/finish", async (req, res) => {
+router.post("/vocab-game/game/finish", authMiddleware, async (req: any, res) => {
   try {
+    awardPoints(req.userId, "vocab_game_finish", { silent: true }).catch(() => {});
     const { session_id } = req.query as { session_id: string };
     if (!session_id) return res.status(400).json({ detail: "session_id gerekli" });
 

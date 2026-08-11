@@ -3,6 +3,8 @@ import { db } from "@workspace/db";
 import { grammarBooksTable, grammarTopicsTable, grammarProgressTable } from "@workspace/db";
 import { eq, and, sql } from "drizzle-orm";
 import OpenAI from "openai";
+import { authMiddleware } from "../middlewares/auth.js";
+import { awardPoints } from "../lib/points.js";
 
 const router = Router();
 
@@ -349,8 +351,9 @@ Respond in valid JSON with this exact structure:
 });
 
 /* ─── POST /grammar/topics/:id/questions ───────────────────────── */
-router.post("/grammar/topics/:id/questions", async (req, res) => {
+router.post("/grammar/topics/:id/questions", authMiddleware, async (req: any, res) => {
   try {
+    awardPoints(req.userId, "grammar_topic_quiz", { dailyCap: 15, silent: true }).catch(() => {});
     const [topic] = await db.select().from(grammarTopicsTable)
       .where(eq(grammarTopicsTable.id, Number(req.params.id)));
     if (!topic) return res.status(404).json({ detail: "Konu bulunamadı" });
@@ -431,9 +434,10 @@ Respond in valid JSON:
 });
 
 /* ─── POST /grammar/ai-coach ────────────────────────────────────── */
-router.post("/grammar/ai-coach", async (req, res) => {
+router.post("/grammar/ai-coach", authMiddleware, async (req: any, res) => {
   try {
     const { topicId, question, userAnswer, correctAnswer, questionType, topicTitle } = req.body;
+    awardPoints(req.userId, "grammar_coach_ask", { dailyCap: 20, silent: true }).catch(() => {});
 
     let topicContent = "";
     if (topicId) {
