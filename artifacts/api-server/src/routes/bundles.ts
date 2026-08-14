@@ -25,12 +25,18 @@ router.get("/bundles/featured", async (_req: Request, res: Response) => {
     const rows = await db.execute(sql`
       SELECT
         b.id, b.slug, b.title, b.subtitle, b.cover_image_url,
-        b.price_try, b.list_price_try, b.currency,
+        b.price_try, b.currency,
         (
           SELECT COUNT(*)::INT
           FROM ebook_bundle_items bi
           WHERE bi.bundle_id = b.id
         ) AS item_count,
+        (
+          SELECT COALESCE(SUM(e.price_try), 0)
+          FROM ebook_bundle_items bi
+          JOIN ebooks e ON bi.ebook_id = e.id
+          WHERE bi.bundle_id = b.id AND e.is_active = TRUE
+        ) AS individual_total_try,
         (
           SELECT COALESCE(json_agg(
             json_build_object('id', e.id, 'title', e.title, 'cover_image_url', e.cover_image_url)
@@ -45,12 +51,28 @@ router.get("/bundles/featured", async (_req: Request, res: Response) => {
       ORDER BY b.sort_order ASC, b.created_at DESC
       LIMIT 6
     `);
-    return res.json({ bundles: rows.rows ?? rows });
+    const bundles = (rows.rows ?? rows).map((b: any) => enrichBundleSavings(b));
+    return res.json({ bundles });
   } catch (e: any) {
     console.error("[bundles/featured] HATA:", e?.message);
     return res.status(500).json({ error: "Paketler alınamadı" });
   }
 });
+
+/** Bundle response'una gerçek zamanlı savings ekle + list_price_try'ı override et (stale değerleri temizle) */
+function enrichBundleSavings(b: any) {
+  const individual = Number(b.individual_total_try ?? 0);
+  const price = Number(b.price_try ?? 0);
+  const savings = Math.max(0, individual - price);
+  const percent = individual > 0 ? Math.round(((individual - price) / individual) * 100) : 0;
+  return {
+    ...b,
+    list_price_try: individual,          // frontend backwards compat — stale değer override edildi
+    individual_total_try: individual,
+    savings_amount_try: savings,
+    savings_percent: Math.max(0, percent),
+  };
+}
 
 // ─── Tüm aktif paketler ─────────────────────────────────────────────────
 router.get("/bundles", async (_req: Request, res: Response) => {
@@ -58,13 +80,19 @@ router.get("/bundles", async (_req: Request, res: Response) => {
     const rows = await db.execute(sql`
       SELECT
         b.id, b.slug, b.title, b.subtitle, b.description,
-        b.cover_image_url, b.price_try, b.list_price_try, b.currency,
+        b.cover_image_url, b.price_try, b.currency,
         b.is_featured, b.tags,
         (
           SELECT COUNT(*)::INT
           FROM ebook_bundle_items bi
           WHERE bi.bundle_id = b.id
         ) AS item_count,
+        (
+          SELECT COALESCE(SUM(e.price_try), 0)
+          FROM ebook_bundle_items bi
+          JOIN ebooks e ON bi.ebook_id = e.id
+          WHERE bi.bundle_id = b.id AND e.is_active = TRUE
+        ) AS individual_total_try,
         (
           SELECT COALESCE(json_agg(
             json_build_object(
@@ -83,7 +111,8 @@ router.get("/bundles", async (_req: Request, res: Response) => {
       WHERE b.is_active = TRUE
       ORDER BY b.is_featured DESC, b.sort_order ASC, b.created_at DESC
     `);
-    return res.json({ bundles: rows.rows ?? rows });
+    const bundles = (rows.rows ?? rows).map((b: any) => enrichBundleSavings(b));
+    return res.json({ bundles });
   } catch (e: any) {
     console.error("[bundles] HATA:", e?.message);
     return res.status(500).json({ error: "Paketler alınamadı" });
@@ -104,7 +133,7 @@ router.get("/bundles/:slug", async (req: Request, res: Response, next) => {
     const rows = await db.execute(sql`
       SELECT
         b.id, b.slug, b.title, b.subtitle, b.description,
-        b.cover_image_url, b.price_try, b.list_price_try, b.currency,
+        b.cover_image_url, b.price_try, b.currency,
         b.is_featured, b.tags, b.seo_title, b.seo_description, b.seo_keywords,
         b.created_at,
         (
@@ -141,21 +170,8 @@ router.get("/bundles/:slug", async (req: Request, res: Response, next) => {
     const bundle = (rows.rows ?? rows)[0] as any;
     if (!bundle) return res.status(404).json({ error: "Paket bulunamadı" });
 
-    // Kalıcı indirim yüzdesi hesapla — tekil fiyat toplamı vs paket fiyatı
-    const individualTotal = Number(bundle.individual_total_try ?? 0);
-    const bundlePrice = Number(bundle.price_try ?? 0);
-    const savingsPercent = individualTotal > 0
-      ? Math.round(((individualTotal - bundlePrice) / individualTotal) * 100)
-      : 0;
-
-    return res.json({
-      bundle: {
-        ...bundle,
-        individual_total_try: individualTotal,
-        savings_amount_try: Math.max(0, individualTotal - bundlePrice),
-        savings_percent: Math.max(0, savingsPercent),
-      },
-    });
+    // Tutarlı hesaplama: list/featured ile aynı helper
+    return res.json({ bundle: enrichBundleSavings(bundle) });
   } catch (e: any) {
     console.error("[bundles/:slug] HATA:", e?.message);
     return res.status(500).json({ error: "Paket alınamadı" });
