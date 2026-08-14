@@ -21,6 +21,7 @@ const PUBLIC_COLUMNS = sql`
   cover_image_url, gallery_urls, preview_pdf_url,
   page_count, reading_time_min, category, tags,
   price_try, list_price_try, currency,
+  discount_ends_at, downloads_display_count,
   is_active, is_featured, published_at,
   seo_title, seo_description, seo_keywords,
   created_at, updated_at

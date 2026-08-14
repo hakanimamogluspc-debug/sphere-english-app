@@ -188,6 +188,9 @@ router.patch(
     if (b.listPriceTry !== undefined) {
       sets.push(sql`list_price_try = ${b.listPriceTry == null ? null : Number(b.listPriceTry)}`);
     }
+    if (b.discountEndsAt !== undefined) {
+      sets.push(sql`discount_ends_at = ${b.discountEndsAt || null}`);
+    }
     if (b.isActive !== undefined) sets.push(sql`is_active = ${!!b.isActive}`);
     if (b.isFeatured !== undefined) sets.push(sql`is_featured = ${!!b.isFeatured}`);
     if (b.sortOrder !== undefined) sets.push(sql`sort_order = ${Number(b.sortOrder)}`);

@@ -25,7 +25,7 @@ router.get("/bundles/featured", async (_req: Request, res: Response) => {
     const rows = await db.execute(sql`
       SELECT
         b.id, b.slug, b.title, b.subtitle, b.cover_image_url,
-        b.price_try, b.currency,
+        b.price_try, b.currency, b.discount_ends_at,
         (
           SELECT COUNT(*)::INT
           FROM ebook_bundle_items bi
@@ -80,7 +80,7 @@ router.get("/bundles", async (_req: Request, res: Response) => {
     const rows = await db.execute(sql`
       SELECT
         b.id, b.slug, b.title, b.subtitle, b.description,
-        b.cover_image_url, b.price_try, b.currency,
+        b.cover_image_url, b.price_try, b.currency, b.discount_ends_at,
         b.is_featured, b.tags,
         (
           SELECT COUNT(*)::INT
@@ -133,7 +133,7 @@ router.get("/bundles/:slug", async (req: Request, res: Response, next) => {
     const rows = await db.execute(sql`
       SELECT
         b.id, b.slug, b.title, b.subtitle, b.description,
-        b.cover_image_url, b.price_try, b.currency,
+        b.cover_image_url, b.price_try, b.currency, b.discount_ends_at,
         b.is_featured, b.tags, b.seo_title, b.seo_description, b.seo_keywords,
         b.created_at,
         (

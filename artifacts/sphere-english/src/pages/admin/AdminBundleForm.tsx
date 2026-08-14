@@ -42,6 +42,7 @@ interface FormState {
   coverImageUrl: string;
   priceTry: string;
   listPriceTry: string;
+  discountEndsAt: string;
   isActive: boolean;
   isFeatured: boolean;
   sortOrder: string;
@@ -58,6 +59,7 @@ const emptyForm: FormState = {
   coverImageUrl: "",
   priceTry: "",
   listPriceTry: "",
+  discountEndsAt: "",
   isActive: true,
   isFeatured: false,
   sortOrder: "0",
@@ -114,6 +116,7 @@ export default function AdminBundleForm({
           coverImageUrl: b.cover_image_url ?? "",
           priceTry: String(b.price_try ?? ""),
           listPriceTry: b.list_price_try ? String(b.list_price_try) : "",
+          discountEndsAt: b.discount_ends_at ? new Date(b.discount_ends_at).toISOString().slice(0, 16) : "",
           isActive: !!b.is_active,
           isFeatured: !!b.is_featured,
           sortOrder: String(b.sort_order ?? 0),
@@ -235,6 +238,7 @@ export default function AdminBundleForm({
         coverImageUrl: form.coverImageUrl.trim() || null,
         priceTry: Number(form.priceTry),
         listPriceTry: form.listPriceTry ? Number(form.listPriceTry) : null,
+        discountEndsAt: form.discountEndsAt ? new Date(form.discountEndsAt).toISOString() : null,
         isActive: form.isActive,
         isFeatured: form.isFeatured,
         sortOrder: Number(form.sortOrder || 0),
@@ -495,6 +499,20 @@ export default function AdminBundleForm({
                     className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
                     placeholder="799"
                   />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">
+                    İndirim Bitiş Tarihi (geri sayım için — opsiyonel)
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={form.discountEndsAt}
+                    onChange={(e) => update("discountEndsAt", e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
+                  />
+                  <div className="text-[11px] text-gray-500 mt-1">
+                    Belirlerse ürün sayfasında "X gün Y saat kaldı" geri sayımı gösterilir.
+                  </div>
                 </div>
               </div>
 

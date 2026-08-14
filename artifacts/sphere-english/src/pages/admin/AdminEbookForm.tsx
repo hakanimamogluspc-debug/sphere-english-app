@@ -65,6 +65,8 @@ interface FormState {
   tagsText: string;
   priceTry: string;
   listPriceTry: string;
+  discountEndsAt: string;
+  downloadsDisplayCount: string;
   isActive: boolean;
   isFeatured: boolean;
   seoTitle: string;
@@ -77,7 +79,7 @@ const EMPTY_FORM: FormState = {
   author: "", publisher: "Sphere English", isbn: "", language: "tr", contentLanguage: "",
   seriesSlug: "", seriesOrder: "", seriesTitle: "",
   pageCount: "", readingTimeMin: "", category: "", tagsText: "",
-  priceTry: "", listPriceTry: "",
+  priceTry: "", listPriceTry: "", discountEndsAt: "", downloadsDisplayCount: "",
   isActive: true, isFeatured: false,
   seoTitle: "", seoDescription: "", seoKeywords: "",
 };
@@ -127,6 +129,8 @@ export default function AdminEbookForm() {
         tagsText: Array.isArray(e.tags) ? e.tags.join(", ") : "",
         priceTry: e.price_try != null ? String(e.price_try) : "",
         listPriceTry: e.list_price_try != null ? String(e.list_price_try) : "",
+        discountEndsAt: e.discount_ends_at ? new Date(e.discount_ends_at).toISOString().slice(0, 16) : "",
+        downloadsDisplayCount: e.downloads_display_count != null ? String(e.downloads_display_count) : "",
         isActive: !!e.is_active,
         isFeatured: !!e.is_featured,
         seoTitle: e.seo_title ?? "",
@@ -175,6 +179,8 @@ export default function AdminEbookForm() {
       tags: form.tagsText.split(",").map((t) => t.trim()).filter(Boolean),
       priceTry: form.priceTry ? parseFloat(form.priceTry) : null,
       listPriceTry: form.listPriceTry ? parseFloat(form.listPriceTry) : null,
+      discountEndsAt: form.discountEndsAt ? new Date(form.discountEndsAt).toISOString() : null,
+      downloadsDisplayCount: form.downloadsDisplayCount ? parseInt(form.downloadsDisplayCount, 10) : null,
       isActive: form.isActive,
       isFeatured: form.isFeatured,
       seoTitle: form.seoTitle.trim() || null,
@@ -332,6 +338,8 @@ export default function AdminEbookForm() {
             <div className="grid grid-cols-2 gap-4">
               <Field label="Satış Fiyatı (TL)" required type="number" value={form.priceTry} onChange={(v) => update("priceTry", v)} />
               <Field label="Liste Fiyatı (indirim öncesi, opsiyonel)" type="number" value={form.listPriceTry} onChange={(v) => update("listPriceTry", v)} />
+              <Field label="İndirim Bitiş Tarihi (opsiyonel, geri sayım için)" type="datetime-local" value={form.discountEndsAt} onChange={(v) => update("discountEndsAt", v)} />
+              <Field label="Görünen İndirilme Sayısı (sosyal kanıt)" type="number" value={form.downloadsDisplayCount} onChange={(v) => update("downloadsDisplayCount", v)} />
             </div>
           </Section>
 

@@ -161,6 +161,7 @@ router.patch(
       series_slug: b.seriesSlug, series_order: b.seriesOrder, series_title: b.seriesTitle,
       page_count: b.pageCount, reading_time_min: b.readingTimeMin, category: b.category,
       price_try: b.priceTry, list_price_try: b.listPriceTry,
+      discount_ends_at: b.discountEndsAt, downloads_display_count: b.downloadsDisplayCount,
       is_active: b.isActive, is_featured: b.isFeatured,
       seo_title: b.seoTitle, seo_description: b.seoDescription, seo_keywords: b.seoKeywords,
     };

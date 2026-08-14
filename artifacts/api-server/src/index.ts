@@ -334,6 +334,10 @@ async function runStartupMigrations() {
     `ALTER TABLE ebooks ALTER COLUMN content_language TYPE VARCHAR(50)`,
     // Ürün galerisi (mockup, tablet, sayfa içi) — JSONB array
     `ALTER TABLE ebooks ADD COLUMN IF NOT EXISTS gallery_urls JSONB DEFAULT '[]'::JSONB`,
+    // İndirim geçerlilik tarihi + görünen download sayacı (trust signal)
+    `ALTER TABLE ebooks ADD COLUMN IF NOT EXISTS discount_ends_at TIMESTAMPTZ`,
+    `ALTER TABLE ebooks ADD COLUMN IF NOT EXISTS downloads_display_count INTEGER DEFAULT 0`,
+    `ALTER TABLE ebook_bundles ADD COLUMN IF NOT EXISTS discount_ends_at TIMESTAMPTZ`,
     // E-kitap dosya/görsel asset tablosu (admin upload → bytea → stream)
     `CREATE TABLE IF NOT EXISTS ebook_assets (
       id SERIAL PRIMARY KEY,
