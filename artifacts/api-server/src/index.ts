@@ -338,6 +338,46 @@ async function runStartupMigrations() {
     `ALTER TABLE ebooks ADD COLUMN IF NOT EXISTS discount_ends_at TIMESTAMPTZ`,
     `ALTER TABLE ebooks ADD COLUMN IF NOT EXISTS downloads_display_count INTEGER DEFAULT 0`,
     `ALTER TABLE ebook_bundles ADD COLUMN IF NOT EXISTS discount_ends_at TIMESTAMPTZ`,
+
+    // ─── Kurumsal Grup Programı siparişleri ────────────────────────
+    `CREATE TABLE IF NOT EXISTS course_orders (
+      id SERIAL PRIMARY KEY,
+      order_token VARCHAR(60) NOT NULL UNIQUE,           -- callback + kayıt formu için
+      programme_slug VARCHAR(60) NOT NULL,               -- 'foundation' | 'diplomacy'
+      programme_title VARCHAR(200) NOT NULL,
+
+      -- Iyzico öncesi minimum
+      buyer_name VARCHAR(200) NOT NULL,
+      buyer_email VARCHAR(200) NOT NULL,
+      buyer_phone VARCHAR(30) NOT NULL,
+
+      -- Iyzico
+      iyzico_conversation_id VARCHAR(100),
+      iyzico_token VARCHAR(200),
+      amount_kurus INTEGER NOT NULL,
+      currency VARCHAR(4) NOT NULL DEFAULT 'TRY',
+
+      status VARCHAR(20) NOT NULL DEFAULT 'pending',     -- pending / paid / failed / registered
+      paid_at TIMESTAMPTZ,
+
+      -- Kayıt formu (ödeme sonrası doldurulan)
+      tc_kimlik VARCHAR(11),
+      age INTEGER,
+      sector VARCHAR(60),
+      gender VARCHAR(20),                                -- kadin / erkek / belirtmek_istemiyorum
+      registration_completed_at TIMESTAMPTZ,
+      admin_notes TEXT,
+
+      -- Grup atama (admin sonradan set eder)
+      assigned_group_id INTEGER,
+      contacted_at TIMESTAMPTZ,
+
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`,
+    `CREATE INDEX IF NOT EXISTS course_orders_status_idx ON course_orders (status, created_at DESC)`,
+    `CREATE INDEX IF NOT EXISTS course_orders_email_idx ON course_orders (LOWER(buyer_email))`,
+    `CREATE INDEX IF NOT EXISTS course_orders_prog_idx ON course_orders (programme_slug, status)`,
     // E-kitap dosya/görsel asset tablosu (admin upload → bytea → stream)
     `CREATE TABLE IF NOT EXISTS ebook_assets (
       id SERIAL PRIMARY KEY,
