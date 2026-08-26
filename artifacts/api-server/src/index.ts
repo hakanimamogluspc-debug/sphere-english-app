@@ -1575,6 +1575,10 @@ async function runStartupMigrations() {
     // ─── User Sector (kişiselleştirme) ─────────────────────────────────────
     `ALTER TABLE users ADD COLUMN IF NOT EXISTS sector VARCHAR(60)`,
 
+    // ─── Course orders — iyzico_payment_id (Iyzico'nun döndürdüğü ödeme id) ──
+    // Refund/dispute/reconciliation için gerekli. Www callback activate ederken doldurur.
+    `ALTER TABLE course_orders ADD COLUMN IF NOT EXISTS iyzico_payment_id VARCHAR(100)`,
+
     // content_articles'a podcast audio + duration kolonları
     // content_type değerleri: 'article' | 'podcast' | 'video'
     `ALTER TABLE content_articles ADD COLUMN IF NOT EXISTS audio_url TEXT`,

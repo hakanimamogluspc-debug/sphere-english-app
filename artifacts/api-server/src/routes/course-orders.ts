@@ -1,46 +1,50 @@
 /**
- * Kurumsal Grup Programı — sipariş + Iyzico ödeme + kayıt formu akışı.
+ * Kurumsal Grup Programı — sipariş DB + kayıt formu + admin.
+ *
+ * MİMARİ NOTU:
+ * Iyzico entegrasyonu www (sphereenglish-www) tarafında.
+ * Bu route sadece DB owner ve public kayıt formu endpoint'lerini tutar.
+ * Iyzico çağrıları www'da yapılır, sonuç bu route'un HMAC internal endpoint'lerine
+ * forward edilir (ebook-purchase pattern'i ile aynı).
  *
  * Public endpoints:
- *   POST /api/course-orders/checkout
- *     body: { programmeSlug, buyerName, buyerEmail, buyerPhone }
- *     → Iyzico session başlatır, checkoutFormContent + orderToken döner
+ *   GET  /course-programmes           → kurs kataloğu
+ *   GET  /course-orders/:token        → sipariş bilgisi (kayıt formu için)
+ *   POST /course-orders/:token/register → kayıt formu submit (TC, yaş, sektör, cinsiyet)
  *
- *   POST /api/course-orders/callback
- *     body: { orderToken, iyzicoToken } (Iyzico callback sayfasından)
- *     → Iyzico'dan sonuç çeker, order status'ünü paid/failed yapar
- *
- *   GET /api/course-orders/:token
- *     → Order bilgilerini döner (paid ise formu doldurmak için)
- *
- *   POST /api/course-orders/:token/register
- *     body: { tcKimlik, age, sector, gender }
- *     → Kayıt formunu tamamlar, "24 saat içinde iletişime geçilecek" sinyali
+ * Internal HMAC endpoints (www'dan çağrılır):
+ *   POST /internal/course-orders/pre-create   → checkout init'te pending yaz
+ *   POST /internal/course-orders/activate     → callback success'te paid'e çevir + admin bildirim
+ *   POST /internal/course-orders/mark-failed  → callback fail'de failed'e çevir
  *
  * Admin endpoints:
- *   GET   /admin/course-orders          → tüm siparişler (filter)
- *   PATCH /admin/course-orders/:id      → contacted_at, admin_notes, group ata
+ *   GET   /admin/course-orders               → liste (filter)
+ *   PATCH /admin/course-orders/:id           → contacted_at, admin_notes, group ata
  */
 
 import { Router, type Request, type Response } from "express";
-import { sql } from "drizzle-orm";
-import { db, pool } from "@workspace/db";
+import { pool } from "@workspace/db";
 import crypto from "node:crypto";
 import { authMiddleware, requireRole, type AuthRequest } from "../middlewares/auth";
-import { getIyzicoClient, iyzicoCall, newConversationId, appBaseUrl } from "../lib/iyzico";
 import { findProgramme, COURSE_PROGRAMMES } from "../lib/courses-catalog";
 import { sendEmail } from "../lib/email";
 
 const router = Router();
 
-function genOrderToken(): string {
-  return `co_${Date.now().toString(36)}_${crypto.randomBytes(6).toString("hex")}`;
-}
-
-function splitName(name: string): { firstName: string; lastName: string } {
-  const parts = name.trim().split(/\s+/);
-  if (parts.length === 1) return { firstName: parts[0], lastName: parts[0] };
-  return { firstName: parts.slice(0, -1).join(" "), lastName: parts[parts.length - 1] };
+// ─── HMAC signature verification (ebook-purchase pattern'i) ────
+function verifySignature(rawBody: string, signature: string | undefined): boolean {
+  if (!signature) return false;
+  const secret = process.env["INTERNAL_API_SHARED_SECRET"];
+  if (!secret) {
+    console.error("[INTERNAL] INTERNAL_API_SHARED_SECRET tanımlı değil");
+    return false;
+  }
+  const expected = crypto.createHmac("sha256", secret).update(rawBody).digest("hex");
+  try {
+    return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected));
+  } catch {
+    return false;
+  }
 }
 
 // ─── PUBLIC: Programme catalog ─────────────────────────────────
@@ -48,122 +52,66 @@ router.get("/course-programmes", (_req: Request, res: Response) => {
   res.json({ programmes: COURSE_PROGRAMMES });
 });
 
-// ─── PUBLIC: Checkout başlat ───────────────────────────────────
-router.post("/course-orders/checkout", async (req: Request, res: Response) => {
+// ─── INTERNAL: Pre-create — checkout init aşamasında pending yaz ────
+router.post("/internal/course-orders/pre-create", async (req: Request, res: Response) => {
+  const rawBody = JSON.stringify(req.body);
+  const signature = req.headers["x-internal-signature"];
+  if (!verifySignature(rawBody, typeof signature === "string" ? signature : undefined)) {
+    return res.status(401).json({ error: "Geçersiz imza" });
+  }
+
+  const {
+    orderToken,
+    programmeSlug,
+    buyerName,
+    buyerEmail,
+    buyerPhone,
+    iyzicoConversationId,
+    iyzicoToken,
+    amountKurus,
+  } = (req.body ?? {}) as any;
+
+  const programme = findProgramme(String(programmeSlug ?? ""));
+  if (!programme) return res.status(400).json({ error: "Geçersiz program" });
+  if (!orderToken || !buyerName || !buyerEmail || !buyerPhone) {
+    return res.status(400).json({ error: "orderToken, ad, e-posta, telefon zorunlu" });
+  }
+
   try {
-    const { programmeSlug, buyerName, buyerEmail, buyerPhone } = req.body ?? {};
-
-    const programme = findProgramme(String(programmeSlug ?? ""));
-    if (!programme) return res.status(400).json({ error: "Geçersiz program" });
-
-    if (!buyerName || !buyerEmail || !buyerPhone) {
-      return res.status(400).json({ error: "Ad, e-posta ve telefon zorunlu" });
-    }
-
-    const iyzipay = getIyzicoClient();
-    const conversationId = newConversationId("course");
-    const orderToken = genOrderToken();
-    const amountTry = programme.priceKurus / 100;
-    const { firstName, lastName } = splitName(String(buyerName));
-
-    // WWW callback — kullanıcı ödeme sonrası döner
-    const wwwBase = (process.env.WWW_BASE_URL ?? "https://www.sphereenglish.com").replace(/\/$/, "");
-    const callbackUrl = `${wwwBase}/api/payment/course/callback?orderToken=${orderToken}`;
-
-    const request = {
-      locale: "tr",
-      conversationId,
-      price: amountTry.toFixed(2),
-      paidPrice: amountTry.toFixed(2),
-      currency: "TRY",
-      basketId: `CO-${orderToken}`,
-      paymentGroup: "PRODUCT",
-      callbackUrl,
-      // Taksit — Iyzico merchant panel'indeki BÜTÜN banka anlaşmalarına izin ver.
-      // Dar liste yerine (1..12 kapsar) → Iyzico kullanıcının bankasına göre kesip
-      // uygulanabilir taksitleri gösterir. Bkz. iyzico docs: enabledInstallments.
-      enabledInstallments: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
-      buyer: {
-        id: orderToken,
-        name: firstName,
-        surname: lastName,
-        gsmNumber: String(buyerPhone),
-        email: String(buyerEmail).toLowerCase(),
-        identityNumber: "11111111111", // TC kayıt formunda alınacak, iyzico için dummy
-        registrationAddress: "Türkiye",
-        ip: req.ip ?? "127.0.0.1",
-        city: "İstanbul",
-        country: "Turkey",
-      },
-      shippingAddress: {
-        contactName: buyerName,
-        city: "İstanbul",
-        country: "Turkey",
-        address: "Dijital hizmet — fiziksel teslimat yok",
-      },
-      billingAddress: {
-        contactName: buyerName,
-        city: "İstanbul",
-        country: "Turkey",
-        address: "Dijital hizmet",
-      },
-      basketItems: [
-        {
-          id: programme.slug,
-          name: programme.title,
-          category1: "Eğitim",
-          itemType: "VIRTUAL",
-          price: amountTry.toFixed(2),
-        },
-      ],
-    };
-
-    const result: any = await iyzicoCall(
-      iyzipay.checkoutFormInitialize.create.bind(iyzipay.checkoutFormInitialize),
-      request,
-    );
-
-    if (result?.status !== "success") {
-      console.error("[course-orders/checkout] Iyzico HATA:", result);
-      return res.status(502).json({
-        error: result?.errorMessage || "Ödeme formu oluşturulamadı",
-        errorCode: result?.errorCode,
-      });
-    }
-
-    // DB'ye pending order yaz
     await pool.query(
       `INSERT INTO course_orders
          (order_token, programme_slug, programme_title,
           buyer_name, buyer_email, buyer_phone,
           iyzico_conversation_id, iyzico_token, amount_kurus, status)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'pending')`,
-      [orderToken, programme.slug, programme.title,
-       buyerName, String(buyerEmail).toLowerCase(), buyerPhone,
-       conversationId, result.token, programme.priceKurus],
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'pending')
+       ON CONFLICT (order_token) DO NOTHING`,
+      [
+        orderToken, programme.slug, programme.title,
+        buyerName, String(buyerEmail).toLowerCase(), buyerPhone,
+        iyzicoConversationId ?? null,
+        iyzicoToken ?? null,
+        amountKurus ?? programme.priceKurus,
+      ],
     );
-
-    return res.json({
-      orderToken,
-      token: result.token,
-      checkoutFormContent: result.checkoutFormContent,
-      paymentPageUrl: result.paymentPageUrl,
-      conversationId,
-    });
+    return res.json({ ok: true, orderToken });
   } catch (e: any) {
-    console.error("[course-orders/checkout] HATA:", e?.message);
-    return res.status(500).json({ error: e?.message ?? "Sipariş oluşturulamadı" });
+    console.error("[INTERNAL/course-orders/pre-create] HATA:", e?.message);
+    return res.status(500).json({ error: e?.message });
   }
 });
 
-// ─── PUBLIC: Iyzico callback → sonuç doğrula, status güncelle ────
-router.post("/course-orders/callback", async (req: Request, res: Response) => {
-  try {
-    const { orderToken, iyzicoToken } = req.body ?? {};
-    if (!orderToken || !iyzicoToken) {
-      return res.status(400).json({ error: "orderToken + iyzicoToken zorunlu" });
-    }
+// ─── INTERNAL: Activate — callback success'te pending → paid ────
+router.post("/internal/course-orders/activate", async (req: Request, res: Response) => {
+  const rawBody = JSON.stringify(req.body);
+  const signature = req.headers["x-internal-signature"];
+  if (!verifySignature(rawBody, typeof signature === "string" ? signature : undefined)) {
+    return res.status(401).json({ error: "Geçersiz imza" });
+  }
 
+  const { orderToken, iyzicoPaymentId } = (req.body ?? {}) as any;
+  if (!orderToken) return res.status(400).json({ error: "orderToken zorunlu" });
+
+  try {
     const orderRes: any = await pool.query(
       `SELECT * FROM course_orders WHERE order_token = $1 LIMIT 1`,
       [orderToken],
@@ -171,53 +119,86 @@ router.post("/course-orders/callback", async (req: Request, res: Response) => {
     const order = orderRes.rows[0];
     if (!order) return res.status(404).json({ error: "Sipariş bulunamadı" });
 
-    // Zaten paid ise idempotent
+    // Idempotent — zaten paid/registered ise dokunma
     if (order.status === "paid" || order.status === "registered") {
-      return res.json({ ok: true, orderToken, status: order.status });
-    }
-
-    const iyzipay = getIyzicoClient();
-    const result: any = await iyzicoCall(
-      iyzipay.checkoutForm.retrieve.bind(iyzipay.checkoutForm),
-      { locale: "tr", token: String(iyzicoToken) },
-    );
-
-    if (result?.paymentStatus === "SUCCESS" && result?.status === "success") {
-      await pool.query(
-        `UPDATE course_orders SET status = 'paid', paid_at = NOW(), updated_at = NOW() WHERE order_token = $1`,
-        [orderToken],
-      );
-
-      // Admin bildirim maili
-      try {
-        const admins = (process.env.ADMIN_NOTIFICATION_EMAILS ?? "")
-          .split(",").map(s => s.trim()).filter(s => s.includes("@"));
-        if (admins.length > 0) {
-          const html = `<div style="font-family:sans-serif">
-            <h2>Yeni Kurs Siparişi ✓</h2>
-            <p><b>Program:</b> ${order.programme_title}</p>
-            <p><b>Müşteri:</b> ${order.buyer_name}</p>
-            <p><b>E-posta:</b> ${order.buyer_email}</p>
-            <p><b>Telefon:</b> ${order.buyer_phone}</p>
-            <p><b>Tutar:</b> ${(order.amount_kurus / 100).toFixed(2)} TL</p>
-            <p style="color:#0ea5e9">Müşteri kayıt formunu dolduruyor — 24 saat içinde iletişime geç.</p>
-          </div>`;
-          for (const to of admins) {
-            await sendEmail(to, `[Kurs] Yeni sipariş — ${order.buyer_name}`, html).catch(() => {});
-          }
-        }
-      } catch {}
-
-      return res.json({ ok: true, orderToken, status: "paid" });
+      return res.json({
+        ok: true,
+        orderToken,
+        status: order.status,
+        programmeSlug: order.programme_slug,
+        programmeTitle: order.programme_title,
+        amountKurus: order.amount_kurus,
+        alreadyProcessed: true,
+      });
     }
 
     await pool.query(
-      `UPDATE course_orders SET status = 'failed', updated_at = NOW() WHERE order_token = $1`,
-      [orderToken],
+      `UPDATE course_orders SET
+         status = 'paid',
+         paid_at = NOW(),
+         iyzico_payment_id = COALESCE($2, iyzico_payment_id),
+         updated_at = NOW()
+       WHERE order_token = $1`,
+      [orderToken, iyzicoPaymentId ?? null],
     );
-    return res.json({ ok: false, orderToken, status: "failed", error: result?.errorMessage });
+
+    // Admin bildirim maili
+    try {
+      const admins = (process.env["ADMIN_NOTIFICATION_EMAILS"] ?? "")
+        .split(",").map((s) => s.trim()).filter((s) => s.includes("@"));
+      if (admins.length > 0) {
+        const html = `<div style="font-family:sans-serif">
+          <h2>Yeni Kurs Siparişi ✓</h2>
+          <p><b>Program:</b> ${order.programme_title}</p>
+          <p><b>Müşteri:</b> ${order.buyer_name}</p>
+          <p><b>E-posta:</b> ${order.buyer_email}</p>
+          <p><b>Telefon:</b> ${order.buyer_phone}</p>
+          <p><b>Tutar:</b> ${(order.amount_kurus / 100).toFixed(2)} TL</p>
+          <p style="color:#0ea5e9">Müşteri kayıt formunu dolduruyor — 24 saat içinde iletişime geç.</p>
+        </div>`;
+        for (const to of admins) {
+          await sendEmail(to, `[Kurs] Yeni sipariş — ${order.buyer_name}`, html).catch(() => {});
+        }
+      }
+    } catch {}
+
+    return res.json({
+      ok: true,
+      orderToken,
+      status: "paid",
+      programmeSlug: order.programme_slug,
+      programmeTitle: order.programme_title,
+      amountKurus: order.amount_kurus,
+    });
   } catch (e: any) {
-    console.error("[course-orders/callback] HATA:", e?.message);
+    console.error("[INTERNAL/course-orders/activate] HATA:", e?.message);
+    return res.status(500).json({ error: e?.message });
+  }
+});
+
+// ─── INTERNAL: Mark failed — callback fail'de pending → failed ────
+router.post("/internal/course-orders/mark-failed", async (req: Request, res: Response) => {
+  const rawBody = JSON.stringify(req.body);
+  const signature = req.headers["x-internal-signature"];
+  if (!verifySignature(rawBody, typeof signature === "string" ? signature : undefined)) {
+    return res.status(401).json({ error: "Geçersiz imza" });
+  }
+
+  const { orderToken, paymentError } = (req.body ?? {}) as any;
+  if (!orderToken) return res.status(400).json({ error: "orderToken zorunlu" });
+
+  try {
+    await pool.query(
+      `UPDATE course_orders SET
+         status = 'failed',
+         admin_notes = COALESCE(admin_notes, '') || $2,
+         updated_at = NOW()
+       WHERE order_token = $1 AND status = 'pending'`,
+      [orderToken, `\n[fail ${new Date().toISOString()}]: ${paymentError ?? "unknown"}`],
+    );
+    return res.json({ ok: true });
+  } catch (e: any) {
+    console.error("[INTERNAL/course-orders/mark-failed] HATA:", e?.message);
     return res.status(500).json({ error: e?.message });
   }
 });
@@ -252,7 +233,6 @@ router.post("/course-orders/:token/register", async (req: Request, res: Response
       return res.status(400).json({ error: "TC, yaş, sektör ve cinsiyet zorunlu" });
     }
 
-    // Order paid olmalı
     const r: any = await pool.query(
       `SELECT id, status FROM course_orders WHERE order_token = $1 LIMIT 1`,
       [token],
