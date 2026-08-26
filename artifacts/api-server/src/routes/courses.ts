@@ -29,6 +29,7 @@ function normalizeCourse(row: any): any {
   return {
     id: row.id,
     slug: row.slug,
+    level_slug: row.level_slug,
     title: row.title,
     title_en: row.title_en,
     subtitle: row.subtitle,
@@ -75,9 +76,28 @@ router.get("/courses", async (_req: Request, res: Response) => {
 router.get("/courses/:slug", async (req: Request, res: Response) => {
   try {
     const slug = String(req.params.slug ?? "").trim();
+    // Hem slug (foundation/diplomacy) hem level_slug (a1-a2/b1-b2) ile lookup
     const r: any = await pool.query(
-      `SELECT * FROM marketing_courses WHERE slug = $1 AND is_active = true LIMIT 1`,
+      `SELECT * FROM marketing_courses
+         WHERE (slug = $1 OR level_slug = $1) AND is_active = true
+         LIMIT 1`,
       [slug],
+    );
+    const course = r.rows[0];
+    if (!course) return res.status(404).json({ error: "Kurs bulunamadı" });
+    return res.json({ course: normalizeCourse(course) });
+  } catch (e: any) {
+    return res.status(500).json({ error: e?.message });
+  }
+});
+
+/** Level slug lookup (URL parameter'dan) — açık endpoint */
+router.get("/courses/level/:levelSlug", async (req: Request, res: Response) => {
+  try {
+    const levelSlug = String(req.params.levelSlug ?? "").trim();
+    const r: any = await pool.query(
+      `SELECT * FROM marketing_courses WHERE level_slug = $1 AND is_active = true LIMIT 1`,
+      [levelSlug],
     );
     const course = r.rows[0];
     if (!course) return res.status(404).json({ error: "Kurs bulunamadı" });
@@ -117,7 +137,7 @@ router.get("/admin/courses/:id", authMiddleware, requireRole("admin"), async (re
 
 /** Allowed fields for insert/update */
 const ALLOWED_FIELDS = [
-  "slug", "title", "title_en", "subtitle", "description",
+  "slug", "level_slug", "title", "title_en", "subtitle", "description",
   "level", "level_badge", "level_cefr", "level_audience",
   "duration_weeks", "duration_label",
   "price_kurus", "price_display",

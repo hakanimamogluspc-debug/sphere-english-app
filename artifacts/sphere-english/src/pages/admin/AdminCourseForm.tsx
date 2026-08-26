@@ -25,6 +25,7 @@ type WeekModule = { n: number; title: string; desc: string };
 
 interface CourseFormData {
   slug: string;
+  level_slug: string;
   title: string;
   title_en: string;
   subtitle: string;
@@ -53,6 +54,7 @@ interface CourseFormData {
 
 const EMPTY_FORM: CourseFormData = {
   slug: "",
+  level_slug: "",
   title: "",
   title_en: "",
   subtitle: "",
@@ -118,6 +120,7 @@ export default function AdminCourseForm() {
         const c = data.course;
         setForm({
           slug: c.slug ?? "",
+          level_slug: c.level_slug ?? "",
           title: c.title ?? "",
           title_en: c.title_en ?? "",
           subtitle: c.subtitle ?? "",
@@ -289,9 +292,14 @@ export default function AdminCourseForm() {
           <h2 className="text-lg font-bold text-[#1B365D] mb-4">Temel Bilgiler</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className={labelCls}>Slug (URL) *</label>
-              <input required value={form.slug} onChange={(e) => set("slug", e.target.value)} className={inputCls} placeholder="ornek: foundation" />
-              <p className="text-[11px] text-gray-500 mt-1">URL'de görünecek: /is-ingilizcesi-kursu/<b>{form.slug || "slug"}</b></p>
+              <label className={labelCls}>Ödeme Slug (internal) *</label>
+              <input required value={form.slug} onChange={(e) => set("slug", e.target.value)} className={inputCls} placeholder="foundation" />
+              <p className="text-[11px] text-gray-500 mt-1">Iyzico ödemesinde referans — <b>{form.slug || "foundation"}</b></p>
+            </div>
+            <div>
+              <label className={labelCls}>URL Slug (level_slug) *</label>
+              <input required value={form.level_slug} onChange={(e) => set("level_slug", e.target.value)} className={inputCls} placeholder="a1-a2" />
+              <p className="text-[11px] text-gray-500 mt-1">Sitedeki URL: /is-ingilizcesi-kursu/<b>{form.level_slug || "a1-a2"}</b></p>
             </div>
             <div>
               <label className={labelCls}>Sıralama</label>

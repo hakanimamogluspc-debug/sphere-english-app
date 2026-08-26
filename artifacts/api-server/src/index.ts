@@ -1619,6 +1619,13 @@ async function runStartupMigrations() {
     `CREATE INDEX IF NOT EXISTS marketing_courses_active_sort_idx ON marketing_courses(is_active, sort_order, id)`,
     `CREATE INDEX IF NOT EXISTS marketing_courses_slug_idx ON marketing_courses(slug)`,
 
+    // level_slug — URL parameter için (www /is-ingilizcesi-kursu/[levelSlug])
+    // slug (foundation/diplomacy) = payment identifier; level_slug (a1-a2/b1-b2) = URL identifier
+    `ALTER TABLE marketing_courses ADD COLUMN IF NOT EXISTS level_slug VARCHAR(30)`,
+    `CREATE INDEX IF NOT EXISTS marketing_courses_level_slug_idx ON marketing_courses(level_slug)`,
+    `UPDATE marketing_courses SET level_slug = 'a1-a2' WHERE slug = 'foundation' AND (level_slug IS NULL OR level_slug = '')`,
+    `UPDATE marketing_courses SET level_slug = 'b1-b2' WHERE slug = 'diplomacy' AND (level_slug IS NULL OR level_slug = '')`,
+
     // ─── Seed initial 2 courses (idempotent — ON CONFLICT DO NOTHING) ──
     `INSERT INTO marketing_courses (
       slug, title, title_en, subtitle, description,
