@@ -12,7 +12,7 @@ export type InvoiceStatus = "pending" | "sent" | "failed" | "canceled";
 export type BuyerType = "individual" | "corporate" | "foreign";
 export type ScenarioType = "TEMELFATURA" | "TICARIFATURA";
 export type SendingType = "KAGIT" | "ELEKTRONIK" | "NONE";
-export type SourceType = "ebook" | "ebook_cart" | "subscription" | "manual";
+export type SourceType = "ebook" | "ebook_cart" | "subscription" | "course" | "manual";
 
 export interface InvoiceBuyer {
   email: string;

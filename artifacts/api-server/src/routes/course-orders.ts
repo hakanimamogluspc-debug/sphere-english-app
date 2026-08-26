@@ -28,6 +28,83 @@ import crypto from "node:crypto";
 import { authMiddleware, requireRole, type AuthRequest } from "../middlewares/auth";
 import { findProgramme, COURSE_PROGRAMMES } from "../lib/courses-catalog";
 import { sendEmail } from "../lib/email";
+import { issueInvoiceForSource } from "../lib/invoice/index.js";
+
+/**
+ * Kayıt formu tamamlanınca bireysel e-Arşiv fatura kesme (fire-and-forget).
+ * Kurumsal fatura desteklenmiyor — Sphere kurumsal kurs için ayrı süreç.
+ */
+function issueCourseInvoice(orderId: number): void {
+  void (async () => {
+    try {
+      const r: any = await pool.query(
+        `SELECT id, order_token, programme_slug, programme_title,
+                buyer_name, buyer_email, buyer_phone,
+                amount_kurus, iyzico_payment_id,
+                tc_kimlik
+           FROM course_orders WHERE id = $1 LIMIT 1`,
+        [orderId],
+      );
+      const order = r.rows[0];
+      if (!order) {
+        console.error(`[COURSE-INVOICE] order bulunamadı: id=${orderId}`);
+        return;
+      }
+      // KDV hesabı — fiyat KDV DAHİL (Türkiye e-ticaret pratiği), oran %20
+      // 4.999 TL total → 4.165,83 KDV hariç + 833,17 KDV = 4.999
+      const amountKurus = Number(order.amount_kurus);
+      const vatRate = 20;
+      const unitPriceKurus = Math.round(amountKurus / (1 + vatRate / 100));
+
+      const res = await issueInvoiceForSource({
+        source: {
+          type: "course",
+          id: Number(order.id),
+          orderId: String(order.order_token),
+        },
+        buyer: {
+          email: String(order.buyer_email),
+          name: String(order.buyer_name ?? "Kursiyer"),
+          type: "individual",
+          taxId: order.tc_kimlik ?? undefined,
+          // Adres kayıt formunda alınmıyor — Luca GİB adres verisini TC üzerinden alır
+          // Yine de fallback verelim, provider fail etmesin
+          address: "Türkiye",
+          city: "İstanbul",
+          district: "Türkiye",
+          country: "Türkiye",
+          phone: order.buyer_phone ?? undefined,
+        },
+        lineItems: [
+          {
+            productCode: `course-${order.programme_slug}`,
+            productName: String(order.programme_title ?? "Sphere English Kursu"),
+            quantity: 1,
+            unitPriceKurus,
+            vatRate,
+            note: "4 haftalık canlı grup programı — Business English",
+          },
+        ],
+        notes: [
+          "Sphere English Kurs Kaydı",
+          order.iyzico_payment_id ? `Iyzico Payment ID: ${order.iyzico_payment_id}` : "",
+        ].filter(Boolean),
+        paymentReference: order.iyzico_payment_id ?? undefined,
+        sendMailAutomatically: true,
+      });
+
+      if (res.ok) {
+        console.info(
+          `[COURSE-INVOICE] fatura kesildi: orderId=${orderId} ettn=${res.ettn} skipped=${res.skipped ?? false}`,
+        );
+      } else {
+        console.error(`[COURSE-INVOICE] fatura BAŞARISIZ: orderId=${orderId} err=${res.error}`);
+      }
+    } catch (e: any) {
+      console.error(`[COURSE-INVOICE] fatura kesme HATA: orderId=${orderId} → ${e?.message}`);
+    }
+  })();
+}
 
 const router = Router();
 
@@ -253,6 +330,9 @@ router.post("/course-orders/:token/register", async (req: Request, res: Response
       [token, String(tcKimlik).slice(0, 11), parseInt(String(age), 10) || null,
        String(sector).slice(0, 60), String(gender).slice(0, 20)],
     );
+
+    // E-Arşiv fatura kes (fire-and-forget) — bireysel, TC ile
+    issueCourseInvoice(Number(order.id));
 
     return res.json({ ok: true });
   } catch (e: any) {
