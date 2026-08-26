@@ -1582,7 +1582,7 @@ async function runStartupMigrations() {
     // ─── Courses (Admin CRUD katalog) ─────────────────────────────────
     // E-kitap gibi admin panelden yönetilebilir kurs kataloğu.
     // course-orders bu tablodan slug ile programme çeker.
-    `CREATE TABLE IF NOT EXISTS courses (
+    `CREATE TABLE IF NOT EXISTS marketing_courses (
       id SERIAL PRIMARY KEY,
       slug VARCHAR(60) NOT NULL UNIQUE,
       title VARCHAR(200) NOT NULL,
@@ -1616,11 +1616,11 @@ async function runStartupMigrations() {
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )`,
-    `CREATE INDEX IF NOT EXISTS courses_active_sort_idx ON courses(is_active, sort_order, id)`,
-    `CREATE INDEX IF NOT EXISTS courses_slug_idx ON courses(slug)`,
+    `CREATE INDEX IF NOT EXISTS marketing_courses_active_sort_idx ON marketing_courses(is_active, sort_order, id)`,
+    `CREATE INDEX IF NOT EXISTS marketing_courses_slug_idx ON marketing_courses(slug)`,
 
     // ─── Seed initial 2 courses (idempotent — ON CONFLICT DO NOTHING) ──
-    `INSERT INTO courses (
+    `INSERT INTO marketing_courses (
       slug, title, title_en, subtitle, description,
       level, level_badge, level_cefr, level_audience,
       duration_weeks, duration_label,
@@ -1652,7 +1652,7 @@ async function runStartupMigrations() {
       true, 1
     ) ON CONFLICT (slug) DO NOTHING`,
 
-    `INSERT INTO courses (
+    `INSERT INTO marketing_courses (
       slug, title, title_en, subtitle, description,
       level, level_badge, level_cefr, level_audience,
       duration_weeks, duration_label,

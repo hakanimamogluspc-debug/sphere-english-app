@@ -33,7 +33,7 @@ async function loadFromDb(): Promise<CourseProgramme[]> {
   try {
     const r: any = await pool.query(
       `SELECT slug, title, title_en, level, price_kurus
-         FROM courses
+         FROM marketing_courses
          WHERE is_active = true
          ORDER BY sort_order ASC, id ASC`,
     );

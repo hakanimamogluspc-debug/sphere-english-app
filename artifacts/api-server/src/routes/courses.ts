@@ -63,7 +63,7 @@ function normalizeCourse(row: any): any {
 router.get("/courses", async (_req: Request, res: Response) => {
   try {
     const r: any = await pool.query(
-      `SELECT * FROM courses WHERE is_active = true ORDER BY sort_order ASC, id ASC`,
+      `SELECT * FROM marketing_courses WHERE is_active = true ORDER BY sort_order ASC, id ASC`,
     );
     return res.json({ courses: r.rows.map(normalizeCourse) });
   } catch (e: any) {
@@ -76,7 +76,7 @@ router.get("/courses/:slug", async (req: Request, res: Response) => {
   try {
     const slug = String(req.params.slug ?? "").trim();
     const r: any = await pool.query(
-      `SELECT * FROM courses WHERE slug = $1 AND is_active = true LIMIT 1`,
+      `SELECT * FROM marketing_courses WHERE slug = $1 AND is_active = true LIMIT 1`,
       [slug],
     );
     const course = r.rows[0];
@@ -93,7 +93,7 @@ router.get("/courses/:slug", async (req: Request, res: Response) => {
 router.get("/admin/courses", authMiddleware, requireRole("admin"), async (_req: AuthRequest, res: Response) => {
   try {
     const r: any = await pool.query(
-      `SELECT * FROM courses ORDER BY sort_order ASC, id ASC`,
+      `SELECT * FROM marketing_courses ORDER BY sort_order ASC, id ASC`,
     );
     return res.json({ courses: r.rows.map(normalizeCourse) });
   } catch (e: any) {
@@ -106,7 +106,7 @@ router.get("/admin/courses/:id", authMiddleware, requireRole("admin"), async (re
   try {
     const id = parseInt(req.params.id, 10);
     if (!id) return res.status(400).json({ error: "Geçersiz id" });
-    const r: any = await pool.query(`SELECT * FROM courses WHERE id = $1 LIMIT 1`, [id]);
+    const r: any = await pool.query(`SELECT * FROM marketing_courses WHERE id = $1 LIMIT 1`, [id]);
     const course = r.rows[0];
     if (!course) return res.status(404).json({ error: "Kurs bulunamadı" });
     return res.json({ course: normalizeCourse(course) });
@@ -140,7 +140,7 @@ router.post("/admin/courses", authMiddleware, requireRole("admin"), async (req: 
     if (!priceKurus || priceKurus < 100) return res.status(400).json({ error: "price_kurus geçerli olmalı (min 100 kuruş)" });
 
     // Slug unique kontrol
-    const exists: any = await pool.query(`SELECT id FROM courses WHERE slug = $1`, [slug]);
+    const exists: any = await pool.query(`SELECT id FROM marketing_courses WHERE slug = $1`, [slug]);
     if (exists.rows.length > 0) {
       return res.status(400).json({ error: "Bu slug zaten kullanımda" });
     }
@@ -182,7 +182,7 @@ router.post("/admin/courses", authMiddleware, requireRole("admin"), async (req: 
     if (!fields.includes("price_kurus")) { fields.push("price_kurus"); values.push(priceKurus); placeholders.push(`$${paramIdx++}`); }
 
     const r: any = await pool.query(
-      `INSERT INTO courses (${fields.join(", ")}) VALUES (${placeholders.join(", ")}) RETURNING *`,
+      `INSERT INTO marketing_courses (${fields.join(", ")}) VALUES (${placeholders.join(", ")}) RETURNING *`,
       values,
     );
     invalidateCoursesCache();
@@ -226,7 +226,7 @@ router.patch("/admin/courses/:id", authMiddleware, requireRole("admin"), async (
 
     values.push(id);
     const r: any = await pool.query(
-      `UPDATE courses SET ${sets.join(", ")}, updated_at = NOW() WHERE id = $${paramIdx} RETURNING *`,
+      `UPDATE marketing_courses SET ${sets.join(", ")}, updated_at = NOW() WHERE id = $${paramIdx} RETURNING *`,
       values,
     );
     if (r.rows.length === 0) return res.status(404).json({ error: "Kurs bulunamadı" });
@@ -244,7 +244,7 @@ router.delete("/admin/courses/:id", authMiddleware, requireRole("admin"), async 
     const id = parseInt(req.params.id, 10);
     if (!id) return res.status(400).json({ error: "Geçersiz id" });
     const r: any = await pool.query(
-      `UPDATE courses SET is_active = false, updated_at = NOW() WHERE id = $1 RETURNING id`,
+      `UPDATE marketing_courses SET is_active = false, updated_at = NOW() WHERE id = $1 RETURNING id`,
       [id],
     );
     if (r.rows.length === 0) return res.status(404).json({ error: "Kurs bulunamadı" });
