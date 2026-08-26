@@ -26,7 +26,7 @@ import { Router, type Request, type Response } from "express";
 import { pool } from "@workspace/db";
 import crypto from "node:crypto";
 import { authMiddleware, requireRole, type AuthRequest } from "../middlewares/auth";
-import { findProgramme, COURSE_PROGRAMMES } from "../lib/courses-catalog";
+import { findProgramme, loadProgrammes, COURSE_PROGRAMMES, invalidateCoursesCache } from "../lib/courses-catalog";
 import { sendEmail } from "../lib/email";
 import { issueInvoiceForSource } from "../lib/invoice/index.js";
 
@@ -148,7 +148,12 @@ router.post("/internal/course-orders/pre-create", async (req: Request, res: Resp
     amountKurus,
   } = (req.body ?? {}) as any;
 
-  const programme = findProgramme(String(programmeSlug ?? ""));
+  // Önce sync cache'ten dene; yoksa DB'den async yükle (yeni admin eklenen kurslar için)
+  let programme = findProgramme(String(programmeSlug ?? ""));
+  if (!programme) {
+    const fresh = await loadProgrammes();
+    programme = fresh.find((p) => p.slug === programmeSlug) ?? null;
+  }
   if (!programme) return res.status(400).json({ error: "Geçersiz program" });
   if (!orderToken || !buyerName || !buyerEmail || !buyerPhone) {
     return res.status(400).json({ error: "orderToken, ad, e-posta, telefon zorunlu" });

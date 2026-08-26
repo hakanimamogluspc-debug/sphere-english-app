@@ -127,6 +127,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       { name: 'E-Kitap Yönetimi',    href: '/admin/ebooks',                   icon: BookOpen },
       { name: 'E-Kitap Paketleri',   href: '/admin/bundles',                  icon: Package },
       { name: 'E-Kitap Satışları',   href: '/admin/ebook-purchases',          icon: ShoppingBag },
+      { name: 'Kurs Yönetimi',       href: '/admin/kurslar',                  icon: GraduationCap },
       { name: 'E-Faturalar',         href: '/admin/faturalar',                icon: Receipt },
       { name: 'MEB Aktivite Raporu', href: '/admin/meb-report',               icon: BarChart3 },
       { name: 'Pazarlama & E-posta', href: '/admin/marketing',                icon: TrendingUp },

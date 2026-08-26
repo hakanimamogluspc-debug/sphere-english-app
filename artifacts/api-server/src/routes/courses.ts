@@ -1,201 +1,258 @@
-import { Router } from "express";
-import { db, usersTable, coursesTable, modulesTable, lessonsTable, enrollmentsTable, lessonProgressTable } from "@workspace/db";
-import { eq, and, ilike, count, sql } from "drizzle-orm";
-import { authMiddleware, requireRole, type AuthRequest } from "../middlewares/auth.js";
+/**
+ * Courses — Admin CRUD + public catalog.
+ *
+ * DB-backed kurs kataloğu (e-kitap admin pattern'i).
+ * course-orders artık DB'den okuyacak (findProgrammeFromDb).
+ *
+ * Public:
+ *   GET  /api/courses               → aktif kurs listesi (www için)
+ *   GET  /api/courses/:slug         → tek kurs detayı
+ *
+ * Admin:
+ *   GET    /api/admin/courses       → tüm kurslar (aktif+pasif)
+ *   POST   /api/admin/courses       → yeni kurs oluştur
+ *   GET    /api/admin/courses/:id   → tek kurs (edit için)
+ *   PATCH  /api/admin/courses/:id   → güncelle
+ *   DELETE /api/admin/courses/:id   → soft delete (is_active=false)
+ */
+
+import { Router, type Request, type Response } from "express";
+import { pool } from "@workspace/db";
+import { authMiddleware, requireRole, type AuthRequest } from "../middlewares/auth";
+import { invalidateCoursesCache } from "../lib/courses-catalog";
 
 const router = Router();
 
-// Helper: get enrolled count and total lessons for a course
-async function getCourseStats(courseId: number) {
-  const [{ enrolled }] = await db.select({ enrolled: count() }).from(enrollmentsTable).where(eq(enrollmentsTable.courseId, courseId));
-  const modules = await db.select({ id: modulesTable.id }).from(modulesTable).where(eq(modulesTable.courseId, courseId));
-  let totalLessons = 0;
-  for (const m of modules) {
-    const [{ lc }] = await db.select({ lc: count() }).from(lessonsTable).where(eq(lessonsTable.moduleId, m.id));
-    totalLessons += Number(lc);
-  }
-  return { enrolledCount: Number(enrolled), totalLessons };
+/** DB row → frontend-friendly object (JSON alanları parse) */
+function normalizeCourse(row: any): any {
+  if (!row) return null;
+  return {
+    id: row.id,
+    slug: row.slug,
+    title: row.title,
+    title_en: row.title_en,
+    subtitle: row.subtitle,
+    description: row.description,
+    level: row.level,
+    level_badge: row.level_badge,
+    level_cefr: row.level_cefr,
+    level_audience: row.level_audience,
+    duration_weeks: row.duration_weeks,
+    duration_label: row.duration_label,
+    price_kurus: row.price_kurus,
+    price_display: row.price_display,
+    weeks: row.weeks ?? [],
+    audience: row.audience ?? [],
+    related_ebook_slugs: row.related_ebook_slugs ?? [],
+    cohort_status: row.cohort_status,
+    cohort_start_date: row.cohort_start_date,
+    cohort_start_display: row.cohort_start_display,
+    cohort_capacity: row.cohort_capacity,
+    cohort_registrations: row.cohort_registrations,
+    seo_title: row.seo_title,
+    seo_description: row.seo_description,
+    is_active: row.is_active,
+    sort_order: row.sort_order,
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+  };
 }
 
-// List courses
-router.get("/courses", authMiddleware, async (req: AuthRequest, res) => {
-  const { level, teacherId, isActive, search } = req.query;
-  let conds: any[] = [];
-  if (level && level !== "null") conds.push(eq(coursesTable.level, level as string));
-  if (teacherId && teacherId !== "null") conds.push(eq(coursesTable.teacherId, parseInt(teacherId as string)));
-  if (isActive !== undefined && isActive !== "null") conds.push(eq(coursesTable.isActive, isActive === "true"));
-  if (search) conds.push(ilike(coursesTable.title, `%${search}%`));
+// ─── PUBLIC ────────────────────────────────────────────────────
 
-  const where = conds.length > 0 ? and(...conds) : undefined;
-  const courses = await db.select({
-    id: coursesTable.id,
-    title: coursesTable.title,
-    description: coursesTable.description,
-    level: coursesTable.level,
-    teacherId: coursesTable.teacherId,
-    price: coursesTable.price,
-    isActive: coursesTable.isActive,
-    imageUrl: coursesTable.imageUrl,
-    createdAt: coursesTable.createdAt,
-  }).from(coursesTable).where(where);
-
-  const result = await Promise.all(courses.map(async (c) => {
-    const stats = await getCourseStats(c.id);
-    const teacher = c.teacherId ? await db.select({ firstName: usersTable.firstName, lastName: usersTable.lastName })
-      .from(usersTable).where(eq(usersTable.id, c.teacherId)).limit(1) : [];
-    return {
-      ...c,
-      price: c.price ? parseFloat(c.price) : null,
-      teacherName: teacher[0] ? `${teacher[0].firstName} ${teacher[0].lastName}` : null,
-      ...stats,
-    };
-  }));
-
-  res.json(result);
-});
-
-// My courses (enrolled for students, taught for teachers)
-router.get("/courses/my", authMiddleware, async (req: AuthRequest, res) => {
-  if (req.userRole === "student") {
-    const enrollments = await db.select({ courseId: enrollmentsTable.courseId })
-      .from(enrollmentsTable).where(eq(enrollmentsTable.studentId, req.userId!));
-    const courseIds = enrollments.map(e => e.courseId);
-    if (courseIds.length === 0) { res.json([]); return; }
-
-    const courses = await db.select().from(coursesTable).where(
-      sql`${coursesTable.id} = ANY(${courseIds})`
+router.get("/courses", async (_req: Request, res: Response) => {
+  try {
+    const r: any = await pool.query(
+      `SELECT * FROM courses WHERE is_active = true ORDER BY sort_order ASC, id ASC`,
     );
-    const result = await Promise.all(courses.map(async (c) => {
-      const stats = await getCourseStats(c.id);
-      return { ...c, price: c.price ? parseFloat(c.price) : null, teacherName: null, ...stats };
-    }));
-    res.json(result);
-  } else if (req.userRole === "teacher") {
-    const courses = await db.select().from(coursesTable).where(eq(coursesTable.teacherId, req.userId!));
-    const result = await Promise.all(courses.map(async (c) => {
-      const stats = await getCourseStats(c.id);
-      return { ...c, price: c.price ? parseFloat(c.price) : null, teacherName: null, ...stats };
-    }));
-    res.json(result);
-  } else {
-    // Admin sees all
-    const courses = await db.select().from(coursesTable);
-    const result = await Promise.all(courses.map(async (c) => {
-      const stats = await getCourseStats(c.id);
-      return { ...c, price: c.price ? parseFloat(c.price) : null, teacherName: null, ...stats };
-    }));
-    res.json(result);
+    return res.json({ courses: r.rows.map(normalizeCourse) });
+  } catch (e: any) {
+    console.error("[courses/list] HATA:", e?.message);
+    return res.status(500).json({ error: e?.message });
   }
 });
 
-// Get course detail
-router.get("/courses/:id", authMiddleware, async (req: AuthRequest, res) => {
-  const id = parseInt(req.params.id);
-  const [course] = await db.select().from(coursesTable).where(eq(coursesTable.id, id)).limit(1);
-  if (!course) { res.status(404).json({ error: "Course not found" }); return; }
-
-  const modules = await db.select().from(modulesTable).where(eq(modulesTable.courseId, id)).orderBy(modulesTable.order);
-  const modulesWithLessons = await Promise.all(modules.map(async (m) => {
-    const lessons = await db.select().from(lessonsTable).where(eq(lessonsTable.moduleId, m.id)).orderBy(lessonsTable.order);
-    let lessonsWithProgress = lessons;
-    if (req.userId) {
-      lessonsWithProgress = await Promise.all(lessons.map(async (l) => {
-        const [progress] = await db.select().from(lessonProgressTable)
-          .where(and(eq(lessonProgressTable.userId, req.userId!), eq(lessonProgressTable.lessonId, l.id))).limit(1);
-        return { ...l, isCompleted: progress?.completed || false };
-      }));
-    }
-    return { ...m, lessons: lessonsWithProgress };
-  }));
-
-  const stats = await getCourseStats(id);
-  const teacher = course.teacherId ? await db.select({ firstName: usersTable.firstName, lastName: usersTable.lastName })
-    .from(usersTable).where(eq(usersTable.id, course.teacherId)).limit(1) : [];
-
-  let isEnrolled = false;
-  let completionPercentage: number | null = null;
-  if (req.userId && req.userRole === "student") {
-    const [enrollment] = await db.select().from(enrollmentsTable)
-      .where(and(eq(enrollmentsTable.studentId, req.userId), eq(enrollmentsTable.courseId, id))).limit(1);
-    isEnrolled = !!enrollment;
-    if (isEnrolled && stats.totalLessons > 0) {
-      const completed = await db.select({ c: count() }).from(lessonProgressTable)
-        .where(and(eq(lessonProgressTable.userId, req.userId), eq(lessonProgressTable.completed, true)));
-      completionPercentage = Math.round((Number(completed[0].c) / stats.totalLessons) * 100);
-    }
+router.get("/courses/:slug", async (req: Request, res: Response) => {
+  try {
+    const slug = String(req.params.slug ?? "").trim();
+    const r: any = await pool.query(
+      `SELECT * FROM courses WHERE slug = $1 AND is_active = true LIMIT 1`,
+      [slug],
+    );
+    const course = r.rows[0];
+    if (!course) return res.status(404).json({ error: "Kurs bulunamadı" });
+    return res.json({ course: normalizeCourse(course) });
+  } catch (e: any) {
+    return res.status(500).json({ error: e?.message });
   }
-
-  res.json({
-    ...course,
-    price: course.price ? parseFloat(course.price) : null,
-    teacherName: teacher[0] ? `${teacher[0].firstName} ${teacher[0].lastName}` : null,
-    ...stats,
-    modules: modulesWithLessons,
-    isEnrolled,
-    completionPercentage,
-  });
 });
 
-// Create course
-router.post("/courses", authMiddleware, requireRole("admin", "teacher"), async (req: AuthRequest, res) => {
-  const { title, description, level, teacherId, price, isActive, imageUrl } = req.body;
-  const tid = req.userRole === "teacher" ? req.userId : (teacherId || req.userId);
-  const [course] = await db.insert(coursesTable).values({
-    title, description, level, teacherId: tid,
-    price: price ? String(price) : null,
-    isActive: isActive !== false,
-    imageUrl: imageUrl || null,
-  }).returning();
-  res.status(201).json({ ...course, price: course.price ? parseFloat(course.price) : null, enrolledCount: 0, totalLessons: 0, teacherName: null });
+// ─── ADMIN ────────────────────────────────────────────────────
+
+/** GET all — aktif + pasif */
+router.get("/admin/courses", authMiddleware, requireRole("admin"), async (_req: AuthRequest, res: Response) => {
+  try {
+    const r: any = await pool.query(
+      `SELECT * FROM courses ORDER BY sort_order ASC, id ASC`,
+    );
+    return res.json({ courses: r.rows.map(normalizeCourse) });
+  } catch (e: any) {
+    return res.status(500).json({ error: e?.message });
+  }
 });
 
-// Update course
-router.patch("/courses/:id", authMiddleware, requireRole("admin", "teacher"), async (req: AuthRequest, res) => {
-  const id = parseInt(req.params.id);
-  const { title, description, level, teacherId, price, isActive, imageUrl } = req.body;
-  const updates: any = { updatedAt: new Date() };
-  if (title !== undefined) updates.title = title;
-  if (description !== undefined) updates.description = description;
-  if (level !== undefined) updates.level = level;
-  if (teacherId !== undefined) updates.teacherId = teacherId;
-  if (price !== undefined) updates.price = price ? String(price) : null;
-  if (isActive !== undefined) updates.isActive = isActive;
-  if (imageUrl !== undefined) updates.imageUrl = imageUrl;
-
-  const [updated] = await db.update(coursesTable).set(updates).where(eq(coursesTable.id, id)).returning();
-  if (!updated) { res.status(404).json({ error: "Course not found" }); return; }
-  const stats = await getCourseStats(id);
-  res.json({ ...updated, price: updated.price ? parseFloat(updated.price) : null, teacherName: null, ...stats });
+/** GET single by id (edit için) */
+router.get("/admin/courses/:id", authMiddleware, requireRole("admin"), async (req: AuthRequest, res: Response) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (!id) return res.status(400).json({ error: "Geçersiz id" });
+    const r: any = await pool.query(`SELECT * FROM courses WHERE id = $1 LIMIT 1`, [id]);
+    const course = r.rows[0];
+    if (!course) return res.status(404).json({ error: "Kurs bulunamadı" });
+    return res.json({ course: normalizeCourse(course) });
+  } catch (e: any) {
+    return res.status(500).json({ error: e?.message });
+  }
 });
 
-// Delete course
-router.delete("/courses/:id", authMiddleware, requireRole("admin"), async (req: AuthRequest, res) => {
-  const id = parseInt(req.params.id);
-  await db.delete(coursesTable).where(eq(coursesTable.id, id));
-  res.json({ success: true, message: "Course deleted" });
+/** Allowed fields for insert/update */
+const ALLOWED_FIELDS = [
+  "slug", "title", "title_en", "subtitle", "description",
+  "level", "level_badge", "level_cefr", "level_audience",
+  "duration_weeks", "duration_label",
+  "price_kurus", "price_display",
+  "weeks", "audience", "related_ebook_slugs",
+  "cohort_status", "cohort_start_date", "cohort_start_display", "cohort_capacity", "cohort_registrations",
+  "seo_title", "seo_description",
+  "is_active", "sort_order",
+];
+
+/** POST create */
+router.post("/admin/courses", authMiddleware, requireRole("admin"), async (req: AuthRequest, res: Response) => {
+  try {
+    const body = req.body ?? {};
+    const slug = String(body.slug ?? "").trim().toLowerCase().replace(/[^a-z0-9-]/g, "-");
+    const title = String(body.title ?? "").trim();
+    const priceKurus = parseInt(String(body.price_kurus ?? 0), 10);
+
+    if (!slug || slug.length < 3) return res.status(400).json({ error: "slug en az 3 karakter olmalı" });
+    if (!title) return res.status(400).json({ error: "title zorunlu" });
+    if (!priceKurus || priceKurus < 100) return res.status(400).json({ error: "price_kurus geçerli olmalı (min 100 kuruş)" });
+
+    // Slug unique kontrol
+    const exists: any = await pool.query(`SELECT id FROM courses WHERE slug = $1`, [slug]);
+    if (exists.rows.length > 0) {
+      return res.status(400).json({ error: "Bu slug zaten kullanımda" });
+    }
+
+    const fields: string[] = [];
+    const values: any[] = [];
+    const placeholders: string[] = [];
+    let paramIdx = 1;
+
+    for (const f of ALLOWED_FIELDS) {
+      if (body[f] === undefined) continue;
+      let val = body[f];
+      // JSON alanları
+      if (f === "weeks" || f === "audience") {
+        val = JSON.stringify(val ?? []);
+      }
+      // Array alan
+      if (f === "related_ebook_slugs") {
+        val = Array.isArray(val) ? val : [];
+      }
+      // Number normalize
+      if (f === "duration_weeks" || f === "price_kurus" || f === "cohort_capacity" || f === "cohort_registrations" || f === "sort_order") {
+        val = parseInt(String(val), 10) || 0;
+      }
+      // Bool normalize
+      if (f === "is_active") {
+        val = val === true || val === "true";
+      }
+      // Empty string → null (özellikle date alanları için)
+      if (val === "") val = null;
+
+      fields.push(f);
+      values.push(val);
+      placeholders.push(`$${paramIdx++}`);
+    }
+
+    if (!fields.includes("slug")) { fields.push("slug"); values.push(slug); placeholders.push(`$${paramIdx++}`); }
+    if (!fields.includes("title")) { fields.push("title"); values.push(title); placeholders.push(`$${paramIdx++}`); }
+    if (!fields.includes("price_kurus")) { fields.push("price_kurus"); values.push(priceKurus); placeholders.push(`$${paramIdx++}`); }
+
+    const r: any = await pool.query(
+      `INSERT INTO courses (${fields.join(", ")}) VALUES (${placeholders.join(", ")}) RETURNING *`,
+      values,
+    );
+    invalidateCoursesCache();
+    return res.json({ course: normalizeCourse(r.rows[0]) });
+  } catch (e: any) {
+    console.error("[admin/courses POST] HATA:", e?.message);
+    return res.status(500).json({ error: e?.message });
+  }
 });
 
-// Enroll in course
-router.post("/courses/:id/enroll", authMiddleware, async (req: AuthRequest, res) => {
-  const courseId = parseInt(req.params.id);
-  const studentId = req.body.studentId || req.userId;
+/** PATCH update */
+router.patch("/admin/courses/:id", authMiddleware, requireRole("admin"), async (req: AuthRequest, res: Response) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (!id) return res.status(400).json({ error: "Geçersiz id" });
 
-  const [existing] = await db.select().from(enrollmentsTable)
-    .where(and(eq(enrollmentsTable.studentId, studentId), eq(enrollmentsTable.courseId, courseId))).limit(1);
-  if (existing) { res.json({ success: true, message: "Already enrolled" }); return; }
+    const body = req.body ?? {};
+    const sets: string[] = [];
+    const values: any[] = [];
+    let paramIdx = 1;
 
-  await db.insert(enrollmentsTable).values({ studentId, courseId });
-  res.json({ success: true, message: "Enrolled successfully" });
+    for (const f of ALLOWED_FIELDS) {
+      if (body[f] === undefined) continue;
+      let val = body[f];
+      if (f === "weeks" || f === "audience") val = JSON.stringify(val ?? []);
+      if (f === "related_ebook_slugs") val = Array.isArray(val) ? val : [];
+      if (f === "duration_weeks" || f === "price_kurus" || f === "cohort_capacity" || f === "cohort_registrations" || f === "sort_order") {
+        val = parseInt(String(val), 10) || 0;
+      }
+      if (f === "is_active") val = val === true || val === "true";
+      // slug normalize (edit için de)
+      if (f === "slug" && typeof val === "string") {
+        val = val.trim().toLowerCase().replace(/[^a-z0-9-]/g, "-");
+      }
+      if (val === "") val = null;
+      sets.push(`${f} = $${paramIdx++}`);
+      values.push(val);
+    }
+
+    if (sets.length === 0) return res.status(400).json({ error: "güncellenecek alan yok" });
+
+    values.push(id);
+    const r: any = await pool.query(
+      `UPDATE courses SET ${sets.join(", ")}, updated_at = NOW() WHERE id = $${paramIdx} RETURNING *`,
+      values,
+    );
+    if (r.rows.length === 0) return res.status(404).json({ error: "Kurs bulunamadı" });
+    invalidateCoursesCache();
+    return res.json({ course: normalizeCourse(r.rows[0]) });
+  } catch (e: any) {
+    console.error("[admin/courses PATCH] HATA:", e?.message);
+    return res.status(500).json({ error: e?.message });
+  }
 });
 
-// Unenroll from course
-router.post("/courses/:id/unenroll", authMiddleware, async (req: AuthRequest, res) => {
-  const courseId = parseInt(req.params.id);
-  const studentId = req.body.studentId || req.userId;
-  await db.delete(enrollmentsTable).where(
-    and(eq(enrollmentsTable.studentId, studentId), eq(enrollmentsTable.courseId, courseId))
-  );
-  res.json({ success: true, message: "Unenrolled successfully" });
+/** DELETE — soft (is_active=false) */
+router.delete("/admin/courses/:id", authMiddleware, requireRole("admin"), async (req: AuthRequest, res: Response) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (!id) return res.status(400).json({ error: "Geçersiz id" });
+    const r: any = await pool.query(
+      `UPDATE courses SET is_active = false, updated_at = NOW() WHERE id = $1 RETURNING id`,
+      [id],
+    );
+    if (r.rows.length === 0) return res.status(404).json({ error: "Kurs bulunamadı" });
+    invalidateCoursesCache();
+    return res.json({ ok: true });
+  } catch (e: any) {
+    return res.status(500).json({ error: e?.message });
+  }
 });
 
 export default router;

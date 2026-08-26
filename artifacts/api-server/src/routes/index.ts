@@ -84,6 +84,7 @@ import adminScenesRouter from "./admin-scenes";
 import adminCareerRouter from "./admin-career";
 import dailyWordRouter from "./daily-word";
 import courseOrdersRouter from "./course-orders";
+import coursesRouter from "./courses";
 import { requireSubscription } from "../middlewares/require-subscription";
 import { authMiddleware } from "../middlewares/auth";
 
@@ -149,6 +150,7 @@ router.use(adminScenesRouter);
 router.use(adminCareerRouter);
 router.use(dailyWordRouter);
 router.use(courseOrdersRouter);
+router.use(coursesRouter);
 router.use(adminEbooksRouter);
 router.use(adminEbookPurchasesRouter);
 router.use(webAnalyticsRouter);

@@ -1579,6 +1579,111 @@ async function runStartupMigrations() {
     // Refund/dispute/reconciliation için gerekli. Www callback activate ederken doldurur.
     `ALTER TABLE course_orders ADD COLUMN IF NOT EXISTS iyzico_payment_id VARCHAR(100)`,
 
+    // ─── Courses (Admin CRUD katalog) ─────────────────────────────────
+    // E-kitap gibi admin panelden yönetilebilir kurs kataloğu.
+    // course-orders bu tablodan slug ile programme çeker.
+    `CREATE TABLE IF NOT EXISTS courses (
+      id SERIAL PRIMARY KEY,
+      slug VARCHAR(60) NOT NULL UNIQUE,
+      title VARCHAR(200) NOT NULL,
+      title_en VARCHAR(200),
+      subtitle TEXT,
+      description TEXT,
+      level VARCHAR(20),
+      level_badge VARCHAR(30),
+      level_cefr VARCHAR(20),
+      level_audience VARCHAR(120),
+      duration_weeks INTEGER DEFAULT 4,
+      duration_label VARCHAR(200),
+      price_kurus INTEGER NOT NULL,
+      price_display VARCHAR(30),
+      -- İçerik JSON alanları
+      weeks JSONB NOT NULL DEFAULT '[]'::jsonb,
+      audience JSONB NOT NULL DEFAULT '[]'::jsonb,
+      related_ebook_slugs TEXT[] DEFAULT '{}',
+      -- Aktif cohort bilgisi
+      cohort_status VARCHAR(20) NOT NULL DEFAULT 'waitlist',
+      cohort_start_date DATE,
+      cohort_start_display VARCHAR(120),
+      cohort_capacity INTEGER DEFAULT 6,
+      cohort_registrations INTEGER DEFAULT 0,
+      -- SEO
+      seo_title VARCHAR(200),
+      seo_description TEXT,
+      -- Yönetim
+      is_active BOOLEAN NOT NULL DEFAULT true,
+      sort_order INTEGER DEFAULT 0,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`,
+    `CREATE INDEX IF NOT EXISTS courses_active_sort_idx ON courses(is_active, sort_order, id)`,
+    `CREATE INDEX IF NOT EXISTS courses_slug_idx ON courses(slug)`,
+
+    // ─── Seed initial 2 courses (idempotent — ON CONFLICT DO NOTHING) ──
+    `INSERT INTO courses (
+      slug, title, title_en, subtitle, description,
+      level, level_badge, level_cefr, level_audience,
+      duration_weeks, duration_label,
+      price_kurus, price_display,
+      weeks, audience, related_ebook_slugs,
+      cohort_status, cohort_start_display, cohort_capacity,
+      seo_title, seo_description,
+      is_active, sort_order
+    ) VALUES (
+      'foundation',
+      'İş İngilizcesine Sıfırdan Başla',
+      'Business English Foundation',
+      'İş hayatında İngilizce iletişim kurmaya yeni başlayan profesyoneller için.',
+      'A1–A2 seviyesindeki profesyoneller için 4 haftalık, canlı grup programı. Sıfırdan başlayarak günlük iş İngilizcesinde ihtiyaç duyduğunuz kalıpları, tanışmaları, e-postaları, telefon görüşmelerini ve toplantı planlamasını gerçek iş senaryoları üzerinden öğrenirsiniz.',
+      'A1-A2', 'Seviye 1', 'A1 – A2', 'Yeni başlayanlar için',
+      4, '4 Hafta · 60 dk · Haftada 1 canlı ders',
+      499900, '4.999 TL',
+      '[
+        {"n": 1, "title": "Kurumsal Kimlik ve İlk Tanışmalar", "desc": "Tanıtım, iletişim bilgileri ve tanışma e-postaları."},
+        {"n": 2, "title": "Günlük İş Akışı ve Talepler", "desc": "Bilgi istemek, yardım talep etmek ve nazik iletişim kurmak."},
+        {"n": 3, "title": "Toplantı Planlama ve Zaman Yönetimi", "desc": "Toplantı saatlerini planlamak, uygunluk bildirmek ve takvim yanıtları."},
+        {"n": 4, "title": "Telefon Görüşmeleri ve Mesaj Yönetimi", "desc": "Telefonu açmak, mesaj almak ve notları iletmek."}
+      ]'::jsonb,
+      '["İş hayatında İngilizceyi ilk kez düzenli kullanacaklar","Basit e-posta ve tanışma cümlelerinde takılanlar","İngilizce toplantı davetlerine cevap vermekte zorlananlar","Yurt dışı meslektaşlarla telefonda temel iletişim kuramayanlar"]'::jsonb,
+      ARRAY['kurumsal-iletisim-toplantilar'],
+      'waitlist', 'Eylül 2026''nın ilk haftası', 6,
+      'A1-A2 İş İngilizcesi Kursu | Business English Foundation',
+      'İş İngilizcesine sıfırdan başlayın. A1-A2 profesyoneller için 4 haftalık online Business English programı.',
+      true, 1
+    ) ON CONFLICT (slug) DO NOTHING`,
+
+    `INSERT INTO courses (
+      slug, title, title_en, subtitle, description,
+      level, level_badge, level_cefr, level_audience,
+      duration_weeks, duration_label,
+      price_kurus, price_display,
+      weeks, audience, related_ebook_slugs,
+      cohort_status, cohort_start_display, cohort_capacity,
+      seo_title, seo_description,
+      is_active, sort_order
+    ) VALUES (
+      'diplomacy',
+      'Toplantıyı Sen Yönet',
+      'Corporate Diplomacy & Crisis Management',
+      'Toplantılarda söz almak, kriz yönetmek, diplomatik iletişim kurmak ve etki yaratmak için.',
+      'B1–B2 seviyesindeki orta ve üst düzey profesyoneller için 4 haftalık, canlı grup programı. Toplantı yönetiminden zorlu mülakatlara, kriz e-postalarından ikna konuşmalarına kadar profesyonel etki alanınızı genişletecek stratejik iletişim becerilerini gerçek iş senaryoları üzerinden geliştirin.',
+      'B1-B2', 'Seviye 2', 'B1 – B2', 'Orta seviye ve üstü',
+      4, '4 Hafta · 60 dk · Haftada 1 canlı ders',
+      499900, '4.999 TL',
+      '[
+        {"n": 1, "title": "Profesyonel İmaj ve Zorlu Mülakatlar", "desc": "STAR yöntemi, zorlu sorulara stratejik ve etkili yanıtlar."},
+        {"n": 2, "title": "Toplantı Yönetimi ve Kararlı İletişim", "desc": "Söz almak, profesyonel şekilde söz kesmek, karşıt görüşleri yönetmek ve toplantıya yön vermek."},
+        {"n": 3, "title": "Kriz E-postaları ve Diplomatik İletişim", "desc": "Kötü haber verme, diplomatik ''hayır'' deme ve kriz anlarında iletişim."},
+        {"n": 4, "title": "İkna Teknikleri ve Paydaş Yönetimi", "desc": "Fikir satma, ikna konuşmaları ve paydaşları etkileme."}
+      ]'::jsonb,
+      '["Uluslararası toplantılarda söz alıp yön vermek isteyenler","Diplomatik hayır demeyi öğrenmek isteyen yöneticiler","Kriz anlarında etkili iletişim kurması gereken profesyoneller","Zorlu mülakatlarda STAR yöntemiyle güçlü cevaplar vermek isteyenler","Yurt dışı paydaşlarla ikna konuşmaları yapan satış, satınalma, yönetim ekipleri"]'::jsonb,
+      ARRAY['kurumsal-iletisim-toplantilar','liderlik-insan-kaynaklari-kuresel-operasyonlar','kurumsal-strateji-finansal-analiz-risk-yonetimi','pazarlama-satis-musteri-iliskileri'],
+      'waitlist', 'Eylül 2026''nın ilk haftası', 6,
+      'B1-B2 İş İngilizcesi Kursu | Toplantı ve İletişim',
+      'B1-B2 profesyoneller için 4 haftalık online İş İngilizcesi programı. Toplantı yönetimi, kriz iletişimi, ikna teknikleri ve zorlu mülakatlar.',
+      true, 2
+    ) ON CONFLICT (slug) DO NOTHING`,
+
     // content_articles'a podcast audio + duration kolonları
     // content_type değerleri: 'article' | 'podcast' | 'video'
     `ALTER TABLE content_articles ADD COLUMN IF NOT EXISTS audio_url TEXT`,
