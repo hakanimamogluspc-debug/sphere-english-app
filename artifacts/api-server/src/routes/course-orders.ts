@@ -79,7 +79,10 @@ router.post("/course-orders/checkout", async (req: Request, res: Response) => {
       basketId: `CO-${orderToken}`,
       paymentGroup: "PRODUCT",
       callbackUrl,
-      enabledInstallments: [1, 2, 3, 6, 9],
+      // Taksit — Iyzico merchant panel'indeki BÜTÜN banka anlaşmalarına izin ver.
+      // Dar liste yerine (1..12 kapsar) → Iyzico kullanıcının bankasına göre kesip
+      // uygulanabilir taksitleri gösterir. Bkz. iyzico docs: enabledInstallments.
+      enabledInstallments: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
       buyer: {
         id: orderToken,
         name: firstName,
