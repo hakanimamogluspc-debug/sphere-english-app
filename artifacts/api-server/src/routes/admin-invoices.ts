@@ -231,6 +231,186 @@ router.post(
   },
 );
 
+// ─── POST /admin/invoices/manual ──────────────────────────────────────
+// Admin panelden manuel fatura — DRAFT olarak kaydeder (Luca'ya GİTMEZ).
+// Sonra admin taslakları /admin/invoices/drafts sayfasında görür, "Kes" ile Luca'ya gönderilir.
+router.post(
+  "/admin/invoices/manual",
+  authMiddleware,
+  requireAdmin,
+  async (req: Request, res: Response) => {
+    try {
+      const b = (req.body ?? {}) as any;
+
+      // Validation
+      const buyerType: "individual" | "corporate" = b.buyerType === "corporate" ? "corporate" : "individual";
+      const buyerName = String(b.buyerName ?? "").trim();
+      const buyerEmail = String(b.buyerEmail ?? "").trim().toLowerCase();
+      const buyerPhone = b.buyerPhone ? String(b.buyerPhone).trim() : undefined;
+      const buyerTaxId = String(b.buyerTaxId ?? "").replace(/\D/g, "").trim();
+      const buyerTaxOffice = b.buyerTaxOffice ? String(b.buyerTaxOffice).trim() : undefined;
+      const buyerCompanyName = b.buyerCompanyName ? String(b.buyerCompanyName).trim() : undefined;
+      const buyerReceiverInboxTag = b.buyerReceiverInboxTag ? String(b.buyerReceiverInboxTag).trim() : undefined;
+      const buyerAddress = String(b.buyerAddress ?? "").trim();
+      const buyerCity = String(b.buyerCity ?? "").trim();
+      const buyerDistrict = String(b.buyerDistrict ?? "").trim();
+      const buyerPostalCode = b.buyerPostalCode ? String(b.buyerPostalCode).trim() : undefined;
+      const productName = String(b.productName ?? "").trim();
+      const priceKurus = parseInt(String(b.priceKurus ?? 0), 10);
+      const vatRate = parseInt(String(b.vatRate ?? 20), 10);
+      const note = b.note ? String(b.note).trim() : undefined;
+      const sendMailAutomatically = b.sendMailAutomatically !== false;
+
+      if (!buyerName || buyerName.length < 2) return res.status(400).json({ ok: false, error: "Alıcı adı gerekli" });
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(buyerEmail)) return res.status(400).json({ ok: false, error: "Geçerli e-posta gerekli" });
+      if (buyerType === "individual" && buyerTaxId.length !== 11) return res.status(400).json({ ok: false, error: "Bireysel için TC (11 hane) gerekli" });
+      if (buyerType === "corporate" && buyerTaxId.length !== 10) return res.status(400).json({ ok: false, error: "Kurumsal için VKN (10 hane) gerekli" });
+      if (buyerType === "corporate" && (!buyerTaxOffice || !buyerCompanyName)) return res.status(400).json({ ok: false, error: "Kurumsal için vergi dairesi ve şirket unvanı gerekli" });
+      if (!buyerAddress || buyerAddress.length < 5) return res.status(400).json({ ok: false, error: "Açık adres gerekli" });
+      if (!buyerCity || !buyerDistrict) return res.status(400).json({ ok: false, error: "İl ve ilçe gerekli" });
+      if (!productName || productName.length < 2) return res.status(400).json({ ok: false, error: "Ürün/hizmet açıklaması gerekli" });
+      if (!priceKurus || priceKurus < 100) return res.status(400).json({ ok: false, error: "Tutar (kuruş cinsinden) 100'den büyük olmalı" });
+      if (![0, 1, 8, 10, 18, 20].includes(vatRate)) return res.status(400).json({ ok: false, error: "Geçerli KDV oranı seçin" });
+
+      // KDV DAHİL fiyat varsayımı — KDV hariç birim fiyatı hesapla
+      const unitPriceKurus = Math.round(priceKurus / (1 + vatRate / 100));
+      const manualSourceId = Date.now();
+      const productCode = `manual-${manualSourceId}`;
+      const adminUserId = (req as any).user?.id ?? null;
+      const adminEmail = (req as any).user?.email ?? "admin";
+
+      // TASLAK olarak kaydet — Luca'ya gitmez, admin onayı bekler
+      const inputJson = {
+        source: { type: "manual", id: manualSourceId, orderId: `MANUAL-${manualSourceId}` },
+        buyer: {
+          email: buyerEmail,
+          name: buyerType === "corporate" ? (buyerCompanyName ?? buyerName) : buyerName,
+          type: buyerType,
+          taxId: buyerTaxId,
+          taxOffice: buyerTaxOffice,
+          companyName: buyerCompanyName,
+          receiverInboxTag: buyerReceiverInboxTag,
+          address: buyerAddress,
+          city: buyerCity,
+          district: buyerDistrict,
+          postalCode: buyerPostalCode,
+          country: "Türkiye",
+          phone: buyerPhone,
+        },
+        lineItems: [{ productCode, productName, quantity: 1, unitPriceKurus, vatRate, note }],
+        notes: [
+          "Sphere English — Manuel fatura (admin panel)",
+          `Kesen: ${adminEmail}`,
+        ],
+        paymentReference: `MANUAL-${manualSourceId}`,
+        sendMailAutomatically,
+      };
+
+      const r: any = await db.execute(sql`
+        INSERT INTO invoice_drafts (input_json, buyer_name, buyer_email, product_name, amount_kurus, created_by)
+        VALUES (${JSON.stringify(inputJson)}::jsonb, ${buyerName}, ${buyerEmail}, ${productName}, ${priceKurus}, ${adminUserId})
+        RETURNING id, created_at
+      `);
+      const draft = (r.rows ?? r)[0] as any;
+      return res.json({
+        ok: true,
+        draftId: Number(draft.id),
+        status: "draft",
+        message: "Taslak olarak kaydedildi. Faturalar → Taslaklar sekmesinden 'Kes' ile onaylayabilirsin.",
+      });
+    } catch (e: any) {
+      console.error("[admin/invoices/manual] HATA:", e?.message);
+      return res.status(500).json({ ok: false, error: e?.message });
+    }
+  },
+);
+
+// ─── GET /admin/invoices/drafts — bekleyen taslak fatura listesi ──────
+router.get(
+  "/admin/invoices/drafts",
+  authMiddleware,
+  requireAdmin,
+  async (_req: Request, res: Response) => {
+    try {
+      const r: any = await db.execute(sql`
+        SELECT id, buyer_name, buyer_email, product_name, amount_kurus,
+               created_by, created_at, updated_at
+        FROM invoice_drafts
+        WHERE issued_at IS NULL
+        ORDER BY created_at DESC
+        LIMIT 200
+      `);
+      return res.json({ drafts: r.rows ?? r });
+    } catch (e: any) {
+      return res.status(500).json({ error: e?.message });
+    }
+  },
+);
+
+// ─── GET /admin/invoices/drafts/:id — taslak detay (düzenleme için) ──
+router.get(
+  "/admin/invoices/drafts/:id",
+  authMiddleware,
+  requireAdmin,
+  async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id, 10);
+      const r: any = await db.execute(sql`SELECT * FROM invoice_drafts WHERE id = ${id} LIMIT 1`);
+      const draft = (r.rows ?? r)[0];
+      if (!draft) return res.status(404).json({ error: "Taslak bulunamadı" });
+      return res.json({ draft });
+    } catch (e: any) {
+      return res.status(500).json({ error: e?.message });
+    }
+  },
+);
+
+// ─── POST /admin/invoices/drafts/:id/issue — taslağı Luca'ya gönder ───
+router.post(
+  "/admin/invoices/drafts/:id/issue",
+  authMiddleware,
+  requireAdmin,
+  async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id, 10);
+      const r: any = await db.execute(sql`SELECT * FROM invoice_drafts WHERE id = ${id} AND issued_at IS NULL LIMIT 1`);
+      const draft = (r.rows ?? r)[0];
+      if (!draft) return res.status(404).json({ ok: false, error: "Taslak bulunamadı veya zaten kesilmiş" });
+
+      const input = draft.input_json;
+      const result = await issueInvoiceForSource(input);
+
+      if (result.ok) {
+        await db.execute(sql`
+          UPDATE invoice_drafts
+          SET issued_at = NOW(), issued_invoice_id = ${result.invoiceId ?? null}, updated_at = NOW()
+          WHERE id = ${id}
+        `);
+      }
+      return res.json(result);
+    } catch (e: any) {
+      console.error("[admin/invoices/drafts/issue] HATA:", e?.message);
+      return res.status(500).json({ ok: false, error: e?.message });
+    }
+  },
+);
+
+// ─── DELETE /admin/invoices/drafts/:id — taslağı sil ──────────────────
+router.delete(
+  "/admin/invoices/drafts/:id",
+  authMiddleware,
+  requireAdmin,
+  async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id, 10);
+      await db.execute(sql`DELETE FROM invoice_drafts WHERE id = ${id} AND issued_at IS NULL`);
+      return res.json({ ok: true });
+    } catch (e: any) {
+      return res.status(500).json({ error: e?.message });
+    }
+  },
+);
+
 // ─── POST /admin/invoices/issue-for-purchase ─────────────────────────
 // Manuel fatura kesme — mevcut bir satın alma için
 // Body: { purchaseId: N } veya { orderId: "cart_..." }

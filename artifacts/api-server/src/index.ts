@@ -1585,6 +1585,23 @@ async function runStartupMigrations() {
     `ALTER TABLE course_orders ADD COLUMN IF NOT EXISTS billing_district VARCHAR(60)`,
     `ALTER TABLE course_orders ADD COLUMN IF NOT EXISTS billing_postal_code VARCHAR(10)`,
 
+    // ─── Invoice drafts — admin panelden manuel fatura taslakları ──────
+    // Luca'ya gitmeden önce admin gözden geçirir, onaylayınca "Kes" edilir.
+    `CREATE TABLE IF NOT EXISTS invoice_drafts (
+      id SERIAL PRIMARY KEY,
+      input_json JSONB NOT NULL,
+      buyer_name VARCHAR(200),
+      buyer_email VARCHAR(200),
+      product_name VARCHAR(300),
+      amount_kurus INTEGER,
+      created_by INTEGER,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      issued_at TIMESTAMPTZ,
+      issued_invoice_id INTEGER
+    )`,
+    `CREATE INDEX IF NOT EXISTS invoice_drafts_pending_idx ON invoice_drafts (created_at DESC) WHERE issued_at IS NULL`,
+
     // ─── Courses (Admin CRUD katalog) ─────────────────────────────────
     // E-kitap gibi admin panelden yönetilebilir kurs kataloğu.
     // course-orders bu tablodan slug ile programme çeker.

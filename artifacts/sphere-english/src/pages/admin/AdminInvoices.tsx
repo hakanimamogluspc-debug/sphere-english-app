@@ -117,6 +117,7 @@ export default function AdminInvoices() {
   const [healthChecking, setHealthChecking] = useState(false);
 
   const [testOpen, setTestOpen] = useState(false);
+  const [manualOpen, setManualOpen] = useState(false);
   const [detailId, setDetailId] = useState<number | null>(null);
 
   // ─── Load list ────────────────────────────────────────────────────
@@ -243,6 +244,14 @@ export default function AdminInvoices() {
               Test Faturası
             </button>
             <button
+              onClick={() => setManualOpen(true)}
+              className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-3 py-2 text-sm font-medium text-white shadow-sm hover:bg-emerald-500"
+              title="WhatsApp/telefon satışları için manuel fatura kes"
+            >
+              <FileText className="h-4 w-4" />
+              Yeni Fatura Kes
+            </button>
+            <button
               onClick={load}
               disabled={loading}
               className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-3 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-500 disabled:opacity-50"
@@ -293,6 +302,9 @@ export default function AdminInvoices() {
           <StatTile label="Başarısız"  count={counts.failed} color="red" icon={XCircle} />
           <StatTile label="İptal"      count={counts.canceled} color="gray" icon={Ban} />
         </div>
+
+        {/* Bekleyen Taslaklar paneli (manuel fatura draft'ları) */}
+        <DraftsPanel />
 
         {/* Faturalanmamış Siparişler paneli */}
         <UnbilledOrdersPanel onIssued={load} />
@@ -464,6 +476,7 @@ export default function AdminInvoices() {
 
       {/* Test invoice modal */}
       {testOpen && <TestInvoiceModal onClose={() => setTestOpen(false)} onDone={load} />}
+      {manualOpen && <ManualInvoiceModal onClose={() => setManualOpen(false)} onDone={load} />}
 
       {/* Detail drawer */}
       {detailId != null && <InvoiceDetailDrawer id={detailId} onClose={() => setDetailId(null)} onChanged={load} />}
@@ -496,6 +509,426 @@ function StatTile({
         <div className={`rounded-md p-1 ${bg}`}><Icon className="h-4 w-4" /></div>
       </div>
       <div className="mt-1 text-2xl font-bold text-gray-900">{count}</div>
+    </div>
+  );
+}
+
+// ─── Bekleyen Taslak Faturalar paneli ─────────────────────────────────
+type DraftRow = {
+  id: number;
+  buyer_name: string | null;
+  buyer_email: string | null;
+  product_name: string | null;
+  amount_kurus: number | null;
+  created_at: string;
+};
+
+function DraftsPanel() {
+  const [drafts, setDrafts] = useState<DraftRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [busyId, setBusyId] = useState<number | null>(null);
+
+  async function load() {
+    setLoading(true);
+    try {
+      const d = await apiFetch("/admin/invoices/drafts");
+      setDrafts(d.drafts ?? []);
+    } catch (e: any) {
+      console.warn("[drafts] yüklenemedi:", e?.message);
+      setDrafts([]);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    load();
+    const t = setInterval(load, 20000); // 20 sn otomatik refresh
+    return () => clearInterval(t);
+  }, []);
+
+  async function issueDraft(id: number) {
+    if (!confirm("Bu taslak Luca'ya gönderilecek. Fatura kesildikten sonra iptal etmek zor. Devam edilsin mi?")) return;
+    setBusyId(id);
+    try {
+      const r = await apiFetch(`/admin/invoices/drafts/${id}/issue`, { method: "POST" });
+      if (r.ok) {
+        alert(`✓ Fatura kesildi\nETTN: ${r.ettn ?? "—"}`);
+        await load();
+      } else {
+        alert(`✗ Hata: ${r.error ?? "bilinmiyor"}`);
+      }
+    } catch (e: any) {
+      alert("Hata: " + e.message);
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function deleteDraft(id: number, buyerName: string | null) {
+    if (!confirm(`"${buyerName ?? "Taslak"}" silinsin mi? Geri alınamaz.`)) return;
+    setBusyId(id);
+    try {
+      await apiFetch(`/admin/invoices/drafts/${id}`, { method: "DELETE" });
+      await load();
+    } catch (e: any) {
+      alert("Hata: " + e.message);
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  if (loading && drafts.length === 0) return null;
+  if (drafts.length === 0) return null;
+
+  return (
+    <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 p-4">
+      <div className="mb-3 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Clock className="h-4 w-4 text-amber-700" />
+          <h3 className="text-sm font-semibold text-amber-900">
+            Bekleyen Taslak Faturalar ({drafts.length})
+          </h3>
+        </div>
+        <span className="text-[11px] text-amber-800">
+          Luca'ya gönderilmeden önce buradan inceleyip onaylayabilirsin
+        </span>
+      </div>
+      <div className="space-y-2">
+        {drafts.map((d) => (
+          <div key={d.id} className="flex items-center gap-3 rounded-md border border-amber-200 bg-white px-3 py-2 text-sm">
+            <div className="flex-1 min-w-0">
+              <div className="font-semibold text-gray-900 truncate">{d.buyer_name ?? "—"}</div>
+              <div className="text-xs text-gray-500 truncate">
+                {d.buyer_email ?? "—"} · {d.product_name ?? "—"}
+              </div>
+            </div>
+            <div className="text-right flex-shrink-0">
+              <div className="text-sm font-bold text-gray-900">{formatTRY(Number(d.amount_kurus ?? 0))}</div>
+              <div className="text-[10px] text-gray-400">{new Date(d.created_at).toLocaleString("tr-TR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}</div>
+            </div>
+            <div className="flex items-center gap-1 flex-shrink-0">
+              <button
+                onClick={() => issueDraft(d.id)}
+                disabled={busyId === d.id}
+                className="inline-flex items-center gap-1 rounded bg-emerald-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-emerald-500 disabled:opacity-50"
+                title="Luca'ya gönder ve fatura kes"
+              >
+                {busyId === d.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <CheckCircle2 className="h-3 w-3" />}
+                Kes
+              </button>
+              <button
+                onClick={() => deleteDraft(d.id, d.buyer_name)}
+                disabled={busyId === d.id}
+                className="inline-flex items-center gap-1 rounded border border-red-300 bg-white px-2.5 py-1 text-xs font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50"
+                title="Taslağı sil"
+              >
+                <XCircle className="h-3 w-3" />
+                Sil
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── Manual invoice modal — WhatsApp/telefon satışları için ────────────
+type ProductOption = {
+  key: string;      // 'ebook-42', 'course-foundation'
+  label: string;    // 'E-Kitap · Kurumsal İletişim & Toplantılar'
+  productName: string;
+  priceTL: number;
+  type: "ebook" | "course";
+};
+
+function ManualInvoiceModal({ onClose, onDone }: { onClose: () => void; onDone: () => void }) {
+  const [buyerType, setBuyerType] = useState<"individual" | "corporate">("individual");
+  const [buyerName, setBuyerName] = useState("");
+  const [buyerEmail, setBuyerEmail] = useState("");
+  const [buyerPhone, setBuyerPhone] = useState("");
+  const [buyerTaxId, setBuyerTaxId] = useState("");
+  const [buyerTaxOffice, setBuyerTaxOffice] = useState("");
+  const [buyerCompanyName, setBuyerCompanyName] = useState("");
+  const [buyerAddress, setBuyerAddress] = useState("");
+  const [buyerCity, setBuyerCity] = useState("");
+  const [buyerDistrict, setBuyerDistrict] = useState("");
+  const [buyerPostalCode, setBuyerPostalCode] = useState("");
+  const [productSelect, setProductSelect] = useState<string>(""); // '' = manuel
+  const [productName, setProductName] = useState("");
+  const [amountTL, setAmountTL] = useState<string>("");
+  const [vatRate, setVatRate] = useState<number>(20);
+  const [note, setNote] = useState("");
+  const [sendMail, setSendMail] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<any>(null);
+  const [productOpts, setProductOpts] = useState<ProductOption[]>([]);
+  const [productsLoading, setProductsLoading] = useState(true);
+
+  // Modal açılınca kitap + kurs listesini çek
+  useEffect(() => {
+    (async () => {
+      setProductsLoading(true);
+      try {
+        const [ebooksRes, coursesRes] = await Promise.allSettled([
+          apiFetch("/admin/ebooks"),
+          apiFetch("/admin/courses"),
+        ]);
+        const opts: ProductOption[] = [];
+        if (ebooksRes.status === "fulfilled" && Array.isArray(ebooksRes.value?.ebooks)) {
+          for (const e of ebooksRes.value.ebooks) {
+            if (!e?.is_active) continue;
+            opts.push({
+              key: `ebook-${e.id}`,
+              label: `E-Kitap · ${e.title}`,
+              productName: `Sphere English E-Kitap · ${e.title}`,
+              priceTL: Number(e.price_try ?? 0),
+              type: "ebook",
+            });
+          }
+        }
+        if (coursesRes.status === "fulfilled" && Array.isArray(coursesRes.value?.courses)) {
+          for (const c of coursesRes.value.courses) {
+            if (!c?.is_active) continue;
+            opts.push({
+              key: `course-${c.slug}`,
+              label: `Kurs · ${c.title}`,
+              productName: `Sphere English Kurs · ${c.title}`,
+              priceTL: Number(c.price_kurus ?? 0) / 100,
+              type: "course",
+            });
+          }
+        }
+        setProductOpts(opts);
+      } catch {
+        // Sessizce — manuel giriş her zaman çalışır
+      } finally {
+        setProductsLoading(false);
+      }
+    })();
+  }, []);
+
+  function onProductChange(key: string) {
+    setProductSelect(key);
+    if (!key) return; // manuel — dokunma
+    const opt = productOpts.find((o) => o.key === key);
+    if (!opt) return;
+    setProductName(opt.productName);
+    setAmountTL(opt.priceTL.toFixed(2).replace(".", ","));
+  }
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    setResult(null);
+    try {
+      const priceKurus = Math.round(parseFloat(amountTL.replace(",", ".")) * 100);
+      const r = await apiFetch("/admin/invoices/manual", {
+        method: "POST",
+        body: JSON.stringify({
+          buyerType,
+          buyerName,
+          buyerEmail,
+          buyerPhone: buyerPhone || undefined,
+          buyerTaxId: buyerTaxId.replace(/\D/g, ""),
+          buyerTaxOffice: buyerType === "corporate" ? buyerTaxOffice : undefined,
+          buyerCompanyName: buyerType === "corporate" ? buyerCompanyName : undefined,
+          buyerAddress,
+          buyerCity,
+          buyerDistrict,
+          buyerPostalCode: buyerPostalCode || undefined,
+          productName,
+          priceKurus,
+          vatRate,
+          note: note || undefined,
+          sendMailAutomatically: sendMail,
+        }),
+      });
+      setResult(r);
+      if (r.ok) onDone();
+    } catch (e: any) {
+      setResult({ ok: false, error: e?.message });
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const inputCls = "mt-1 w-full rounded border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:ring-emerald-500";
+  const labelCls = "block text-xs font-semibold text-gray-700";
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 overflow-y-auto" onClick={onClose}>
+      <div className="w-full max-w-2xl rounded-lg bg-white shadow-xl my-8" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between border-b px-5 py-3">
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900">Manuel Fatura Kes</h3>
+            <p className="text-xs text-gray-500">WhatsApp / telefon satışları için · KDV DAHİL tutar</p>
+          </div>
+          <button onClick={onClose} className="rounded p-1 text-gray-400 hover:bg-gray-100"><X className="h-4 w-4" /></button>
+        </div>
+
+        <form onSubmit={submit} className="p-5 space-y-4">
+
+          {/* Alıcı tipi */}
+          <div>
+            <label className={labelCls}>Fatura Tipi *</label>
+            <div className="mt-1 grid grid-cols-2 gap-2">
+              {(["individual", "corporate"] as const).map((t) => (
+                <label key={t} className={`flex items-center gap-2 px-3 py-2 rounded border-2 cursor-pointer transition-colors ${
+                  buyerType === t ? "border-emerald-500 bg-emerald-50" : "border-gray-200 hover:border-gray-300"
+                }`}>
+                  <input type="radio" name="buyerType" checked={buyerType === t} onChange={() => setBuyerType(t)} className="accent-emerald-600" />
+                  <span className="text-sm font-medium text-gray-800">{t === "individual" ? "Bireysel" : "Kurumsal (VKN)"}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Alıcı bilgileri */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className={labelCls}>{buyerType === "individual" ? "Ad Soyad *" : "Yetkili adı *"}</label>
+              <input required type="text" value={buyerName} onChange={(e) => setBuyerName(e.target.value)} className={inputCls} placeholder="Ayşe Yıldız" />
+            </div>
+            <div>
+              <label className={labelCls}>E-posta *</label>
+              <input required type="email" value={buyerEmail} onChange={(e) => setBuyerEmail(e.target.value)} className={inputCls} placeholder="ayse@ornek.com" />
+            </div>
+            <div>
+              <label className={labelCls}>Telefon</label>
+              <input type="tel" value={buyerPhone} onChange={(e) => setBuyerPhone(e.target.value)} className={inputCls} placeholder="+90 5XX XXX XX XX" />
+            </div>
+            <div>
+              <label className={labelCls}>{buyerType === "individual" ? "TC Kimlik No *" : "VKN *"}</label>
+              <input required type="text" inputMode="numeric" maxLength={buyerType === "individual" ? 11 : 10}
+                value={buyerTaxId}
+                onChange={(e) => setBuyerTaxId(e.target.value.replace(/\D/g, "").slice(0, buyerType === "individual" ? 11 : 10))}
+                className={inputCls + " font-mono"}
+                placeholder={buyerType === "individual" ? "11 haneli" : "10 haneli"} />
+            </div>
+          </div>
+
+          {buyerType === "corporate" && (
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className={labelCls}>Şirket Unvanı *</label>
+                <input required type="text" value={buyerCompanyName} onChange={(e) => setBuyerCompanyName(e.target.value)} className={inputCls} placeholder="ABC İletişim A.Ş." />
+              </div>
+              <div>
+                <label className={labelCls}>Vergi Dairesi *</label>
+                <input required type="text" value={buyerTaxOffice} onChange={(e) => setBuyerTaxOffice(e.target.value)} className={inputCls} placeholder="Ankara Kurumlar" />
+              </div>
+            </div>
+          )}
+
+          {/* Adres */}
+          <div>
+            <label className={labelCls}>Açık Adres *</label>
+            <textarea required value={buyerAddress} onChange={(e) => setBuyerAddress(e.target.value)} rows={2} className={inputCls} placeholder="Mahalle, cadde, bina no" />
+          </div>
+          <div className="grid grid-cols-3 gap-3">
+            <div>
+              <label className={labelCls}>İl *</label>
+              <input required type="text" value={buyerCity} onChange={(e) => setBuyerCity(e.target.value)} className={inputCls} placeholder="Ankara" />
+            </div>
+            <div>
+              <label className={labelCls}>İlçe *</label>
+              <input required type="text" value={buyerDistrict} onChange={(e) => setBuyerDistrict(e.target.value)} className={inputCls} placeholder="Çankaya" />
+            </div>
+            <div>
+              <label className={labelCls}>Posta Kodu</label>
+              <input type="text" inputMode="numeric" maxLength={5}
+                value={buyerPostalCode}
+                onChange={(e) => setBuyerPostalCode(e.target.value.replace(/\D/g, ""))}
+                className={inputCls} placeholder="06520" />
+            </div>
+          </div>
+
+          {/* Ürün + Tutar */}
+          <div className="border-t pt-4 space-y-3">
+            <div>
+              <label className={labelCls}>Ürün Seç {productsLoading && <span className="text-gray-400 font-normal">(yükleniyor…)</span>}</label>
+              <select
+                value={productSelect}
+                onChange={(e) => onProductChange(e.target.value)}
+                className={inputCls}
+              >
+                <option value="">— Manuel giriş —</option>
+                {productOpts.filter((o) => o.type === "ebook").length > 0 && (
+                  <optgroup label="E-Kitaplar">
+                    {productOpts.filter((o) => o.type === "ebook").map((o) => (
+                      <option key={o.key} value={o.key}>{o.label} — {o.priceTL.toFixed(2)} TL</option>
+                    ))}
+                  </optgroup>
+                )}
+                {productOpts.filter((o) => o.type === "course").length > 0 && (
+                  <optgroup label="Kurslar">
+                    {productOpts.filter((o) => o.type === "course").map((o) => (
+                      <option key={o.key} value={o.key}>{o.label} — {o.priceTL.toFixed(2)} TL</option>
+                    ))}
+                  </optgroup>
+                )}
+              </select>
+              <p className="text-[11px] text-gray-500 mt-1">Kitap/kurs seçince isim ve fiyat otomatik doldurulur. Manuel değişiklik yapabilirsin.</p>
+            </div>
+            <div>
+              <label className={labelCls}>Ürün / Hizmet *</label>
+              <input required type="text" value={productName} onChange={(e) => setProductName(e.target.value)} className={inputCls}
+                placeholder="Örn: Sphere English Business English Kurs · Eylül 2026" />
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div className="col-span-2">
+                <label className={labelCls}>Tutar (TL, KDV DAHİL) *</label>
+                <input required type="text" inputMode="decimal" value={amountTL} onChange={(e) => setAmountTL(e.target.value)} className={inputCls + " font-mono"} placeholder="4999,00" />
+              </div>
+              <div>
+                <label className={labelCls}>KDV Oranı *</label>
+                <select value={vatRate} onChange={(e) => setVatRate(parseInt(e.target.value))} className={inputCls}>
+                  <option value={20}>%20 (standart)</option>
+                  <option value={10}>%10 (eğitim akrediteli)</option>
+                  <option value={1}>%1</option>
+                  <option value={0}>%0 (istisna)</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <label className={labelCls}>Not (fatura üzerinde görünür)</label>
+              <input type="text" value={note} onChange={(e) => setNote(e.target.value)} className={inputCls} placeholder="Ödeme: WhatsApp havale · IBAN xxx" />
+            </div>
+            <label className="flex items-center gap-2 text-sm text-gray-700">
+              <input type="checkbox" checked={sendMail} onChange={(e) => setSendMail(e.target.checked)} className="accent-emerald-600" />
+              Faturayı alıcıya otomatik e-posta ile gönder
+            </label>
+          </div>
+
+          {result && (
+            <div className={`rounded p-3 text-sm ${result.ok ? "bg-emerald-50 text-emerald-800" : "bg-red-50 text-red-800"}`}>
+              {result.ok ? (
+                <>
+                  <div className="font-semibold">✓ Taslak oluşturuldu (Draft #{result.draftId})</div>
+                  <div className="mt-1 text-xs">{result.message ?? "Taslaklar sekmesinden inceleyip 'Kes' ile onaylayabilirsin."}</div>
+                </>
+              ) : (
+                <>
+                  <div className="font-semibold">✗ Taslak oluşturulamadı</div>
+                  <div className="mt-1 text-xs break-all">{result.error}</div>
+                </>
+              )}
+            </div>
+          )}
+
+          <div className="flex justify-end gap-2 border-t pt-3">
+            <button type="button" onClick={onClose}
+              className="rounded border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50">Kapat</button>
+            <button type="submit" disabled={loading}
+              className="inline-flex items-center gap-2 rounded bg-emerald-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-emerald-500 disabled:opacity-50">
+              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
+              Taslak Oluştur
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }
