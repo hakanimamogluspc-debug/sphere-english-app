@@ -782,9 +782,9 @@ function ManualInvoiceModal({ onClose, onDone }: { onClose: () => void; onDone: 
   const labelCls = "block text-xs font-semibold text-gray-700";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 overflow-y-auto" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 p-4 overflow-y-auto" onClick={onClose}>
       <div className="w-full max-w-2xl rounded-lg bg-white shadow-xl my-8" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between border-b px-5 py-3">
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b bg-white px-5 py-3 rounded-t-lg">
           <div>
             <h3 className="text-lg font-semibold text-gray-900">Manuel Fatura Kes</h3>
             <p className="text-xs text-gray-500">WhatsApp / telefon satışları için · KDV DAHİL tutar</p>
