@@ -30,6 +30,139 @@ import { findProgramme, loadProgrammes, COURSE_PROGRAMMES, invalidateCoursesCach
 import { sendEmail } from "../lib/email";
 import { issueInvoiceForSource } from "../lib/invoice/index.js";
 
+// ─── Email templates ─────────────────────────────────────────
+const BRAND_NAVY = "#1B365D";
+const BRAND_SKY = "#0ea5e9";
+
+function formatTRY(kurus: number): string {
+  return new Intl.NumberFormat("tr-TR", { style: "currency", currency: "TRY", maximumFractionDigits: 2 }).format(kurus / 100);
+}
+
+function formatDT(iso: string | Date | null): string {
+  if (!iso) return "—";
+  const d = typeof iso === "string" ? new Date(iso) : iso;
+  return d.toLocaleString("tr-TR", { day: "2-digit", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" });
+}
+
+/** Müşteri hoş geldin maili — kayıt formu tamamlanınca */
+function buildCustomerWelcomeHtml(order: any): string {
+  const priceDisplay = formatTRY(Number(order.amount_kurus));
+  return `<!DOCTYPE html>
+<html lang="tr"><head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:24px 16px;background:#f3f4f6;font-family:-apple-system,'Segoe UI',Roboto,sans-serif;">
+<div style="max-width:600px;margin:0 auto;background:#ffffff;border-radius:8px;overflow:hidden;">
+  <div style="background:${BRAND_NAVY};padding:32px 24px;text-align:center;">
+    <div style="color:#7dd3fc;font-size:11px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;margin-bottom:8px;">KAYDIN ONAYLANDI</div>
+    <h1 style="color:#ffffff;margin:0;font-size:24px;font-weight:700;letter-spacing:-0.02em;">Sphere English Ailesine Hoş Geldin!</h1>
+  </div>
+  <div style="padding:32px 24px;color:${BRAND_NAVY};line-height:1.6;">
+    <p style="font-size:16px;margin:0 0 20px;">Merhaba <strong>${escapeHtml(order.buyer_name)}</strong>,</p>
+    <p style="font-size:15px;color:#4a5568;margin:0 0 24px;"><strong>${escapeHtml(order.programme_title)}</strong> programı için kaydın onaylandı. Sipariş bilgilerin aşağıda — bu maili saklamanı öneririz.</p>
+    <div style="background:#f0f7ff;border:1px solid rgba(14,165,233,0.25);border-radius:12px;padding:18px;margin:20px 0;">
+      <table style="width:100%;font-size:13px;border-collapse:collapse;">
+        <tr><td style="color:#6b7280;padding:4px 0;">Program</td><td style="text-align:right;font-weight:500;color:${BRAND_NAVY};">${escapeHtml(order.programme_title)}</td></tr>
+        <tr><td style="color:#6b7280;padding:4px 0;">Tutar</td><td style="text-align:right;font-weight:500;color:${BRAND_NAVY};">${priceDisplay}</td></tr>
+        <tr><td style="color:#6b7280;padding:4px 0;">Sipariş No</td><td style="text-align:right;font-family:monospace;font-size:11px;color:#6b7280;">${escapeHtml(order.order_token)}</td></tr>
+      </table>
+    </div>
+    <div style="background:#ecfdf5;border:1px solid #a7f3d0;border-radius:12px;padding:18px;margin:20px 0;">
+      <div style="font-size:11px;font-weight:700;color:#065f46;letter-spacing:0.14em;text-transform:uppercase;margin-bottom:6px;">SONRAKİ ADIM</div>
+      <p style="color:#064e3b;font-size:14px;margin:0;">En geç <strong>24 saat içinde</strong> ekibimiz seninle iletişime geçecek. Grup ataması, ders takvimi ve Zoom giriş bilgileri e-postana iletilecek.</p>
+    </div>
+    <p style="font-size:13px;color:#6b7280;margin:20px 0 0;">E-Arşiv faturan Iyzico entegrasyonu üzerinden birkaç dakika içinde ayrı bir mail ile gönderilecek.</p>
+    <p style="font-size:13px;color:#6b7280;margin:20px 0 0;">Sorularin için:<br>
+      <a href="mailto:info@sphereenglish.com" style="color:${BRAND_SKY};text-decoration:none;">info@sphereenglish.com</a><br>
+      <a href="https://wa.me/905066085810" style="color:${BRAND_SKY};text-decoration:none;">+90 506 608 58 10 (WhatsApp)</a>
+    </p>
+  </div>
+  <div style="background:#f9fafb;padding:16px 24px;text-align:center;font-size:11px;color:#9ca3af;border-top:1px solid #f3f4f6;">
+    © 2026 Sphere English · Türk profesyoneller için iş İngilizcesi
+  </div>
+</div>
+</body></html>`;
+}
+
+/** Admin bildirim maili — ödeme aktive olunca */
+function buildAdminNotifyHtml(order: any): string {
+  const priceDisplay = formatTRY(Number(order.amount_kurus));
+  const adminUrl = "https://app.sphereenglish.com/admin/kurs-satislari";
+  return `<!DOCTYPE html>
+<html lang="tr"><head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:24px 16px;background:#f3f4f6;font-family:-apple-system,'Segoe UI',Roboto,sans-serif;">
+<div style="max-width:600px;margin:0 auto;background:#ffffff;border-radius:8px;overflow:hidden;">
+  <div style="background:${BRAND_NAVY};padding:24px;display:flex;align-items:center;justify-content:space-between;">
+    <div>
+      <div style="color:#7dd3fc;font-size:10px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;margin-bottom:4px;">SPHERE ADMIN · YENİ SATIŞ</div>
+      <h1 style="color:#ffffff;margin:0;font-size:20px;font-weight:700;">Yeni Kurs Kaydı ✓</h1>
+    </div>
+    <div style="background:${BRAND_SKY};color:#ffffff;padding:8px 14px;border-radius:8px;font-weight:700;font-size:16px;">${priceDisplay}</div>
+  </div>
+  <div style="padding:24px;color:${BRAND_NAVY};line-height:1.6;">
+    <div style="background:#ecfdf5;border-left:3px solid #10b981;padding:12px 16px;margin-bottom:20px;font-size:13px;color:#064e3b;">
+      <strong>Aksiyon:</strong> Müşteri kayıt formunu doldurdu. <strong>24 saat içinde</strong> iletişime geç, grup atamasını yap.
+    </div>
+    <div style="border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;">
+      <div style="background:#f9fafb;padding:12px 16px;font-size:11px;font-weight:700;color:#6b7280;letter-spacing:0.12em;text-transform:uppercase;">Program</div>
+      <div style="padding:12px 16px;font-weight:500;">${escapeHtml(order.programme_title)}</div>
+    </div>
+    <div style="border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;margin-top:12px;">
+      <div style="background:#f9fafb;padding:12px 16px;font-size:11px;font-weight:700;color:#6b7280;letter-spacing:0.12em;text-transform:uppercase;">Müşteri Bilgileri</div>
+      <table style="width:100%;font-size:13px;border-collapse:collapse;">
+        <tr><td style="color:#6b7280;padding:10px 16px;width:120px;">Ad Soyad</td><td style="padding:10px 16px;font-weight:500;">${escapeHtml(order.buyer_name)}</td></tr>
+        <tr><td style="color:#6b7280;padding:10px 16px;border-top:1px solid #f3f4f6;">E-posta</td><td style="padding:10px 16px;border-top:1px solid #f3f4f6;color:${BRAND_SKY};">${escapeHtml(order.buyer_email)}</td></tr>
+        <tr><td style="color:#6b7280;padding:10px 16px;border-top:1px solid #f3f4f6;">Telefon</td><td style="padding:10px 16px;border-top:1px solid #f3f4f6;font-family:monospace;">${escapeHtml(order.buyer_phone)}</td></tr>
+        ${order.tc_kimlik ? `<tr><td style="color:#6b7280;padding:10px 16px;border-top:1px solid #f3f4f6;">TC Kimlik</td><td style="padding:10px 16px;border-top:1px solid #f3f4f6;font-family:monospace;">${escapeHtml(order.tc_kimlik)}</td></tr>` : ''}
+        ${order.sector ? `<tr><td style="color:#6b7280;padding:10px 16px;border-top:1px solid #f3f4f6;">Sektör</td><td style="padding:10px 16px;border-top:1px solid #f3f4f6;">${escapeHtml(order.sector)}</td></tr>` : ''}
+      </table>
+    </div>
+    <div style="border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;margin-top:12px;">
+      <div style="background:#f9fafb;padding:12px 16px;font-size:11px;font-weight:700;color:#6b7280;letter-spacing:0.12em;text-transform:uppercase;">Ödeme</div>
+      <table style="width:100%;font-size:13px;border-collapse:collapse;">
+        <tr><td style="color:#6b7280;padding:10px 16px;width:140px;">Tutar</td><td style="padding:10px 16px;font-weight:700;">${priceDisplay}</td></tr>
+        <tr><td style="color:#6b7280;padding:10px 16px;border-top:1px solid #f3f4f6;">Ödeme Tarihi</td><td style="padding:10px 16px;border-top:1px solid #f3f4f6;">${formatDT(order.paid_at ?? new Date())}</td></tr>
+        ${order.iyzico_payment_id ? `<tr><td style="color:#6b7280;padding:10px 16px;border-top:1px solid #f3f4f6;">Iyzico ID</td><td style="padding:10px 16px;border-top:1px solid #f3f4f6;font-family:monospace;font-size:11px;">${escapeHtml(order.iyzico_payment_id)}</td></tr>` : ''}
+      </table>
+    </div>
+    <div style="margin-top:24px;text-align:center;">
+      <a href="${adminUrl}" style="display:inline-block;padding:12px 24px;background:${BRAND_SKY};color:#ffffff;border-radius:8px;font-weight:700;font-size:13px;text-decoration:none;">Admin Panelde Aç →</a>
+    </div>
+  </div>
+  <div style="background:#f9fafb;padding:12px 24px;text-align:center;font-size:10px;color:#9ca3af;border-top:1px solid #f3f4f6;">
+    Bu bildirim otomatik gönderildi · Sphere English Admin
+  </div>
+</div>
+</body></html>`;
+}
+
+function escapeHtml(v: any): string {
+  return String(v ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+/** Müşteri hoş geldin maili (fire-and-forget) */
+function sendCustomerWelcomeEmail(orderId: number): void {
+  void (async () => {
+    try {
+      const r: any = await pool.query(
+        `SELECT order_token, programme_title, buyer_name, buyer_email, amount_kurus
+           FROM course_orders WHERE id = $1 LIMIT 1`,
+        [orderId],
+      );
+      const order = r.rows[0];
+      if (!order || !order.buyer_email) return;
+      const html = buildCustomerWelcomeHtml(order);
+      await sendEmail(order.buyer_email, `Kayıt onayı — ${order.programme_title}`, html);
+      console.info(`[COURSE-EMAIL/customer] gönderildi: orderId=${orderId} to=${order.buyer_email}`);
+    } catch (e: any) {
+      console.error(`[COURSE-EMAIL/customer] HATA: orderId=${orderId} → ${e?.message}`);
+    }
+  })();
+}
+
 /**
  * Kayıt formu tamamlanınca bireysel e-Arşiv fatura kesme (fire-and-forget).
  * Kurumsal fatura desteklenmiyor — Sphere kurumsal kurs için ayrı süreç.
@@ -224,25 +357,25 @@ router.post("/internal/course-orders/activate", async (req: Request, res: Respon
       [orderToken, iyzicoPaymentId ?? null],
     );
 
-    // Admin bildirim maili
+    // Admin bildirim maili — branded template
     try {
       const admins = (process.env["ADMIN_NOTIFICATION_EMAILS"] ?? "")
         .split(",").map((s) => s.trim()).filter((s) => s.includes("@"));
       if (admins.length > 0) {
-        const html = `<div style="font-family:sans-serif">
-          <h2>Yeni Kurs Siparişi ✓</h2>
-          <p><b>Program:</b> ${order.programme_title}</p>
-          <p><b>Müşteri:</b> ${order.buyer_name}</p>
-          <p><b>E-posta:</b> ${order.buyer_email}</p>
-          <p><b>Telefon:</b> ${order.buyer_phone}</p>
-          <p><b>Tutar:</b> ${(order.amount_kurus / 100).toFixed(2)} TL</p>
-          <p style="color:#0ea5e9">Müşteri kayıt formunu dolduruyor — 24 saat içinde iletişime geç.</p>
-        </div>`;
+        // Fresh order verisi (paid_at + iyzico_payment_id dahil)
+        const freshRes: any = await pool.query(
+          `SELECT * FROM course_orders WHERE id = $1 LIMIT 1`,
+          [order.id],
+        );
+        const freshOrder = freshRes.rows[0] ?? order;
+        const html = buildAdminNotifyHtml(freshOrder);
         for (const to of admins) {
           await sendEmail(to, `[Kurs] Yeni sipariş — ${order.buyer_name}`, html).catch(() => {});
         }
       }
-    } catch {}
+    } catch (e: any) {
+      console.warn("[COURSE-EMAIL/admin] hata:", e?.message);
+    }
 
     return res.json({
       ok: true,
@@ -338,6 +471,8 @@ router.post("/course-orders/:token/register", async (req: Request, res: Response
 
     // E-Arşiv fatura kes (fire-and-forget) — bireysel, TC ile
     issueCourseInvoice(Number(order.id));
+    // Müşteriye Sphere-markalı hoş geldin maili (fire-and-forget)
+    sendCustomerWelcomeEmail(Number(order.id));
 
     return res.json({ ok: true });
   } catch (e: any) {
