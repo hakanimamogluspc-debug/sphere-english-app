@@ -20,6 +20,8 @@ type NavItem = {
   icon: React.ElementType;
   moduleKey?: string;
   group?: 'ai-studio';
+  /** Görsel bölüm başlığı — href/icon ignore edilir, sadece küçük label render eder. */
+  isSectionHeader?: boolean;
 };
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -126,8 +128,11 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       { name: 'Eğitmen Başvuruları', href: '/admin/teacher-applications',     icon: UserPlus },
       { name: 'E-Kitap Yönetimi',    href: '/admin/ebooks',                   icon: BookOpen },
       { name: 'E-Kitap Paketleri',   href: '/admin/bundles',                  icon: Package },
-      { name: 'E-Kitap Satışları',   href: '/admin/ebook-purchases',          icon: ShoppingBag },
       { name: 'Kurs Yönetimi',       href: '/admin/kurslar',                  icon: GraduationCap },
+      // ─── Satışlar bölümü ───
+      { name: 'Satışlar',            href: '',                                icon: ShoppingBag,   isSectionHeader: true },
+      { name: 'E-Kitap Satışları',   href: '/admin/ebook-purchases',          icon: ShoppingBag },
+      { name: 'Kurs Satışları',      href: '/admin/kurs-satislari',           icon: ShoppingBag },
       { name: 'E-Faturalar',         href: '/admin/faturalar',                icon: Receipt },
       { name: 'MEB Aktivite Raporu', href: '/admin/meb-report',               icon: BarChart3 },
       { name: 'Pazarlama & E-posta', href: '/admin/marketing',                icon: TrendingUp },
@@ -190,6 +195,20 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const postGroupItems = firstAiIdx === -1 ? [] : currentNav.slice(lastAiIdx + 1);
 
   const NavLink = ({ item, collapsed = false }: { item: NavItem; collapsed?: boolean }) => {
+    // Section header — tıklanmaz, sadece görsel bölüm başlığı
+    if (item.isSectionHeader) {
+      if (collapsed) {
+        // Collapsed sidebar'da separator olarak render
+        return <div className="my-2 border-t border-sidebar-foreground/10" title={item.name} />;
+      }
+      return (
+        <div className="px-3 pt-4 pb-1 flex items-center gap-2 text-[10px] uppercase tracking-widest text-sidebar-foreground/40 font-bold">
+          <item.icon className="w-3.5 h-3.5" />
+          {item.name}
+        </div>
+      );
+    }
+
     const isActive = location === item.href || (location.startsWith(item.href) && item.href !== '/dashboard' && item.href !== '/corporate/dashboard');
     return (
       <Link

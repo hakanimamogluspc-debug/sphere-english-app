@@ -36,6 +36,7 @@ const AdminCourses        = lazy(() => import("./pages/admin/Courses"));
 // Marketing site kurs katalog yönetimi (bireysel grup programları) — LMS Courses'tan ayrı
 const AdminMarketingCourses     = lazy(() => import("./pages/admin/AdminCourses"));
 const AdminMarketingCourseForm  = lazy(() => import("./pages/admin/AdminCourseForm"));
+const AdminCourseOrders         = lazy(() => import("./pages/admin/AdminCourseOrders"));
 const Announcements       = lazy(() => import("./pages/admin/Announcements"));
 const AdminCompanies      = lazy(() => import("./pages/admin/Companies"));
 const AdminGroups         = lazy(() => import("./pages/admin/Groups"));
@@ -296,6 +297,7 @@ function Router() {
         <Route path="/admin/kurslar"><LayoutWrapper component={AdminMarketingCourses} allowedRoles={['admin']} /></Route>
         <Route path="/admin/kurslar/yeni"><LayoutWrapper component={AdminMarketingCourseForm} allowedRoles={['admin']} /></Route>
         <Route path="/admin/kurslar/:id"><LayoutWrapper component={AdminMarketingCourseForm} allowedRoles={['admin']} /></Route>
+        <Route path="/admin/kurs-satislari"><LayoutWrapper component={AdminCourseOrders} allowedRoles={['admin']} /></Route>
         <Route path="/admin/teachers"><LayoutWrapper component={AdminTeachers} allowedRoles={['admin']} /></Route>
         <Route path="/admin/students"><LayoutWrapper component={AdminStudents} allowedRoles={['admin']} /></Route>
         <Route path="/admin/groups"><LayoutWrapper component={AdminGroups} allowedRoles={['admin']} /></Route>
