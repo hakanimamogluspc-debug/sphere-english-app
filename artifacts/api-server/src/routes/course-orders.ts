@@ -369,24 +369,39 @@ router.post("/internal/course-orders/activate", async (req: Request, res: Respon
       [orderToken, iyzicoPaymentId ?? null],
     );
 
+    // Fresh order verisi (paid_at + iyzico_payment_id dahil)
+    const freshRes: any = await pool.query(
+      `SELECT * FROM course_orders WHERE id = $1 LIMIT 1`,
+      [order.id],
+    );
+    const freshOrder = freshRes.rows[0] ?? order;
+
     // Admin bildirim maili — branded template
     try {
       const admins = (process.env["ADMIN_NOTIFICATION_EMAILS"] ?? "")
         .split(",").map((s) => s.trim()).filter((s) => s.includes("@"));
       if (admins.length > 0) {
-        // Fresh order verisi (paid_at + iyzico_payment_id dahil)
-        const freshRes: any = await pool.query(
-          `SELECT * FROM course_orders WHERE id = $1 LIMIT 1`,
-          [order.id],
-        );
-        const freshOrder = freshRes.rows[0] ?? order;
         const html = buildAdminNotifyHtml(freshOrder);
         for (const to of admins) {
           await sendEmail(to, `[Kurs] Yeni sipariş — ${order.buyer_name}`, html).catch(() => {});
         }
+        console.info(`[COURSE-EMAIL/admin] gönderildi: orderId=${order.id} recipients=${admins.length}`);
+      } else {
+        console.warn("[COURSE-EMAIL/admin] ADMIN_NOTIFICATION_EMAILS boş — mail atlanıyor");
       }
     } catch (e: any) {
       console.warn("[COURSE-EMAIL/admin] hata:", e?.message);
+    }
+
+    // Müşteri hoş geldin maili (fire-and-forget) — ödeme başarılı olur olmaz
+    sendCustomerWelcomeEmail(Number(order.id));
+
+    // E-Arşiv fatura kes (fire-and-forget) — TC pre-create'te toplandı, immediate fire
+    // Kayıt formu beklemeye gerek yok (2-adımlı ödeme form'undan TC + adres var)
+    if (freshOrder.tc_kimlik) {
+      issueCourseInvoice(Number(order.id));
+    } else {
+      console.warn(`[COURSE-INVOICE] orderId=${order.id} TC yok — invoice register endpoint'inde kesilecek`);
     }
 
     return res.json({
@@ -481,10 +496,23 @@ router.post("/course-orders/:token/register", async (req: Request, res: Response
        String(sector).slice(0, 60), String(gender).slice(0, 20)],
     );
 
-    // E-Arşiv fatura kes (fire-and-forget) — bireysel, TC ile
-    issueCourseInvoice(Number(order.id));
-    // Müşteriye Sphere-markalı hoş geldin maili (fire-and-forget)
-    sendCustomerWelcomeEmail(Number(order.id));
+    // Fatura + hoş geldin maili sadece activate'te tetiklenmediyse burada tetikle.
+    // Yeni akışta ödeme adımı 2'sinde TC toplandığı için activate'te zaten fire olur.
+    // Bu blok eski akış / TC ödeme adımında girilmedi ise fallback olarak çalışır.
+    const isPreviouslyRegistered = order.status === "registered";
+    if (!isPreviouslyRegistered) {
+      const invRows: any = await pool.query(
+        `SELECT id FROM invoices WHERE source_type = 'course' AND source_id = $1 LIMIT 1`,
+        [order.id],
+      );
+      const alreadyInvoiced = (invRows.rows ?? []).length > 0;
+      if (!alreadyInvoiced) {
+        issueCourseInvoice(Number(order.id));
+      }
+      // Welcome mail her koşulda register'da tekrar atılabilir — idempotency yok ama zararsız
+      // (activate'te de attık, kayıt formunu doldurunca da atsak sorun değil; ama double avoid için de skip:)
+      // sendCustomerWelcomeEmail(Number(order.id));
+    }
 
     return res.json({ ok: true });
   } catch (e: any) {
