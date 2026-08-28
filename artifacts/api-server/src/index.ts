@@ -1579,6 +1579,12 @@ async function runStartupMigrations() {
     // Refund/dispute/reconciliation için gerekli. Www callback activate ederken doldurur.
     `ALTER TABLE course_orders ADD COLUMN IF NOT EXISTS iyzico_payment_id VARCHAR(100)`,
 
+    // ─── Course orders — fatura adresi (Iyzico Auth + e-Arşiv için gerçek adres) ──
+    `ALTER TABLE course_orders ADD COLUMN IF NOT EXISTS billing_address TEXT`,
+    `ALTER TABLE course_orders ADD COLUMN IF NOT EXISTS billing_city VARCHAR(60)`,
+    `ALTER TABLE course_orders ADD COLUMN IF NOT EXISTS billing_district VARCHAR(60)`,
+    `ALTER TABLE course_orders ADD COLUMN IF NOT EXISTS billing_postal_code VARCHAR(10)`,
+
     // ─── Courses (Admin CRUD katalog) ─────────────────────────────────
     // E-kitap gibi admin panelden yönetilebilir kurs kataloğu.
     // course-orders bu tablodan slug ile programme çeker.

@@ -174,7 +174,8 @@ function issueCourseInvoice(orderId: number): void {
         `SELECT id, order_token, programme_slug, programme_title,
                 buyer_name, buyer_email, buyer_phone,
                 amount_kurus, iyzico_payment_id,
-                tc_kimlik
+                tc_kimlik,
+                billing_address, billing_city, billing_district, billing_postal_code
            FROM course_orders WHERE id = $1 LIMIT 1`,
         [orderId],
       );
@@ -200,11 +201,11 @@ function issueCourseInvoice(orderId: number): void {
           name: String(order.buyer_name ?? "Kursiyer"),
           type: "individual",
           taxId: order.tc_kimlik ?? undefined,
-          // Adres kayıt formunda alınmıyor — Luca GİB adres verisini TC üzerinden alır
-          // Yine de fallback verelim, provider fail etmesin
-          address: "Türkiye",
-          city: "İstanbul",
-          district: "Türkiye",
+          // Ödeme modalında toplanan gerçek adres — fallback varsa provider fail etmesin
+          address: order.billing_address ?? "Türkiye",
+          city: order.billing_city ?? "İstanbul",
+          district: order.billing_district ?? order.billing_city ?? "Türkiye",
+          postalCode: order.billing_postal_code ?? undefined,
           country: "Türkiye",
           phone: order.buyer_phone ?? undefined,
         },
@@ -276,6 +277,11 @@ router.post("/internal/course-orders/pre-create", async (req: Request, res: Resp
     buyerName,
     buyerEmail,
     buyerPhone,
+    tcKimlik,
+    billingAddress,
+    billingCity,
+    billingDistrict,
+    billingPostalCode,
     iyzicoConversationId,
     iyzicoToken,
     amountKurus,
@@ -296,13 +302,19 @@ router.post("/internal/course-orders/pre-create", async (req: Request, res: Resp
     await pool.query(
       `INSERT INTO course_orders
          (order_token, programme_slug, programme_title,
-          buyer_name, buyer_email, buyer_phone,
+          buyer_name, buyer_email, buyer_phone, tc_kimlik,
+          billing_address, billing_city, billing_district, billing_postal_code,
           iyzico_conversation_id, iyzico_token, amount_kurus, status)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'pending')
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, 'pending')
        ON CONFLICT (order_token) DO NOTHING`,
       [
         orderToken, programme.slug, programme.title,
         buyerName, String(buyerEmail).toLowerCase(), buyerPhone,
+        tcKimlik ? String(tcKimlik).replace(/\D/g, '').slice(0, 11) : null,
+        billingAddress ?? null,
+        billingCity ?? null,
+        billingDistrict ?? null,
+        billingPostalCode ?? null,
         iyzicoConversationId ?? null,
         iyzicoToken ?? null,
         amountKurus ?? programme.priceKurus,
