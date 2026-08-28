@@ -233,7 +233,7 @@ router.post(
 
 // ─── POST /admin/invoices/manual ──────────────────────────────────────
 // Admin panelden manuel fatura — DRAFT olarak kaydeder (Luca'ya GİTMEZ).
-// Sonra admin taslakları /admin/invoices/drafts sayfasında görür, "Kes" ile Luca'ya gönderilir.
+// Çoklu ürün desteği: body.lineItems = [{ productName, priceKurus (KDV DAHİL), vatRate, note? }]
 router.post(
   "/admin/invoices/manual",
   authMiddleware,
@@ -242,7 +242,7 @@ router.post(
     try {
       const b = (req.body ?? {}) as any;
 
-      // Validation
+      // Buyer
       const buyerType: "individual" | "corporate" = b.buyerType === "corporate" ? "corporate" : "individual";
       const buyerName = String(b.buyerName ?? "").trim();
       const buyerEmail = String(b.buyerEmail ?? "").trim().toLowerCase();
@@ -255,12 +255,9 @@ router.post(
       const buyerCity = String(b.buyerCity ?? "").trim();
       const buyerDistrict = String(b.buyerDistrict ?? "").trim();
       const buyerPostalCode = b.buyerPostalCode ? String(b.buyerPostalCode).trim() : undefined;
-      const productName = String(b.productName ?? "").trim();
-      const priceKurus = parseInt(String(b.priceKurus ?? 0), 10);
-      const vatRate = parseInt(String(b.vatRate ?? 20), 10);
-      const note = b.note ? String(b.note).trim() : undefined;
       const sendMailAutomatically = b.sendMailAutomatically !== false;
 
+      // Buyer validation
       if (!buyerName || buyerName.length < 2) return res.status(400).json({ ok: false, error: "Alıcı adı gerekli" });
       if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(buyerEmail)) return res.status(400).json({ ok: false, error: "Geçerli e-posta gerekli" });
       if (buyerType === "individual" && buyerTaxId.length !== 11) return res.status(400).json({ ok: false, error: "Bireysel için TC (11 hane) gerekli" });
@@ -268,16 +265,47 @@ router.post(
       if (buyerType === "corporate" && (!buyerTaxOffice || !buyerCompanyName)) return res.status(400).json({ ok: false, error: "Kurumsal için vergi dairesi ve şirket unvanı gerekli" });
       if (!buyerAddress || buyerAddress.length < 5) return res.status(400).json({ ok: false, error: "Açık adres gerekli" });
       if (!buyerCity || !buyerDistrict) return res.status(400).json({ ok: false, error: "İl ve ilçe gerekli" });
-      if (!productName || productName.length < 2) return res.status(400).json({ ok: false, error: "Ürün/hizmet açıklaması gerekli" });
-      if (!priceKurus || priceKurus < 100) return res.status(400).json({ ok: false, error: "Tutar (kuruş cinsinden) 100'den büyük olmalı" });
-      if (![0, 1, 8, 10, 18, 20].includes(vatRate)) return res.status(400).json({ ok: false, error: "Geçerli KDV oranı seçin" });
 
-      // KDV DAHİL fiyat varsayımı — KDV hariç birim fiyatı hesapla
-      const unitPriceKurus = Math.round(priceKurus / (1 + vatRate / 100));
+      // Line items — çoklu ürün. Legacy tek-ürün alanları da fallback olarak kabul edilir.
+      let rawLines: any[] = Array.isArray(b.lineItems) && b.lineItems.length > 0
+        ? b.lineItems
+        : [{ productName: b.productName, priceKurus: b.priceKurus, vatRate: b.vatRate, note: b.note }];
+
+      if (rawLines.length === 0) return res.status(400).json({ ok: false, error: "En az 1 ürün eklemelisin" });
+      if (rawLines.length > 20) return res.status(400).json({ ok: false, error: "Maksimum 20 ürün eklenebilir" });
+
       const manualSourceId = Date.now();
-      const productCode = `manual-${manualSourceId}`;
       const adminUserId = (req as any).user?.id ?? null;
       const adminEmail = (req as any).user?.email ?? "admin";
+
+      const invoiceLines: any[] = [];
+      let totalKurus = 0;
+
+      for (let i = 0; i < rawLines.length; i++) {
+        const li = rawLines[i] ?? {};
+        const productName = String(li.productName ?? "").trim();
+        const priceKurus = parseInt(String(li.priceKurus ?? 0), 10);
+        const vatRate = parseInt(String(li.vatRate ?? 20), 10);
+        const quantity = parseInt(String(li.quantity ?? 1), 10) || 1;
+        const note = li.note ? String(li.note).trim() : undefined;
+
+        if (!productName || productName.length < 2) return res.status(400).json({ ok: false, error: `Ürün ${i + 1}: isim gerekli` });
+        if (!priceKurus || priceKurus < 100) return res.status(400).json({ ok: false, error: `Ürün ${i + 1}: tutar (kuruş) 100'den büyük olmalı` });
+        if (![0, 1, 8, 10, 18, 20].includes(vatRate)) return res.status(400).json({ ok: false, error: `Ürün ${i + 1}: geçerli KDV oranı seçin` });
+
+        // priceKurus = KDV DAHİL birim fiyat. KDV hariç hesapla:
+        const unitPriceKurus = Math.round(priceKurus / (1 + vatRate / 100));
+        totalKurus += priceKurus * quantity;
+
+        invoiceLines.push({
+          productCode: `manual-${manualSourceId}-${i + 1}`,
+          productName,
+          quantity,
+          unitPriceKurus,
+          vatRate,
+          note,
+        });
+      }
 
       // TASLAK olarak kaydet — Luca'ya gitmez, admin onayı bekler
       const inputJson = {
@@ -297,7 +325,7 @@ router.post(
           country: "Türkiye",
           phone: buyerPhone,
         },
-        lineItems: [{ productCode, productName, quantity: 1, unitPriceKurus, vatRate, note }],
+        lineItems: invoiceLines,
         notes: [
           "Sphere English — Manuel fatura (admin panel)",
           `Kesen: ${adminEmail}`,
@@ -306,9 +334,13 @@ router.post(
         sendMailAutomatically,
       };
 
+      const productSummary = invoiceLines.length === 1
+        ? invoiceLines[0].productName
+        : `${invoiceLines[0].productName} · +${invoiceLines.length - 1} ürün daha`;
+
       const r: any = await db.execute(sql`
         INSERT INTO invoice_drafts (input_json, buyer_name, buyer_email, product_name, amount_kurus, created_by)
-        VALUES (${JSON.stringify(inputJson)}::jsonb, ${buyerName}, ${buyerEmail}, ${productName}, ${priceKurus}, ${adminUserId})
+        VALUES (${JSON.stringify(inputJson)}::jsonb, ${buyerName}, ${buyerEmail}, ${productSummary}, ${totalKurus}, ${adminUserId})
         RETURNING id, created_at
       `);
       const draft = (r.rows ?? r)[0] as any;
@@ -316,7 +348,9 @@ router.post(
         ok: true,
         draftId: Number(draft.id),
         status: "draft",
-        message: "Taslak olarak kaydedildi. Faturalar → Taslaklar sekmesinden 'Kes' ile onaylayabilirsin.",
+        totalKurus,
+        lineCount: invoiceLines.length,
+        message: "Taslak olarak kaydedildi. Bekleyen Taslaklar panelinden 'Kes' ile onaylayabilirsin.",
       });
     } catch (e: any) {
       console.error("[admin/invoices/manual] HATA:", e?.message);

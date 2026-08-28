@@ -655,11 +655,10 @@ function ManualInvoiceModal({ onClose, onDone }: { onClose: () => void; onDone: 
   const [buyerCity, setBuyerCity] = useState("");
   const [buyerDistrict, setBuyerDistrict] = useState("");
   const [buyerPostalCode, setBuyerPostalCode] = useState("");
-  const [productSelect, setProductSelect] = useState<string>(""); // '' = manuel
-  const [productName, setProductName] = useState("");
-  const [amountTL, setAmountTL] = useState<string>("");
-  const [vatRate, setVatRate] = useState<number>(20);
-  const [note, setNote] = useState("");
+  // Çoklu ürün satırları
+  type LineItem = { productName: string; amountTL: string; vatRate: number; note: string; productSelect: string };
+  const emptyLine = (): LineItem => ({ productName: "", amountTL: "", vatRate: 20, note: "", productSelect: "" });
+  const [lineItems, setLineItems] = useState<LineItem[]>([emptyLine()]);
   const [sendMail, setSendMail] = useState(true);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
@@ -709,21 +708,49 @@ function ManualInvoiceModal({ onClose, onDone }: { onClose: () => void; onDone: 
     })();
   }, []);
 
-  function onProductChange(key: string) {
-    setProductSelect(key);
-    if (!key) return; // manuel — dokunma
+  function updateLine(idx: number, patch: Partial<LineItem>) {
+    setLineItems((prev) => prev.map((l, i) => (i === idx ? { ...l, ...patch } : l)));
+  }
+  function addLine() {
+    setLineItems((prev) => [...prev, emptyLine()]);
+  }
+  function removeLine(idx: number) {
+    setLineItems((prev) => prev.filter((_, i) => i !== idx));
+  }
+  function onProductChangeAtIdx(idx: number, key: string) {
+    if (!key) {
+      updateLine(idx, { productSelect: "" });
+      return;
+    }
     const opt = productOpts.find((o) => o.key === key);
     if (!opt) return;
-    setProductName(opt.productName);
-    setAmountTL(opt.priceTL.toFixed(2).replace(".", ","));
+    updateLine(idx, {
+      productSelect: key,
+      productName: opt.productName,
+      amountTL: opt.priceTL.toFixed(2).replace(".", ","),
+    });
   }
+  // Toplamlar
+  const totals = (() => {
+    let total = 0;
+    for (const l of lineItems) {
+      const p = parseFloat((l.amountTL || "0").replace(",", ".")) || 0;
+      total += p;
+    }
+    return { totalTL: total };
+  })();
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setResult(null);
     try {
-      const priceKurus = Math.round(parseFloat(amountTL.replace(",", ".")) * 100);
+      const lines = lineItems.map((l) => ({
+        productName: l.productName,
+        priceKurus: Math.round((parseFloat(l.amountTL.replace(",", ".")) || 0) * 100),
+        vatRate: l.vatRate,
+        note: l.note || undefined,
+      }));
       const r = await apiFetch("/admin/invoices/manual", {
         method: "POST",
         body: JSON.stringify({
@@ -738,10 +765,7 @@ function ManualInvoiceModal({ onClose, onDone }: { onClose: () => void; onDone: 
           buyerCity,
           buyerDistrict,
           buyerPostalCode: buyerPostalCode || undefined,
-          productName,
-          priceKurus,
-          vatRate,
-          note: note || undefined,
+          lineItems: lines,
           sendMailAutomatically: sendMail,
         }),
       });
@@ -845,60 +869,104 @@ function ManualInvoiceModal({ onClose, onDone }: { onClose: () => void; onDone: 
             </div>
           </div>
 
-          {/* Ürün + Tutar */}
+          {/* Fatura Satırları (çoklu ürün) */}
           <div className="border-t pt-4 space-y-3">
-            <div>
-              <label className={labelCls}>Ürün Seç {productsLoading && <span className="text-gray-400 font-normal">(yükleniyor…)</span>}</label>
-              <select
-                value={productSelect}
-                onChange={(e) => onProductChange(e.target.value)}
-                className={inputCls}
+            <div className="flex items-center justify-between">
+              <h4 className="text-sm font-semibold text-gray-900">Fatura Satırları ({lineItems.length})</h4>
+              <button
+                type="button"
+                onClick={addLine}
+                className="inline-flex items-center gap-1 rounded bg-emerald-100 px-2 py-1 text-xs font-semibold text-emerald-800 hover:bg-emerald-200"
               >
-                <option value="">— Manuel giriş —</option>
-                {productOpts.filter((o) => o.type === "ebook").length > 0 && (
-                  <optgroup label="E-Kitaplar">
-                    {productOpts.filter((o) => o.type === "ebook").map((o) => (
-                      <option key={o.key} value={o.key}>{o.label} — {o.priceTL.toFixed(2)} TL</option>
-                    ))}
-                  </optgroup>
-                )}
-                {productOpts.filter((o) => o.type === "course").length > 0 && (
-                  <optgroup label="Kurslar">
-                    {productOpts.filter((o) => o.type === "course").map((o) => (
-                      <option key={o.key} value={o.key}>{o.label} — {o.priceTL.toFixed(2)} TL</option>
-                    ))}
-                  </optgroup>
-                )}
-              </select>
-              <p className="text-[11px] text-gray-500 mt-1">Kitap/kurs seçince isim ve fiyat otomatik doldurulur. Manuel değişiklik yapabilirsin.</p>
+                + Satır Ekle
+              </button>
             </div>
-            <div>
-              <label className={labelCls}>Ürün / Hizmet *</label>
-              <input required type="text" value={productName} onChange={(e) => setProductName(e.target.value)} className={inputCls}
-                placeholder="Örn: Sphere English Business English Kurs · Eylül 2026" />
-            </div>
-            <div className="grid grid-cols-3 gap-3">
-              <div className="col-span-2">
-                <label className={labelCls}>Tutar (TL, KDV DAHİL) *</label>
-                <input required type="text" inputMode="decimal" value={amountTL} onChange={(e) => setAmountTL(e.target.value)} className={inputCls + " font-mono"} placeholder="4999,00" />
+
+            {lineItems.map((line, idx) => (
+              <div key={idx} className="rounded-md border border-gray-200 bg-gray-50 p-3 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold uppercase tracking-wide text-gray-500">Satır {idx + 1}</span>
+                  {lineItems.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => removeLine(idx)}
+                      className="text-xs text-red-600 hover:text-red-800"
+                    >
+                      Sil
+                    </button>
+                  )}
+                </div>
+                <div>
+                  <label className={labelCls}>Ürün Seç</label>
+                  <select
+                    value={line.productSelect}
+                    onChange={(e) => onProductChangeAtIdx(idx, e.target.value)}
+                    className={inputCls}
+                  >
+                    <option value="">— Manuel giriş —</option>
+                    {productOpts.filter((o) => o.type === "ebook").length > 0 && (
+                      <optgroup label="E-Kitaplar">
+                        {productOpts.filter((o) => o.type === "ebook").map((o) => (
+                          <option key={o.key} value={o.key}>{o.label} — {o.priceTL.toFixed(2)} TL</option>
+                        ))}
+                      </optgroup>
+                    )}
+                    {productOpts.filter((o) => o.type === "course").length > 0 && (
+                      <optgroup label="Kurslar">
+                        {productOpts.filter((o) => o.type === "course").map((o) => (
+                          <option key={o.key} value={o.key}>{o.label} — {o.priceTL.toFixed(2)} TL</option>
+                        ))}
+                      </optgroup>
+                    )}
+                  </select>
+                </div>
+                <div>
+                  <label className={labelCls}>Ürün / Hizmet *</label>
+                  <input required type="text" value={line.productName}
+                    onChange={(e) => updateLine(idx, { productName: e.target.value })}
+                    className={inputCls}
+                    placeholder="Ürün adı" />
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="col-span-2">
+                    <label className={labelCls}>Tutar (TL, KDV DAHİL) *</label>
+                    <input required type="text" inputMode="decimal" value={line.amountTL}
+                      onChange={(e) => updateLine(idx, { amountTL: e.target.value })}
+                      className={inputCls + " font-mono"}
+                      placeholder="199,00" />
+                  </div>
+                  <div>
+                    <label className={labelCls}>KDV *</label>
+                    <select value={line.vatRate}
+                      onChange={(e) => updateLine(idx, { vatRate: parseInt(e.target.value) })}
+                      className={inputCls}>
+                      <option value={20}>%20</option>
+                      <option value={10}>%10</option>
+                      <option value={1}>%1</option>
+                      <option value={0}>%0</option>
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label className={labelCls}>Not (opsiyonel)</label>
+                  <input type="text" value={line.note}
+                    onChange={(e) => updateLine(idx, { note: e.target.value })}
+                    className={inputCls} placeholder="Satıra özel not" />
+                </div>
               </div>
-              <div>
-                <label className={labelCls}>KDV Oranı *</label>
-                <select value={vatRate} onChange={(e) => setVatRate(parseInt(e.target.value))} className={inputCls}>
-                  <option value={20}>%20 (standart)</option>
-                  <option value={10}>%10 (eğitim akrediteli)</option>
-                  <option value={1}>%1</option>
-                  <option value={0}>%0 (istisna)</option>
-                </select>
-              </div>
+            ))}
+
+            {/* Toplam */}
+            <div className="flex items-center justify-between rounded-md border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm">
+              <span className="font-semibold text-emerald-900">TOPLAM (KDV DAHİL)</span>
+              <span className="font-bold text-emerald-900 text-lg">
+                {totals.totalTL.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} TL
+              </span>
             </div>
-            <div>
-              <label className={labelCls}>Not (fatura üzerinde görünür)</label>
-              <input type="text" value={note} onChange={(e) => setNote(e.target.value)} className={inputCls} placeholder="Ödeme: WhatsApp havale · IBAN xxx" />
-            </div>
-            <label className="flex items-center gap-2 text-sm text-gray-700">
+
+            <label className="flex items-center gap-2 text-sm text-gray-700 pt-2">
               <input type="checkbox" checked={sendMail} onChange={(e) => setSendMail(e.target.checked)} className="accent-emerald-600" />
-              Faturayı alıcıya otomatik e-posta ile gönder
+              Faturayı alıcıya otomatik e-posta ile gönder (Kes ederken)
             </label>
           </div>
 
