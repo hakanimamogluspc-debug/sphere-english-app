@@ -50,6 +50,7 @@ function normalizeCourse(row: any): any {
     cohort_start_display: row.cohort_start_display,
     cohort_capacity: row.cohort_capacity,
     cohort_registrations: row.cohort_registrations,
+    cohort_waitlist_label: row.cohort_waitlist_label,
     seo_title: row.seo_title,
     seo_description: row.seo_description,
     is_active: row.is_active,
@@ -143,6 +144,7 @@ const ALLOWED_FIELDS = [
   "price_kurus", "price_display",
   "weeks", "audience", "related_ebook_slugs",
   "cohort_status", "cohort_start_date", "cohort_start_display", "cohort_capacity", "cohort_registrations",
+  "cohort_waitlist_label",
   "seo_title", "seo_description",
   "is_active", "sort_order",
 ];

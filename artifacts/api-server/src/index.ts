@@ -1649,6 +1649,11 @@ async function runStartupMigrations() {
     `UPDATE marketing_courses SET level_slug = 'a1-a2' WHERE slug = 'foundation' AND (level_slug IS NULL OR level_slug = '')`,
     `UPDATE marketing_courses SET level_slug = 'b1-b2' WHERE slug = 'diplomacy' AND (level_slug IS NULL OR level_slug = '')`,
 
+    // Cohort ön-kayıt rozet metni — admin panelden per-course editable
+    // (Card'da "EYLÜL ÖN KAYIT" pill'i — dönem değişince buradan güncelle)
+    `ALTER TABLE marketing_courses ADD COLUMN IF NOT EXISTS cohort_waitlist_label VARCHAR(60) DEFAULT 'Eylül Ön Kayıt'`,
+    `UPDATE marketing_courses SET cohort_waitlist_label = 'Eylül Ön Kayıt' WHERE cohort_waitlist_label IS NULL`,
+
     // ─── Seed initial 2 courses (idempotent — ON CONFLICT DO NOTHING) ──
     `INSERT INTO marketing_courses (
       slug, title, title_en, subtitle, description,

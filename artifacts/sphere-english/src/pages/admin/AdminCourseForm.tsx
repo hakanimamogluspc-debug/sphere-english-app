@@ -46,6 +46,7 @@ interface CourseFormData {
   cohort_start_display: string;
   cohort_capacity: number;
   cohort_registrations: number;
+  cohort_waitlist_label: string;
   seo_title: string;
   seo_description: string;
   is_active: boolean;
@@ -80,6 +81,7 @@ const EMPTY_FORM: CourseFormData = {
   cohort_start_display: "",
   cohort_capacity: 6,
   cohort_registrations: 0,
+  cohort_waitlist_label: "Eylül Ön Kayıt",
   seo_title: "",
   seo_description: "",
   is_active: true,
@@ -141,6 +143,7 @@ export default function AdminCourseForm() {
           cohort_start_display: c.cohort_start_display ?? "",
           cohort_capacity: c.cohort_capacity ?? 6,
           cohort_registrations: c.cohort_registrations ?? 0,
+          cohort_waitlist_label: c.cohort_waitlist_label ?? "Eylül Ön Kayıt",
           seo_title: c.seo_title ?? "",
           seo_description: c.seo_description ?? "",
           is_active: c.is_active ?? true,
@@ -388,6 +391,19 @@ export default function AdminCourseForm() {
             <div>
               <label className={labelCls}>Başlangıç Metni (görünen)</label>
               <input value={form.cohort_start_display} onChange={(e) => set("cohort_start_display", e.target.value)} className={inputCls} placeholder="Eylül 2026'nın ilk haftası" />
+            </div>
+            <div>
+              <label className={labelCls}>Ön Kayıt Rozet Metni</label>
+              <input
+                value={form.cohort_waitlist_label}
+                onChange={(e) => set("cohort_waitlist_label", e.target.value)}
+                className={inputCls}
+                placeholder="Eylül Ön Kayıt"
+                maxLength={60}
+              />
+              <p className="text-[11px] text-gray-500 mt-1">
+                Kurs kartlarında (homepage + katalog) &quot;Ön Kayıt&quot; durumundayken görünen rozet metni. Örn: &quot;Ekim Ön Kayıt&quot;, &quot;Kasım Grubu&quot;.
+              </p>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
