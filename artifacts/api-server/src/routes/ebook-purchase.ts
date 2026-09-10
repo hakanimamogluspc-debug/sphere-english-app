@@ -196,6 +196,11 @@ router.post("/internal/ebook-purchase/pre-create", async (req: Request, res: Res
     affiliateCode,
     couponCode,
     couponDiscountKurus,
+    // Meta Pixel/CAPI kimlik verisi — checkout başlarken yakalanır
+    metaFbp,
+    metaFbc,
+    metaClientIp,
+    metaClientUserAgent,
   } = (req.body ?? {}) as any;
 
   if (!ebookId || !buyerEmail || !iyzicoConversationId) {
@@ -237,6 +242,10 @@ router.post("/internal/ebook-purchase/pre-create", async (req: Request, res: Res
           billing_district = ${billingDistrict ?? null},
           billing_postal_code = ${billingPostalCode ?? null},
           coupon_discount_kurus = ${couponDiscountKurus ?? null},
+          meta_fbp = COALESCE(${metaFbp ?? null}, meta_fbp),
+          meta_fbc = COALESCE(${metaFbc ?? null}, meta_fbc),
+          meta_client_ip = COALESCE(${metaClientIp ?? null}, meta_client_ip),
+          meta_client_user_agent = COALESCE(${metaClientUserAgent ?? null}, meta_client_user_agent),
           updated_at = NOW()
         WHERE id = ${existingRow.id}
       `);
@@ -253,7 +262,8 @@ router.post("/internal/ebook-purchase/pre-create", async (req: Request, res: Res
         iyzico_conversation_id,
         payment_status, invoice_status,
         download_count,
-        coupon_discount_kurus
+        coupon_discount_kurus,
+        meta_fbp, meta_fbc, meta_client_ip, meta_client_user_agent
       ) VALUES (
         ${ebookId}, ${userId}, ${buyerEmail.toLowerCase()}, ${buyerName ?? null}, ${buyerPhone ?? null},
         ${invoiceType ?? "individual"}, ${taxId ?? null}, ${taxOffice ?? null}, ${companyName ?? null},
@@ -262,7 +272,8 @@ router.post("/internal/ebook-purchase/pre-create", async (req: Request, res: Res
         ${iyzicoConversationId},
         'pending', 'pending',
         0,
-        ${couponDiscountKurus ?? null}
+        ${couponDiscountKurus ?? null},
+        ${metaFbp ?? null}, ${metaFbc ?? null}, ${metaClientIp ?? null}, ${metaClientUserAgent ?? null}
       )
       RETURNING id
     `);
@@ -309,12 +320,21 @@ router.post("/internal/ebook-purchase/activate", async (req: Request, res: Respo
     affiliateCode,
   } = (req.body ?? {}) as any;
 
+  // Meta Pixel/CAPI kimlik verisi — pending kayıttan çekip response'ta callback'e döneriz.
+  // (Callback bunları sendCapiPurchase.userData'ya yazacak — attribution için kritik.)
+  let metaFbp: string | null = null;
+  let metaFbc: string | null = null;
+  let metaClientIp: string | null = null;
+  let metaClientUserAgent: string | null = null;
+
   // Defense-in-depth: Iyzico response'da bazen buyer.email veya conversationId boş gelir.
   // Pending kayıt (pre-create) bilgilerinden eksik alanları doldur.
-  if ((!ebookId || !buyerEmail || !buyerName || !amountPaid) && iyzicoConversationId) {
+  // Ayrıca meta_* alanlarını her zaman çek (response'ta callback'e döneceğiz).
+  if (iyzicoConversationId) {
     try {
       const lookupRows = await db.execute(sql`
-        SELECT ebook_id, buyer_email, buyer_name, amount_paid
+        SELECT ebook_id, buyer_email, buyer_name, amount_paid,
+               meta_fbp, meta_fbc, meta_client_ip, meta_client_user_agent
         FROM ebook_purchases
         WHERE iyzico_conversation_id = ${iyzicoConversationId}
         ORDER BY created_at DESC
@@ -336,6 +356,10 @@ router.post("/internal/ebook-purchase/activate", async (req: Request, res: Respo
         if (!amountPaid && lookupRow.amount_paid != null) {
           amountPaid = Number(lookupRow.amount_paid);
         }
+        metaFbp = lookupRow.meta_fbp ?? null;
+        metaFbc = lookupRow.meta_fbc ?? null;
+        metaClientIp = lookupRow.meta_client_ip ?? null;
+        metaClientUserAgent = lookupRow.meta_client_user_agent ?? null;
       } else {
         console.warn(`[EBOOK-PURCHASE] activate: pending kayit bulunamadi convId=${iyzicoConversationId}`);
       }
@@ -385,6 +409,7 @@ router.post("/internal/ebook-purchase/activate", async (req: Request, res: Respo
           ok: true,
           purchaseId: existingSuccess.id,
           action: "already_active",
+          meta: { fbp: metaFbp, fbc: metaFbc, clientIp: metaClientIp, clientUserAgent: metaClientUserAgent },
         });
       }
     }
@@ -451,7 +476,12 @@ router.post("/internal/ebook-purchase/activate", async (req: Request, res: Respo
         // Fatura kes + mail'i tetikle (sıralı, fire-and-forget)
         // Fatura kesildikten SONRA mail atılır — viewer URL DB'de hazır olur
         issueEbookInvoiceAndSendMail(Number(updatedRow.id));
-        return res.json({ ok: true, purchaseId: updatedRow.id, action: "updated" });
+        return res.json({
+          ok: true,
+          purchaseId: updatedRow.id,
+          action: "updated",
+          meta: { fbp: metaFbp, fbc: metaFbc, clientIp: metaClientIp, clientUserAgent: metaClientUserAgent },
+        });
       }
     }
 
@@ -498,7 +528,12 @@ router.post("/internal/ebook-purchase/activate", async (req: Request, res: Respo
       // Fatura kes + mail'i tetikle (sıralı, fire-and-forget)
       issueEbookInvoiceAndSendMail(Number(newId));
     }
-    return res.json({ ok: true, purchaseId: newId, action: "inserted" });
+    return res.json({
+      ok: true,
+      purchaseId: newId,
+      action: "inserted",
+      meta: { fbp: metaFbp, fbc: metaFbc, clientIp: metaClientIp, clientUserAgent: metaClientUserAgent },
+    });
   } catch (e: any) {
     console.error("[EBOOK-PURCHASE] activate HATA:", e?.message);
     return res.status(500).json({ error: "Kayıt başarısız: " + e?.message });

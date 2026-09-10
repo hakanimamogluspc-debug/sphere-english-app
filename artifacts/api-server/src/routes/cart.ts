@@ -154,6 +154,11 @@ router.post("/internal/cart/pre-create", async (req: Request, res: Response) => 
     couponDiscountKurus,
     affiliateCode: _affiliateCode,
     iyzicoConversationId,
+    // Meta Pixel/CAPI kimlik verisi — checkout başlarken yakalanır
+    metaFbp,
+    metaFbc,
+    metaClientIp,
+    metaClientUserAgent,
   } = (req.body ?? {}) as any;
 
   if (!Array.isArray(items) || items.length === 0) {
@@ -227,7 +232,8 @@ router.post("/internal/cart/pre-create", async (req: Request, res: Response) => 
           payment_status, invoice_status,
           download_count,
           coupon_id, coupon_discount_kurus,
-          order_id, bundle_id
+          order_id, bundle_id,
+          meta_fbp, meta_fbc, meta_client_ip, meta_client_user_agent
         ) VALUES (
           ${item.ebookId}, ${userId}, ${String(buyerEmail).toLowerCase()}, ${buyerName ?? null}, ${buyerPhone ?? null},
           ${invoiceType ?? "individual"}, ${taxId ?? null}, ${taxOffice ?? null}, ${companyName ?? null},
@@ -237,7 +243,8 @@ router.post("/internal/cart/pre-create", async (req: Request, res: Response) => 
           'pending', 'pending',
           0,
           ${isLastItem ? couponId : null}, ${isLastItem ? discountKurus || null : null},
-          ${orderId}, ${item.bundleId}
+          ${orderId}, ${item.bundleId},
+          ${metaFbp ?? null}, ${metaFbc ?? null}, ${metaClientIp ?? null}, ${metaClientUserAgent ?? null}
         )
         RETURNING id
       `);
@@ -290,6 +297,29 @@ router.post("/internal/cart/activate", async (req: Request, res: Response) => {
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
     const paidAtIso = paidAt ?? new Date().toISOString();
 
+    // Meta Pixel/CAPI kimlik verisi — pending kayıttan çekilip callback'e response'ta döneriz.
+    // (Callback bunları sendCapiPurchase.userData'ya yazacak.)
+    let metaFbp: string | null = null;
+    let metaFbc: string | null = null;
+    let metaClientIp: string | null = null;
+    let metaClientUserAgent: string | null = null;
+    try {
+      const metaRows = await db.execute(sql`
+        SELECT meta_fbp, meta_fbc, meta_client_ip, meta_client_user_agent
+        FROM ebook_purchases
+        WHERE order_id = ${orderKey}
+        ORDER BY id ASC
+        LIMIT 1
+      `);
+      const mRow = (metaRows.rows ?? metaRows)[0] as any;
+      if (mRow) {
+        metaFbp = mRow.meta_fbp ?? null;
+        metaFbc = mRow.meta_fbc ?? null;
+        metaClientIp = mRow.meta_client_ip ?? null;
+        metaClientUserAgent = mRow.meta_client_user_agent ?? null;
+      }
+    } catch {}
+
     // Idempotency guard — bu order zaten aktive edildiyse dön
     const successRows = await db.execute(sql`
       SELECT id FROM ebook_purchases
@@ -298,7 +328,12 @@ router.post("/internal/cart/activate", async (req: Request, res: Response) => {
     `);
     if ((successRows.rows ?? successRows).length > 0) {
       console.info(`[CART] activate SKIP (idempotent): order_id=${orderKey} zaten aktif`);
-      return res.json({ ok: true, orderId: orderKey, action: "already_active" });
+      return res.json({
+        ok: true,
+        orderId: orderKey,
+        action: "already_active",
+        meta: { fbp: metaFbp, fbc: metaFbc, clientIp: metaClientIp, clientUserAgent: metaClientUserAgent },
+      });
     }
 
     // Pending kayıtları çek — buyer bilgileri + coupon + bundle_id
@@ -637,6 +672,7 @@ router.post("/internal/cart/activate", async (req: Request, res: Response) => {
       orderId: orderKey,
       itemCount: activatedPurchaseIds.length,
       purchaseIds: activatedPurchaseIds,
+      meta: { fbp: metaFbp, fbc: metaFbc, clientIp: metaClientIp, clientUserAgent: metaClientUserAgent },
     });
   } catch (e: any) {
     console.error("[CART] activate HATA:", e?.message, e?.stack);

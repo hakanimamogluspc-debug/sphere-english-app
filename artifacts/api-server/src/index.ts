@@ -444,6 +444,14 @@ async function runStartupMigrations() {
     `ALTER TABLE ebook_purchases ADD COLUMN IF NOT EXISTS mail_attempts INTEGER NOT NULL DEFAULT 0`,
     // Audit log alanı — manuel aktivasyon, manuel düzeltme gibi admin müdahaleleri
     `ALTER TABLE ebook_purchases ADD COLUMN IF NOT EXISTS notes TEXT`,
+    // ── Meta Pixel/CAPI kimlik verisi — checkout initialize aşamasında yakalanır ──
+    // Iyzico callback'i kullanıcının cookie/IP/UA'sını taşımaz. O yüzden
+    // pending kayıt oluşturulurken _fbp, _fbc, IP, UA yakalanıp buraya yazılır.
+    // Callback'te CAPI Purchase gönderirken bu satırdan okunur (attribution korunur).
+    `ALTER TABLE ebook_purchases ADD COLUMN IF NOT EXISTS meta_fbp VARCHAR(255)`,
+    `ALTER TABLE ebook_purchases ADD COLUMN IF NOT EXISTS meta_fbc VARCHAR(255)`,
+    `ALTER TABLE ebook_purchases ADD COLUMN IF NOT EXISTS meta_client_ip VARCHAR(60)`,
+    `ALTER TABLE ebook_purchases ADD COLUMN IF NOT EXISTS meta_client_user_agent TEXT`,
     // download_token + download_expires_at + paid_at NOT NULL idi — pending kayıtlar için NULL'a izin verelim
     `ALTER TABLE ebook_purchases ALTER COLUMN download_token DROP NOT NULL`,
     `ALTER TABLE ebook_purchases ALTER COLUMN download_expires_at DROP NOT NULL`,
