@@ -1,0 +1,51 @@
+{
+  "sections": {
+    "account": "Account",
+    "language": "Language",
+    "notifications": "Notifications",
+    "privacy": "Privacy",
+    "ai_consent": "AI Permissions",
+    "security": "Security",
+    "subscription": "Subscription",
+    "danger_zone": "Danger Zone"
+  },
+  "account": {
+    "email": "Email",
+    "name": "Full Name",
+    "phone": "Phone",
+    "change_password": "Change Password",
+    "current_level": "Your current CEFR level"
+  },
+  "language": {
+    "title": "Interface Language",
+    "subtitle": "Content and menus appear in the selected language",
+    "tr": "Türkçe",
+    "en": "English"
+  },
+  "notifications": {
+    "title": "Notification Preferences",
+    "email": "Email notifications",
+    "push": "Push notifications",
+    "daily_reminder": "Daily lesson reminder",
+    "streak_alert": "Streak loss alert",
+    "weekly_report": "Weekly progress report",
+    "marketing": "Marketing and campaign communication"
+  },
+  "ai_consent": {
+    "title": "AI Modules Usage Permission",
+    "description": "See how your data is processed when using AI-powered modules like Writing Coach, Pronunciation Coach, and AI Tutor. Manage your permission anytime.",
+    "current_status": "Currently: {{status}}",
+    "granted": "Permission granted",
+    "not_granted": "Permission not granted",
+    "grant": "Grant Permission",
+    "revoke": "Revoke Permission",
+    "learn_more": "Learn more"
+  },
+  "delete_account": {
+    "title": "Delete My Account",
+    "warning": "This action cannot be undone. Your personal information, progress, and AI data will be deleted. Data required for legal retention (invoice records) will be anonymized and kept.",
+    "confirm_text": "Enter your password to confirm",
+    "delete_button": "Delete My Account Permanently",
+    "cancel": "Cancel"
+  }
+}

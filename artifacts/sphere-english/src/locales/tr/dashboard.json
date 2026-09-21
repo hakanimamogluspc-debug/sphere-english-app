@@ -1,0 +1,37 @@
+{
+  "welcome": "Hoş geldin, {{name}}",
+  "welcome_back": "Tekrar hoş geldin, {{name}}",
+  "your_progress": "İlerlemen",
+  "today_task": {
+    "title": "Bugün için 10 dakikan hazır",
+    "subtitle": "Seviyene uygun kısa bir görev seçtik",
+    "start": "Şimdi Başla",
+    "skip": "Bugün Atla",
+    "completed": "🎉 Aferin! Bugünkü görevini tamamladın"
+  },
+  "streak": {
+    "days": "{{count}} gün üst üste 🔥",
+    "days_zero": "Streak başlat 🔥",
+    "keep_going": "Streak'ini koru!",
+    "broken": "Streak'in kırıldı — yeniden başlamak için çok geç değil",
+    "freeze": "Streak korumaya al"
+  },
+  "sections": {
+    "continue_learning": "Kaldığın yerden devam et",
+    "recommended": "Sana özel öneriler",
+    "recent_activity": "Son aktivitelerin",
+    "upcoming": "Yaklaşan dersler"
+  },
+  "nav_groups": {
+    "learn": "Öğren",
+    "practice": "Uygula",
+    "ai_studio": "AI Studio",
+    "social": "Topluluk",
+    "settings": "Ayarlar"
+  },
+  "empty_states": {
+    "no_activity": "Henüz aktivite yok. Bir modül seçerek başlayabilirsin.",
+    "no_recommendations": "Sana özel öneriler için birkaç etkileşim daha gerekli."
+  },
+  "help_button": "Yardıma mı ihtiyacın var?"
+}

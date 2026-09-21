@@ -1,0 +1,51 @@
+{
+  "sections": {
+    "account": "Hesap",
+    "language": "Dil",
+    "notifications": "Bildirimler",
+    "privacy": "Gizlilik",
+    "ai_consent": "AI İzinleri",
+    "security": "Güvenlik",
+    "subscription": "Abonelik",
+    "danger_zone": "Tehlikeli Bölge"
+  },
+  "account": {
+    "email": "E-posta",
+    "name": "Ad Soyad",
+    "phone": "Telefon",
+    "change_password": "Şifre Değiştir",
+    "current_level": "Mevcut CEFR seviyen"
+  },
+  "language": {
+    "title": "Arayüz Dili",
+    "subtitle": "İçerik ve menüler seçtiğin dilde görüntülenir",
+    "tr": "Türkçe",
+    "en": "English"
+  },
+  "notifications": {
+    "title": "Bildirim Tercihleri",
+    "email": "E-posta bildirimleri",
+    "push": "Anlık bildirimler",
+    "daily_reminder": "Günlük ders hatırlatması",
+    "streak_alert": "Streak kaybı uyarısı",
+    "weekly_report": "Haftalık ilerleme raporu",
+    "marketing": "Pazarlama ve kampanya iletişimi"
+  },
+  "ai_consent": {
+    "title": "AI Modülleri Kullanım İzni",
+    "description": "Yazma Koçu, Telaffuz Koçu, AI Tutor gibi AI destekli modülleri kullanırken verilerin nasıl işlendiğini görebilir ve iznini yönetebilirsin.",
+    "current_status": "Şu an: {{status}}",
+    "granted": "İzin verildi",
+    "not_granted": "İzin verilmedi",
+    "grant": "İzin Ver",
+    "revoke": "İzni Geri Çek",
+    "learn_more": "Daha fazla bilgi al"
+  },
+  "delete_account": {
+    "title": "Hesabımı Sil",
+    "warning": "Bu işlem geri alınamaz. Kişisel bilgilerin, ilerlemen ve AI verilerin silinir. Yasal saklama gereken veriler (fatura kayıtları) anonimleştirilerek saklanır.",
+    "confirm_text": "Onaylamak için parolanı gir",
+    "delete_button": "Hesabımı Kalıcı Olarak Sil",
+    "cancel": "Vazgeç"
+  }
+}

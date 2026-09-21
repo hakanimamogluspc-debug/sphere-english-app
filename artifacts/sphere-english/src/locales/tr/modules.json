@@ -1,0 +1,193 @@
+{
+  "intro": {
+    "how_to_use": "Nasıl kullanılır?",
+    "who_for": "Kimin için?",
+    "first_action": "İlk adımın",
+    "duration": "Ortalama süre: {{duration}}",
+    "skip": "Bunu atla",
+    "start": "Hadi Başlayalım",
+    "show_again": "Bu tanıtımı yeniden göster"
+  },
+  "writing_coach": {
+    "name": "Yazma Koçu",
+    "tagline": "İş email'lerini native seviyede yaz",
+    "value_prop": "AI destekli yazma asistanı — yazdıklarını anlık kontrol eder, ton, dilbilgisi ve iş İngilizcesi uyumu için öneriler sunar.",
+    "how_to": [
+      "Bir email veya iş yazısı yazmaya başla",
+      "AI koçun anlık olarak dilbilgisi ve ton önerileri gönderir",
+      "Önerileri kabul et veya reddet — final metin sende"
+    ],
+    "target_level": "A2 ve üstü için ideal",
+    "first_action": "İlk deneme için basit bir teşekkür email'i yaz",
+    "duration": "3-5 dakika"
+  },
+  "pronunciation_coach": {
+    "name": "Telaffuz Koçu",
+    "tagline": "Kelimelerin nasıl okunduğunu keşfet",
+    "value_prop": "Konuşmanı mikrofonla dinler, doğru sesletim için görsel + ses geri bildirimi verir.",
+    "how_to": [
+      "Bir kelime veya cümle seç",
+      "Mikrofona konuş",
+      "AI koç doğru sesletimi karşılaştırır ve puan verir"
+    ],
+    "target_level": "A1 ve üstü tüm seviyeler",
+    "first_action": "'Hello' kelimesiyle başla — en kolay!",
+    "duration": "5-8 dakika"
+  },
+  "grammar_coach": {
+    "name": "Dilbilgisi Koçu",
+    "tagline": "Dilbilgisi kurallarını Türkçe açıklamalarla öğren",
+    "value_prop": "Her konu Türkçe anlatılır, örnekler İngilizce. Alıştırmalarla hemen pekiştir.",
+    "how_to": [
+      "Seviyene uygun bir konu seç",
+      "Türkçe anlatımı oku, örnekleri incele",
+      "Kısa alıştırmalarla test et"
+    ],
+    "target_level": "A1'den B2'ye tüm seviyeler",
+    "first_action": "A1 için 'To Be (am/is/are)' ile başla",
+    "duration": "10-15 dakika"
+  },
+  "vocab_game": {
+    "name": "Kelime Oyunu",
+    "tagline": "İş İngilizcesi kelimelerini oyunlaştırarak öğren",
+    "value_prop": "Her seviye için özel kelime kartları. Görseller + Türkçe çeviri + sesletim + örnek cümle.",
+    "how_to": [
+      "Seviyeni seç",
+      "Kelime kartlarını çevirip anlamı tahmin et",
+      "Puan topla, tekrarla ustalaş"
+    ],
+    "target_level": "A1'den C1'ye tüm seviyeler",
+    "first_action": "10 kelimelik hızlı bir tur oyna",
+    "duration": "5-10 dakika"
+  },
+  "simulation_mode": {
+    "name": "İş Senaryoları",
+    "tagline": "Gerçek iş durumlarını canlı yaşayarak öğren",
+    "value_prop": "Toplantı, e-posta, satış görüşmesi gibi gerçek iş senaryolarında AI ile rol yap. Hem konuşma hem yazma becerileri gelişir.",
+    "how_to": [
+      "Senaryoya uygun bir rol seç (satış temsilcisi, İK uzmanı, vb.)",
+      "AI ile diyaloğa gir",
+      "Performansın hakkında geri bildirim al"
+    ],
+    "target_level": "A2 ve üstü — B1+ için ideal",
+    "first_action": "'Kendini tanıtma' senaryosuyla başla",
+    "duration": "10-15 dakika"
+  },
+  "interview_sim": {
+    "name": "Mülakat Simülatörü",
+    "tagline": "İngilizce iş görüşmelerine hazırlan",
+    "value_prop": "Sektörüne özel mülakat sorularını cevaplama pratiği. Ton, akıcılık ve içerik açısından geri bildirim.",
+    "how_to": [
+      "Sektörünü seç (tech, finans, üretim, vb.)",
+      "AI mülakatçı ile diyalog yap",
+      "Sonunda güçlü/zayıf yönlerin hakkında rapor al"
+    ],
+    "target_level": "B1 ve üstü için ideal",
+    "first_action": "Bir 'kendini tanıt' sorusuyla başla",
+    "duration": "15-20 dakika"
+  },
+  "presentation_sim": {
+    "name": "Sunum Simülatörü",
+    "tagline": "İngilizce sunumların akıcılık ve etki kazan",
+    "value_prop": "Konu seç, AI sana sunum yapılandırması + ipuçları verir. Canlı prova sırasında ton ve zamanlama hakkında geri bildirim.",
+    "how_to": [
+      "Sunum konunu seç veya oluştur",
+      "AI ile provaya başla",
+      "Ton, zamanlama, akıcılık raporu al"
+    ],
+    "target_level": "B1 ve üstü için ideal",
+    "first_action": "'Şirketimi tanıtıyorum' provasıyla başla",
+    "duration": "15-25 dakika"
+  },
+  "ai_quiz": {
+    "name": "Akıllı Quiz",
+    "tagline": "Seviyene uyarlanan kişisel quiz'ler",
+    "value_prop": "Her sorunun zorluk seviyesi cevaplarına göre otomatik ayarlanır. Zayıf olduğun konulara odaklanır.",
+    "how_to": [
+      "Konu veya karışık modu seç",
+      "Sorulara cevap ver",
+      "AI bir sonraki soruyu performansına göre seçer"
+    ],
+    "target_level": "A1'den C2'ye tüm seviyeler",
+    "first_action": "Karışık modda 5 soruluk hızlı bir quiz",
+    "duration": "5-10 dakika"
+  },
+  "ai_tutor": {
+    "name": "Kişisel Tutor",
+    "tagline": "Her sorunu Türkçe sorabileceğin AI öğretmen",
+    "value_prop": "İngilizce hakkında aklına takılan her şeyi Türkçe sor — AI Türkçe cevap versin. A1 için mükemmel.",
+    "how_to": [
+      "Türkçe sorunu yaz: 'Present perfect ne zaman kullanılır?'",
+      "AI Türkçe açıklama + İngilizce örnekler verir",
+      "Devam sorularıyla derinleş"
+    ],
+    "target_level": "A1'den C2'ye tüm seviyeler — Türkçe destek A1-A2 için özellikle faydalı",
+    "first_action": "'İş email'i nasıl başlar?' diye sor",
+    "duration": "5-15 dakika"
+  },
+  "learning_path": {
+    "name": "Öğrenme Yolu",
+    "tagline": "Kişisel öğrenme rotan — adım adım ilerle",
+    "value_prop": "Seviyenden başlayıp hedefine kadar aşamalı bir yol haritası. Her hafta yeni bir konu, ölçülebilir ilerleme.",
+    "how_to": [
+      "Hedefini seç (mülakat, sunum, toplantı, vb.)",
+      "Yol haritanı gör",
+      "Her hafta bir adımı tamamla"
+    ],
+    "target_level": "A1 ve üstü tüm seviyeler",
+    "first_action": "Yol haritanı oluşturmak için hedefini seç",
+    "duration": "Haftada 30-60 dakika"
+  },
+  "level_exams": {
+    "name": "Seviye Sınavları",
+    "tagline": "Bir üst CEFR seviyesine geç",
+    "value_prop": "Oxford Business Result tabanlı seviye atlama sınavları. Başarılı olunca sertifika + platform içerikleri açılır.",
+    "how_to": [
+      "Mevcut seviyeni seç",
+      "Sınavı çöz",
+      "Başarılı olunca üst seviye içeriklere geç"
+    ],
+    "target_level": "A1'den C2'ye tüm seviyeler",
+    "first_action": "Öncelikle placement testi tamamla",
+    "duration": "30-45 dakika"
+  },
+  "materials": {
+    "name": "Materyaller",
+    "tagline": "Kütüphaneden e-kitap, ses kaydı, dokümanlar",
+    "value_prop": "Oxford referanslı iş İngilizcesi materyalleri, PDF'ler, ses dosyaları — hepsi offline indirilebilir.",
+    "how_to": [
+      "Seviyene uygun materyali seç",
+      "Online oku veya indir",
+      "Kendi hızında ilerle"
+    ],
+    "target_level": "A1'den C2'ye tüm seviyeler",
+    "first_action": "Kategorilere göz at ve bir başlangıç materyali seç",
+    "duration": "Değişken"
+  },
+  "speaking_club": {
+    "name": "Speaking Club",
+    "tagline": "Diğer öğrencilerle canlı konuşma pratiği",
+    "value_prop": "Haftalık sanal buluşmalar. Öğretmen moderatörlüğünde konu bazlı grup konuşmaları.",
+    "how_to": [
+      "Programa göz at, uygun bir seansı seç",
+      "Kayıt ol",
+      "Canlı Zoom seansına katıl"
+    ],
+    "target_level": "A2 ve üstü — B1+ için ideal",
+    "first_action": "Bu haftaki programa bak",
+    "duration": "45-60 dakika"
+  },
+  "live_classes": {
+    "name": "Canlı Dersler",
+    "tagline": "Sphere eğitmenleriyle canlı grup dersleri",
+    "value_prop": "Haftalık düzenli canlı dersler. Küçük grup (max 6 kişi), interaktif, kayıtları izlenebilir.",
+    "how_to": [
+      "Programından uygun bir dersi seç",
+      "Katıl butonuna tıkla",
+      "Ders sonrası kayıtla tekrar izle"
+    ],
+    "target_level": "Her seviye için özel gruplar var",
+    "first_action": "Bu haftaki dersini seç",
+    "duration": "60 dakika"
+  }
+}

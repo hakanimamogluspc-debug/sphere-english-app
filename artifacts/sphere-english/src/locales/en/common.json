@@ -1,0 +1,71 @@
+{
+  "app": {
+    "name": "Sphere English",
+    "tagline": "Master business English"
+  },
+  "actions": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "close": "Close",
+    "delete": "Delete",
+    "edit": "Edit",
+    "confirm": "Confirm",
+    "continue": "Continue",
+    "back": "Back",
+    "next": "Next",
+    "start": "Start",
+    "finish": "Finish",
+    "retry": "Try Again",
+    "refresh": "Refresh",
+    "submit": "Submit",
+    "search": "Search",
+    "filter": "Filter",
+    "load_more": "Load More",
+    "select": "Select",
+    "show_more": "Show More",
+    "show_less": "Show Less"
+  },
+  "status": {
+    "loading": "Loading…",
+    "saving": "Saving…",
+    "success": "Success",
+    "error": "Error",
+    "warning": "Warning",
+    "info": "Info",
+    "empty": "No content yet",
+    "coming_soon": "Coming soon"
+  },
+  "errors": {
+    "generic": "Something went wrong. Please try again.",
+    "network": "Connection error. Check your internet connection.",
+    "unauthorized": "You don't have permission for this action.",
+    "not_found": "The content you're looking for was not found.",
+    "server": "Server is not responding right now. Please try again in a few minutes."
+  },
+  "time": {
+    "minutes": "{{count}} min",
+    "hours": "{{count}} h",
+    "days": "{{count}} days",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "tomorrow": "Tomorrow",
+    "this_week": "This week",
+    "last_week": "Last week"
+  },
+  "levels": {
+    "A1": "A1 · Beginner",
+    "A2": "A2 · Elementary",
+    "B1": "B1 · Intermediate",
+    "B2": "B2 · Upper Intermediate",
+    "C1": "C1 · Advanced",
+    "C2": "C2 · Proficient",
+    "your_level": "Your level",
+    "recommended_for_level": "Suitable for your {{level}} level"
+  },
+  "cta": {
+    "start_now": "Start Now",
+    "learn_more": "Learn More",
+    "try_now": "Try Now",
+    "get_started": "Get Started"
+  }
+}

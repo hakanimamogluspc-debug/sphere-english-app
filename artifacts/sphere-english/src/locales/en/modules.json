@@ -1,0 +1,193 @@
+{
+  "intro": {
+    "how_to_use": "How to use?",
+    "who_for": "Who is it for?",
+    "first_action": "Your first step",
+    "duration": "Average duration: {{duration}}",
+    "skip": "Skip this",
+    "start": "Let's Begin",
+    "show_again": "Show this intro again"
+  },
+  "writing_coach": {
+    "name": "Writing Coach",
+    "tagline": "Write business emails like a native",
+    "value_prop": "AI-powered writing assistant — checks your writing in real time, provides suggestions for tone, grammar, and business English fit.",
+    "how_to": [
+      "Start writing an email or business document",
+      "AI coach sends real-time grammar and tone suggestions",
+      "Accept or reject suggestions — the final text is yours"
+    ],
+    "target_level": "Ideal for A2 and above",
+    "first_action": "Try writing a simple thank-you email",
+    "duration": "3-5 minutes"
+  },
+  "pronunciation_coach": {
+    "name": "Pronunciation Coach",
+    "tagline": "Discover how words are pronounced",
+    "value_prop": "Listens to your speech via microphone, provides visual + audio feedback for correct pronunciation.",
+    "how_to": [
+      "Select a word or phrase",
+      "Speak into the microphone",
+      "AI coach compares pronunciation and gives you a score"
+    ],
+    "target_level": "All levels from A1 and above",
+    "first_action": "Start with the word 'Hello' — the easiest!",
+    "duration": "5-8 minutes"
+  },
+  "grammar_coach": {
+    "name": "Grammar Coach",
+    "tagline": "Learn grammar rules with Turkish explanations",
+    "value_prop": "Every topic explained in Turkish, examples in English. Practice exercises to reinforce immediately.",
+    "how_to": [
+      "Pick a topic matching your level",
+      "Read the Turkish explanation, review examples",
+      "Test yourself with short exercises"
+    ],
+    "target_level": "All levels from A1 to B2",
+    "first_action": "For A1, start with 'To Be (am/is/are)'",
+    "duration": "10-15 minutes"
+  },
+  "vocab_game": {
+    "name": "Vocab Game",
+    "tagline": "Learn business English words with gamification",
+    "value_prop": "Custom vocabulary cards for each level. Visuals + Turkish translation + pronunciation + example sentence.",
+    "how_to": [
+      "Pick your level",
+      "Flip cards and guess the meaning",
+      "Collect points, master through repetition"
+    ],
+    "target_level": "All levels from A1 to C1",
+    "first_action": "Play a quick round with 10 words",
+    "duration": "5-10 minutes"
+  },
+  "simulation_mode": {
+    "name": "Business Scenarios",
+    "tagline": "Learn by living real business situations",
+    "value_prop": "Role-play real business scenarios like meetings, emails, sales calls with AI. Develops both speaking and writing skills.",
+    "how_to": [
+      "Select a role suitable for the scenario (sales rep, HR specialist, etc.)",
+      "Dialogue with AI",
+      "Get feedback about your performance"
+    ],
+    "target_level": "A2 and above — ideal for B1+",
+    "first_action": "Start with the 'Self Introduction' scenario",
+    "duration": "10-15 minutes"
+  },
+  "interview_sim": {
+    "name": "Interview Simulator",
+    "tagline": "Prepare for English job interviews",
+    "value_prop": "Practice answering industry-specific interview questions. Feedback on tone, fluency, and content.",
+    "how_to": [
+      "Pick your industry (tech, finance, manufacturing, etc.)",
+      "Have a dialogue with the AI interviewer",
+      "Get a report on your strengths and weaknesses"
+    ],
+    "target_level": "Ideal for B1 and above",
+    "first_action": "Start with a 'Tell me about yourself' question",
+    "duration": "15-20 minutes"
+  },
+  "presentation_sim": {
+    "name": "Presentation Simulator",
+    "tagline": "Gain fluency and impact in English presentations",
+    "value_prop": "Pick a topic, AI gives you a presentation structure + tips. Live rehearsal with feedback on tone and timing.",
+    "how_to": [
+      "Choose or create your presentation topic",
+      "Start rehearsing with AI",
+      "Get a report on tone, timing, fluency"
+    ],
+    "target_level": "Ideal for B1 and above",
+    "first_action": "Start with 'Introducing my company' rehearsal",
+    "duration": "15-25 minutes"
+  },
+  "ai_quiz": {
+    "name": "Smart Quiz",
+    "tagline": "Personal quizzes adapted to your level",
+    "value_prop": "Each question's difficulty is auto-adjusted based on your answers. Focuses on your weak areas.",
+    "how_to": [
+      "Choose a topic or mixed mode",
+      "Answer questions",
+      "AI picks the next question based on your performance"
+    ],
+    "target_level": "All levels from A1 to C2",
+    "first_action": "Take a quick 5-question mixed quiz",
+    "duration": "5-10 minutes"
+  },
+  "ai_tutor": {
+    "name": "Personal Tutor",
+    "tagline": "AI teacher you can ask everything in Turkish",
+    "value_prop": "Ask anything about English in Turkish — AI answers in Turkish. Perfect for A1.",
+    "how_to": [
+      "Type your question in Turkish: 'When is present perfect used?'",
+      "AI provides Turkish explanation + English examples",
+      "Go deeper with follow-up questions"
+    ],
+    "target_level": "All levels from A1 to C2 — Turkish support especially helpful for A1-A2",
+    "first_action": "Ask 'How do I start a business email?'",
+    "duration": "5-15 minutes"
+  },
+  "learning_path": {
+    "name": "Learning Path",
+    "tagline": "Your personal learning route — step by step",
+    "value_prop": "A gradual roadmap from your level to your goal. New topic each week, measurable progress.",
+    "how_to": [
+      "Select your goal (interview, presentation, meeting, etc.)",
+      "See your roadmap",
+      "Complete one step each week"
+    ],
+    "target_level": "All levels from A1 and above",
+    "first_action": "Choose your goal to create your roadmap",
+    "duration": "30-60 minutes per week"
+  },
+  "level_exams": {
+    "name": "Level Exams",
+    "tagline": "Move up to the next CEFR level",
+    "value_prop": "CEFR level-up exams based on Oxford Business Result. Success unlocks certificate + platform content.",
+    "how_to": [
+      "Select your current level",
+      "Take the exam",
+      "On success, access upper level content"
+    ],
+    "target_level": "All levels from A1 to C2",
+    "first_action": "First complete the placement test",
+    "duration": "30-45 minutes"
+  },
+  "materials": {
+    "name": "Materials",
+    "tagline": "E-books, audio, documents from the library",
+    "value_prop": "Oxford-referenced business English materials, PDFs, audio files — all downloadable for offline use.",
+    "how_to": [
+      "Pick a material suitable for your level",
+      "Read online or download",
+      "Go at your own pace"
+    ],
+    "target_level": "All levels from A1 to C2",
+    "first_action": "Browse categories and pick a starter material",
+    "duration": "Variable"
+  },
+  "speaking_club": {
+    "name": "Speaking Club",
+    "tagline": "Live speaking practice with other students",
+    "value_prop": "Weekly virtual meetups. Topic-based group conversations moderated by a teacher.",
+    "how_to": [
+      "Browse the schedule, pick a suitable session",
+      "Sign up",
+      "Join the live Zoom session"
+    ],
+    "target_level": "A2 and above — ideal for B1+",
+    "first_action": "Check this week's schedule",
+    "duration": "45-60 minutes"
+  },
+  "live_classes": {
+    "name": "Live Classes",
+    "tagline": "Live group classes with Sphere instructors",
+    "value_prop": "Regular weekly live classes. Small group (max 6), interactive, recordings available.",
+    "how_to": [
+      "Pick a suitable class from your schedule",
+      "Click Join",
+      "Watch replay after class if needed"
+    ],
+    "target_level": "Special groups for every level",
+    "first_action": "Pick this week's class",
+    "duration": "60 minutes"
+  }
+}

@@ -1,0 +1,59 @@
+{
+  "steps": {
+    "language": {
+      "title": "Welcome! In which language would you like to learn?",
+      "subtitle": "Choose the interface language — you can change it anytime",
+      "tr": "Türkçe",
+      "en": "English"
+    },
+    "welcome": {
+      "title": "Welcome to Sphere English, {{name}}!",
+      "subtitle": "Let's get to know you in 3 minutes and build your personalized roadmap."
+    },
+    "sector": {
+      "title": "Which industry do you work in?",
+      "subtitle": "We'll prepare business English scenarios specific to your industry",
+      "options": {
+        "finance": "Finance / Banking",
+        "tech": "Technology / Software",
+        "manufacturing": "Manufacturing / Export",
+        "consulting": "Consulting / Legal",
+        "healthcare": "Healthcare / Pharma",
+        "hospitality": "Tourism / Hospitality",
+        "hr": "Human Resources",
+        "sales": "Sales / Marketing",
+        "other": "Other"
+      }
+    },
+    "goal": {
+      "title": "What is your main goal?",
+      "subtitle": "We'll highlight the modules that benefit you the most",
+      "options": {
+        "interview": "Prepare for job interviews",
+        "meetings": "Be more effective in meetings",
+        "presentation": "Give presentations",
+        "email": "Write great business emails",
+        "customer": "Communicate with international clients",
+        "certificate": "Get a CEFR certificate",
+        "general": "Gain overall fluency"
+      }
+    },
+    "level": {
+      "title": "Let's determine your level",
+      "subtitle": "A short 5-minute placement test to start at the right level",
+      "start_test": "Start Test",
+      "skip": "Skip for now — I'll do it later"
+    },
+    "first_task": {
+      "title": "Great! Your first step is ready 🎉",
+      "subtitle": "We picked a personalized 10-minute mini task for you",
+      "start": "Start First Task",
+      "later": "Do it later"
+    }
+  },
+  "progress": {
+    "step": "Step {{current}} / {{total}}",
+    "back": "Back",
+    "next": "Continue"
+  }
+}

@@ -1,0 +1,71 @@
+{
+  "app": {
+    "name": "Sphere English",
+    "tagline": "İş İngilizcesinde ustalaş"
+  },
+  "actions": {
+    "save": "Kaydet",
+    "cancel": "İptal",
+    "close": "Kapat",
+    "delete": "Sil",
+    "edit": "Düzenle",
+    "confirm": "Onayla",
+    "continue": "Devam Et",
+    "back": "Geri",
+    "next": "İleri",
+    "start": "Başla",
+    "finish": "Bitir",
+    "retry": "Tekrar Dene",
+    "refresh": "Yenile",
+    "submit": "Gönder",
+    "search": "Ara",
+    "filter": "Filtrele",
+    "load_more": "Daha Fazla Yükle",
+    "select": "Seç",
+    "show_more": "Daha Fazla Göster",
+    "show_less": "Daha Az Göster"
+  },
+  "status": {
+    "loading": "Yükleniyor…",
+    "saving": "Kaydediliyor…",
+    "success": "Başarılı",
+    "error": "Hata",
+    "warning": "Uyarı",
+    "info": "Bilgi",
+    "empty": "Henüz içerik yok",
+    "coming_soon": "Yakında geliyor"
+  },
+  "errors": {
+    "generic": "Bir şeyler ters gitti. Lütfen tekrar deneyin.",
+    "network": "Bağlantı hatası. İnternet bağlantınızı kontrol edin.",
+    "unauthorized": "Bu işlem için yetkiniz yok.",
+    "not_found": "Aradığınız içerik bulunamadı.",
+    "server": "Sunucu şu an yanıt vermiyor. Birkaç dakika sonra tekrar deneyin."
+  },
+  "time": {
+    "minutes": "{{count}} dk",
+    "hours": "{{count}} sa",
+    "days": "{{count}} gün",
+    "today": "Bugün",
+    "yesterday": "Dün",
+    "tomorrow": "Yarın",
+    "this_week": "Bu hafta",
+    "last_week": "Geçen hafta"
+  },
+  "levels": {
+    "A1": "A1 · Yeni Başlayan",
+    "A2": "A2 · Temel",
+    "B1": "B1 · Orta Alt",
+    "B2": "B2 · Orta Üst",
+    "C1": "C1 · İleri",
+    "C2": "C2 · Yetkin",
+    "your_level": "Seviyen",
+    "recommended_for_level": "{{level}} seviyeniz için uygun"
+  },
+  "cta": {
+    "start_now": "Hemen Başla",
+    "learn_more": "Daha Fazla Bilgi",
+    "try_now": "Şimdi Dene",
+    "get_started": "Hadi Başlayalım"
+  }
+}

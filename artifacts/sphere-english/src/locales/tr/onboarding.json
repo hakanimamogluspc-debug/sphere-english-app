@@ -1,0 +1,59 @@
+{
+  "steps": {
+    "language": {
+      "title": "Hoş geldin! Hangi dilde öğrenmek istiyorsun?",
+      "subtitle": "Arayüz dilini seç — istediğin zaman değiştirebilirsin",
+      "tr": "Türkçe",
+      "en": "English"
+    },
+    "welcome": {
+      "title": "Sphere English'e hoş geldin, {{name}}!",
+      "subtitle": "3 dakikada seni tanıyıp sana özel bir yol haritası oluşturalım."
+    },
+    "sector": {
+      "title": "Hangi sektörde çalışıyorsun?",
+      "subtitle": "Sektörüne özel iş İngilizcesi senaryoları hazırlayacağız",
+      "options": {
+        "finance": "Finans / Bankacılık",
+        "tech": "Teknoloji / Yazılım",
+        "manufacturing": "Üretim / İhracat",
+        "consulting": "Danışmanlık / Hukuk",
+        "healthcare": "Sağlık / İlaç",
+        "hospitality": "Turizm / Hospitality",
+        "hr": "İnsan Kaynakları",
+        "sales": "Satış / Pazarlama",
+        "other": "Diğer"
+      }
+    },
+    "goal": {
+      "title": "Ana hedefin ne?",
+      "subtitle": "Sana en çok faydası olacak modülleri öne çıkaracağız",
+      "options": {
+        "interview": "İş görüşmelerine hazırlanmak",
+        "meetings": "Toplantılarda daha etkili olmak",
+        "presentation": "Sunum yapmak",
+        "email": "İş email'lerini iyi yazmak",
+        "customer": "Uluslararası müşterilerle iletişim",
+        "certificate": "CEFR sertifikası almak",
+        "general": "Genel akıcılık kazanmak"
+      }
+    },
+    "level": {
+      "title": "Seviyeni belirleyelim",
+      "subtitle": "5 dakikalık kısa bir yerleştirme sınavıyla en doğru seviyene başlayalım",
+      "start_test": "Sınava Başla",
+      "skip": "Şimdilik atla — sonra yaparım"
+    },
+    "first_task": {
+      "title": "Harika! İlk adımın hazır 🎉",
+      "subtitle": "Sana özel 10 dakikalık bir mini görev seçtik",
+      "start": "İlk Görevi Başlat",
+      "later": "Sonra yaparım"
+    }
+  },
+  "progress": {
+    "step": "Adım {{current}} / {{total}}",
+    "back": "Geri",
+    "next": "Devam"
+  }
+}
