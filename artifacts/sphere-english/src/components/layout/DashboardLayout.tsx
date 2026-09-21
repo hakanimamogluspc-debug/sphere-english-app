@@ -124,6 +124,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       { name: 'Demo Randevular',     href: '/admin/demo',                     icon: Calendar },
       { name: 'İçerik Kütüphanesi',  href: '/admin/content',                  icon: Newspaper },
       { name: 'İçerik Envanteri',    href: '/admin/content-envanteri',        icon: BarChart3 },
+      { name: 'AI İçerik Üretici',   href: '/admin/ai-icerik',                icon: Sparkles },
       { name: 'Kariyer & Motivasyon',href: '/admin/career',                   icon: Compass },
       { name: 'Konuşma Sahneleri',   href: '/admin/scenes',                   icon: Mic },
       { name: 'Eğitmen Başvuruları', href: '/admin/teacher-applications',     icon: UserPlus },
