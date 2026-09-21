@@ -715,6 +715,22 @@ async function runStartupMigrations() {
     )`,
     `CREATE INDEX IF NOT EXISTS speaking_scenes_category_idx ON speaking_scenes(category, is_active, sort_order)`,
 
+    // A1-C2 tam CEFR aralığı için CHECK constraint genişletme (R0.9)
+    // Eski: A2-C1. Yeni başlayan (A1) ve yetkin (C2) seviyeleri için içerik üretmek istiyoruz.
+    // DO block ile idempotent: constraint zaten yeni aralıksa hata vermez.
+    `DO $$
+     BEGIN
+       IF EXISTS (
+         SELECT 1 FROM information_schema.check_constraints
+         WHERE constraint_name LIKE '%speaking_scenes_difficulty_check%'
+       ) THEN
+         ALTER TABLE speaking_scenes DROP CONSTRAINT IF EXISTS speaking_scenes_difficulty_check;
+       END IF;
+       ALTER TABLE speaking_scenes
+         ADD CONSTRAINT speaking_scenes_difficulty_check
+         CHECK (difficulty IN ('A1','A2','B1','B2','C1','C2'));
+     END $$`,
+
     // Sahne turları — user ve ai konuşmaları sırayla
     `CREATE TABLE IF NOT EXISTS speaking_scene_turns (
       id SERIAL PRIMARY KEY,

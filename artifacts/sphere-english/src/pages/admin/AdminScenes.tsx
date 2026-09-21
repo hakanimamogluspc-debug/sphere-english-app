@@ -26,7 +26,7 @@ const CAT_LABEL: Record<string, string> = {
   negotiation: "Müzakere", presentations: "Sunumlar", phone_calls: "Telefon",
   tech: "Teknoloji", hr: "İK", finance: "Finans", healthcare: "Sağlık",
 };
-const DIFFICULTIES = ["A2", "B1", "B2", "C1"];
+const DIFFICULTIES = ["A1", "A2", "B1", "B2", "C1", "C2"];
 const VOICES = ["nova", "onyx", "shimmer", "echo", "alloy", "fable"];
 
 type Scene = {

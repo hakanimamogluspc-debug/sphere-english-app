@@ -40,7 +40,7 @@ export const CATEGORY_LABEL: Record<string, string> = {
   healthcare: "Sağlık",
 };
 
-const DIFFICULTIES = ["A2", "B1", "B2", "C1"] as const;
+const DIFFICULTIES = ["A1", "A2", "B1", "B2", "C1", "C2"] as const;
 const VOICES = ["nova", "onyx", "shimmer", "echo", "alloy", "fable"] as const;
 
 // Konu havuzları — Türk profesyonellerin gerçek dünyada yaşadığı senaryolar

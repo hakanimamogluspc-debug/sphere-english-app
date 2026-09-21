@@ -93,21 +93,21 @@ router.get(
         // tablo yoksa 0 kalır
       }
 
-      // 5) Kullanıcı seviye dağılımı (users.cefr_level varsa)
+      // 5) Kullanıcı seviye dağılımı — users.current_level (placement test sonucu)
       inventory["users_by_level"] = initMatrix();
       try {
         const userRows = await db.execute(sql`
-          SELECT UPPER(TRIM(cefr_level)) AS lvl, COUNT(*)::int AS n
+          SELECT UPPER(TRIM(current_level)) AS lvl, COUNT(*)::int AS n
           FROM users
-          WHERE cefr_level IS NOT NULL
-          GROUP BY UPPER(TRIM(cefr_level))
+          WHERE current_level IS NOT NULL AND role = 'student'
+          GROUP BY UPPER(TRIM(current_level))
         `);
         for (const r of (userRows.rows ?? userRows) as any[]) {
           const key = String(r.lvl ?? "").toUpperCase();
           if (CEFR_LEVELS.includes(key as Cefr)) inventory["users_by_level"][key as Cefr] = Number(r.n);
         }
-      } catch {
-        // users.cefr_level yoksa 0 kalır (placement_result kullanılıyor olabilir)
+      } catch (e: any) {
+        console.warn("[admin/content-inventory] users.current_level sorgu hata:", e?.message);
       }
 
       // Hedefler — retention için önerilen minimum içerik sayıları
