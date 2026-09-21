@@ -1,6 +1,18 @@
 import { useEffect, useState } from "react";
-import { apiFetch } from "@/lib/api";
+import { API } from "@/lib/api-url";
 import { AlertTriangle, CheckCircle2, RefreshCw, TrendingUp } from "lucide-react";
+
+const TOKEN_KEY = "sphere_token";
+async function apiFetch(path: string, opts: RequestInit = {}) {
+  const token = localStorage.getItem(TOKEN_KEY);
+  const res = await fetch(`${API}${path}`, {
+    ...opts,
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}`, ...(opts.headers || {}) },
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error((data as any)?.error || `HTTP ${res.status}`);
+  return data;
+}
 
 /**
  * Admin — İçerik Envanteri
