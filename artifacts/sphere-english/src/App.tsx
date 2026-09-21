@@ -59,6 +59,7 @@ const AdminMailTemplates  = lazy(() => import("./pages/admin/AdminMailTemplates"
 const AdminDemo           = lazy(() => import("./pages/admin/AdminDemo"));
 const AdminContent        = lazy(() => import("./pages/admin/AdminContent"));
 const AdminScenes         = lazy(() => import("./pages/admin/AdminScenes"));
+const AdminContentInventory = lazy(() => import("./pages/admin/AdminContentInventory"));
 const AdminCareer         = lazy(() => import("./pages/admin/AdminCareer"));
 const CareerPage          = lazy(() => import("./pages/student/Career"));
 const Partner             = lazy(() => import("./pages/Partner"));
@@ -322,6 +323,7 @@ function Router() {
         <Route path="/admin/demo"><LayoutWrapper component={AdminDemo} allowedRoles={['admin']} /></Route>
         <Route path="/admin/content"><LayoutWrapper component={AdminContent} allowedRoles={['admin']} /></Route>
         <Route path="/admin/scenes"><LayoutWrapper component={AdminScenes} allowedRoles={['admin']} /></Route>
+        <Route path="/admin/content-envanteri"><LayoutWrapper component={AdminContentInventory} allowedRoles={['admin']} /></Route>
         <Route path="/admin/career"><LayoutWrapper component={AdminCareer} allowedRoles={['admin']} /></Route>
         <Route path="/kariyer"><LayoutWrapper component={CareerPage} allowedRoles={['student', 'admin', 'corporate']} /></Route>
         <Route path="/partner/apply"><LayoutWrapper component={PartnerApply} /></Route>
