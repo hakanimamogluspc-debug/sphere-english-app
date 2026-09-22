@@ -367,7 +367,7 @@ export default function AIQuizGenerator() {
           </div>
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 flex items-center gap-2">
             <Wand2 className="h-7 w-7 text-purple-600" />
-            Akıllı Quiz Üretici
+            Akıllı Quiz
           </h1>
           <p className="text-sm text-gray-500 mt-1">
             Kendine konu seç ya da bir metin yapıştır — AI sana özel quiz hazırlayıp seviyeni ölçsün.

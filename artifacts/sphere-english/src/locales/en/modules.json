@@ -8,174 +8,220 @@
     "start": "Let's Begin",
     "show_again": "Show this intro again"
   },
-  "writing_coach": {
-    "name": "Writing Coach",
-    "tagline": "Write business emails like a native",
-    "value_prop": "AI-powered writing assistant — checks your writing in real time, provides suggestions for tone, grammar, and business English fit.",
+  "speaking_coach": {
+    "name": "Speaking Coach",
+    "tagline": "Speak freely with AI coaches of different accents and expertise",
+    "value_prop": "Speak freely in English with AI coaches of different accents and expertise. Pronunciation, grammar and vocabulary errors are analyzed in real time.",
     "how_to": [
-      "Start writing an email or business document",
-      "AI coach sends real-time grammar and tone suggestions",
-      "Accept or reject suggestions — the final text is yours"
+      "Open Speaking Coach from the Sphere AI Studio menu",
+      "Pick the coach that fits your industry or target accent (e.g. British CEO, New York finance expert, Indian-English software developer)",
+      "Grant microphone access and start speaking with the coach",
+      "Review the feedback that appears during and after the conversation"
     ],
-    "target_level": "Ideal for A2 and above",
-    "first_action": "Try writing a simple thank-you email",
-    "duration": "3-5 minutes"
+    "target_level": "B1 and above — professionals who want to adapt to different accents and practice fluent speaking",
+    "first_action": "Pick the coach closest to your industry and talk about your work for 2 minutes",
+    "duration": "10-15 min"
   },
   "pronunciation_coach": {
-    "name": "Pronunciation Coach",
-    "tagline": "Discover how words are pronounced",
-    "value_prop": "Listens to your speech via microphone, provides visual + audio feedback for correct pronunciation.",
+    "name": "Speaking Coach",
+    "tagline": "Speak freely with AI coaches of different accents and expertise",
+    "value_prop": "Speak freely in English with AI coaches of different accents and expertise. Pronunciation, grammar and vocabulary errors are analyzed in real time.",
     "how_to": [
-      "Select a word or phrase",
-      "Speak into the microphone",
-      "AI coach compares pronunciation and gives you a score"
+      "Open Speaking Coach from the Sphere AI Studio menu",
+      "Pick the coach that fits your industry or target accent (e.g. British CEO, New York finance expert, Indian-English software developer)",
+      "Grant microphone access and start speaking with the coach",
+      "Review the feedback that appears during and after the conversation"
     ],
-    "target_level": "All levels from A1 and above",
-    "first_action": "Start with the word 'Hello' — the easiest!",
-    "duration": "5-8 minutes"
+    "target_level": "B1 and above — professionals who want to adapt to different accents and practice fluent speaking",
+    "first_action": "Pick the coach closest to your industry and talk about your work for 2 minutes",
+    "duration": "10-15 min"
+  },
+  "speaking_scenes": {
+    "name": "Speaking Scenes",
+    "tagline": "Role-play with AI in 66 ready-made business scenarios",
+    "value_prop": "Role-play with AI in 66 ready-made business scenarios. Each target sentence you say is scored for pronunciation, fluency, accuracy and completeness.",
+    "how_to": [
+      "Open Speaking Scenes",
+      "Pick a category (Phone, Sales, Meetings, Negotiation, Presentations, HR, etc.)",
+      "Click 'Start' on a scene that matches your level",
+      "Play your role, say each turn's target sentence and see your score"
+    ],
+    "target_level": "A2 and above — for those preparing for concrete business situations (calls, meetings, sales)",
+    "first_action": "Complete an A2 scene from the Phone category",
+    "duration": "3-4 min per scene"
+  },
+  "writing_coach": {
+    "name": "Writing Coach",
+    "tagline": "Let AI analyze the English you write",
+    "value_prop": "AI analyzes your English text and gives you feedback to improve.",
+    "how_to": [
+      "Open Writing Coach",
+      "Choose the writing type (General Writing, Business Email, Formal Letter, Essay, Report)",
+      "Optionally enter a topic or title",
+      "Write or paste your text (up to 3,000 characters)",
+      "Click 'Analyze Text' and review the feedback"
+    ],
+    "target_level": "A2 and above — anyone writing business emails, reports or exam essays",
+    "first_action": "Paste a business email you sent this week and get it analyzed",
+    "duration": "5-10 min"
   },
   "grammar_coach": {
     "name": "Grammar Coach",
-    "tagline": "Learn grammar rules with Turkish explanations",
-    "value_prop": "Every topic explained in Turkish, examples in English. Practice exercises to reinforce immediately.",
+    "tagline": "Learn and practice grammar tailored to your level",
+    "value_prop": "Learn and practice grammar topics organized by level with AI guidance.",
     "how_to": [
-      "Pick a topic matching your level",
-      "Read the Turkish explanation, review examples",
-      "Test yourself with short exercises"
+      "Open Grammar Coach",
+      "Pick your level at the top (A1–C1)",
+      "Click a topic, read the explanation and do the exercises",
+      "Watch the topic status update to 'completed'"
     ],
-    "target_level": "All levels from A1 to B2",
-    "first_action": "For A1, start with 'To Be (am/is/are)'",
-    "duration": "10-15 minutes"
+    "target_level": "A1–C1 — for those strengthening grammar foundations or closing gaps on specific topics",
+    "first_action": "Open the first unstarted topic at your level and complete it",
+    "duration": "10-15 min per topic"
   },
   "vocab_game": {
     "name": "Vocab Game",
-    "tagline": "Learn business English words with gamification",
-    "value_prop": "Custom vocabulary cards for each level. Visuals + Turkish translation + pronunciation + example sentence.",
+    "tagline": "AI-powered word-guessing game",
+    "value_prop": "Grow your vocabulary by playing an AI-powered word-guessing game.",
     "how_to": [
-      "Pick your level",
-      "Flip cards and guess the meaning",
-      "Collect points, master through repetition"
+      "Open Vocab Game",
+      "Enter your name",
+      "Pick a level (single level or Mixed)",
+      "Start the game and guess the words"
     ],
-    "target_level": "All levels from A1 to C1",
-    "first_action": "Play a quick round with 10 words",
-    "duration": "5-10 minutes"
+    "target_level": "All levels — for quick, fun daily practice",
+    "first_action": "Play a round at your level",
+    "duration": "5 min per round"
   },
   "simulation_mode": {
-    "name": "Business Scenarios",
-    "tagline": "Learn by living real business situations",
-    "value_prop": "Role-play real business scenarios like meetings, emails, sales calls with AI. Develops both speaking and writing skills.",
+    "name": "Business Simulations",
+    "tagline": "Role-play industry scenarios with expert AI coaches",
+    "value_prop": "Role-play industry-specific business scenarios with expert AI coaches.",
     "how_to": [
-      "Select a role suitable for the scenario (sales rep, HR specialist, etc.)",
-      "Dialogue with AI",
-      "Get feedback about your performance"
+      "Open Business Simulations",
+      "Pick your industry (Finance, Tech, Healthcare, Tourism, Legal, etc.)",
+      "Pick a scenario and coach specific to the industry",
+      "Complete the scenario end-to-end with the coach"
     ],
-    "target_level": "A2 and above — ideal for B1+",
-    "first_action": "Start with the 'Self Introduction' scenario",
-    "duration": "10-15 minutes"
+    "target_level": "B1 and above — professionals wanting to practice in the language of their industry",
+    "first_action": "Pick your own industry and try the first scenario",
+    "duration": "10-15 min"
   },
   "interview_sim": {
     "name": "Interview Simulator",
-    "tagline": "Prepare for English job interviews",
-    "value_prop": "Practice answering industry-specific interview questions. Feedback on tone, fluency, and content.",
+    "tagline": "Voice interview with AI + detailed hiring report",
+    "value_prop": "Practice English job interviews via voice with an AI interviewer and receive a detailed hiring-style report at the end.",
     "how_to": [
-      "Pick your industry (tech, finance, manufacturing, etc.)",
-      "Have a dialogue with the AI interviewer",
-      "Get a report on your strengths and weaknesses"
+      "Open Interview Simulator",
+      "Enter target position, seniority (Junior to Executive) and industry",
+      "Optionally add the job ad and CV summary",
+      "Choose the number of questions (Quick 4 / Standard 8 / Detailed 12)",
+      "Pick your interviewer and start the voice interview",
+      "Review the hiring-style report at the end"
     ],
-    "target_level": "Ideal for B1 and above",
-    "first_action": "Start with a 'Tell me about yourself' question",
-    "duration": "15-20 minutes"
+    "target_level": "B1 and above — candidates preparing for English interviews or international jobs",
+    "first_action": "Enter the position you want and try 'Quick (4 questions)' mode",
+    "duration": "10-30 min depending on question count"
   },
   "presentation_sim": {
     "name": "Presentation Simulator",
-    "tagline": "Gain fluency and impact in English presentations",
-    "value_prop": "Pick a topic, AI gives you a presentation structure + tips. Live rehearsal with feedback on tone and timing.",
+    "tagline": "Present in English + manage Q&A, get impact + language report",
+    "value_prop": "Deliver English presentations to a chosen audience and manage the Q&A round. Get an impact + language report at the end.",
     "how_to": [
-      "Choose or create your presentation topic",
-      "Start rehearsing with AI",
-      "Get a report on tone, timing, fluency"
+      "Open Presentation Simulator",
+      "Write your topic, pick the purpose (Inform, Persuade, Pitch, Train, Update)",
+      "Set tone, target duration, and Q&A count",
+      "Pick your audience (Investors, Board, Internal Team, Customers)",
+      "Deliver the presentation, then handle the audience's questions",
+      "Review the impact and language report"
     ],
-    "target_level": "Ideal for B1 and above",
-    "first_action": "Start with 'Introducing my company' rehearsal",
-    "duration": "15-25 minutes"
+    "target_level": "B1 and above — professionals delivering meeting, pitch or customer presentations",
+    "first_action": "Rehearse a real upcoming presentation in a 5-minute version",
+    "duration": "Presentation + Q&A total 10-15 min"
   },
   "ai_quiz": {
-    "name": "Smart Quiz",
-    "tagline": "Personal quizzes adapted to your level",
-    "value_prop": "Each question's difficulty is auto-adjusted based on your answers. Focuses on your weak areas.",
+    "name": "AI Quiz",
+    "tagline": "Write a topic or paste text, AI builds a personalized quiz",
+    "value_prop": "Get AI to build a personalized quiz to measure your level based on a topic you write or text you paste.",
     "how_to": [
-      "Choose a topic or mixed mode",
-      "Answer questions",
-      "AI picks the next question based on your performance"
+      "Open AI Quiz",
+      "Enter a topic or paste an English text as the source",
+      "Pick your level (A1–C2)",
+      "Pick question types (Vocabulary, Grammar, Comprehension)",
+      "Set question count (4-20) and click 'Generate Quiz'"
     ],
-    "target_level": "All levels from A1 to C2",
-    "first_action": "Take a quick 5-question mixed quiz",
-    "duration": "5-10 minutes"
+    "target_level": "All levels — for reinforcing a text you read or testing yourself on a topic",
+    "first_action": "Paste an article you read in Explore and generate an 8-question quiz",
+    "duration": "5-15 min depending on question count"
   },
   "ai_tutor": {
-    "name": "Personal Tutor",
-    "tagline": "AI teacher you can ask everything in Turkish",
-    "value_prop": "Ask anything about English in Turkish — AI answers in Turkish. Perfect for A1.",
+    "name": "Personal AI Tutor",
+    "tagline": "Your personal English tutor who remembers you",
+    "value_prop": "Your personal English tutor who teaches you through conversation and remembers your past chats. Explanations come with Turkish support when needed.",
     "how_to": [
-      "Type your question in Turkish: 'When is present perfect used?'",
-      "AI provides Turkish explanation + English examples",
-      "Go deeper with follow-up questions"
+      "Open Personal AI Tutor",
+      "Click 'New Chat'",
+      "Type your question (grammar, vocabulary, writing, exam prep, etc.)",
+      "Continue the conversation with the explanations and examples; revisit past chats from the left panel"
     ],
-    "target_level": "All levels from A1 to C2 — Turkish support especially helpful for A1-A2",
-    "first_action": "Ask 'How do I start a business email?'",
-    "duration": "5-15 minutes"
+    "target_level": "All levels — anyone who wants instant answers to what they're stuck on",
+    "first_action": "Ask about an English phrase or grammar rule you're curious about today",
+    "duration": "Usually 5-10 min"
   },
   "learning_path": {
     "name": "Learning Path",
-    "tagline": "Your personal learning route — step by step",
-    "value_prop": "A gradual roadmap from your level to your goal. New topic each week, measurable progress.",
+    "tagline": "AI-crafted 4-week study plan for you",
+    "value_prop": "Get AI to build you a personalized 4-week study plan based on your activity, weak areas and goal.",
     "how_to": [
-      "Select your goal (interview, presentation, meeting, etc.)",
-      "See your roadmap",
-      "Complete one step each week"
+      "Open Learning Path",
+      "Set your goal and generate your plan",
+      "Follow the weekly plan broken down into daily steps",
+      "Check off completed steps; use 'Regenerate Plan' if needed"
     ],
-    "target_level": "All levels from A1 and above",
-    "first_action": "Choose your goal to create your roadmap",
-    "duration": "30-60 minutes per week"
+    "target_level": "All levels — for structured, goal-oriented study",
+    "first_action": "Complete this week's first step of your plan",
+    "duration": "4-week plan · ~30 min per step"
   },
   "level_exams": {
     "name": "Level Exams",
-    "tagline": "Move up to the next CEFR level",
-    "value_prop": "CEFR level-up exams based on Oxford Business Result. Success unlocks certificate + platform content.",
+    "tagline": "CEFR level-up — based on Oxford Business Result",
+    "value_prop": "Proficiency exams based on Oxford Business Result for every CEFR level — measure and level up.",
     "how_to": [
-      "Select your current level",
-      "Take the exam",
-      "On success, access upper level content"
+      "Open Level Exams",
+      "See your current level and unlocked exams",
+      "Click 'Start Exam' at a level and answer the questions",
+      "Score 70%+ to level up and unlock the next exam"
     ],
-    "target_level": "All levels from A1 to C2",
-    "first_action": "First complete the placement test",
-    "duration": "30-45 minutes"
+    "target_level": "All levels — for officially benchmarking or leveling up",
+    "first_action": "Take your current level's exam to validate your starting point",
+    "duration": "25 min per exam (12-14 questions)"
   },
   "materials": {
     "name": "Materials",
-    "tagline": "E-books, audio, documents from the library",
+    "tagline": "Library — e-books, audio, documents",
     "value_prop": "Oxford-referenced business English materials, PDFs, audio files — all downloadable for offline use.",
     "how_to": [
       "Pick a material suitable for your level",
       "Read online or download",
       "Go at your own pace"
     ],
-    "target_level": "All levels from A1 to C2",
+    "target_level": "All levels",
     "first_action": "Browse categories and pick a starter material",
     "duration": "Variable"
   },
   "speaking_club": {
     "name": "Speaking Club",
-    "tagline": "Live speaking practice with other students",
-    "value_prop": "Weekly virtual meetups. Topic-based group conversations moderated by a teacher.",
+    "tagline": "Live speaking events with real people",
+    "value_prop": "Sign up for English speaking events organized with other participants.",
     "how_to": [
-      "Browse the schedule, pick a suitable session",
-      "Sign up",
-      "Join the live Zoom session"
+      "Open Speaking Club",
+      "Browse upcoming events",
+      "Sign up for an event that fits you",
+      "Track your registrations in the 'My Registrations' tab and join when the time comes"
     ],
-    "target_level": "A2 and above — ideal for B1+",
-    "first_action": "Check this week's schedule",
-    "duration": "45-60 minutes"
+    "target_level": "A2 and above — for building confidence by speaking with real people",
+    "first_action": "Sign up for one of the upcoming events",
+    "duration": "45-60 min per event"
   },
   "live_classes": {
     "name": "Live Classes",
@@ -188,6 +234,32 @@
     ],
     "target_level": "Special groups for every level",
     "first_action": "Pick this week's class",
-    "duration": "60 minutes"
+    "duration": "60 min"
+  },
+  "discover": {
+    "name": "Explore",
+    "tagline": "News and articles by level + Turkish summary",
+    "value_prop": "Read level-tagged current news and articles with Turkish summaries. Content is personalized to your industry.",
+    "how_to": [
+      "Pick your industry from the dashboard",
+      "Open Explore",
+      "Pick an article at your level, check the Turkish summary, and read it"
+    ],
+    "target_level": "A2 and above — for improving reading skills and business vocabulary",
+    "first_action": "Read an article related to your own industry",
+    "duration": "5-10 min per article"
+  },
+  "watch_listen": {
+    "name": "Watch & Listen",
+    "tagline": "Sharpen listening with videos and podcasts",
+    "value_prop": "Sharpen your listening with videos and podcasts on productivity, motivation and the business world. Every piece comes with a Turkish summary.",
+    "how_to": [
+      "Open Watch & Listen",
+      "Pick a piece of content that interests you and check the Turkish summary",
+      "Watch the video or listen to the podcast"
+    ],
+    "target_level": "B1 and above — for adapting to natural speaking speed and different accents",
+    "first_action": "Watch one of this week's recommended videos",
+    "duration": "5-20 min per piece"
   }
 }

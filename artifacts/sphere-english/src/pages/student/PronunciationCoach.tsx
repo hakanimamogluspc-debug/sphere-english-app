@@ -682,7 +682,7 @@ function TeacherSelectScreen({ onSelect }: { onSelect: (t: Teacher) => void }) {
       <div className="max-w-2xl mx-auto px-4 py-10">
         <div className="mb-10 text-center">
           <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-            <h1 className="text-3xl font-bold text-gray-900 font-display">AI Konuşma Koçu</h1>
+            <h1 className="text-3xl font-bold text-gray-900 font-display">Konuşma Koçu</h1>
             <p className="text-gray-500 text-sm mt-2 max-w-sm mx-auto">
               Koçunu seç, İngilizce konuş. Telaffuz, gramer ve kelime hatalarını gerçek zamanlı analiz eder.
             </p>

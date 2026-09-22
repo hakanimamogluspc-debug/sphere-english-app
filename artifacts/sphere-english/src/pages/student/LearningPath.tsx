@@ -186,7 +186,7 @@ export default function LearningPath() {
         </div>
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 flex items-center gap-2">
           <Compass className="h-7 w-7 text-purple-600" />
-          Adaptif Öğrenme Yolu
+          Öğrenme Yolu
         </h1>
         <p className="text-sm text-gray-500 mt-1">
           Yaptığın çalışmalara, zayıf alanlarına ve hedefine göre AI sana özel 4 haftalık plan üretir.

@@ -187,7 +187,7 @@ function StudentDashboard() {
             <CardContent className="p-0">
               <Link href="/student/level-exams">
                 <div className="p-4 flex items-center justify-center text-sm font-medium text-primary hover:bg-primary/5 transition-colors cursor-pointer">
-                  Seviye atlama testini al &rarr;
+                  Seviye Sınavlarına git &rarr;
                 </div>
               </Link>
             </CardContent>
@@ -244,7 +244,7 @@ type QuickAction = {
 
 // Her modül için: accent (dikey şerit + ikon rengi)
 const QUICK_ACTIONS: QuickAction[] = [
-  { label: "AI Öğretmen",       subtitle: "Sohbet ederek öğren",     href: "/student/ai-tutor",           icon: GraduationCap, bg: "",  accent: "#1B365D",  featureKey: "student-ai-tutor" },
+  { label: "Kişisel AI Öğretmen", subtitle: "Sohbet ederek öğren",     href: "/student/ai-tutor",           icon: GraduationCap, bg: "",  accent: "#1B365D",  featureKey: "student-ai-tutor" },
   { label: "Konuşma Sahneleri", subtitle: "Rol yaparak konuş",       href: "/student/speaking-scenes",    icon: Cpu,           bg: "",  accent: "#0d9488",  featureKey: "student-speaking-scenes" },
   { label: "Yazma Koçu",        subtitle: "Metnini geliştir",        href: "/student/writing-coach",      icon: BookMarked,    bg: "",  accent: "#c2410c",  featureKey: "student-writing-coach" },
   { label: "Dilbilgisi Koçu",   subtitle: "Kurallara hakim ol",      href: "/student/grammar-coach",      icon: Cpu,           bg: "",  accent: "#7c3aed",  featureKey: "student-grammar-coach" },

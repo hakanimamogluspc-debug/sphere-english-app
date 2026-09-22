@@ -104,7 +104,7 @@ export default function LevelExams() {
         </div>
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 flex items-center gap-2">
           <GraduationCap className="h-7 w-7 text-blue-600" />
-          Seviye Geçme Sınavları
+          Seviye Sınavları
         </h1>
         <p className="text-sm text-gray-500 mt-1">
           Her CEFR seviyesi için yeterlilik sınavı. %70 ve üzeri puanla geçer ve seviyeni yükseltirsin.
