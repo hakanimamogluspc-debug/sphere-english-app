@@ -3,6 +3,7 @@ import { Mic, MicOff, Volume2, ChevronLeft, ChevronDown, ChevronUp, AlertCircle,
 import { motion, AnimatePresence } from "framer-motion";
 import { useBeforeUnload } from "@/hooks/use-before-unload";
 import { ClickableText } from "@/components/ClickableText";
+import ModuleIntro from "@/components/ModuleIntro";
 
 const TOKEN_KEY = "sphere_token";
 
@@ -1333,7 +1334,12 @@ export default function PronunciationCoach() {
     };
   }, []);
 
-  if (screen === "select") return <TeacherSelectScreen onSelect={handleSelectTeacher} />;
+  if (screen === "select") return (
+    <>
+      <ModuleIntro moduleKey="pronunciation_coach" />
+      <TeacherSelectScreen onSelect={handleSelectTeacher} />
+    </>
+  );
   if (screen === "intro") return <CoachIntroScreen teacher={teacher} onStart={handleStartSession} onBack={handleBack} />;
   if (screen === "report" && sessionReport) return (
     <SessionReportScreen
