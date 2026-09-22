@@ -1,8 +1,9 @@
 import { useAuth } from "@/hooks/use-auth";
 import { useRef, useState, useEffect, useCallback } from "react";
 import { RefreshCw, Gamepad2 } from "lucide-react";
+import { withModuleIntro } from "@/components/withModuleIntro";
 
-export default function VocabGame() {
+function VocabGame() {
   const { user } = useAuth();
   const [lockedSrc, setLockedSrc] = useState<string | null>(null);
   const [loadError, setLoadError] = useState(false);
@@ -73,3 +74,5 @@ export default function VocabGame() {
     </div>
   );
 }
+
+export default withModuleIntro("vocab_game")(VocabGame);

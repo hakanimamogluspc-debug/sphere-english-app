@@ -4,6 +4,7 @@ import {
   PenLine, Send, Loader2, ChevronDown, ChevronUp,
   CheckCircle2, AlertCircle, Lightbulb, Star, BookOpen, FileText, Mail, ClipboardList, Sparkles
 } from "lucide-react";
+import { withModuleIntro } from "@/components/withModuleIntro";
 
 const getApiBase = () => import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -87,7 +88,7 @@ function CollapsibleSection({ title, icon: Icon, color, children, defaultOpen = 
   );
 }
 
-export default function WritingCoach() {
+function WritingCoach() {
   const [writingType, setWritingType] = useState("general");
   const [topic, setTopic] = useState("");
   const [text, setText] = useState("");
@@ -375,3 +376,5 @@ export default function WritingCoach() {
     </div>
   );
 }
+
+export default withModuleIntro("writing_coach")(WritingCoach);

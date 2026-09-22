@@ -24,6 +24,7 @@ import {
   Pause,
   Award,
 } from "lucide-react";
+import { withModuleIntro } from "@/components/withModuleIntro";
 
 const TOKEN_KEY = "sphere_token";
 const API = import.meta.env.BASE_URL.replace(/\/$/, "") + "/api";
@@ -139,7 +140,7 @@ function formatDuration(sec: number) {
 
 type Stage = "setup" | "recording" | "processing" | "qa" | "report" | "history";
 
-export default function PresentationSimulator() {
+function PresentationSimulator() {
   const [stage, setStage] = useState<Stage>("setup");
   const [audiences, setAudiences] = useState<Audience[]>([]);
   const [history, setHistory] = useState<SessionRow[]>([]);
@@ -1326,3 +1327,5 @@ function HistoryPanel({
     </div>
   );
 }
+
+export default withModuleIntro("presentation_sim")(PresentationSimulator);

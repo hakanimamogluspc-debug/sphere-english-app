@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "wouter";
 import { API } from "@/lib/api-url";
 import { Loader2, Lock, Mic, Clock, TrendingUp, Sparkles } from "lucide-react";
+import { withModuleIntro } from "@/components/withModuleIntro";
 
 /**
  * Speaking Role-Play sahneleri liste sayfası.
@@ -53,7 +54,7 @@ const DIFFICULTY_COLORS: Record<string, string> = {
   C1: "bg-red-100 text-red-800",
 };
 
-export default function SpeakingScenes() {
+function SpeakingScenes() {
   const [data, setData] = useState<ListResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -264,3 +265,5 @@ function SceneCard({ scene }: { scene: Scene }) {
     </Link>
   );
 }
+
+export default withModuleIntro("speaking_scenes")(SpeakingScenes);

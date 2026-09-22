@@ -19,6 +19,7 @@ import {
   Type,
 } from "lucide-react";
 import { DictionaryHost } from "@/components/ClickableText";
+import { withModuleIntro } from "@/components/withModuleIntro";
 
 const TOKEN_KEY = "sphere_token";
 const API = import.meta.env.BASE_URL.replace(/\/$/, "") + "/api";
@@ -88,7 +89,7 @@ const SUGGESTED_PROMPTS = [
   { tr: "TOEFL writing için iyi bir giriş paragrafı nasıl yazılır?", icon: Award },
 ];
 
-export default function AITutor() {
+function AITutor() {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeId, setActiveId] = useState<number | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -697,3 +698,5 @@ function escapeHtml(s: string): string {
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
 }
+
+export default withModuleIntro("ai_tutor")(AITutor);

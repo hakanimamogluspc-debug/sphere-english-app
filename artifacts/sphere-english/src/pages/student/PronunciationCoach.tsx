@@ -3,7 +3,7 @@ import { Mic, MicOff, Volume2, ChevronLeft, ChevronDown, ChevronUp, AlertCircle,
 import { motion, AnimatePresence } from "framer-motion";
 import { useBeforeUnload } from "@/hooks/use-before-unload";
 import { ClickableText } from "@/components/ClickableText";
-import ModuleIntro from "@/components/ModuleIntro";
+import { withModuleIntro } from "@/components/withModuleIntro";
 
 const TOKEN_KEY = "sphere_token";
 
@@ -978,7 +978,7 @@ function EndSessionDialog({ teacher, onConfirm, onCancel }: { teacher: Teacher; 
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
-export default function PronunciationCoach() {
+function PronunciationCoach() {
   const [screen, setScreen] = useState<Screen>("select");
   const [teacher, setTeacher] = useState<Teacher>(TEACHERS[0]);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -1334,12 +1334,7 @@ export default function PronunciationCoach() {
     };
   }, []);
 
-  if (screen === "select") return (
-    <>
-      <ModuleIntro moduleKey="pronunciation_coach" />
-      <TeacherSelectScreen onSelect={handleSelectTeacher} />
-    </>
-  );
+  if (screen === "select") return <TeacherSelectScreen onSelect={handleSelectTeacher} />;
   if (screen === "intro") return <CoachIntroScreen teacher={teacher} onStart={handleStartSession} onBack={handleBack} />;
   if (screen === "report" && sessionReport) return (
     <SessionReportScreen
@@ -1525,3 +1520,5 @@ export default function PronunciationCoach() {
     </div>
   );
 }
+
+export default withModuleIntro("pronunciation_coach")(PronunciationCoach);

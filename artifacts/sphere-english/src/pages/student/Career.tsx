@@ -3,6 +3,7 @@ import {
   Video, Headphones, Loader2, Compass, RefreshCw, ExternalLink, Globe2,
 } from "lucide-react";
 import { API } from "@/lib/api-url";
+import { withModuleIntro } from "@/components/withModuleIntro";
 
 const TOKEN_KEY = "sphere_token";
 async function apiFetch(path: string) {
@@ -41,7 +42,7 @@ function fmtDuration(sec: number | null): string {
   return h > 0 ? `${h}s ${m}dk` : `${m} dk`;
 }
 
-export default function Career() {
+function Career() {
   const [type, setType] = useState("all");
   const [language, setLanguage] = useState("all");
   const [category, setCategory] = useState("all");
@@ -173,3 +174,5 @@ function ContentCard({ item }: { item: Item }) {
     </a>
   );
 }
+
+export default withModuleIntro("watch_listen")(Career);

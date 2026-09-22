@@ -6,6 +6,7 @@ import {
   MessageCircle, X, Star, Loader2, ArrowLeft, Sparkles, Trophy,
   Brain, ChevronLeft, Volume2
 } from "lucide-react";
+import { withModuleIntro } from "@/components/withModuleIntro";
 
 const API = import.meta.env.BASE_URL.replace(/\/$/, "") + "/api";
 
@@ -36,7 +37,7 @@ type Progress = { topicId: number; correctAnswers: number; totalAnswered: number
 
 type Screen = "hub" | "learn" | "practice" | "complete";
 
-export default function GrammarCoach() {
+function GrammarCoach() {
   const { user } = useAuth();
   const username = user ? [user.firstName, user.lastName].filter(Boolean).join(" ") || user.email || "" : "";
 
@@ -540,3 +541,5 @@ export default function GrammarCoach() {
     </div>
   );
 }
+
+export default withModuleIntro("grammar_coach")(GrammarCoach);

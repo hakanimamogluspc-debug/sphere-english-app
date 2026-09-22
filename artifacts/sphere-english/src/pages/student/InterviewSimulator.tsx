@@ -20,6 +20,7 @@ import {
   Sparkles,
   Volume2,
 } from "lucide-react";
+import { withModuleIntro } from "@/components/withModuleIntro";
 
 const TOKEN_KEY = "sphere_token";
 const API = import.meta.env.BASE_URL.replace(/\/$/, "") + "/api";
@@ -168,7 +169,7 @@ function formatDuration(sec: number) {
 
 type Stage = "setup" | "live" | "report" | "history";
 
-export default function InterviewSimulator() {
+function InterviewSimulator() {
   const [stage, setStage] = useState<Stage>("setup");
   const [coaches, setCoaches] = useState<Coach[]>([]);
   const [history, setHistory] = useState<SessionRow[]>([]);
@@ -1130,3 +1131,5 @@ function HistoryPanel({
     </div>
   );
 }
+
+export default withModuleIntro("interview_sim")(InterviewSimulator);

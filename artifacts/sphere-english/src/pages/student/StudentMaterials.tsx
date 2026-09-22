@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/core";
 import { FolderOpen, FileText, File, ImageIcon, Download, ChevronRight, ArrowLeft } from "lucide-react";
 import { motion } from "framer-motion";
 import { API } from "@/lib/api-url";
+import { withModuleIntro } from "@/components/withModuleIntro";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 interface Folder { id: number; name: string; description: string | null; materialCount: number; isActive: boolean; }
@@ -42,7 +43,7 @@ function fileTypeBg(type: string) {
 }
 
 // ─── Main ──────────────────────────────────────────────────────────────────────
-export default function StudentMaterials() {
+function StudentMaterials() {
   const [selectedFolder, setSelectedFolder] = useState<FolderDetail | null>(null);
 
   const { data: folders = [], isLoading } = useQuery<Folder[]>({
@@ -178,3 +179,5 @@ export default function StudentMaterials() {
     </div>
   );
 }
+
+export default withModuleIntro("materials")(StudentMaterials);

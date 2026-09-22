@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { withModuleIntro } from "@/components/withModuleIntro";
 
 const NAVY = "#082567";
 const SILVER = "#8da4c8";
@@ -696,7 +697,7 @@ function MicButton({
   );
 }
 
-export default function SimulationMode() {
+function SimulationMode() {
   const [step, setStep] = useState<'sector' | 'coach' | 'mode' | 'scenario-pick' | 'chat' | 'report'>('sector');
   const [sector, setSector] = useState<Sector | null>(null);
   const [coach, setCoach] = useState<Coach | null>(null);
@@ -1386,3 +1387,5 @@ export default function SimulationMode() {
     </div>
   );
 }
+
+export default withModuleIntro("simulation_mode")(SimulationMode);

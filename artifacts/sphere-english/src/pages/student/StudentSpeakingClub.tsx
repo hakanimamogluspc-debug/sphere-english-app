@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 
 import { API } from "@/lib/api-url";
+import { withModuleIntro } from "@/components/withModuleIntro";
 
 type Club = {
   id: number;
@@ -52,7 +53,7 @@ function isUpcoming(scheduledAt: string, duration: number) {
   return end > new Date();
 }
 
-export default function StudentSpeakingClub() {
+function StudentSpeakingClub() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [clubs, setClubs] = useState<Club[]>([]);
@@ -294,3 +295,5 @@ export default function StudentSpeakingClub() {
     </div>
   );
 }
+
+export default withModuleIntro("speaking_club")(StudentSpeakingClub);

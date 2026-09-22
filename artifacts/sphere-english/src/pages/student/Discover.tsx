@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import { API } from "@/lib/api-url";
 import { ClickableText, type VocabHint } from "@/components/ClickableText";
+import { withModuleIntro } from "@/components/withModuleIntro";
 
 const TOKEN_KEY = "sphere_token";
 
@@ -65,7 +66,7 @@ const CAT_CLR: Record<string, string> = {
   general: "bg-gray-100 text-gray-700",
 };
 
-export default function Discover() {
+function Discover() {
   const [category, setCategory] = useState("all");
   const [cefr, setCefr] = useState("all");
   const [q, setQ] = useState("");
@@ -507,3 +508,5 @@ function ArticleModal({ articleId, onClose, onSavedChange }: {
   );
 }
 
+
+export default withModuleIntro("discover")(Discover);

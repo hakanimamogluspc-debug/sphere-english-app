@@ -14,6 +14,7 @@ import {
   Sparkles,
   RotateCcw,
 } from "lucide-react";
+import { withModuleIntro } from "@/components/withModuleIntro";
 
 const TOKEN_KEY = "sphere_token";
 const API = import.meta.env.BASE_URL.replace(/\/$/, "") + "/api";
@@ -40,7 +41,7 @@ const LEVEL_BADGES: Record<string, { label: string; color: string; gradient: str
   C2: { label: "Yetkin (Proficient)",  color: "#f472b6", gradient: "from-pink-50 to-pink-100" },
 };
 
-export default function LevelExams() {
+function LevelExams() {
   const [, navigate] = useLocation();
   const [levels, setLevels] = useState<LevelInfo[]>([]);
   const [currentLevel, setCurrentLevel] = useState<string | null>(null);
@@ -217,3 +218,5 @@ export default function LevelExams() {
     </div>
   );
 }
+
+export default withModuleIntro("level_exams")(LevelExams);

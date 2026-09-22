@@ -21,6 +21,7 @@ import {
   Target,
   PlayCircle,
 } from "lucide-react";
+import { withModuleIntro } from "@/components/withModuleIntro";
 
 const TOKEN_KEY = "sphere_token";
 const API = import.meta.env.BASE_URL.replace(/\/$/, "") + "/api";
@@ -93,7 +94,7 @@ const CATEGORY_LABEL_TR: Record<string, string> = {
 
 type Stage = "setup" | "generating" | "taking" | "submitting" | "report" | "history";
 
-export default function AIQuizGenerator() {
+function AIQuizGenerator() {
   const [stage, setStage] = useState<Stage>("setup");
   const [history, setHistory] = useState<SessionRow[]>([]);
 
@@ -956,3 +957,5 @@ function HistoryPanel({ sessions, onOpen, onNew }: { sessions: SessionRow[]; onO
     </div>
   );
 }
+
+export default withModuleIntro("ai_quiz")(AIQuizGenerator);

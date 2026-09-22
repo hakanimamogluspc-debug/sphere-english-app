@@ -23,6 +23,7 @@ import {
   Headphones,
   GraduationCap,
 } from "lucide-react";
+import { withModuleIntro } from "@/components/withModuleIntro";
 
 const TOKEN_KEY = "sphere_token";
 const API = import.meta.env.BASE_URL.replace(/\/$/, "") + "/api";
@@ -78,7 +79,7 @@ const CATEGORY_META: Record<string, { label: string; icon: any; color: string; b
   review: { label: "Tekrar", icon: RotateCcw, color: "#52525b", bg: "#f4f4f5" },
 };
 
-export default function LearningPath() {
+function LearningPath() {
   const [path, setPath] = useState<PathRow | null>(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
@@ -434,3 +435,5 @@ function StepCard({ step, onToggle }: { step: Step; onToggle: () => void }) {
     </div>
   );
 }
+
+export default withModuleIntro("learning_path")(LearningPath);
