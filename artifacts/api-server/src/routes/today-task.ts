@@ -61,7 +61,7 @@ const GOAL_LABELS_TR: Record<string, string> = {
 
 /**
  * Kullanıcının seviyesi + sektör + hedefine göre bir görev seç.
- * Deterministic — aynı day+userId için aynı görev.
+ * skipCount ile atla butonu her seferinde farklı görev üretir.
  */
 function pickTaskForUser(opts: {
   userId: number;
@@ -69,11 +69,12 @@ function pickTaskForUser(opts: {
   sector: string | null;
   goal: string | null;
   date: string; // YYYY-MM-DD
+  skipCount: number;
 }): TodayTask {
-  const { userId, level, sector, goal, date } = opts;
+  const { userId, level, sector, goal, date, skipCount } = opts;
 
-  // Deterministic random seed: userId + date → task type seçimi
-  const seed = (userId * 31 + hashString(date)) % TASK_TYPES.length;
+  // Seed'e skipCount da ekle — her atla'da farklı görev gelir
+  const seed = (userId * 31 + hashString(date) + skipCount * 7919) % TASK_TYPES.length;
   const type = TASK_TYPES[seed];
 
   const sectorLabel = sector ? SECTOR_LABELS_TR[sector] ?? "iş" : "iş";
@@ -177,10 +178,13 @@ async function ensureTable() {
       completed_at TIMESTAMPTZ,
       skipped BOOLEAN NOT NULL DEFAULT FALSE,
       skipped_at TIMESTAMPTZ,
+      skip_count INTEGER NOT NULL DEFAULT 0,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       UNIQUE(user_id, task_date)
     )
   `);
+  // Mevcut tablo için idempotent kolon ekle
+  await pool.query(`ALTER TABLE today_tasks ADD COLUMN IF NOT EXISTS skip_count INTEGER NOT NULL DEFAULT 0`);
 }
 // Server boot'ta bir kez çalışır — hata sessizce geç
 ensureTable().catch((e) => console.warn("[today-task] ensureTable warn:", e?.message));
@@ -194,12 +198,14 @@ router.get("/student/today-task", authMiddleware, async (req: AuthRequest, res: 
 
     // Cache kontrol — bugünkü görev zaten var mı?
     const existing = await pool.query(
-      `SELECT id, task_type, payload, completed, skipped
+      `SELECT id, task_type, payload, completed, skipped, skip_count
        FROM today_tasks WHERE user_id = $1 AND task_date = $2 LIMIT 1`,
       [req.userId, date],
     );
+    let skipCount = 0;
     if (existing.rows.length > 0) {
       const row = existing.rows[0];
+      skipCount = Number(row.skip_count ?? 0);
       // Eğer skipped ise yeni görev üret (aşağıda)
       if (!row.skipped) {
         return res.json({
@@ -228,12 +234,13 @@ router.get("/student/today-task", authMiddleware, async (req: AuthRequest, res: 
       sector,
       goal,
       date,
+      skipCount,
     });
 
-    // DB'ye kaydet (UPSERT — skipped varsa günce)
+    // DB'ye kaydet (UPSERT — skipped varsa günce; skip_count'u koru)
     const upsert = await pool.query(
-      `INSERT INTO today_tasks (user_id, task_date, task_type, payload)
-       VALUES ($1, $2, $3, $4)
+      `INSERT INTO today_tasks (user_id, task_date, task_type, payload, skip_count)
+       VALUES ($1, $2, $3, $4, $5)
        ON CONFLICT (user_id, task_date) DO UPDATE
          SET task_type = EXCLUDED.task_type,
              payload = EXCLUDED.payload,
@@ -242,7 +249,7 @@ router.get("/student/today-task", authMiddleware, async (req: AuthRequest, res: 
              completed = FALSE,
              completed_at = NULL
        RETURNING id, completed`,
-      [req.userId, date, task.type, task],
+      [req.userId, date, task.type, task, skipCount],
     );
 
     return res.json({
@@ -263,8 +270,12 @@ router.post("/student/today-task/skip", authMiddleware, async (req: AuthRequest,
   try {
     if (!req.userId) return res.status(401).json({ error: "Yetkisiz" });
     const date = todayIsoDate();
+    // skip_count'u artır — sonraki GET yeni bir görev üretecek
     await pool.query(
-      `UPDATE today_tasks SET skipped = TRUE, skipped_at = NOW()
+      `UPDATE today_tasks
+         SET skipped = TRUE,
+             skipped_at = NOW(),
+             skip_count = skip_count + 1
        WHERE user_id = $1 AND task_date = $2`,
       [req.userId, date],
     );
