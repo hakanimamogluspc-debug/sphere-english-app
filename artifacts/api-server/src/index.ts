@@ -108,6 +108,15 @@ async function runStartupMigrations() {
     `ALTER TABLE users ADD COLUMN IF NOT EXISTS placement_test_completed BOOLEAN NOT NULL DEFAULT false`,
     // Mevcut kullanıcılar için testi tamamlanmış say (sadece yeni kayıt olanlar zorunlu)
     `UPDATE users SET placement_test_completed = true WHERE placement_test_completed = false AND created_at < NOW() - INTERVAL '2 minutes'`,
+    // ─── Onboarding wizard alanları (R0.5) ────────────────────────────────────
+    // Yeni kayıt: onboarding wizard → placement test → dashboard
+    // Not: 'sector' kolonu zaten var (schema/users.ts), tekrar eklenmez — onu kullanacağız.
+    `ALTER TABLE users ADD COLUMN IF NOT EXISTS onboarding_completed BOOLEAN NOT NULL DEFAULT false`,
+    `ALTER TABLE users ADD COLUMN IF NOT EXISTS preferred_language VARCHAR(5) DEFAULT 'tr'`,
+    `ALTER TABLE users ADD COLUMN IF NOT EXISTS learning_goal VARCHAR(60)`,
+    // Mevcut tüm kullanıcılar için onboarding'i tamamlanmış say (grandfather)
+    `UPDATE users SET onboarding_completed = true WHERE onboarding_completed = false AND created_at < NOW() - INTERVAL '2 minutes'`,
+    `CREATE INDEX IF NOT EXISTS idx_users_onboarding ON users(onboarding_completed)`,
     // ─── Performans indexleri ─────────────────────────────────────────────────
     `CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)`,
     `CREATE INDEX IF NOT EXISTS idx_users_company_id ON users(company_id)`,

@@ -118,6 +118,7 @@ const MyReport                = lazy(() => import("./pages/student/MyReport"));
 const SpeakingSceneRunner     = lazy(() => import("./pages/student/SpeakingSceneRunner"));
 const AIStudio                = lazy(() => import("./pages/AIStudio"));
 const PlacementTest           = lazy(() => import("./pages/PlacementTest"));
+const Onboarding              = lazy(() => import("./pages/Onboarding"));
 const Subscription            = lazy(() => import("./pages/student/Subscription"));
 
 // Pro gate sarmalanmış versiyonlar — withProGate plain ComponentType bekliyor
@@ -167,8 +168,19 @@ function ProtectedRoute({ component: Component, allowedRoles, skipPlacementCheck
     !skipPlacementCheck &&
     user?.role === "student" &&
     !user?.company &&
+    user?.onboardingCompleted === false &&
+    location !== "/onboarding"
+  ) {
+    return <Redirect to="/onboarding" />;
+  }
+
+  if (
+    !skipPlacementCheck &&
+    user?.role === "student" &&
+    !user?.company &&
     user?.placementTestCompleted === false &&
-    location !== "/placement-test"
+    location !== "/placement-test" &&
+    location !== "/onboarding"
   ) {
     return <Redirect to="/placement-test" />;
   }
@@ -197,6 +209,15 @@ function PlacementTestRoute() {
   return <PlacementTest />;
 }
 
+function OnboardingRoute() {
+  const { isLoading, isAuthenticated, user } = useAuth();
+  if (isLoading) return <PageLoader />;
+  if (!isAuthenticated) return <Redirect to="/login" />;
+  // Zaten tamamladıysa dashboard'a git
+  if (user?.onboardingCompleted === true) return <Redirect to="/dashboard" />;
+  return <Onboarding />;
+}
+
 function Router() {
   const { isAuthenticated, user } = useAuth();
   const [location] = useLocation();
@@ -206,8 +227,21 @@ function Router() {
 
   if (isAuthenticated && location === "/") {
     if (user?.role === "corporate") return <Redirect to="/corporate/dashboard" />;
+    if (user?.role === "student" && !user?.company && user?.onboardingCompleted === false) return <Redirect to="/onboarding" />;
     if (user?.role === "student" && !user?.company && user?.placementTestCompleted === false) return <Redirect to="/placement-test" />;
     return <Redirect to="/dashboard" />;
+  }
+
+  // Onboarding tamamlanmamış öğrenci → /onboarding'e yönlendir
+  if (
+    isAuthenticated &&
+    user?.role === "student" &&
+    !user?.company &&
+    user?.onboardingCompleted === false &&
+    location !== "/onboarding" &&
+    !location.startsWith("/logout")
+  ) {
+    return <Redirect to="/onboarding" />;
   }
 
   // Direct URL session-loss fix: placement test tamamlanmamış öğrenci
@@ -218,6 +252,7 @@ function Router() {
     !user?.company &&
     user?.placementTestCompleted === false &&
     location !== "/placement-test" &&
+    location !== "/onboarding" &&
     !location.startsWith("/student/level-exams") &&
     !location.startsWith("/profile") &&
     !location.startsWith("/logout")
@@ -236,6 +271,9 @@ function Router() {
         <Route path="/sifremi-unuttum" component={ForgotPassword} />
         <Route path="/ai-studio" component={AIStudio} />
         <Route path="/placement-test" component={PlacementTestRoute} />
+        <Route path="/onboarding">
+          <OnboardingRoute />
+        </Route>
 
         {/* Common Protected */}
         <Route path="/dashboard"><LayoutWrapper component={Dashboard} /></Route>

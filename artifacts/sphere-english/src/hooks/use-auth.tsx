@@ -16,6 +16,8 @@ interface AuthContextType {
   register: (data: RegisterRequest) => Promise<void>;
   logout: () => void;
   isAuthenticated: boolean;
+  /** User cache'ini yeniden çek — onboarding, profile update gibi durumlarda */
+  refresh: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -104,6 +106,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLocation("/partner");
     } else if (isCorporate) {
       setLocation("/corporate/dashboard");
+    } else if (isStudent && !response.user?.company && !response.user?.onboardingCompleted) {
+      setLocation("/onboarding");
     } else if (isStudent && !response.user?.company && !response.user?.placementTestCompleted) {
       setLocation("/placement-test");
     } else {
@@ -120,6 +124,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loginMutation = useLogin();
   const registerMutation = useRegister();
 
+  const handleRefresh = async () => {
+    // Tüm cache'i invalidate + refetch — user profile güncellemesinden
+    // sonra fresh data almak için (onboarding, profile update vb.)
+    await queryClient.invalidateQueries();
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -129,6 +139,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         register: handleRegister,
         logout: handleLogout,
         isAuthenticated: !!user,
+        refresh: handleRefresh,
       }}
     >
       {children}

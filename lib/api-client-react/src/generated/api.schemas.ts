@@ -87,6 +87,14 @@ export interface UserProfile {
   /** @nullable */
   badges?: string[] | null;
   placementTestCompleted?: boolean;
+  /** Onboarding wizard tamamlandı mı? — kayıt sonrası ilk 5 adım (R0.5) */
+  onboardingCompleted?: boolean;
+  /** Kullanıcının arayüz dili tercihi — 'tr' veya 'en' */
+  preferredLanguage?: string | null;
+  /** Kullanıcının sektörü — onboarding wizard'da seçilir */
+  sector?: string | null;
+  /** Kullanıcının öğrenme hedefi — onboarding wizard'da seçilir */
+  learningGoal?: string | null;
   /** @nullable — kurumsal kayıtlı öğrencilerde dolu, bireysel kayıtlılarda null */
   company?: { id: number; name: string; code: string } | null;
 }

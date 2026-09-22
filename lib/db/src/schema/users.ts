@@ -22,6 +22,10 @@ export const usersTable = pgTable("users", {
   studentNumber: varchar("student_number", { length: 20 }),
   accountType: varchar("account_type", { length: 20 }),
   sector: varchar("sector", { length: 60 }),
+  // Onboarding wizard alanları (R0.5)
+  onboardingCompleted: boolean("onboarding_completed").notNull().default(false),
+  preferredLanguage: varchar("preferred_language", { length: 5 }).default("tr"),
+  learningGoal: varchar("learning_goal", { length: 60 }),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
