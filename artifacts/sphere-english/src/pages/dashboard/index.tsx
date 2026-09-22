@@ -9,6 +9,7 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { useEffect, useState } from "react";
 import { API } from "@/lib/api-url";
 import TrialBanner from "@/components/subscription/TrialBanner";
+import TodayTaskCard from "@/components/TodayTaskCard";
 
 function useAnnouncements() {
   const [announcements, setAnnouncements] = useState<any[]>([]);
@@ -56,6 +57,9 @@ function StudentDashboard() {
           </div>
         </div>
       )}
+
+      {/* 🎯 Bugün için 1 iş — dashboard'un ana odak noktası (R1.A) */}
+      {user?.role === "student" && <TodayTaskCard />}
 
       {/* Hızlı Erişim */}
       <QuickAccessGrid />
