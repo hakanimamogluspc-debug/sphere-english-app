@@ -8,6 +8,7 @@ import os from "os";
 import path from "path";
 import { authMiddleware } from "../middlewares/auth.js";
 import { awardPoints } from "../lib/points.js";
+import { getUserLevel, levelInstruction } from "../lib/user-level.js";
 
 const execFileAsync = promisify(execFile);
 const router = Router();
@@ -165,13 +166,18 @@ router.post(
         return res.status(400).json({ error: "Ses anlaşılamadı. Daha yüksek ve net konuşmayı deneyin." });
       }
 
+      // CEFR level'ı enjekte et (R0.6) — AI counterpart kullanıcının seviyesinde konuşsun
+      const userLevel = await getUserLevel((req as any).userId);
+      const levelGuidance = levelInstruction(userLevel, { includeTurkishSupport: false });
+
       const conversationSystemPrompt = `${systemPrompt}
+${levelGuidance}
 
 SIMULATION RULES:
 - You are the professional counterpart in this business scenario (client, manager, partner, buyer, official, etc.).
 - The user is a Turkish professional practicing business English. Engage realistically.
 - Keep your responses concise: 2-3 sentences max.
-- Use natural, authentic business language appropriate to your character.
+- Use natural, authentic business language appropriate to your character AND the user's CEFR level.
 - Ask follow-up questions or make requests to keep the conversation flowing.
 - Do NOT correct the user's English — just respond naturally as your character.
 - Always respond in English only.

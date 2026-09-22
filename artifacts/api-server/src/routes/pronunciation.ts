@@ -13,6 +13,7 @@ import { usersTable, pronunciationAssessmentsTable } from "@workspace/db/schema"
 import { eq, desc } from "drizzle-orm";
 import { applyActivityStreak, computeEffectiveStreak } from "../utils/streak.js";
 import { notifyNewAssessment, notifyLevelUp } from "../lib/notifications.js";
+import { getUserLevel, levelInstruction } from "../lib/user-level.js";
 import {
   analyzePronunciation as azureAnalyze,
   buildWordFeedback as azureBuildFeedback,
@@ -256,7 +257,12 @@ router.post(
         ? coachSystemPrompt
         : `You are ${teacherName}, a warm and encouraging English conversation teacher.`;
 
+      // CEFR level'ı prompt'a enjekte et (R0.6) — koç kullanıcı seviyesinde konuşsun
+      const userLevel = await getUserLevel((req as any).userId);
+      const levelGuidance = levelInstruction(userLevel, { includeTurkishSupport: false });
+
       const systemPrompt = `${basePersonality}
+${levelGuidance}
 
 CONVERSATION STYLE:
 - Have a genuine conversation — not a lecture.

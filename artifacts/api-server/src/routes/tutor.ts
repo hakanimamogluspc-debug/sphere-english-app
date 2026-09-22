@@ -47,7 +47,12 @@ async function getUserContext(userId: number): Promise<string> {
   try {
     const [user] = await db.select().from(usersTable).where(eq(usersTable.id, userId)).limit(1);
     if (!user) return "";
-    return `Student profile: name=${user.fullName || user.email}, CEFR=${(user as any).cefrLevel || "unknown"}, role=${user.role}.`;
+    // Drizzle field: currentLevel (DB kolonu: current_level). Placement test bittikten sonra dolar.
+    const level = (user as any).currentLevel || "unknown";
+    const fullName = [user.firstName, user.lastName].filter(Boolean).join(" ") || user.email;
+    const sector = (user as any).sector ? `, sector=${(user as any).sector}` : "";
+    const goal = (user as any).learningGoal ? `, goal=${(user as any).learningGoal}` : "";
+    return `Student profile: name=${fullName}, CEFR=${level}, role=${user.role}${sector}${goal}.`;
   } catch {
     return "";
   }

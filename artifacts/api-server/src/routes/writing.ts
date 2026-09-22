@@ -2,6 +2,7 @@ import { Router, Request, Response } from "express";
 import OpenAI from "openai";
 import { authMiddleware } from "../middlewares/auth.js";
 import { awardPoints } from "../lib/points.js";
+import { getUserLevel, levelInstruction } from "../lib/user-level.js";
 
 const router = Router();
 
@@ -44,10 +45,17 @@ router.post("/writing/analyze", authMiddleware, async (req: Request, res: Respon
     const typeName = WRITING_TYPES[writingType] || WRITING_TYPES["general"];
     const topicLine = topic ? `Konu: "${topic}"` : "";
 
+    // Öğrencinin CEFR seviyesini AI prompt'una enjekte et (R0.6)
+    const userLevel = await getUserLevel((req as any).userId);
+    const levelGuidance = levelInstruction(userLevel);
+
     const systemPrompt = `Sen deneyimli bir İngilizce yazma koçusun. Öğrencilerin İngilizce yazılarını analiz edip yapıcı, detaylı geri bildirim veriyorsun. Geri bildirimini her zaman Türkçe veriyorsun, ancak düzeltilen metin ve örnekler İngilizce olacak.
 
 Analiz ettiğin yazı türü: ${typeName}
 ${topicLine}
+${levelGuidance}
+
+Öğrencinin seviyesine uygun düzeltmeler ve öneriler yap. Örneğin A1 öğrenciye C1 seviyesinde alternatif kelime önermek yerine, seviyesine uygun ama biraz daha iyi bir alternatif öner.
 
 Şu formatta JSON yanıtı ver (başka hiçbir şey yazma, sadece JSON):
 {

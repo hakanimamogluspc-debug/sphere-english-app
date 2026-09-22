@@ -12,7 +12,13 @@ function VocabGame() {
 
   const buildSrc = useCallback((u: typeof user) => {
     const displayName = [u?.firstName, u?.lastName].filter(Boolean).join(" ") || u?.email || "";
-    return `/vocab-game/${displayName ? `?username=${encodeURIComponent(displayName)}` : ""}`;
+    // Kullanıcının CEFR seviyesini de iframe'e geçir — oyun default'ta bunu kullanır
+    const level = u?.currentLevel;
+    const params = new URLSearchParams();
+    if (displayName) params.set("username", displayName);
+    if (level) params.set("level", level);
+    const qs = params.toString();
+    return `/vocab-game/${qs ? `?${qs}` : ""}`;
   }, []);
 
   useEffect(() => {

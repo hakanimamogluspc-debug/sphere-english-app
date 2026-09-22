@@ -22,6 +22,7 @@ import {
   PlayCircle,
 } from "lucide-react";
 import { withModuleIntro } from "@/components/withModuleIntro";
+import { useAuth } from "@/hooks/use-auth";
 
 const TOKEN_KEY = "sphere_token";
 const API = import.meta.env.BASE_URL.replace(/\/$/, "") + "/api";
@@ -101,7 +102,10 @@ function AIQuizGenerator() {
   const [sourceMode, setSourceMode] = useState<"topic" | "text">("topic");
   const [topic, setTopic] = useState("");
   const [sourceText, setSourceText] = useState("");
-  const [level, setLevel] = useState<AIQuizSetup["level"]>("B1");
+  // Default level: kullanıcının kendi CEFR seviyesi (placement test'ten), yoksa B1
+  const { user } = useAuth();
+  const userLevel = (user?.currentLevel as AIQuizSetup["level"] | undefined) ?? "B1";
+  const [level, setLevel] = useState<AIQuizSetup["level"]>(userLevel);
   const [numQuestions, setNumQuestions] = useState(8);
   const [categories, setCategories] = useState<AIQuizSetup["categories"]>(["vocabulary", "grammar", "comprehension"]);
 
