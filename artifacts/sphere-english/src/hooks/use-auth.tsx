@@ -89,7 +89,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     queryClient.setQueryData(["/api/auth/me"], response.user);
     queryClient.invalidateQueries();
     const role = response.user?.role;
-    const dest = role === "corporate" ? "/corporate/dashboard" : role === "partner" ? "/partner" : "/dashboard";
+    const isStudent = role === "student";
+    const u = response.user;
+    let dest = "/dashboard";
+    if (role === "corporate") dest = "/corporate/dashboard";
+    else if (role === "partner") dest = "/partner";
+    else if (isStudent && !u?.company && u?.onboardingCompleted !== true) dest = "/onboarding";
+    else if (isStudent && !u?.company && u?.placementTestCompleted !== true) dest = "/placement-test";
     setLocation(dest);
   };
 
@@ -106,9 +112,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLocation("/partner");
     } else if (isCorporate) {
       setLocation("/corporate/dashboard");
-    } else if (isStudent && !response.user?.company && !response.user?.onboardingCompleted) {
+    } else if (isStudent && !response.user?.company && response.user?.onboardingCompleted !== true) {
       setLocation("/onboarding");
-    } else if (isStudent && !response.user?.company && !response.user?.placementTestCompleted) {
+    } else if (isStudent && !response.user?.company && response.user?.placementTestCompleted !== true) {
       setLocation("/placement-test");
     } else {
       setLocation("/dashboard");

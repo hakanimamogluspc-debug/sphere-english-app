@@ -168,7 +168,7 @@ function ProtectedRoute({ component: Component, allowedRoles, skipPlacementCheck
     !skipPlacementCheck &&
     user?.role === "student" &&
     !user?.company &&
-    user?.onboardingCompleted === false &&
+    user?.onboardingCompleted !== true &&
     location !== "/onboarding"
   ) {
     return <Redirect to="/onboarding" />;
@@ -227,7 +227,7 @@ function Router() {
 
   if (isAuthenticated && location === "/") {
     if (user?.role === "corporate") return <Redirect to="/corporate/dashboard" />;
-    if (user?.role === "student" && !user?.company && user?.onboardingCompleted === false) return <Redirect to="/onboarding" />;
+    if (user?.role === "student" && !user?.company && user?.onboardingCompleted !== true) return <Redirect to="/onboarding" />;
     if (user?.role === "student" && !user?.company && user?.placementTestCompleted === false) return <Redirect to="/placement-test" />;
     return <Redirect to="/dashboard" />;
   }
@@ -237,7 +237,7 @@ function Router() {
     isAuthenticated &&
     user?.role === "student" &&
     !user?.company &&
-    user?.onboardingCompleted === false &&
+    user?.onboardingCompleted !== true &&
     location !== "/onboarding" &&
     !location.startsWith("/logout")
   ) {
