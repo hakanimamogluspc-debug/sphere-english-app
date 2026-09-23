@@ -16,6 +16,7 @@ import {
 import { and, desc, eq } from "drizzle-orm";
 import { authMiddleware } from "../middlewares/auth.js";
 import { awardPoints } from "../lib/points.js";
+import { getUserLevel, levelInstruction } from "../lib/user-level.js";
 
 const execFileAsync = promisify(execFile);
 const router = Router();
@@ -158,14 +159,26 @@ async function tts(text: string, voice: Voice): Promise<string> {
 
 // ── System prompt builder ────────────────────────────────────────────────────
 
-function buildSystemPrompt(setup: InterviewSetup, phase: Phase, persona: string, asked: number, target: number): string {
+function buildSystemPrompt(
+  setup: InterviewSetup,
+  phase: Phase,
+  persona: string,
+  asked: number,
+  target: number,
+  userCefrLevel: string | null = null,
+): string {
+  // Kullanıcının CEFR seviyesine göre kalibre et (R0.6/R1.C)
+  const effectiveLevel = userCefrLevel ?? setup.cefrTarget ?? "B1";
+  const levelGuidance = levelInstruction(effectiveLevel as any, { includeTurkishSupport: false });
+
   const base = `${persona}
 
 You are conducting a ${setup.seniority.toUpperCase()} level job interview for the role of "${setup.targetRole}" in the ${setup.industry} sector. The candidate is a Turkish professional practicing English. The interview will be ~${target} questions total (currently on question ${asked + 1}).
+${levelGuidance}
 
 INTERVIEW RULES:
 - Stay completely in character as the interviewer.
-- Speak ENGLISH only. Use natural, professional, native-level interview language.
+- Speak ENGLISH only. Use natural, professional interview language calibrated to the candidate's CEFR level.
 - Keep each turn concise (2-3 sentences max). Ask ONE question per turn unless the candidate asks you something.
 - Never give the candidate feedback during the interview — that comes at the end.
 - React naturally to their answer (brief acknowledgement) before the next question.
@@ -208,7 +221,9 @@ router.post("/interview/start", authMiddleware, async (req: Request, res: Respon
     const style = INTERVIEWER_STYLES[styleKey];
 
     const phase: Phase = "intro";
-    const systemPrompt = buildSystemPrompt(setup, phase, style.persona, 0, targetQuestions);
+    // Kullanıcının CEFR seviyesini enjekte et (R1.C)
+    const userCefrLevel = await getUserLevel(userId);
+    const systemPrompt = buildSystemPrompt(setup, phase, style.persona, 0, targetQuestions, userCefrLevel);
 
     const completion = await getOpenAI().chat.completions.create({
       model: "gpt-4o-mini",
@@ -304,12 +319,15 @@ router.post(
       const phase = nextPhase(session.currentPhase as Phase, newAsked, session.targetQuestions) as Phase;
       const isFinalTurn = newAsked > session.targetQuestions;
 
+      // Kullanıcının CEFR seviyesini enjekte et (R1.C)
+      const userCefrLevel = await getUserLevel((req as any).userId as number);
       const systemPrompt = buildSystemPrompt(
         session.setup,
         isFinalTurn ? "closing" : phase,
         style.persona,
         newAsked - 1,
         session.targetQuestions,
+        userCefrLevel,
       );
 
       const recentTranscript = session.transcript.slice(-10).map((t) => ({

@@ -16,6 +16,7 @@ import {
 import { and, desc, eq, inArray } from "drizzle-orm";
 import { authMiddleware } from "../middlewares/auth.js";
 import { awardPoints } from "../lib/points.js";
+import { getUserLevel, levelInstruction } from "../lib/user-level.js";
 
 const execFileAsync = promisify(execFile);
 const router = Router();
@@ -265,11 +266,17 @@ router.post(
 
       // 2. Generate first Q&A question from audience persona
       const profile = AUDIENCE_PROFILES[session.setup.audienceType] || AUDIENCE_PROFILES.team;
+
+      // Kullanıcının CEFR seviyesini enjekte et (R1.C) — soru seviyeye uygun karmaşıklıkta
+      const userCefrLevel = await getUserLevel((req as any).userId as number);
+      const levelGuidance = levelInstruction(userCefrLevel, { includeTurkishSupport: false });
+
       const firstQuestionPrompt = `You are role-playing ${profile.questionerName} (${profile.questionerRole}), part of an audience of ${profile.persona}.
+${levelGuidance}
 
 A speaker just delivered the following presentation in English about "${session.setup.topic}". Their goal was: ${session.setup.goalLabel}. Audience: ${session.setup.audienceTypeLabel}.
 
-Read the presentation transcript below carefully, then ask ONE pointed, specific question (max 2 sentences) that the audience would realistically ask. Reference something concrete the speaker said. Keep it fair but probing.
+Read the presentation transcript below carefully, then ask ONE pointed, specific question (max 2 sentences) that the audience would realistically ask. Reference something concrete the speaker said. Keep it fair but probing. Calibrate the question's language complexity to the speaker's CEFR level.
 
 Transcript:
 """${transcript.slice(0, 3500)}"""
@@ -380,18 +387,23 @@ router.post(
       let audioBase64: string | null = null;
 
       if (remainingTurns > 0) {
+        // Kullanıcının CEFR seviyesini enjekte et (R1.C)
+        const userCefrLevel = await getUserLevel((req as any).userId as number);
+        const levelGuidance = levelInstruction(userCefrLevel, { includeTurkishSupport: false });
+
         // Generate next question, contextual to previous answer
         const previousQA = turns
           .map((t) => `Q: ${t.question}\nA: ${t.candidateAnswer}`)
           .join("\n\n");
         const nextQPrompt = `You are still ${profile.questionerName} (${profile.questionerRole}). The Q&A so far:
+${levelGuidance}
 
 ${previousQA}
 
 Original presentation transcript (truncated):
 """${(session.presentationTranscript || "").slice(0, 2500)}"""
 
-Ask ONE follow-up question (max 2 sentences) that drills deeper, challenges, or explores a different angle than what's been covered. Be realistic for ${profile.persona}. Reply with the question text only.`;
+Ask ONE follow-up question (max 2 sentences) that drills deeper, challenges, or explores a different angle than what's been covered. Be realistic for ${profile.persona}. Calibrate the question's language to the speaker's CEFR level. Reply with the question text only.`;
         const c = await getOpenAI().chat.completions.create({
           model: "gpt-4o-mini",
           messages: [{ role: "user", content: nextQPrompt }],
