@@ -271,4 +271,4 @@ function BusinessCardsPage() {
   );
 }
 
-export default withModuleIntro(BusinessCardsPage, "business_cards");
+export default withModuleIntro("business_cards")(BusinessCardsPage);
