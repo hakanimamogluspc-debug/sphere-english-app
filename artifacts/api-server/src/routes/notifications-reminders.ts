@@ -196,7 +196,7 @@ async function runStreakRisk(appUrl: string) {
 
   // Streak >= 2, last_active_date < today, e-posta var, opt-in
   const rows = await pool.query(
-    `SELECT u.id, u.name, u.email, u.streak, u.last_active_date,
+    `SELECT u.id, u.first_name AS name, u.email, u.streak, u.last_active_date,
             COALESCE(p.streak_risk_email, TRUE) AS opt_in
      FROM users u
      LEFT JOIN notification_preferences p ON p.user_id = u.id
@@ -256,7 +256,7 @@ async function runComeback(appUrl: string) {
   const fourteenDaysAgo = new Date(Date.now() - 14 * 86400000).toISOString().slice(0, 10);
 
   const rows = await pool.query(
-    `SELECT u.id, u.name, u.email, u.last_active_date,
+    `SELECT u.id, u.first_name AS name, u.email, u.last_active_date,
             COALESCE(p.inactivity_email, TRUE) AS opt_in
      FROM users u
      LEFT JOIN notification_preferences p ON p.user_id = u.id
