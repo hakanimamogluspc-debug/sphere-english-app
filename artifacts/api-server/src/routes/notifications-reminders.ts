@@ -339,6 +339,25 @@ router.post("/internal/notifications/run-daily-reminders", async (req: Request, 
 // ─── GET /internal/notifications/preview ─────────────────────────────────
 // Debug: mail göndermeden aday sayısını gör
 
+// Debug — bugünkü log detayı (kime gitti + status)
+router.get("/internal/notifications/log-today", async (req: Request, res: Response) => {
+  if (!checkInternal(req, res)) return;
+  try {
+    const r = await pool.query(
+      `SELECT nl.id, nl.user_id, u.email, u.first_name, u.streak, u.last_active_date,
+              nl.type, nl.channel, nl.status, nl.error, nl.created_at
+       FROM notification_log nl
+       LEFT JOIN users u ON u.id = nl.user_id
+       WHERE nl.sent_date = CURRENT_DATE
+       ORDER BY nl.created_at DESC
+       LIMIT 200`,
+    );
+    return res.json({ ok: true, count: r.rowCount, rows: r.rows });
+  } catch (e: any) {
+    return res.status(500).json({ error: e?.message });
+  }
+});
+
 router.get("/internal/notifications/preview", async (req: Request, res: Response) => {
   if (!checkInternal(req, res)) return;
 
