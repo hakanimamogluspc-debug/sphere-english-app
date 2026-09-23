@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "wouter";
 import { API } from "@/lib/api-url";
-import { Loader2, Lock, Mic, Clock, TrendingUp, Sparkles } from "lucide-react";
+import { Loader2, Lock, Mic, Clock, TrendingUp, Sparkles, TrendingDown, Target } from "lucide-react";
 import { withModuleIntro } from "@/components/withModuleIntro";
+import { useAuth } from "@/hooks/use-auth";
 
 /**
  * Speaking Role-Play sahneleri liste sayfası.
@@ -19,12 +20,18 @@ interface Scene {
   description_tr: string;
   user_role_tr: string | null;
   counterpart_role_tr: string | null;
-  difficulty: "A2" | "B1" | "B2" | "C1";
+  difficulty: "A1" | "A2" | "B1" | "B2" | "C1" | "C2";
   min_plan: "free" | "pro";
   avg_duration_min: number;
   sort_order: number;
   locked: boolean;
   lock_reason: "pro_only" | "category_locked" | null;
+}
+
+const CEFR_ORDER = ["A1", "A2", "B1", "B2", "C1", "C2"];
+function cefrIndex(level: string): number {
+  const i = CEFR_ORDER.indexOf(level);
+  return i === -1 ? 2 : i; // default B1
 }
 
 interface ListResponse {
@@ -48,17 +55,25 @@ const CATEGORY_LABELS: Record<string, { label: string; icon: string; color: stri
 };
 
 const DIFFICULTY_COLORS: Record<string, string> = {
+  A1: "bg-emerald-100 text-emerald-800",
   A2: "bg-green-100 text-green-800",
   B1: "bg-blue-100 text-blue-800",
   B2: "bg-orange-100 text-orange-800",
   C1: "bg-red-100 text-red-800",
+  C2: "bg-pink-100 text-pink-800",
 };
 
+type LevelFilter = "my_level" | "all" | "A1" | "A2" | "B1" | "B2" | "C1" | "C2";
+
 function SpeakingScenes() {
+  const { user } = useAuth();
+  const userLevel = (user?.currentLevel as string | undefined) ?? "B1";
+  const userIdx = cefrIndex(userLevel);
   const [data, setData] = useState<ListResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | "all">("all");
+  const [levelFilter, setLevelFilter] = useState<LevelFilter>("my_level");
 
   useEffect(() => {
     let cancel = false;
@@ -101,10 +116,36 @@ function SpeakingScenes() {
 
   const scenes = data?.scenes ?? [];
   const categories = Array.from(new Set(scenes.map((s) => s.category)));
-  const filtered =
+
+  // Kategori filtresi
+  const byCategory =
     selectedCategory === "all"
       ? scenes
       : scenes.filter((s) => s.category === selectedCategory);
+
+  // Level filtresi + sort (R1.D)
+  //   my_level: kullanıcının seviyesindeki + altındakiler
+  //   all: hepsi
+  //   A1/A2/.../C2: tam o seviye
+  const filtered = useMemo(() => {
+    let list = byCategory;
+    if (levelFilter === "my_level") {
+      list = list.filter((s) => cefrIndex(s.difficulty) <= userIdx);
+    } else if (levelFilter !== "all") {
+      list = list.filter((s) => s.difficulty === levelFilter);
+    }
+    // Sort: my_level → user'ın seviyesindekiler önce, sonra alt seviyeler
+    // all → user'ın seviyesindekiler önce, üst seviyeler sonra (soluk gösterilecek)
+    return [...list].sort((a, b) => {
+      const ai = cefrIndex(a.difficulty);
+      const bi = cefrIndex(b.difficulty);
+      // Öncelik: kullanıcı seviyesine yakınlık (aynı seviye 0, alt/üst uzaklaştıkça artıyor)
+      const aDist = ai === userIdx ? 0 : ai < userIdx ? 1 : 100 + (ai - userIdx);
+      const bDist = bi === userIdx ? 0 : bi < userIdx ? 1 : 100 + (bi - userIdx);
+      if (aDist !== bDist) return aDist - bDist;
+      return a.sort_order - b.sort_order;
+    });
+  }, [byCategory, levelFilter, userIdx]);
 
   return (
     <div className="max-w-6xl mx-auto px-4 lg:px-8 py-8">
@@ -125,6 +166,55 @@ function SpeakingScenes() {
       </div>
 
       {/* Abonelik kaldırıldı — tier banner artık gösterilmiyor */}
+
+      {/* Seviye filtresi (R1.D) */}
+      <div className="mb-4 flex items-center gap-2 flex-wrap">
+        <span className="text-xs font-bold text-slate-500 uppercase tracking-wider mr-1">
+          Seviye:
+        </span>
+        <button
+          onClick={() => setLevelFilter("my_level")}
+          className={`px-3 py-1.5 rounded-full text-xs font-bold transition inline-flex items-center gap-1 ${
+            levelFilter === "my_level"
+              ? "bg-indigo-600 text-white shadow-md"
+              : "bg-white border border-slate-200 text-slate-700 hover:border-indigo-300"
+          }`}
+        >
+          <Target size={11} />
+          Bana Uygun ({userLevel} ve altı)
+        </button>
+        <button
+          onClick={() => setLevelFilter("all")}
+          className={`px-3 py-1.5 rounded-full text-xs font-bold transition ${
+            levelFilter === "all"
+              ? "bg-slate-900 text-white"
+              : "bg-white border border-slate-200 text-slate-700 hover:border-slate-400"
+          }`}
+        >
+          Hepsi
+        </button>
+        {(["A1", "A2", "B1", "B2", "C1", "C2"] as const).map((lvl) => {
+          const count = scenes.filter((s) => s.difficulty === lvl).length;
+          if (count === 0) return null;
+          const isAbove = cefrIndex(lvl) > userIdx;
+          return (
+            <button
+              key={lvl}
+              onClick={() => setLevelFilter(lvl)}
+              className={`px-3 py-1.5 rounded-full text-xs font-bold transition ${
+                levelFilter === lvl
+                  ? "bg-slate-900 text-white"
+                  : isAbove
+                    ? "bg-amber-50 border border-amber-200 text-amber-800 hover:bg-amber-100"
+                    : "bg-white border border-slate-200 text-slate-700 hover:border-slate-400"
+              }`}
+            >
+              {lvl} ({count})
+              {isAbove && levelFilter !== lvl && <span className="ml-1">↑</span>}
+            </button>
+          );
+        })}
+      </div>
 
       {/* Kategori filtresi */}
       <div className="mb-6 flex gap-2 flex-wrap">
@@ -170,7 +260,7 @@ function SpeakingScenes() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map((scene) => (
-            <SceneCard key={scene.id} scene={scene} />
+            <SceneCard key={scene.id} scene={scene} userLevel={userLevel} />
           ))}
         </div>
       )}
@@ -178,7 +268,7 @@ function SpeakingScenes() {
   );
 }
 
-function SceneCard({ scene }: { scene: Scene }) {
+function SceneCard({ scene, userLevel }: { scene: Scene; userLevel: string }) {
   const catMeta =
     CATEGORY_LABELS[scene.category] || {
       label: scene.category,
@@ -187,12 +277,20 @@ function SceneCard({ scene }: { scene: Scene }) {
     };
   const diffColor = DIFFICULTY_COLORS[scene.difficulty] || "bg-slate-100 text-slate-800";
 
+  // Kullanıcının seviyesinin üstünde mi? (R1.D)
+  const sceneIdx = cefrIndex(scene.difficulty);
+  const userIdx = cefrIndex(userLevel);
+  const isAboveLevel = sceneIdx > userIdx;
+  const levelsAbove = sceneIdx - userIdx;
+
   const cardContent = (
     <div
       className={`h-full flex flex-col p-5 rounded-2xl border transition-all ${
         scene.locked
           ? "bg-slate-50 border-slate-200 opacity-70"
-          : "bg-white border-slate-200 hover:border-cyan-400 hover:shadow-lg hover:-translate-y-0.5"
+          : isAboveLevel
+            ? "bg-slate-50 border-slate-200 opacity-75 hover:opacity-95 hover:border-amber-300"
+            : "bg-white border-slate-200 hover:border-cyan-400 hover:shadow-lg hover:-translate-y-0.5"
       }`}
     >
       {/* Üst rozetler */}
@@ -201,6 +299,15 @@ function SceneCard({ scene }: { scene: Scene }) {
           <span>{catMeta.icon}</span> {catMeta.label}
         </span>
         <div className="flex items-center gap-1">
+          {isAboveLevel && !scene.locked && (
+            <span
+              className="px-2 py-1 rounded-md text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200 inline-flex items-center gap-0.5"
+              title={`Seviyenden ${levelsAbove} kademe yukarı — zor gelebilir`}
+            >
+              <TrendingUp size={9} />
+              +{levelsAbove}
+            </span>
+          )}
           <span className={`px-2 py-1 rounded-md text-[10px] font-bold ${diffColor}`}>
             {scene.difficulty}
           </span>
