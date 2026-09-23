@@ -217,13 +217,6 @@ async function runStreakRisk(appUrl: string) {
       skipped++;
       continue;
     }
-    // last_active_date bugün DEĞİL, dün OLMALI (bugün de geçmediyse comeback'e girer)
-    if (row.last_active_date && daysBetween(row.last_active_date, today) > 1) {
-      // 2+ gündür yok — comeback'e bırak
-      skipped++;
-      continue;
-    }
-
     const inserted = await logNotification(row.id, "streak_risk", "email", "sent");
     if (!inserted) {
       // Bugün zaten gönderilmiş
@@ -265,6 +258,7 @@ async function runComeback(appUrl: string) {
        AND u.last_active_date >= $1
        AND u.last_active_date <= $2
        AND u.role = 'student'
+       AND (u.streak IS NULL OR u.streak = 0)
      LIMIT 5000`,
     [fourteenDaysAgo, twoDaysAgo],
   );
