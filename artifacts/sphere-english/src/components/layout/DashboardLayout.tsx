@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   BookOpen, LayoutDashboard, Video, FileQuestion, LineChart,
   Award, MessageSquare, Users, Megaphone, LogOut, Menu, Building2, BarChart3, GraduationCap, Mic, MessageCircle, FolderOpen, PenLine, TrendingUp, Settings2, Gamepad2, Crown, Lock,
-  Sparkles, ChevronDown, Brain, Briefcase, Presentation, Wand2, Compass, Bot, Activity, UserPlus, ShoppingBag, Phone, UserCircle, Ticket, HardDrive, Package, Receipt, Mail, ChevronLeft, ChevronRight, Calendar, Newspaper, BookMarked, Gift
+  Sparkles, ChevronDown, Brain, Briefcase, Presentation, Wand2, Compass, Bot, Activity, UserPlus, ShoppingBag, Phone, UserCircle, Ticket, HardDrive, Package, Receipt, Mail, ChevronLeft, ChevronRight, Calendar, Newspaper, BookMarked, Gift, MapPin
 } from "lucide-react";
 import { Avatar } from "../ui/core";
 import { NotificationBell } from "../NotificationBell";
@@ -69,6 +69,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       { name: 'Kurslarım',           href: '/courses',                        icon: BookOpen,      moduleKey: 'student-courses' },
       { name: 'İş Kartları',         href: '/is-kartlari',                    icon: BookMarked },
       { name: 'Arkadaşını Davet Et', href: '/davet',                          icon: Gift },
+      { name: 'Yolculuğum',          href: '/yolculugum',                     icon: MapPin },
       { name: 'Materyallerim',       href: '/student/materials',              icon: FolderOpen,    moduleKey: 'student-materials' },
       { name: 'Keşfet',              href: '/kesfet',                         icon: Newspaper },
       { name: 'İzle & Dinle',        href: '/kariyer',                        icon: Compass },
