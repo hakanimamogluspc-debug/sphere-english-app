@@ -202,15 +202,16 @@ router.get("/student/leaderboard/weekly", authMiddleware, async (req: AuthReques
 
     // Bu haftaki puan artışını hesaplamak zor (activity_logs vs) — şimdilik toplam puana göre sırala
     // İleride weekly_points kolonu eklenirse iyileştirilir
+    // Gizlilik: isim değil öğrenci numarası dönüyor (SE-YYYY-NNNN formatı)
     const query = sector
-      ? `SELECT id, first_name, last_name, total_points, streak, current_level, sector
+      ? `SELECT id, student_number, total_points, streak, current_level, sector
          FROM users
          WHERE role = 'student'
            AND current_level = $1
            AND sector = $2
          ORDER BY total_points DESC
          LIMIT 20`
-      : `SELECT id, first_name, last_name, total_points, streak, current_level, sector
+      : `SELECT id, student_number, total_points, streak, current_level, sector
          FROM users
          WHERE role = 'student'
            AND current_level = $1
@@ -223,7 +224,8 @@ router.get("/student/leaderboard/weekly", authMiddleware, async (req: AuthReques
     const rows = r.rows.map((u, idx) => ({
       rank: idx + 1,
       userId: u.id,
-      name: [u.first_name, u.last_name].filter(Boolean).join(" ") || "Öğrenci",
+      // Gizlilik: student_number gösterilir (ör. SE-2026-0007). Yoksa fallback "Öğrenci #ID"
+      studentNumber: u.student_number ?? `Öğrenci #${u.id}`,
       totalPoints: Number(u.total_points ?? 0),
       streak: Number(u.streak ?? 0),
       isMe: u.id === req.userId,

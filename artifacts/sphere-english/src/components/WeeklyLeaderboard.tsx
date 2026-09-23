@@ -14,7 +14,7 @@ const TOKEN_KEY = "sphere_token";
 interface LeaderboardEntry {
   rank: number;
   userId: number;
-  name: string;
+  studentNumber: string;
   totalPoints: number;
   streak: number;
   isMe: boolean;
@@ -134,10 +134,10 @@ export default function WeeklyLeaderboard() {
                 {medal ? medal.icon : entry.rank}
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-sm font-semibold text-slate-800 truncate">
-                  {entry.name}
+                <div className="text-sm font-mono font-semibold text-slate-800 truncate tabular-nums">
+                  {entry.studentNumber}
                   {entry.isMe && (
-                    <span className="ml-1.5 text-[10px] text-indigo-600 font-bold uppercase tracking-wider">
+                    <span className="ml-1.5 text-[10px] text-indigo-600 font-bold uppercase tracking-wider font-sans">
                       Sen
                     </span>
                   )}
