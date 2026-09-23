@@ -10,6 +10,8 @@ import { useEffect, useState } from "react";
 import { API } from "@/lib/api-url";
 import TrialBanner from "@/components/subscription/TrialBanner";
 import TodayTaskCard from "@/components/TodayTaskCard";
+import StreakCard from "@/components/StreakCard";
+import WeeklyLeaderboard from "@/components/WeeklyLeaderboard";
 
 function useAnnouncements() {
   const [announcements, setAnnouncements] = useState<any[]>([]);
@@ -58,11 +60,25 @@ function StudentDashboard() {
         </div>
       )}
 
-      {/* 🎯 Bugün için 1 iş — dashboard'un ana odak noktası (R1.A) */}
-      {user?.role === "student" && <TodayTaskCard />}
+      {/* 🎯 Bugün için 1 iş + Streak (R1.A + R1.B) */}
+      {user?.role === "student" && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div className="lg:col-span-2">
+            <TodayTaskCard />
+          </div>
+          <div>
+            <StreakCard />
+          </div>
+        </div>
+      )}
 
       {/* Hızlı Erişim */}
       <QuickAccessGrid />
+
+      {/* Haftalık Sıralama — kohort içi rekabet (R1.B) */}
+      {user?.role === "student" && (
+        <WeeklyLeaderboard />
+      )}
 
       {/* Bu hafta odaklan (hata bazlı) */}
       <FocusThisWeekCard />
