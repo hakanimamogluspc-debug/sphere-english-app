@@ -270,6 +270,33 @@ export default function Register() {
                   <Input id="b-password" type="password" icon={<Lock size={18} />} placeholder="••••••••" error={bireyselForm.formState.errors.password?.message} {...bireyselForm.register("password")} />
                 </div>
 
+                <div>
+                  <Label htmlFor="b-referral">Davet Kodu <span className="text-muted-foreground font-normal">(varsa)</span></Label>
+                  <Input
+                    id="b-referral"
+                    icon={<Award size={18} />}
+                    placeholder="Örn: ABC123"
+                    value={referralCode}
+                    onChange={async (e) => {
+                      const val = e.target.value.toUpperCase().slice(0, 8).replace(/[^A-Z0-9]/g, "");
+                      setReferralCode(val);
+                      setReferralInfo(null);
+                      if (val.length >= 4 && val.length <= 8) {
+                        try {
+                          const r = await fetch(`/api/public/referral/${encodeURIComponent(val)}`);
+                          const d = await r.json();
+                          if (d?.ok) setReferralInfo({ referrer_first_name: d.referrer_first_name });
+                        } catch {}
+                      }
+                    }}
+                  />
+                  {referralInfo && (
+                    <p className="text-xs text-purple-700 font-semibold mt-1">
+                      ✓ Bu kod <strong>{referralInfo.referrer_first_name}</strong>'a ait — ikinize de 3 streak freeze!
+                    </p>
+                  )}
+                </div>
+
                 <Button type="submit" className="w-full text-lg h-12 mt-2" isLoading={isSubmitting}>
                   Hesap oluştur
                 </Button>
