@@ -29,17 +29,25 @@ import { sendEmail } from "../lib/email";
 const router = Router();
 
 async function ensureTables() {
+  // notification_preferences zaten Drizzle schema'sında var (streak_risk_email,
+  // inactivity_email, weekly_digest_email vb.). Sadece eksik push sütunlarını ekle.
   await pool.query(`
     CREATE TABLE IF NOT EXISTS notification_preferences (
       user_id INTEGER PRIMARY KEY,
+      email_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+      in_app_enabled BOOLEAN NOT NULL DEFAULT TRUE,
       streak_risk_email BOOLEAN NOT NULL DEFAULT TRUE,
-      comeback_email BOOLEAN NOT NULL DEFAULT TRUE,
-      weekly_report_email BOOLEAN NOT NULL DEFAULT TRUE,
-      streak_risk_push BOOLEAN NOT NULL DEFAULT FALSE,
-      comeback_push BOOLEAN NOT NULL DEFAULT FALSE,
+      inactivity_email BOOLEAN NOT NULL DEFAULT TRUE,
+      new_assessment_email BOOLEAN NOT NULL DEFAULT TRUE,
+      level_up_email BOOLEAN NOT NULL DEFAULT TRUE,
+      new_quiz_email BOOLEAN NOT NULL DEFAULT FALSE,
+      weekly_digest_email BOOLEAN NOT NULL DEFAULT TRUE,
+      last_email_sent_at TIMESTAMPTZ,
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
   `);
+  await pool.query(`ALTER TABLE notification_preferences ADD COLUMN IF NOT EXISTS streak_risk_push BOOLEAN NOT NULL DEFAULT FALSE`);
+  await pool.query(`ALTER TABLE notification_preferences ADD COLUMN IF NOT EXISTS inactivity_push BOOLEAN NOT NULL DEFAULT FALSE`);
   await pool.query(`
     CREATE TABLE IF NOT EXISTS notification_log (
       id SERIAL PRIMARY KEY,
@@ -249,7 +257,7 @@ async function runComeback(appUrl: string) {
 
   const rows = await pool.query(
     `SELECT u.id, u.name, u.email, u.last_active_date,
-            COALESCE(p.comeback_email, TRUE) AS opt_in
+            COALESCE(p.inactivity_email, TRUE) AS opt_in
      FROM users u
      LEFT JOIN notification_preferences p ON p.user_id = u.id
      WHERE u.email IS NOT NULL AND u.email <> ''
@@ -361,7 +369,7 @@ router.get("/internal/notifications/preview", async (req: Request, res: Response
        WHERE u.email IS NOT NULL AND u.email <> ''
          AND u.role = 'student'
          AND u.last_active_date >= $1 AND u.last_active_date <= $2
-         AND COALESCE(p.comeback_email, TRUE) = TRUE`,
+         AND COALESCE(p.inactivity_email, TRUE) = TRUE`,
       [fourteenDaysAgo, twoDaysAgo],
     );
     const lastRun = await pool.query(

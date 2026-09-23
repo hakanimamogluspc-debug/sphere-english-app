@@ -6,18 +6,18 @@ const TOKEN_KEY = "sphere_token";
 
 interface Prefs {
   streak_risk_email: boolean;
-  comeback_email: boolean;
-  weekly_report_email: boolean;
+  inactivity_email: boolean;
+  weekly_digest_email: boolean;
   streak_risk_push: boolean;
-  comeback_push: boolean;
+  inactivity_push: boolean;
 }
 
 const DEFAULT_PREFS: Prefs = {
   streak_risk_email: true,
-  comeback_email: true,
-  weekly_report_email: true,
+  inactivity_email: true,
+  weekly_digest_email: true,
   streak_risk_push: false,
-  comeback_push: false,
+  inactivity_push: false,
 };
 
 async function apiFetch(path: string, opts: RequestInit = {}) {
@@ -155,8 +155,8 @@ export default function NotificationPreferences() {
           icon={<span className="text-lg">👋</span>}
           title="Geri dönüş hatırlatması"
           description="Birkaç gündür girmediysen 'seni özledik' hatırlatması gönderelim mi?"
-          checked={prefs.comeback_email}
-          onChange={(v) => update({ comeback_email: v })}
+          checked={prefs.inactivity_email}
+          onChange={(v) => update({ inactivity_email: v })}
           disabled={saving}
         />
         <div className="border-t border-slate-100" />
@@ -164,8 +164,8 @@ export default function NotificationPreferences() {
           icon={<span className="text-lg">📊</span>}
           title="Haftalık ilerleme raporu"
           description="Her Pazar günü haftanın özeti — kaç dakika çalıştın, hangi seviyedesin."
-          checked={prefs.weekly_report_email}
-          onChange={(v) => update({ weekly_report_email: v })}
+          checked={prefs.weekly_digest_email}
+          onChange={(v) => update({ weekly_digest_email: v })}
           disabled={saving}
         />
       </div>
@@ -190,8 +190,8 @@ export default function NotificationPreferences() {
           icon={<span className="text-lg">👋</span>}
           title="Geri dönüş (push)"
           description="Yakında — tarayıcı bildirimi için etkinleştirme adımı gerekli."
-          checked={prefs.comeback_push}
-          onChange={(v) => update({ comeback_push: v })}
+          checked={prefs.inactivity_push}
+          onChange={(v) => update({ inactivity_push: v })}
           disabled={saving}
         />
       </div>

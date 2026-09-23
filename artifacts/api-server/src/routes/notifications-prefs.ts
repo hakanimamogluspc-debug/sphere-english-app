@@ -3,7 +3,11 @@
  *
  * GET  /student/notification-prefs   — mevcut tercihleri döner
  * PATCH /student/notification-prefs  — güncelle
- * POST /student/notification-prefs/unsubscribe?token=... — e-posta linkinden hızlı opt-out
+ * GET  /notifications/unsubscribe    — e-posta linkinden hızlı opt-out
+ *
+ * Şema: lib/db/schema/notifications.ts (notificationPreferencesTable) —
+ *   streak_risk_email, inactivity_email, weekly_digest_email vb.
+ *   push sütunları notifications-reminders.ts ALTER TABLE ile eklenir.
  */
 
 import { Router, type Response, type Request } from "express";
@@ -17,25 +21,37 @@ async function ensureTable() {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS notification_preferences (
       user_id INTEGER PRIMARY KEY,
+      email_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+      in_app_enabled BOOLEAN NOT NULL DEFAULT TRUE,
       streak_risk_email BOOLEAN NOT NULL DEFAULT TRUE,
-      comeback_email BOOLEAN NOT NULL DEFAULT TRUE,
-      weekly_report_email BOOLEAN NOT NULL DEFAULT TRUE,
-      streak_risk_push BOOLEAN NOT NULL DEFAULT FALSE,
-      comeback_push BOOLEAN NOT NULL DEFAULT FALSE,
+      inactivity_email BOOLEAN NOT NULL DEFAULT TRUE,
+      new_assessment_email BOOLEAN NOT NULL DEFAULT TRUE,
+      level_up_email BOOLEAN NOT NULL DEFAULT TRUE,
+      new_quiz_email BOOLEAN NOT NULL DEFAULT FALSE,
+      weekly_digest_email BOOLEAN NOT NULL DEFAULT TRUE,
+      last_email_sent_at TIMESTAMPTZ,
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
   `);
+  await pool.query(`ALTER TABLE notification_preferences ADD COLUMN IF NOT EXISTS streak_risk_push BOOLEAN NOT NULL DEFAULT FALSE`);
+  await pool.query(`ALTER TABLE notification_preferences ADD COLUMN IF NOT EXISTS inactivity_push BOOLEAN NOT NULL DEFAULT FALSE`);
 }
 ensureTable().catch((e) => console.warn("[notif-prefs] ensureTable warn:", e?.message));
 
-const KEYS = ["streak_risk_email", "comeback_email", "weekly_report_email", "streak_risk_push", "comeback_push"] as const;
+const KEYS = [
+  "streak_risk_email",
+  "inactivity_email",
+  "weekly_digest_email",
+  "streak_risk_push",
+  "inactivity_push",
+] as const;
 
 router.get("/student/notification-prefs", authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
     if (!req.userId) return res.status(401).json({ error: "Yetkisiz" });
     const r = await pool.query(
-      `SELECT streak_risk_email, comeback_email, weekly_report_email,
-              streak_risk_push, comeback_push
+      `SELECT streak_risk_email, inactivity_email, weekly_digest_email,
+              streak_risk_push, inactivity_push
        FROM notification_preferences WHERE user_id = $1 LIMIT 1`,
       [req.userId],
     );
@@ -44,10 +60,10 @@ router.get("/student/notification-prefs", authMiddleware, async (req: AuthReques
       ok: true,
       prefs: {
         streak_risk_email: row.streak_risk_email ?? true,
-        comeback_email: row.comeback_email ?? true,
-        weekly_report_email: row.weekly_report_email ?? true,
+        inactivity_email: row.inactivity_email ?? true,
+        weekly_digest_email: row.weekly_digest_email ?? true,
         streak_risk_push: row.streak_risk_push ?? false,
-        comeback_push: row.comeback_push ?? false,
+        inactivity_push: row.inactivity_push ?? false,
       },
     });
   } catch (e: any) {
@@ -91,17 +107,15 @@ router.get("/notifications/unsubscribe", async (req: Request, res: Response) => 
     const type = String(req.query.type ?? "");
     if (!token || !type) return res.status(400).send("Eksik parametre");
 
-    // Token = HMAC(user_id + type) — env secret ile doğrula
     const secret = process.env.INTERNAL_TOKEN ?? "dev";
-    // Format: userId.hmac
     const [uidStr, hmac] = token.split(".");
     const userId = parseInt(uidStr, 10);
     const expected = crypto.createHmac("sha256", secret).update(`${userId}:${type}`).digest("hex").slice(0, 24);
     if (!userId || hmac !== expected) return res.status(400).send("Geçersiz token");
 
     const col = type === "streak_risk" ? "streak_risk_email"
-              : type === "comeback" ? "comeback_email"
-              : type === "weekly_report" ? "weekly_report_email"
+              : type === "comeback" || type === "inactivity" ? "inactivity_email"
+              : type === "weekly_digest" ? "weekly_digest_email"
               : null;
     if (!col) return res.status(400).send("Geçersiz tür");
 
