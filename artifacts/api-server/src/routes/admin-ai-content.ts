@@ -49,6 +49,20 @@ const VOCAB_CATEGORIES = [
   "everyday",
 ] as const;
 
+const CARD_CATEGORIES = [
+  "meetings",
+  "emails",
+  "phone_calls",
+  "presentations",
+  "sales",
+  "interview",
+  "self_intro",
+  "customer_service",
+  "business_general",
+  "everyday",
+  "vocabulary_expansion",
+] as const;
+
 const SCENE_CATEGORIES = [
   "general_business",
   "meetings",
@@ -197,6 +211,56 @@ Her parça:
 ${count} parça üret. Tümü ${level} seviye, ${category} kategori.`;
 }
 
+function businessCardPrompt(level: Cefr, count: number, category: string): string {
+  const levelGuidance: Record<Cefr, string> = {
+    A1: "en basit — 4-6 kelimelik kalıp ifadeler ('Nice to meet you')",
+    A2: "temel — 5-8 kelimelik günlük iş kalıpları ('Could you send me the file?')",
+    B1: "orta — 6-10 kelimelik iş kalıpları, phrasal verb sınırlı",
+    B2: "üst orta — doğal iş dili, deyimler ve nüans başlangıcı",
+    C1: "ileri — nüanslı, diplomatik kalıplar ('I'd be inclined to suggest…')",
+    C2: "yetkin — sofistike, kültürel farkındalık gerektiren kalıplar",
+  };
+
+  return `Sphere English için mikro-içerik "İş Kartı" (Business Card) üretiyorsun.
+
+Her kart 2-3 dakikada okunacak, KONKRE, İŞE YARAR bir iş İngilizcesi kalıp öğretir.
+Örnek konular: "Toplantıda 'let me get back to you' yerine ne söylenir",
+"Email red cevabı — kibar 4 formül", "Cold call açılış cümleleri", "Zam istemenin İngilizcesi".
+
+Seviye: ${level} (${levelGuidance[level]})
+Kategori: ${category}
+Adet: ${count}
+
+KURALLAR:
+1. context_tr — 2-3 cümle Türkçe: "Bu kartı ne zaman kullanacaksın?" — somut bir iş durumu
+2. phrase_en — ana ifade (kısa ve net)
+3. alternatives_en — 3-4 alternatif kalıp (farklı formallık seviyeleri)
+4. example_en — gerçek iş bağlamında bir cümle
+5. translation_tr — example_en'in doğal Türkçe çevirisi
+6. tags — 2-4 filtrelenebilir etiket (örn: ["email","polite","refusal"])
+7. Türk profesyonellerin GERÇEK ihtiyaçlarına odaklan — kültürel farkındalık, kibarlık, formallık
+
+ÇIKTI: SADECE geçerli JSON array döndür (markdown fence YOK):
+[
+  {
+    "level": "${level}",
+    "category": "${category}",
+    "context_tr": "Bir toplantıda hemen cevap veremediğin bir soru geldiğinde profesyonelce süre kazanmak istersin. 'Bilmiyorum' yerine bu kalıp senin hazırlıksızlığını gizler.",
+    "phrase_en": "Let me get back to you on that.",
+    "alternatives_en": [
+      "I'll need to check and get back to you.",
+      "Can I circle back to you on this?",
+      "Let me look into it and follow up."
+    ],
+    "example_en": "That's a great question — let me get back to you on that after I check with the team.",
+    "translation_tr": "Harika bir soru — ekiple konuşup size dönerim.",
+    "tags": ["meeting", "professional", "buy_time"]
+  }
+]
+
+${count} kart üret. Tümü ${level} seviye, ${category} kategori. Konuları çeşitlendir — aynı senaryoyu tekrar etme.`;
+}
+
 // ─── Claude API çağrısı ────────────────────────────────────────────────────
 
 async function callClaude(userPrompt: string, apiKey: string, maxTokens = 4000): Promise<string> {
@@ -272,8 +336,8 @@ router.post(
 
       const { type, level, count, category } = req.body ?? {};
 
-      if (!["vocab", "scene", "reading"].includes(String(type))) {
-        return res.status(400).json({ error: "type: 'vocab' | 'scene' | 'reading' olmalı" });
+      if (!["vocab", "scene", "reading", "business_card"].includes(String(type))) {
+        return res.status(400).json({ error: "type: 'vocab' | 'scene' | 'reading' | 'business_card' olmalı" });
       }
       if (!CEFR_LEVELS.includes(String(level).toUpperCase() as Cefr)) {
         return res.status(400).json({ error: "level: A1-C2 arası olmalı" });
@@ -308,6 +372,15 @@ router.post(
         const raw = await callClaude(prompt, apiKey, Math.min(8000, n * 800 + 500));
         items = extractJSON<any[]>(raw);
         if (!Array.isArray(items)) throw new Error("Response array değil");
+      } else if (type === "business_card") {
+        const n = Math.max(1, Math.min(30, parseInt(String(count), 10) || 10));
+        if (!CARD_CATEGORIES.includes(cat as any)) {
+          warnings.push(`Kategori '${cat}' önerilen listede yok — devam ediliyor ama gözden geçir.`);
+        }
+        const prompt = businessCardPrompt(cefr, n, cat || "business_general");
+        const raw = await callClaude(prompt, apiKey, Math.min(8000, n * 400 + 500));
+        items = extractJSON<any[]>(raw);
+        if (!Array.isArray(items)) throw new Error("Response array değil");
       }
 
       return res.json({ ok: true, type, level: cefr, count: items.length, items, warnings });
@@ -330,7 +403,7 @@ router.post(
     if (!Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ error: "items array boş olamaz" });
     }
-    if (!["vocab", "scene", "reading"].includes(String(type))) {
+    if (!["vocab", "scene", "reading", "business_card"].includes(String(type))) {
       return res.status(400).json({ error: "type geçersiz" });
     }
 
@@ -476,6 +549,70 @@ router.post(
             imported++;
           } catch (err: any) {
             errors.push(`reading: ${err?.message}`);
+          }
+        }
+      }
+
+      if (type === "business_card") {
+        // business_cards tablosunu garantile (idempotent)
+        await pool.query(`
+          CREATE TABLE IF NOT EXISTS business_cards (
+            id SERIAL PRIMARY KEY,
+            level VARCHAR(4) NOT NULL,
+            category VARCHAR(40) NOT NULL,
+            context_tr TEXT NOT NULL,
+            phrase_en TEXT NOT NULL,
+            alternatives_en JSONB NOT NULL DEFAULT '[]'::jsonb,
+            example_en TEXT NOT NULL,
+            translation_tr TEXT NOT NULL,
+            tags TEXT[] NOT NULL DEFAULT '{}',
+            is_active BOOLEAN NOT NULL DEFAULT TRUE,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+          )
+        `);
+        for (const it of items) {
+          try {
+            const level = String(it.level ?? "").toUpperCase();
+            const category = String(it.category ?? "business_general");
+            const contextTr = String(it.context_tr ?? "").trim();
+            const phraseEn = String(it.phrase_en ?? "").trim();
+            const exampleEn = String(it.example_en ?? "").trim();
+            const translationTr = String(it.translation_tr ?? "").trim();
+            const alternativesEn = Array.isArray(it.alternatives_en) ? it.alternatives_en : [];
+            const tags = Array.isArray(it.tags) ? it.tags.map((t: any) => String(t)) : [];
+            if (!level || !contextTr || !phraseEn || !exampleEn || !translationTr) {
+              skipped.push({ reason: "eksik alan", item: it });
+              continue;
+            }
+            // Duplicate check — aynı phrase + level
+            const exists = await pool.query(
+              "SELECT id FROM business_cards WHERE LOWER(phrase_en) = LOWER($1) AND level = $2 LIMIT 1",
+              [phraseEn, level],
+            );
+            if (exists.rows.length > 0) {
+              skipped.push({ reason: "duplicate", item: it });
+              continue;
+            }
+            await pool.query(
+              `INSERT INTO business_cards
+                 (level, category, context_tr, phrase_en, alternatives_en,
+                  example_en, translation_tr, tags)
+               VALUES ($1, $2, $3, $4, $5::jsonb, $6, $7, $8)`,
+              [
+                level,
+                category,
+                contextTr,
+                phraseEn,
+                JSON.stringify(alternativesEn),
+                exampleEn,
+                translationTr,
+                tags,
+              ],
+            );
+            imported++;
+          } catch (err: any) {
+            errors.push(`business_card: ${err?.message}`);
           }
         }
       }

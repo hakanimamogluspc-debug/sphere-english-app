@@ -261,5 +261,19 @@
     "target_level": "B1 ve üzeri — doğal konuşma hızına ve farklı aksanlara alışmak isteyenler",
     "first_action": "Bu haftanın önerilen videolarından birini izle",
     "duration": "İçerik başına 5-20 dk"
+  },
+  "business_cards": {
+    "name": "İş Kartları",
+    "tagline": "Her gün 3-5 hazır iş İngilizcesi kalıbı",
+    "value_prop": "İşte hemen kullanabileceğin kalıp cümleleri sana bağlam + örnek + alternatiflerle sunar. Her kart 2-3 dakikada okunur — 'let me get back to you', 'circling back', 'zam istemenin İngilizcesi' gibi Türk profesyonellerin gerçek ihtiyaçlarına odaklanır.",
+    "how_to": [
+      "Kontrol panelindeki 'Günün İş Kartları' bölümünden bugünkü 3-5 kartı gör",
+      "Karta dokun ve arka yüzündeki örnek + alternatifleri incele",
+      "İşine yarayacakları yıldızlayarak favorilere ekle",
+      "Kütüphanede seviyene ve konuya göre daha fazlasını keşfet"
+    ],
+    "target_level": "A2 ve üzeri — hazır kalıplarla iş İngilizcesi konforunu hızla artırmak isteyenler",
+    "first_action": "Bugünün ilk kartını çevir ve örneğine bak",
+    "duration": "Kart başına 2-3 dk"
   }
 }

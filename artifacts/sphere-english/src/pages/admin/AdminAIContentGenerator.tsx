@@ -23,7 +23,7 @@ async function apiFetch(path: string, opts: RequestInit = {}) {
   return data;
 }
 
-type ContentType = "vocab" | "scene" | "reading";
+type ContentType = "vocab" | "scene" | "reading" | "business_card";
 type Cefr = "A1" | "A2" | "B1" | "B2" | "C1" | "C2";
 
 const CEFR_LEVELS: Cefr[] = ["A1", "A2", "B1", "B2", "C1", "C2"];
@@ -56,6 +56,20 @@ const SCENE_CATEGORIES = [
   "healthcare",
 ];
 
+const CARD_CATEGORIES = [
+  "meetings",
+  "emails",
+  "phone_calls",
+  "presentations",
+  "sales",
+  "interview",
+  "self_intro",
+  "customer_service",
+  "business_general",
+  "everyday",
+  "vocabulary_expansion",
+];
+
 interface GeneratedItem {
   _approved?: boolean;
   _expanded?: boolean;
@@ -81,7 +95,8 @@ export default function AdminAIContentGenerator() {
   const [error, setError] = useState<string | null>(null);
   const [importResult, setImportResult] = useState<any>(null);
 
-  const availableCategories = type === "scene" ? SCENE_CATEGORIES : VOCAB_CATEGORIES;
+  const availableCategories =
+    type === "scene" ? SCENE_CATEGORIES : type === "business_card" ? CARD_CATEGORIES : VOCAB_CATEGORIES;
 
   const handleGenerate = async () => {
     setGenerating(true);
@@ -168,7 +183,7 @@ export default function AdminAIContentGenerator() {
               onChange={(e) => {
                 const t = e.target.value as ContentType;
                 setType(t);
-                setCategory(t === "scene" ? "general_business" : "business_general");
+                setCategory(t === "scene" ? "general_business" : t === "business_card" ? "meetings" : "business_general");
               }}
               className="w-full border border-slate-200 rounded-md px-3 py-2 text-sm"
               disabled={generating}
@@ -176,6 +191,7 @@ export default function AdminAIContentGenerator() {
               <option value="vocab">Vocab (Kelime)</option>
               <option value="scene">Speaking Scene (Sahne)</option>
               <option value="reading">Reading Article (Makale)</option>
+              <option value="business_card">İş Kartı (Business Card)</option>
             </select>
           </div>
           <div>
@@ -209,14 +225,20 @@ export default function AdminAIContentGenerator() {
             <input
               type="number"
               min={1}
-              max={type === "scene" ? 1 : type === "reading" ? 10 : 50}
+              max={type === "scene" ? 1 : type === "reading" ? 10 : type === "business_card" ? 30 : 50}
               value={count}
               onChange={(e) => setCount(Math.max(1, parseInt(e.target.value) || 1))}
               className="w-full border border-slate-200 rounded-md px-3 py-2 text-sm"
               disabled={generating || type === "scene"}
             />
             <p className="text-[10px] text-slate-400 mt-0.5">
-              {type === "scene" ? "Sahne için tek üretim" : type === "reading" ? "Maks 10" : "Maks 50"}
+              {type === "scene"
+                ? "Sahne için tek üretim"
+                : type === "reading"
+                ? "Maks 10"
+                : type === "business_card"
+                ? "Maks 30"
+                : "Maks 50"}
             </p>
           </div>
           <div>
@@ -334,6 +356,16 @@ export default function AdminAIContentGenerator() {
                         <strong className="text-slate-900">{it.title}</strong>
                         <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 uppercase font-semibold">
                           {it.cefr_level}
+                        </span>
+                      </div>
+                    )}
+                    {type === "business_card" && (
+                      <div className="flex items-center gap-3">
+                        <strong className="text-slate-900 truncate">{it.phrase_en}</strong>
+                        <span className="text-slate-400">·</span>
+                        <span className="text-slate-600 text-xs truncate">{it.category}</span>
+                        <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 uppercase font-semibold">
+                          {it.level}
                         </span>
                       </div>
                     )}

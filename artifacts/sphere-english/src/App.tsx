@@ -113,6 +113,7 @@ const AIQuizGenerator         = lazy(() => import("./pages/student/AIQuizGenerat
 const AITutor                 = lazy(() => import("./pages/student/AITutor"));
 const LearningPath            = lazy(() => import("./pages/student/LearningPath"));
 const SpeakingScenes          = lazy(() => import("./pages/student/SpeakingScenes"));
+const BusinessCards           = lazy(() => import("./pages/student/BusinessCards"));
 const Discover                = lazy(() => import("./pages/student/Discover"));
 const MyReport                = lazy(() => import("./pages/student/MyReport"));
 const SpeakingSceneRunner     = lazy(() => import("./pages/student/SpeakingSceneRunner"));
@@ -306,6 +307,8 @@ function Router() {
         <Route path="/student/learning-path"><LayoutWrapper component={LearningPathPro} allowedRoles={['student', 'admin']} featureKey="student-learning-path" /></Route>
         {/* Speaking role-play sahneleri — free tier de erişebilir (endpoint içinde quota kontrolü) */}
         <Route path="/student/speaking-scenes"><LayoutWrapper component={SpeakingScenes} allowedRoles={['student', 'admin']} featureKey="student-speaking-scenes" /></Route>
+        <Route path="/is-kartlari"><LayoutWrapper component={BusinessCards} allowedRoles={['student', 'admin']} /></Route>
+        <Route path="/student/business-cards"><LayoutWrapper component={BusinessCards} allowedRoles={['student', 'admin']} /></Route>
         <Route path="/kesfet"><LayoutWrapper component={Discover} allowedRoles={['student', 'admin', 'corporate']} /></Route>
         <Route path="/raporum"><LayoutWrapper component={MyReport} allowedRoles={['student', 'admin', 'corporate']} /></Route>
         <Route path="/student/speaking-scenes/:slug"><LayoutWrapper component={SpeakingSceneRunner} allowedRoles={['student', 'admin']} featureKey="student-speaking-scenes" /></Route>

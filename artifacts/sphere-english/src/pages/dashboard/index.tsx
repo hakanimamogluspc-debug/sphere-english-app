@@ -12,6 +12,7 @@ import TrialBanner from "@/components/subscription/TrialBanner";
 import TodayTaskCard from "@/components/TodayTaskCard";
 import StreakCard from "@/components/StreakCard";
 import WeeklyLeaderboard from "@/components/WeeklyLeaderboard";
+import BusinessCardsDaily from "@/components/BusinessCardsDaily";
 
 function useAnnouncements() {
   const [announcements, setAnnouncements] = useState<any[]>([]);
@@ -75,9 +76,12 @@ function StudentDashboard() {
       {/* Hızlı Erişim */}
       <QuickAccessGrid />
 
-      {/* Haftalık Sıralama — kohort içi rekabet (R1.B) */}
+      {/* İş Kartları + Haftalık Sıralama (R2 + R1.B) */}
       {user?.role === "student" && (
-        <WeeklyLeaderboard />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <BusinessCardsDaily />
+          <WeeklyLeaderboard />
+        </div>
       )}
 
       {/* Bu hafta odaklan (hata bazlı) */}
