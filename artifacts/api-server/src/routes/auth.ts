@@ -10,6 +10,7 @@ import { notifyNewUserRegistration } from "../lib/admin-notifications.js";
 import { sendEmail } from "../lib/email.js";
 import { renderWelcomeEmail } from "../lib/welcome-email.js";
 import { awardPoints } from "../lib/points.js";
+import { linkReferral } from "./referrals.js";
 
 const router = Router();
 
@@ -28,6 +29,7 @@ const registerSchema = z.object({
   phone: z.string().trim().max(40).optional().or(z.literal("")),
   companyCode: z.string().trim().max(50).optional().or(z.literal("")),
   accountType: z.enum(["bireysel", "kurumsal"]).optional(),
+  referralCode: z.string().trim().max(16).optional().or(z.literal("")),
 });
 
 router.post("/auth/login", validateBody(loginSchema), async (req, res) => {
@@ -78,7 +80,7 @@ router.post("/auth/login", validateBody(loginSchema), async (req, res) => {
 });
 
 router.post("/auth/register", validateBody(registerSchema), async (req, res) => {
-  const { email, password, firstName, lastName, role, phone, companyCode, accountType } = req.body;
+  const { email, password, firstName, lastName, role, phone, companyCode, accountType, referralCode } = req.body;
 
   const isBireysel = accountType === "bireysel";
   const assignedRole = role === "corporate" ? "corporate" : role === "partner" ? "partner" : "student";
@@ -130,6 +132,11 @@ router.post("/auth/register", validateBody(registerSchema), async (req, res) => 
       fbp: req.cookies?.["_fbp"],
       sourceUrl: "https://app.sphereenglish.com/register",
     }).catch(() => {});
+
+    // Referans bağlama (varsa) — her iki tarafa 3 streak freeze verir
+    linkReferral(updatedUser.id, referralCode).catch((e) =>
+      console.warn("[auth/register] referral bağlama hata:", e?.message),
+    );
 
     notifyNewUserRegistration({
       userId: updatedUser.id,

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { Link } from "wouter";
 import { useForm } from "react-hook-form";
@@ -35,6 +35,25 @@ export default function Register() {
   const [error, setError] = useState<string | null>(null);
   const [accountType, setAccountType] = useState<"bireysel" | "kurumsal" | "partner">("bireysel");
   const [kurumsalRole, setKurumsalRole] = useState<"student" | "corporate">("student");
+  const [referralCode, setReferralCode] = useState<string>("");
+  const [referralInfo, setReferralInfo] = useState<{ referrer_first_name: string } | null>(null);
+
+  // URL'de ?ref=XXX varsa yakala + doğrula
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search);
+    const ref = q.get("ref") || localStorage.getItem("sphere_ref") || "";
+    if (!ref) return;
+    const clean = ref.trim().toUpperCase();
+    setReferralCode(clean);
+    localStorage.setItem("sphere_ref", clean);
+    // Backend'e sor — kod geçerli mi + kim gönderdi
+    fetch(`/api/public/referral/${encodeURIComponent(clean)}`)
+      .then((r) => r.json())
+      .then((d) => {
+        if (d?.ok) setReferralInfo({ referrer_first_name: d.referrer_first_name });
+      })
+      .catch(() => {});
+  }, []);
 
   const bireyselForm = useForm<BireyselForm>({ resolver: zodResolver(bireyselSchema) });
   const kurumsalForm = useForm<KurumsalForm>({ resolver: zodResolver(kurumsalSchema) });
@@ -45,7 +64,7 @@ export default function Register() {
   const onPartnerSubmit = async (data: BireyselForm) => {
     try {
       setError(null);
-      await (registerUser as any)({ ...data, role: "partner", accountType: "bireysel" });
+      await (registerUser as any)({ ...data, role: "partner", accountType: "bireysel", referralCode });
     } catch (err: any) {
       setError(err.message || "Kayıt olunamadı. Lütfen tekrar deneyin.");
     }
@@ -54,7 +73,7 @@ export default function Register() {
   const onBireyselSubmit = async (data: BireyselForm) => {
     try {
       setError(null);
-      await (registerUser as any)({ ...data, role: "student", accountType: "bireysel" });
+      await (registerUser as any)({ ...data, role: "student", accountType: "bireysel", referralCode });
     } catch (err: any) {
       setError(err.message || "Kayıt olunamadı. Lütfen tekrar deneyin.");
     }
@@ -63,7 +82,7 @@ export default function Register() {
   const onKurumsalSubmit = async (data: KurumsalForm) => {
     try {
       setError(null);
-      await (registerUser as any)({ ...data, role: kurumsalRole, accountType: "kurumsal" });
+      await (registerUser as any)({ ...data, role: kurumsalRole, accountType: "kurumsal", referralCode });
     } catch (err: any) {
       setError(err.message || "Kayıt olunamadı. Lütfen tekrar deneyin.");
     }
@@ -96,6 +115,16 @@ export default function Register() {
                 className="h-[90px] w-auto object-contain"
               />
             </Link>
+            {referralInfo && (
+              <div className="mb-4 rounded-xl border border-purple-200 bg-gradient-to-br from-purple-50 to-indigo-50 p-3">
+                <p className="text-xs font-bold text-purple-800 mb-0.5">
+                  🎁 <strong>{referralInfo.referrer_first_name}</strong> seni davet etti!
+                </p>
+                <p className="text-[11px] text-purple-700">
+                  Kayıt olduğunda ikinize de <strong>3 streak freeze</strong> hediye ediyoruz.
+                </p>
+              </div>
+            )}
             <h2 className="text-3xl font-extrabold font-display text-foreground">Hesap oluştur</h2>
             <p className="mt-2 text-muted-foreground">
               {accountType === "bireysel"

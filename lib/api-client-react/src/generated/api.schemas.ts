@@ -40,6 +40,9 @@ export interface RegisterRequest {
   role: RegisterRequestRole;
   /** @nullable */
   phone?: string | null;
+  accountType?: "bireysel" | "kurumsal";
+  companyCode?: string;
+  referralCode?: string;
 }
 
 export type UserProfileRole =
