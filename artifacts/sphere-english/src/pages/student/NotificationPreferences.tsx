@@ -1,6 +1,12 @@
 import { useEffect, useState } from "react";
 import { API } from "@/lib/api-url";
-import { Bell, Check, Loader2, Mail, Smartphone } from "lucide-react";
+import { Bell, Check, Loader2, Mail, Smartphone, BellOff } from "lucide-react";
+import {
+  isPushSupported,
+  currentPushPermission,
+  subscribePush,
+  unsubscribePush,
+} from "@/lib/push-notifications";
 
 const TOKEN_KEY = "sphere_token";
 
@@ -171,30 +177,11 @@ export default function NotificationPreferences() {
       </div>
 
       {/* Push */}
-      <div className="bg-white border border-slate-200 rounded-xl p-5">
-        <div className="flex items-center gap-2 mb-3 pb-3 border-b border-slate-100">
-          <Smartphone size={16} className="text-slate-500" />
-          <h2 className="text-sm font-bold text-slate-800 uppercase tracking-wider">Tarayıcı Bildirimi</h2>
-        </div>
-
-        <ToggleRow
-          icon={<span className="text-lg">🔥</span>}
-          title="Streak riski (push)"
-          description="Tarayıcı bildirimlerini etkinleştirmen gerekir. Yakında."
-          checked={prefs.streak_risk_push}
-          onChange={(v) => update({ streak_risk_push: v })}
-          disabled={saving}
-        />
-        <div className="border-t border-slate-100" />
-        <ToggleRow
-          icon={<span className="text-lg">👋</span>}
-          title="Geri dönüş (push)"
-          description="Yakında — tarayıcı bildirimi için etkinleştirme adımı gerekli."
-          checked={prefs.inactivity_push}
-          onChange={(v) => update({ inactivity_push: v })}
-          disabled={saving}
-        />
-      </div>
+      <PushSection
+        prefs={prefs}
+        onPrefChange={update}
+        saving={saving}
+      />
 
       <p className="text-xs text-slate-400 mt-6 leading-relaxed">
         Sphere English size hesap işlemleri (parola sıfırlama, sipariş bildirimi vb.)
@@ -204,3 +191,107 @@ export default function NotificationPreferences() {
     </div>
   );
 }
+
+// ─── PushSection — subscribe/unsubscribe + toggle'lar ──────────────────────
+
+function PushSection({
+  prefs,
+  onPrefChange,
+  saving,
+}: {
+  prefs: Prefs;
+  onPrefChange: (patch: Partial<Prefs>) => Promise<void>;
+  saving: boolean;
+}) {
+  const [supported, setSupported] = useState(false);
+  const [permission, setPermission] = useState<NotificationPermission>("default");
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    setSupported(isPushSupported());
+    setPermission(currentPushPermission());
+  }, []);
+
+  const activate = async () => {
+    setBusy(true);
+    const ok = await subscribePush();
+    if (ok) {
+      setPermission("granted");
+      // Otomatik olarak iki toggle'ı da aç
+      await onPrefChange({ streak_risk_push: true, inactivity_push: true });
+    } else {
+      setPermission(currentPushPermission());
+    }
+    setBusy(false);
+  };
+
+  const deactivate = async () => {
+    setBusy(true);
+    await unsubscribePush();
+    await onPrefChange({ streak_risk_push: false, inactivity_push: false });
+    setPermission(currentPushPermission());
+    setBusy(false);
+  };
+
+  const enabled = permission === "granted";
+
+  return (
+    <div className="bg-white border border-slate-200 rounded-xl p-5">
+      <div className="flex items-center justify-between mb-3 pb-3 border-b border-slate-100">
+        <div className="flex items-center gap-2">
+          <Smartphone size={16} className="text-slate-500" />
+          <h2 className="text-sm font-bold text-slate-800 uppercase tracking-wider">Tarayıcı Bildirimi</h2>
+        </div>
+        {supported && (
+          enabled ? (
+            <button
+              onClick={deactivate}
+              disabled={busy}
+              className="inline-flex items-center gap-1 text-xs font-bold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-3 py-1 rounded-lg"
+            >
+              {busy ? <Loader2 size={12} className="animate-spin" /> : <BellOff size={12} />}
+              Etkin — Kaldır
+            </button>
+          ) : (
+            <button
+              onClick={activate}
+              disabled={busy || permission === "denied"}
+              className="inline-flex items-center gap-1 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 px-3 py-1 rounded-lg disabled:bg-slate-300"
+            >
+              {busy ? <Loader2 size={12} className="animate-spin" /> : <Bell size={12} />}
+              Etkinleştir
+            </button>
+          )
+        )}
+      </div>
+
+      {!supported && (
+        <p className="text-xs text-slate-500 italic">Tarayıcın push bildirimi desteklemiyor.</p>
+      )}
+      {supported && permission === "denied" && (
+        <p className="text-xs text-red-600 mb-3">
+          Bildirim izni reddedilmiş. Tarayıcı ayarlarından bu site için bildirimlere izin ver, sonra tekrar dene.
+        </p>
+      )}
+
+      <ToggleRow
+        icon={<span className="text-lg">🔥</span>}
+        title="Streak riski (push)"
+        description={enabled ? "Tarayıcın açıksa 20:00 civarı bildirim gelir." : "Yukarıdan etkinleştir."}
+        checked={prefs.streak_risk_push}
+        onChange={(v) => onPrefChange({ streak_risk_push: v })}
+        disabled={saving || !enabled}
+      />
+      <div className="border-t border-slate-100" />
+      <ToggleRow
+        icon={<span className="text-lg">👋</span>}
+        title="Geri dönüş (push)"
+        description={enabled ? "Birkaç gündür yoksan sabah bildirim gelir." : "Yukarıdan etkinleştir."}
+        checked={prefs.inactivity_push}
+        onChange={(v) => onPrefChange({ inactivity_push: v })}
+        disabled={saving || !enabled}
+      />
+    </div>
+  );
+}
+

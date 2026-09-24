@@ -25,6 +25,7 @@
 import { Router, type Request, type Response } from "express";
 import { pool } from "@workspace/db";
 import { sendEmail } from "../lib/email";
+import { sendPushToUser } from "./push-notifications";
 
 const router = Router();
 
@@ -197,7 +198,8 @@ async function runStreakRisk(appUrl: string) {
   // Streak >= 2, last_active_date < today, e-posta var, opt-in
   const rows = await pool.query(
     `SELECT u.id, u.first_name AS name, u.email, u.streak, u.last_active_date,
-            COALESCE(p.streak_risk_email, TRUE) AS opt_in
+            COALESCE(p.streak_risk_email, TRUE) AS opt_in,
+            COALESCE(p.streak_risk_push, FALSE) AS push_opt_in
      FROM users u
      LEFT JOIN notification_preferences p ON p.user_id = u.id
      WHERE u.email IS NOT NULL AND u.email <> ''
@@ -224,7 +226,8 @@ async function runStreakRisk(appUrl: string) {
       continue;
     }
 
-    const { subject, html } = streakRiskEmail(String(row.name || "Merhaba").split(" ")[0], row.streak, appUrl);
+    const firstName = String(row.name || "Merhaba").split(" ")[0];
+    const { subject, html } = streakRiskEmail(firstName, row.streak, appUrl);
     const result = await sendEmail(row.email, subject, html);
     if (result.ok) {
       sent++;
@@ -235,6 +238,27 @@ async function runStreakRisk(appUrl: string) {
          WHERE user_id = $2 AND type = 'streak_risk' AND channel = 'email' AND sent_date = CURRENT_DATE`,
         [result.error ?? "unknown", row.id],
       );
+    }
+
+    // Push kanalı — opt-in ise dene (bağımsız log satırı)
+    if (row.push_opt_in) {
+      const pushInserted = await logNotification(row.id, "streak_risk", "push", "sent");
+      if (pushInserted) {
+        try {
+          await sendPushToUser(row.id, {
+            title: `🔥 ${row.streak} günlük serin tehlikede!`,
+            body: `${firstName}, sadece 2 dakika ayır — serini korumaya devam et.`,
+            url: "/dashboard",
+            tag: "streak_risk",
+          });
+        } catch (e: any) {
+          await pool.query(
+            `UPDATE notification_log SET status = 'failed', error = $1
+             WHERE user_id = $2 AND type = 'streak_risk' AND channel = 'push' AND sent_date = CURRENT_DATE`,
+            [e?.message ?? "unknown", row.id],
+          );
+        }
+      }
     }
   }
 
@@ -250,7 +274,8 @@ async function runComeback(appUrl: string) {
 
   const rows = await pool.query(
     `SELECT u.id, u.first_name AS name, u.email, u.last_active_date,
-            COALESCE(p.inactivity_email, TRUE) AS opt_in
+            COALESCE(p.inactivity_email, TRUE) AS opt_in,
+            COALESCE(p.inactivity_push, FALSE) AS push_opt_in
      FROM users u
      LEFT JOIN notification_preferences p ON p.user_id = u.id
      WHERE u.email IS NOT NULL AND u.email <> ''
@@ -295,7 +320,8 @@ async function runComeback(appUrl: string) {
       continue;
     }
 
-    const { subject, html } = comebackEmail(String(row.name || "Merhaba").split(" ")[0], daysAway, appUrl);
+    const firstName = String(row.name || "Merhaba").split(" ")[0];
+    const { subject, html } = comebackEmail(firstName, daysAway, appUrl);
     const result = await sendEmail(row.email, subject, html);
     if (result.ok) {
       sent++;
@@ -306,6 +332,27 @@ async function runComeback(appUrl: string) {
          WHERE user_id = $2 AND type = 'comeback' AND channel = 'email' AND sent_date = CURRENT_DATE`,
         [result.error ?? "unknown", row.id],
       );
+    }
+
+    // Push kanalı
+    if (row.push_opt_in) {
+      const pushInserted = await logNotification(row.id, "comeback", "push", "sent");
+      if (pushInserted) {
+        try {
+          await sendPushToUser(row.id, {
+            title: `👋 ${firstName}, seni özledik`,
+            body: `${daysAway} gündür yoksun — bugün için 2 dakikalık bir görev hazırladık.`,
+            url: "/dashboard",
+            tag: "comeback",
+          });
+        } catch (e: any) {
+          await pool.query(
+            `UPDATE notification_log SET status = 'failed', error = $1
+             WHERE user_id = $2 AND type = 'comeback' AND channel = 'push' AND sent_date = CURRENT_DATE`,
+            [e?.message ?? "unknown", row.id],
+          );
+        }
+      }
     }
   }
 
