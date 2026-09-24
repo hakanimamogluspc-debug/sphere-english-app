@@ -64,10 +64,30 @@ export function authMiddleware(req: AuthRequest, res: Response, next: NextFuncti
   }
 
   try {
-    const payload = jwt.verify(token, JWT_SECRET) as { userId: number; role: string; accountType?: string };
+    const payload = jwt.verify(token, JWT_SECRET) as { userId: number; role: string; accountType?: string; exp: number; iat: number };
     req.userId = payload.userId;
     req.userRole = payload.role;
     req.userAccountType = payload.accountType;
+
+    // Sliding session — token'ın kalan süresi 30 günün altına düştüyse yenile
+    // Böylece aktif kullanıcı hiç logout olmaz.
+    const nowSec = Math.floor(Date.now() / 1000);
+    const remainingSec = payload.exp - nowSec;
+    const THIRTY_DAYS = 30 * 24 * 60 * 60;
+    if (remainingSec < THIRTY_DAYS && remainingSec > 0) {
+      const originalTtl = payload.exp - payload.iat;
+      // Beni-hatırla senaryosu = orijinal ≥ 30 gün. Değilse (kısa session), yenileme.
+      if (originalTtl >= THIRTY_DAYS) {
+        const newToken = generateToken(payload.userId, payload.role, payload.accountType, true);
+        res.setHeader("x-refreshed-token", newToken);
+        res.cookie("sphere_token", newToken, {
+          httpOnly: true,
+          sameSite: "lax",
+          maxAge: TOKEN_TTL_MS.remember,
+          secure: process.env.NODE_ENV === "production",
+        });
+      }
+    }
     next();
   } catch {
     res.status(401).json({ error: "Invalid or expired token" });
@@ -107,7 +127,19 @@ export function requireRole(...roles: string[]) {
   };
 }
 
-export function generateToken(userId: number, role: string, accountType?: string | null): string {
-  // 30 gün: kullanıcılar uzun süre tekrar login olmak zorunda kalmasın.
-  return jwt.sign({ userId, role, ...(accountType ? { accountType } : {}) }, JWT_SECRET, { expiresIn: "30d" });
+export function generateToken(
+  userId: number,
+  role: string,
+  accountType?: string | null,
+  rememberMe: boolean = true,
+): string {
+  // Varsayılan: 180 gün (beni hatırla açık) — uzun süre otomatik kalır.
+  // Kapatırsa: 1 gün (paylaşılan cihaz senaryosu için).
+  const expiresIn = rememberMe ? "180d" : "1d";
+  return jwt.sign({ userId, role, ...(accountType ? { accountType } : {}) }, JWT_SECRET, { expiresIn });
 }
+
+export const TOKEN_TTL_MS = {
+  remember: 180 * 24 * 60 * 60 * 1000,
+  session: 24 * 60 * 60 * 1000,
+};

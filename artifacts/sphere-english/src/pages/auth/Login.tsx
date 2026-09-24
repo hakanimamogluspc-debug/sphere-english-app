@@ -18,7 +18,11 @@ type LoginForm = z.infer<typeof loginSchema>;
 export default function Login() {
   const { login } = useAuth();
   const [error, setError] = useState<string | null>(null);
-  
+  const [rememberMe, setRememberMe] = useState<boolean>(() => {
+    // localStorage'da kayıtlıysa oku, yoksa varsayılan true
+    try { return localStorage.getItem("sphere_remember_me") !== "false"; } catch { return true; }
+  });
+
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<LoginForm>({
     resolver: zodResolver(loginSchema)
   });
@@ -26,7 +30,8 @@ export default function Login() {
   const onSubmit = async (data: LoginForm) => {
     try {
       setError(null);
-      await login(data);
+      try { localStorage.setItem("sphere_remember_me", rememberMe ? "true" : "false"); } catch {}
+      await (login as any)({ ...data, rememberMe });
     } catch (err: any) {
       setError(err.message || "Giriş yapılamadı. Lütfen bilgilerinizi kontrol edin.");
     }
@@ -73,6 +78,18 @@ export default function Login() {
               </div>
               <Input id="password" type="password" icon={<Lock size={18} />} placeholder="••••••••" error={errors.password?.message} {...register("password")} />
             </div>
+
+            <label className="flex items-center gap-2 cursor-pointer select-none group">
+              <input
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary/40 cursor-pointer"
+              />
+              <span className="text-sm text-slate-700 group-hover:text-slate-900">
+                Beni hatırla <span className="text-xs text-slate-400">(6 ay boyunca çıkma)</span>
+              </span>
+            </label>
 
             <Button type="submit" className="w-full text-lg h-12" isLoading={isSubmitting}>
               Giriş Yap

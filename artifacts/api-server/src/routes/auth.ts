@@ -3,7 +3,7 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { db, usersTable, companiesTable } from "@workspace/db";
 import { eq, and, count, sql } from "drizzle-orm";
-import { authMiddleware, generateToken, type AuthRequest } from "../middlewares/auth.js";
+import { authMiddleware, generateToken, TOKEN_TTL_MS, type AuthRequest } from "../middlewares/auth.js";
 import { sendMetaEvent } from "../services/metaConversions.js";
 import { validateBody, schemas } from "../middlewares/validate.js";
 import { notifyNewUserRegistration } from "../lib/admin-notifications.js";
@@ -18,6 +18,7 @@ const router = Router();
 const loginSchema = z.object({
   email: schemas.email,
   password: z.string().min(1, "Parola gerekli"),
+  rememberMe: z.boolean().optional(),
 });
 
 const registerSchema = z.object({
@@ -33,7 +34,8 @@ const registerSchema = z.object({
 });
 
 router.post("/auth/login", validateBody(loginSchema), async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, rememberMe } = req.body;
+  const remember = rememberMe !== false; // varsayılan true
 
   const [user] = await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase())).limit(1);
   if (!user) {
@@ -47,7 +49,7 @@ router.post("/auth/login", validateBody(loginSchema), async (req, res) => {
     return;
   }
 
-  const token = generateToken(user.id, user.role, (user as any).accountType);
+  const token = generateToken(user.id, user.role, (user as any).accountType, remember);
   const { password: _, ...userWithoutPassword } = user;
 
   let companyInfo = null;
@@ -59,7 +61,7 @@ router.post("/auth/login", validateBody(loginSchema), async (req, res) => {
   res.cookie("sphere_token", token, {
     httpOnly: true,
     sameSite: "lax",
-    maxAge: 30 * 24 * 60 * 60 * 1000,
+    maxAge: remember ? TOKEN_TTL_MS.remember : TOKEN_TTL_MS.session,
     secure: process.env.NODE_ENV === "production",
   });
 

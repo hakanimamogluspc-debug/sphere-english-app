@@ -79,7 +79,18 @@ window.fetch = async (...args) => {
     }
   }
 
-  return originalFetch(resource, config);
+  const response = await originalFetch(resource, config);
+
+  // Sliding session: backend x-refreshed-token header'ında yeni token gönderirse
+  // localStorage'ı güncelle — kullanıcı hiç logout olmaz.
+  try {
+    const refreshed = response.headers.get("x-refreshed-token");
+    if (refreshed && refreshed !== _token) {
+      setInterceptorToken(refreshed);
+    }
+  } catch { /* ignore */ }
+
+  return response;
 };
 
 export {};

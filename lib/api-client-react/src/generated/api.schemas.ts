@@ -21,6 +21,7 @@ export interface SuccessResponse {
 export interface LoginRequest {
   email: string;
   password: string;
+  rememberMe?: boolean;
 }
 
 export type RegisterRequestRole =
