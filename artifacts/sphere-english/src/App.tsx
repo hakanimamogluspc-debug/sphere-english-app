@@ -120,10 +120,10 @@ const LearningMap             = lazy(() => import("./pages/student/LearningMap")
 const RewardsPage             = lazy(() => import("./pages/student/Rewards"));
 const MobileDemo              = lazy(() => import("./pages/admin/MobileDemo"));
 const MobileHome              = lazy(() => import("./pages/m/MobileHome"));
-const MobilePractice          = lazy(() => import("./pages/m/MobilePlaceholder").then(m => ({ default: m.MobilePractice })));
-const MobileLibrary           = lazy(() => import("./pages/m/MobilePlaceholder").then(m => ({ default: m.MobileLibrary })));
-const MobileRewards           = lazy(() => import("./pages/m/MobilePlaceholder").then(m => ({ default: m.MobileRewards })));
-const MobileProfile           = lazy(() => import("./pages/m/MobilePlaceholder").then(m => ({ default: m.MobileProfile })));
+const MobilePractice          = lazy(() => import("./pages/m/MobilePractice"));
+const MobileLibrary           = lazy(() => import("./pages/m/MobileLibrary"));
+const MobileRewards           = lazy(() => import("./pages/m/MobileRewards"));
+const MobileProfile           = lazy(() => import("./pages/m/MobileProfile"));
 const Discover                = lazy(() => import("./pages/student/Discover"));
 const MyReport                = lazy(() => import("./pages/student/MyReport"));
 const SpeakingSceneRunner     = lazy(() => import("./pages/student/SpeakingSceneRunner"));
