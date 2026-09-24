@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { API } from "@/lib/api-url";
-import { Gift, Copy, Check, MessageCircle, Twitter, Loader2, Users, Snowflake, Sparkles } from "lucide-react";
+import { Link } from "wouter";
+import { Gift, Copy, Check, MessageCircle, Twitter, Loader2, Users, Snowflake, Sparkles, Award, ArrowRight } from "lucide-react";
 
 /**
  * /davet — Referans sistemi
@@ -180,6 +181,27 @@ export default function ReferralPage() {
           <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider mt-0.5">Mevcut Freeze</p>
         </div>
       </div>
+
+      {/* Ödül CTA */}
+      {data.stats.current_freezes > 0 && (
+        <Link
+          href="/odullerim"
+          className="flex items-center gap-3 bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-300 rounded-xl p-4 mb-6 hover:shadow-md transition-shadow group"
+        >
+          <div className="w-12 h-12 rounded-lg bg-amber-500 flex items-center justify-center text-white shrink-0">
+            <Award size={22} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="text-sm font-extrabold text-amber-900">
+              {data.stats.current_freezes} freeze biriktirdin — ödül al!
+            </div>
+            <p className="text-xs text-amber-800 mt-0.5">
+              Rozetler, ekstra freeze, indirim kuponları seni bekliyor.
+            </p>
+          </div>
+          <ArrowRight className="text-amber-600 group-hover:translate-x-0.5 transition-transform" size={18} />
+        </Link>
+      )}
 
       {/* Davetliler Listesi */}
       <div className="bg-white border border-slate-200 rounded-xl p-5">
