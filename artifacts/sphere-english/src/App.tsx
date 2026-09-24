@@ -119,6 +119,11 @@ const ReferralPage            = lazy(() => import("./pages/student/ReferralPage"
 const LearningMap             = lazy(() => import("./pages/student/LearningMap"));
 const RewardsPage             = lazy(() => import("./pages/student/Rewards"));
 const MobileDemo              = lazy(() => import("./pages/admin/MobileDemo"));
+const MobileHome              = lazy(() => import("./pages/m/MobileHome"));
+const MobilePractice          = lazy(() => import("./pages/m/MobilePlaceholder").then(m => ({ default: m.MobilePractice })));
+const MobileLibrary           = lazy(() => import("./pages/m/MobilePlaceholder").then(m => ({ default: m.MobileLibrary })));
+const MobileRewards           = lazy(() => import("./pages/m/MobilePlaceholder").then(m => ({ default: m.MobileRewards })));
+const MobileProfile           = lazy(() => import("./pages/m/MobilePlaceholder").then(m => ({ default: m.MobileProfile })));
 const Discover                = lazy(() => import("./pages/student/Discover"));
 const MyReport                = lazy(() => import("./pages/student/MyReport"));
 const SpeakingSceneRunner     = lazy(() => import("./pages/student/SpeakingSceneRunner"));
@@ -194,15 +199,17 @@ function ProtectedRoute({ component: Component, allowedRoles, skipPlacementCheck
   return <Component />;
 }
 
-function LayoutWrapper({ component: Component, allowedRoles, featureKey }: { component: any, allowedRoles?: string[], featureKey?: string }) {
+function LayoutWrapper({ component: Component, allowedRoles, featureKey, noLayout }: { component: any, allowedRoles?: string[], featureKey?: string, noLayout?: boolean }) {
   return (
     <ProtectedRoute
       allowedRoles={allowedRoles}
       featureKey={featureKey}
       component={() => (
-        <DashboardLayout>
-          <Component />
-        </DashboardLayout>
+        noLayout ? <Component /> : (
+          <DashboardLayout>
+            <Component />
+          </DashboardLayout>
+        )
       )}
     />
   );
@@ -319,6 +326,13 @@ function Router() {
         <Route path="/yolculugum"><LayoutWrapper component={LearningMap} allowedRoles={['student', 'admin', 'teacher']} /></Route>
         <Route path="/odullerim"><LayoutWrapper component={RewardsPage} allowedRoles={['student', 'admin', 'teacher']} /></Route>
         <Route path="/admin/mobil-demo"><LayoutWrapper component={MobileDemo} allowedRoles={['admin']} /></Route>
+
+        {/* Mobil paralel rotalar — TabBar navigation ile */}
+        <Route path="/m/anasayfa"><LayoutWrapper component={MobileHome} allowedRoles={['student', 'admin', 'teacher']} noLayout /></Route>
+        <Route path="/m/pratik"><LayoutWrapper component={MobilePractice} allowedRoles={['student', 'admin', 'teacher']} noLayout /></Route>
+        <Route path="/m/kutuphane"><LayoutWrapper component={MobileLibrary} allowedRoles={['student', 'admin', 'teacher']} noLayout /></Route>
+        <Route path="/m/kazanim"><LayoutWrapper component={MobileRewards} allowedRoles={['student', 'admin', 'teacher']} noLayout /></Route>
+        <Route path="/m/profil"><LayoutWrapper component={MobileProfile} allowedRoles={['student', 'admin', 'teacher']} noLayout /></Route>
         <Route path="/kesfet"><LayoutWrapper component={Discover} allowedRoles={['student', 'admin', 'corporate']} /></Route>
         <Route path="/raporum"><LayoutWrapper component={MyReport} allowedRoles={['student', 'admin', 'corporate']} /></Route>
         <Route path="/student/speaking-scenes/:slug"><LayoutWrapper component={SpeakingSceneRunner} allowedRoles={['student', 'admin']} featureKey="student-speaking-scenes" /></Route>

@@ -13,6 +13,7 @@ import TodayTaskCard from "@/components/TodayTaskCard";
 import StreakCard from "@/components/StreakCard";
 import WeeklyLeaderboard from "@/components/WeeklyLeaderboard";
 import BusinessCardsDaily from "@/components/BusinessCardsDaily";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 function useAnnouncements() {
   const [announcements, setAnnouncements] = useState<any[]>([]);
@@ -958,6 +959,12 @@ function AdminDashboard() {
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const isMobile = useIsMobile();
+
+  // Mobil viewport'ta öğrenciler otomatik yeni mobil arayüze yönlenir
+  if (isMobile && (user?.role === 'student')) {
+    return <Redirect to="/m/anasayfa" />;
+  }
 
   if (user?.role === 'partner') return <Redirect to="/partner" />;
   if (user?.role === 'corporate') return <Redirect to="/corporate/dashboard" />;
