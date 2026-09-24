@@ -118,6 +118,7 @@ const NotificationPreferences = lazy(() => import("./pages/student/NotificationP
 const ReferralPage            = lazy(() => import("./pages/student/ReferralPage"));
 const LearningMap             = lazy(() => import("./pages/student/LearningMap"));
 const RewardsPage             = lazy(() => import("./pages/student/Rewards"));
+const MobileDemo              = lazy(() => import("./pages/admin/MobileDemo"));
 const Discover                = lazy(() => import("./pages/student/Discover"));
 const MyReport                = lazy(() => import("./pages/student/MyReport"));
 const SpeakingSceneRunner     = lazy(() => import("./pages/student/SpeakingSceneRunner"));
@@ -317,6 +318,7 @@ function Router() {
         <Route path="/davet"><LayoutWrapper component={ReferralPage} allowedRoles={['student', 'admin', 'teacher']} /></Route>
         <Route path="/yolculugum"><LayoutWrapper component={LearningMap} allowedRoles={['student', 'admin', 'teacher']} /></Route>
         <Route path="/odullerim"><LayoutWrapper component={RewardsPage} allowedRoles={['student', 'admin', 'teacher']} /></Route>
+        <Route path="/admin/mobil-demo"><LayoutWrapper component={MobileDemo} allowedRoles={['admin']} /></Route>
         <Route path="/kesfet"><LayoutWrapper component={Discover} allowedRoles={['student', 'admin', 'corporate']} /></Route>
         <Route path="/raporum"><LayoutWrapper component={MyReport} allowedRoles={['student', 'admin', 'corporate']} /></Route>
         <Route path="/student/speaking-scenes/:slug"><LayoutWrapper component={SpeakingSceneRunner} allowedRoles={['student', 'admin']} featureKey="student-speaking-scenes" /></Route>
