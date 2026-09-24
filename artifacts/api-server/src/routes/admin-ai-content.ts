@@ -321,6 +321,45 @@ function extractJSON<T>(raw: string): T {
   }
 }
 
+// ─── Helper: tek bir üretim (route handler'lar ve bulk için ortak) ────────
+
+async function runGenerate(
+  type: string,
+  cefr: Cefr,
+  cat: string,
+  count: number,
+  apiKey: string,
+): Promise<{ items: any[]; warnings: string[] }> {
+  const warnings: string[] = [];
+  let items: any[] = [];
+
+  if (type === "vocab") {
+    const n = Math.max(1, Math.min(50, count || 20));
+    if (!VOCAB_CATEGORIES.includes(cat as any)) warnings.push(`Kategori '${cat}' önerilen listede yok`);
+    const raw = await callClaude(vocabPrompt(cefr, n, cat || "business_general"), apiKey, Math.min(8000, n * 200 + 500));
+    items = extractJSON<any[]>(raw);
+    if (!Array.isArray(items)) throw new Error("Response array değil");
+  } else if (type === "scene") {
+    if (!SCENE_CATEGORIES.includes(cat as any)) warnings.push(`Kategori '${cat}' önerilen listede yok`);
+    const raw = await callClaude(scenePrompt(cefr, cat || "general_business"), apiKey, 3500);
+    items = [extractJSON<any>(raw)];
+  } else if (type === "reading") {
+    const n = Math.max(1, Math.min(10, count || 3));
+    const raw = await callClaude(readingPrompt(cefr, n, cat || "business_general"), apiKey, Math.min(8000, n * 800 + 500));
+    items = extractJSON<any[]>(raw);
+    if (!Array.isArray(items)) throw new Error("Response array değil");
+  } else if (type === "business_card") {
+    const n = Math.max(1, Math.min(30, count || 10));
+    if (!CARD_CATEGORIES.includes(cat as any)) warnings.push(`Kategori '${cat}' önerilen listede yok`);
+    const raw = await callClaude(businessCardPrompt(cefr, n, cat || "business_general"), apiKey, Math.min(8000, n * 400 + 500));
+    items = extractJSON<any[]>(raw);
+    if (!Array.isArray(items)) throw new Error("Response array değil");
+  } else {
+    throw new Error("Geçersiz tür: " + type);
+  }
+  return { items, warnings };
+}
+
 // ─── POST /admin/ai-content/generate ───────────────────────────────────────
 
 router.post(
@@ -345,44 +384,8 @@ router.post(
 
       const cefr = String(level).toUpperCase() as Cefr;
       const cat = String(category ?? "").trim();
-
-      let items: any[] = [];
-      const warnings: string[] = [];
-
-      if (type === "vocab") {
-        const n = Math.max(1, Math.min(50, parseInt(String(count), 10) || 20));
-        if (!VOCAB_CATEGORIES.includes(cat as any)) {
-          warnings.push(`Kategori '${cat}' önerilen listede yok — devam ediliyor ama gözden geçir.`);
-        }
-        const prompt = vocabPrompt(cefr, n, cat || "business_general");
-        const raw = await callClaude(prompt, apiKey, Math.min(8000, n * 200 + 500));
-        items = extractJSON<any[]>(raw);
-        if (!Array.isArray(items)) throw new Error("Response array değil");
-      } else if (type === "scene") {
-        if (!SCENE_CATEGORIES.includes(cat as any)) {
-          warnings.push(`Kategori '${cat}' önerilen listede yok — devam ediliyor ama gözden geçir.`);
-        }
-        const prompt = scenePrompt(cefr, cat || "general_business");
-        const raw = await callClaude(prompt, apiKey, 3500);
-        const item = extractJSON<any>(raw);
-        items = [item];
-      } else if (type === "reading") {
-        const n = Math.max(1, Math.min(10, parseInt(String(count), 10) || 3));
-        const prompt = readingPrompt(cefr, n, cat || "business_general");
-        const raw = await callClaude(prompt, apiKey, Math.min(8000, n * 800 + 500));
-        items = extractJSON<any[]>(raw);
-        if (!Array.isArray(items)) throw new Error("Response array değil");
-      } else if (type === "business_card") {
-        const n = Math.max(1, Math.min(30, parseInt(String(count), 10) || 10));
-        if (!CARD_CATEGORIES.includes(cat as any)) {
-          warnings.push(`Kategori '${cat}' önerilen listede yok — devam ediliyor ama gözden geçir.`);
-        }
-        const prompt = businessCardPrompt(cefr, n, cat || "business_general");
-        const raw = await callClaude(prompt, apiKey, Math.min(8000, n * 400 + 500));
-        items = extractJSON<any[]>(raw);
-        if (!Array.isArray(items)) throw new Error("Response array değil");
-      }
-
+      const n = parseInt(String(count), 10) || 0;
+      const { items, warnings } = await runGenerate(String(type), cefr, cat, n, apiKey);
       return res.json({ ok: true, type, level: cefr, count: items.length, items, warnings });
     } catch (e: any) {
       console.error("[admin/ai-content/generate] HATA:", e?.message);
@@ -390,6 +393,124 @@ router.post(
     }
   },
 );
+
+// ─── Helper: import (route handler + bulk için ortak) ────────────────────
+
+async function runImport(
+  type: string,
+  items: any[],
+): Promise<{ imported: number; skipped: any[]; errors: string[] }> {
+  let imported = 0;
+  const skipped: any[] = [];
+  const errors: string[] = [];
+
+  if (type === "vocab") {
+    for (const it of items) {
+      try {
+        const word = String(it.word ?? "").trim();
+        const turkish = String(it.turkish ?? "").trim();
+        const level = String(it.level ?? "").toUpperCase();
+        const category = String(it.category ?? "business_general");
+        const imagePrompt = String(it.image_prompt ?? "");
+        if (!word || !turkish || !level) { skipped.push({ reason: "eksik alan", item: it }); continue; }
+        const exists = await pool.query(
+          "SELECT id FROM vocab_words WHERE LOWER(word) = LOWER($1) AND UPPER(level) = UPPER($2) LIMIT 1",
+          [word, level],
+        );
+        if (exists.rows.length > 0) { skipped.push({ reason: "duplicate", item: it }); continue; }
+        await pool.query(
+          `INSERT INTO vocab_words (word, turkish, image_prompt, level, category) VALUES ($1, $2, $3, $4, $5)`,
+          [word, turkish, imagePrompt, level, category],
+        );
+        imported++;
+      } catch (err: any) { errors.push(`vocab: ${err?.message}`); }
+    }
+  } else if (type === "scene") {
+    for (const it of items) {
+      try {
+        const titleEn = String(it.title_en ?? "").trim();
+        const titleTr = String(it.title_tr ?? "").trim();
+        const descTr = String(it.description_tr ?? "").trim();
+        const difficulty = String(it.difficulty ?? "").toUpperCase();
+        const category = String(it.category ?? it.scene_category ?? "general_business");
+        const turns = Array.isArray(it.turns) ? it.turns : [];
+        if (!titleEn || !titleTr || !difficulty || turns.length === 0) { skipped.push({ reason: "eksik alan", item: it }); continue; }
+        const baseSlug = titleEn.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 80);
+        const slug = `${baseSlug}-${crypto.randomBytes(3).toString("hex")}`;
+        const sceneRow = await pool.query(
+          `INSERT INTO speaking_scenes (slug, category, title_en, title_tr, description_tr, user_role_tr, counterpart_role_tr, difficulty, min_plan, avg_duration_min, voice, is_active, sort_order)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, TRUE, 0) RETURNING id`,
+          [slug, category, titleEn, titleTr, descTr, String(it.user_role_tr ?? ""), String(it.counterpart_role_tr ?? ""), difficulty, String(it.min_plan ?? "free"), parseInt(String(it.avg_duration_min ?? 5), 10) || 5, String(it.voice ?? "nova")],
+        );
+        const sceneId = sceneRow.rows[0]?.id;
+        if (sceneId) {
+          for (let idx = 0; idx < turns.length; idx++) {
+            const t = turns[idx];
+            await pool.query(
+              `INSERT INTO speaking_scene_turns (scene_id, turn_order, speaker, text_en, text_tr, notes_tr) VALUES ($1, $2, $3, $4, $5, $6)`,
+              [sceneId, idx, String(t.speaker ?? "user"), String(t.text_en ?? ""), String(t.text_tr ?? ""), String(t.hint_tr ?? t.notes_tr ?? "")],
+            );
+          }
+          imported++;
+        }
+      } catch (err: any) { errors.push(`scene: ${err?.message}`); }
+    }
+  } else if (type === "reading") {
+    for (const it of items) {
+      try {
+        const title = String(it.title ?? "").trim();
+        const body = String(it.body ?? "").trim();
+        const cefrLevel = String(it.cefr_level ?? "").toUpperCase();
+        const category = String(it.category ?? "business_general");
+        const summaryTr = String(it.summary_tr ?? "");
+        if (!title || !body || !cefrLevel) { skipped.push({ reason: "eksik alan", item: it }); continue; }
+        const externalId = `ai-${crypto.randomBytes(6).toString("hex")}`;
+        const wordCount = body.split(/\s+/).filter(Boolean).length;
+        await pool.query(
+          `INSERT INTO content_articles (source, external_id, url, title, body_text, word_count, tr_summary, cefr_level, category, status, published_admin_at)
+           VALUES ('ai_generated', $1, $2, $3, $4, $5, $6, $7, $8, 'published', NOW())`,
+          [externalId, `internal://ai-content/${externalId}`, title, body, wordCount, summaryTr, cefrLevel, category],
+        );
+        imported++;
+      } catch (err: any) { errors.push(`reading: ${err?.message}`); }
+    }
+  } else if (type === "business_card") {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS business_cards (
+        id SERIAL PRIMARY KEY, level VARCHAR(4) NOT NULL, category VARCHAR(40) NOT NULL,
+        context_tr TEXT NOT NULL, phrase_en TEXT NOT NULL, alternatives_en JSONB NOT NULL DEFAULT '[]'::jsonb,
+        example_en TEXT NOT NULL, translation_tr TEXT NOT NULL, tags TEXT[] NOT NULL DEFAULT '{}',
+        is_active BOOLEAN NOT NULL DEFAULT TRUE, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
+    for (const it of items) {
+      try {
+        const level = String(it.level ?? "").toUpperCase();
+        const category = String(it.category ?? "business_general");
+        const contextTr = String(it.context_tr ?? "").trim();
+        const phraseEn = String(it.phrase_en ?? "").trim();
+        const exampleEn = String(it.example_en ?? "").trim();
+        const translationTr = String(it.translation_tr ?? "").trim();
+        const alternativesEn = Array.isArray(it.alternatives_en) ? it.alternatives_en : [];
+        const tags = Array.isArray(it.tags) ? it.tags.map((t: any) => String(t)) : [];
+        if (!level || !contextTr || !phraseEn || !exampleEn || !translationTr) { skipped.push({ reason: "eksik alan", item: it }); continue; }
+        const exists = await pool.query(
+          "SELECT id FROM business_cards WHERE LOWER(phrase_en) = LOWER($1) AND level = $2 LIMIT 1",
+          [phraseEn, level],
+        );
+        if (exists.rows.length > 0) { skipped.push({ reason: "duplicate", item: it }); continue; }
+        await pool.query(
+          `INSERT INTO business_cards (level, category, context_tr, phrase_en, alternatives_en, example_en, translation_tr, tags)
+           VALUES ($1, $2, $3, $4, $5::jsonb, $6, $7, $8)`,
+          [level, category, contextTr, phraseEn, JSON.stringify(alternativesEn), exampleEn, translationTr, tags],
+        );
+        imported++;
+      } catch (err: any) { errors.push(`business_card: ${err?.message}`); }
+    }
+  }
+
+  return { imported, skipped, errors };
+}
 
 // ─── POST /admin/ai-content/import ─────────────────────────────────────────
 
@@ -407,216 +528,8 @@ router.post(
       return res.status(400).json({ error: "type geçersiz" });
     }
 
-    let imported = 0;
-    const skipped: any[] = [];
-    const errors: string[] = [];
-
     try {
-      if (type === "vocab") {
-        for (const it of items) {
-          try {
-            const word = String(it.word ?? "").trim();
-            const turkish = String(it.turkish ?? "").trim();
-            const level = String(it.level ?? "").toUpperCase();
-            const category = String(it.category ?? "business_general");
-            const imagePrompt = String(it.image_prompt ?? "");
-            if (!word || !turkish || !level) {
-              skipped.push({ reason: "eksik alan", item: it });
-              continue;
-            }
-            // Duplicate check (word + level)
-            const exists = await pool.query(
-              "SELECT id FROM vocab_words WHERE LOWER(word) = LOWER($1) AND UPPER(level) = UPPER($2) LIMIT 1",
-              [word, level],
-            );
-            if (exists.rows.length > 0) {
-              skipped.push({ reason: "duplicate", item: it });
-              continue;
-            }
-            await pool.query(
-              `INSERT INTO vocab_words (word, turkish, image_prompt, level, category)
-               VALUES ($1, $2, $3, $4, $5)`,
-              [word, turkish, imagePrompt, level, category],
-            );
-            imported++;
-          } catch (err: any) {
-            errors.push(`vocab: ${err?.message}`);
-          }
-        }
-      } else if (type === "scene") {
-        for (const it of items) {
-          try {
-            const titleEn = String(it.title_en ?? "").trim();
-            const titleTr = String(it.title_tr ?? "").trim();
-            const descTr = String(it.description_tr ?? "").trim();
-            const difficulty = String(it.difficulty ?? "").toUpperCase();
-            const category = String(it.category ?? it.scene_category ?? "general_business");
-            const turns = Array.isArray(it.turns) ? it.turns : [];
-            if (!titleEn || !titleTr || !difficulty || turns.length === 0) {
-              skipped.push({ reason: "eksik alan", item: it });
-              continue;
-            }
-            // Slug üret
-            const baseSlug = titleEn
-              .toLowerCase()
-              .replace(/[^a-z0-9]+/g, "-")
-              .replace(/^-|-$/g, "")
-              .slice(0, 80);
-            const slug = `${baseSlug}-${crypto.randomBytes(3).toString("hex")}`;
-
-            const sceneRow = await pool.query(
-              `INSERT INTO speaking_scenes (
-                slug, category, title_en, title_tr, description_tr,
-                user_role_tr, counterpart_role_tr,
-                difficulty, min_plan, avg_duration_min, voice,
-                is_active, sort_order
-              ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, TRUE, 0)
-              RETURNING id`,
-              [
-                slug,
-                category,
-                titleEn,
-                titleTr,
-                descTr,
-                String(it.user_role_tr ?? ""),
-                String(it.counterpart_role_tr ?? ""),
-                difficulty,
-                String(it.min_plan ?? "free"),
-                parseInt(String(it.avg_duration_min ?? 5), 10) || 5,
-                String(it.voice ?? "nova"),
-              ],
-            );
-            const sceneId = sceneRow.rows[0]?.id;
-            if (sceneId) {
-              // Turn'leri ekle — kolonlar: turn_order, speaker, text_en, text_tr, notes_tr
-              for (let idx = 0; idx < turns.length; idx++) {
-                const t = turns[idx];
-                await pool.query(
-                  `INSERT INTO speaking_scene_turns (
-                    scene_id, turn_order, speaker, text_en, text_tr, notes_tr
-                  ) VALUES ($1, $2, $3, $4, $5, $6)`,
-                  [
-                    sceneId,
-                    idx,
-                    String(t.speaker ?? "user"),
-                    String(t.text_en ?? ""),
-                    String(t.text_tr ?? ""),
-                    String(t.hint_tr ?? t.notes_tr ?? ""),
-                  ],
-                );
-              }
-              imported++;
-            }
-          } catch (err: any) {
-            errors.push(`scene: ${err?.message}`);
-          }
-        }
-      } else if (type === "reading") {
-        for (const it of items) {
-          try {
-            const title = String(it.title ?? "").trim();
-            const body = String(it.body ?? "").trim();
-            const cefrLevel = String(it.cefr_level ?? "").toUpperCase();
-            const category = String(it.category ?? "business_general");
-            const summaryTr = String(it.summary_tr ?? "");
-            const keywords = Array.isArray(it.keywords) ? it.keywords : [];
-            if (!title || !body || !cefrLevel) {
-              skipped.push({ reason: "eksik alan", item: it });
-              continue;
-            }
-            // content_articles şeması: source, external_id, url (NOT NULL), title, body_text, tr_summary, cefr_level
-            const externalId = `ai-${crypto.randomBytes(6).toString("hex")}`;
-            const wordCount = body.split(/\s+/).filter(Boolean).length;
-            await pool.query(
-              `INSERT INTO content_articles (
-                source, external_id, url, title, body_text,
-                word_count, tr_summary, cefr_level, category,
-                status, published_admin_at
-              ) VALUES (
-                'ai_generated', $1, $2, $3, $4, $5, $6, $7, $8, 'published', NOW()
-              )`,
-              [
-                externalId,
-                `internal://ai-content/${externalId}`, // sentetik URL — AI üretimi için
-                title,
-                body,
-                wordCount,
-                summaryTr,
-                cefrLevel,
-                category,
-              ],
-            );
-            imported++;
-          } catch (err: any) {
-            errors.push(`reading: ${err?.message}`);
-          }
-        }
-      }
-
-      if (type === "business_card") {
-        // business_cards tablosunu garantile (idempotent)
-        await pool.query(`
-          CREATE TABLE IF NOT EXISTS business_cards (
-            id SERIAL PRIMARY KEY,
-            level VARCHAR(4) NOT NULL,
-            category VARCHAR(40) NOT NULL,
-            context_tr TEXT NOT NULL,
-            phrase_en TEXT NOT NULL,
-            alternatives_en JSONB NOT NULL DEFAULT '[]'::jsonb,
-            example_en TEXT NOT NULL,
-            translation_tr TEXT NOT NULL,
-            tags TEXT[] NOT NULL DEFAULT '{}',
-            is_active BOOLEAN NOT NULL DEFAULT TRUE,
-            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-            updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-          )
-        `);
-        for (const it of items) {
-          try {
-            const level = String(it.level ?? "").toUpperCase();
-            const category = String(it.category ?? "business_general");
-            const contextTr = String(it.context_tr ?? "").trim();
-            const phraseEn = String(it.phrase_en ?? "").trim();
-            const exampleEn = String(it.example_en ?? "").trim();
-            const translationTr = String(it.translation_tr ?? "").trim();
-            const alternativesEn = Array.isArray(it.alternatives_en) ? it.alternatives_en : [];
-            const tags = Array.isArray(it.tags) ? it.tags.map((t: any) => String(t)) : [];
-            if (!level || !contextTr || !phraseEn || !exampleEn || !translationTr) {
-              skipped.push({ reason: "eksik alan", item: it });
-              continue;
-            }
-            // Duplicate check — aynı phrase + level
-            const exists = await pool.query(
-              "SELECT id FROM business_cards WHERE LOWER(phrase_en) = LOWER($1) AND level = $2 LIMIT 1",
-              [phraseEn, level],
-            );
-            if (exists.rows.length > 0) {
-              skipped.push({ reason: "duplicate", item: it });
-              continue;
-            }
-            await pool.query(
-              `INSERT INTO business_cards
-                 (level, category, context_tr, phrase_en, alternatives_en,
-                  example_en, translation_tr, tags)
-               VALUES ($1, $2, $3, $4, $5::jsonb, $6, $7, $8)`,
-              [
-                level,
-                category,
-                contextTr,
-                phraseEn,
-                JSON.stringify(alternativesEn),
-                exampleEn,
-                translationTr,
-                tags,
-              ],
-            );
-            imported++;
-          } catch (err: any) {
-            errors.push(`business_card: ${err?.message}`);
-          }
-        }
-      }
-
+      const { imported, skipped, errors } = await runImport(String(type), items);
       return res.json({ ok: true, type, imported, skipped: skipped.length, skippedDetails: skipped, errors });
     } catch (e: any) {
       console.error("[admin/ai-content/import] HATA:", e?.message);
@@ -624,5 +537,102 @@ router.post(
     }
   },
 );
+
+// ─── POST /admin/ai-content/bulk-generate ────────────────────────────────
+// Çoklu (level, category) kombinasyonlarını tek istekte üret + import et.
+// Body: { type, level, categories: string[], countPerCategory: number, autoImport?: boolean }
+// Response: { batches: [{level, category, generated, imported, warnings, errors}], totals }
+router.post(
+  "/admin/ai-content/bulk-generate",
+  authMiddleware,
+  requireRole("admin"),
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const apiKey = process.env.ANTHROPIC_API_KEY;
+      if (!apiKey) return res.status(500).json({ error: "ANTHROPIC_API_KEY tanımlı değil" });
+
+      const { type, level, categories, countPerCategory, autoImport } = req.body ?? {};
+      if (!["vocab", "scene", "reading", "business_card"].includes(String(type))) {
+        return res.status(400).json({ error: "type: 'vocab' | 'scene' | 'reading' | 'business_card' olmalı" });
+      }
+      if (!CEFR_LEVELS.includes(String(level).toUpperCase() as Cefr)) {
+        return res.status(400).json({ error: "level: A1-C2" });
+      }
+      if (!Array.isArray(categories) || categories.length === 0) {
+        return res.status(400).json({ error: "categories boş olamaz" });
+      }
+      if (categories.length > 15) {
+        return res.status(400).json({ error: "Maksimum 15 kategori" });
+      }
+      const cefr = String(level).toUpperCase() as Cefr;
+      const n = parseInt(String(countPerCategory), 10) || 10;
+      const doImport = autoImport !== false; // varsayılan true
+
+      // Uzun sürebilir — HTTP timeout'a takılmasın diye header'ı önden set et
+      res.setTimeout(15 * 60 * 1000);
+
+      const batches: any[] = [];
+      let totalGenerated = 0;
+      let totalImported = 0;
+      let totalErrors = 0;
+
+      for (const cat of categories) {
+        const category = String(cat).trim();
+        try {
+          const { items, warnings } = await runGenerate(String(type), cefr, category, n, apiKey);
+          let imported = 0;
+          let skippedCount = 0;
+          let errList: string[] = [];
+          if (doImport) {
+            const r = await runImport(String(type), items);
+            imported = r.imported;
+            skippedCount = r.skipped.length;
+            errList = r.errors;
+          }
+          batches.push({
+            level: cefr,
+            category,
+            generated: items.length,
+            imported,
+            skipped: skippedCount,
+            warnings,
+            errors: errList,
+          });
+          totalGenerated += items.length;
+          totalImported += imported;
+          totalErrors += errList.length;
+        } catch (e: any) {
+          batches.push({
+            level: cefr,
+            category,
+            generated: 0,
+            imported: 0,
+            skipped: 0,
+            warnings: [],
+            errors: [e?.message ?? "hata"],
+          });
+          totalErrors++;
+        }
+      }
+
+      return res.json({
+        ok: true,
+        type,
+        level: cefr,
+        totals: {
+          batches: batches.length,
+          generated: totalGenerated,
+          imported: totalImported,
+          errors: totalErrors,
+        },
+        batches,
+      });
+    } catch (e: any) {
+      console.error("[admin/ai-content/bulk-generate] HATA:", e?.message);
+      return res.status(500).json({ error: e?.message });
+    }
+  },
+);
+
 
 export default router;

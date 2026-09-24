@@ -9,6 +9,8 @@ import {
   ChevronDown,
   ChevronRight,
   AlertTriangle,
+  Layers,
+  Zap,
 } from "lucide-react";
 
 const TOKEN_KEY = "sphere_token";
@@ -411,6 +413,258 @@ export default function AdminAIContentGenerator() {
       {items.length === 0 && !generating && !importResult && (
         <div className="text-center py-16 text-slate-400 text-sm">
           Üretmek istediğin içerik türü + seviye + kategori seç, üste basın.
+        </div>
+      )}
+
+      {/* ═══════════════ TOPLU ÜRET ═══════════════ */}
+      <BulkGenerator />
+    </div>
+  );
+}
+
+// ─── BulkGenerator ─────────────────────────────────────────────────────────
+// Çoklu kategori için tek tıkla üretim + otomatik import.
+interface BulkBatch {
+  level: string;
+  category: string;
+  generated: number;
+  imported: number;
+  skipped: number;
+  warnings: string[];
+  errors: string[];
+}
+
+function BulkGenerator() {
+  const [open, setOpen] = useState(false);
+  const [bType, setBType] = useState<ContentType>("business_card");
+  const [bLevel, setBLevel] = useState<Cefr>("B1");
+  const [bCategories, setBCategories] = useState<string[]>([]);
+  const [bCount, setBCount] = useState(10);
+  const [running, setRunning] = useState(false);
+  const [result, setResult] = useState<{ totals: any; batches: BulkBatch[] } | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const available =
+    bType === "scene" ? SCENE_CATEGORIES : bType === "business_card" ? CARD_CATEGORIES : VOCAB_CATEGORIES;
+
+  const toggleCat = (c: string) => {
+    setBCategories((prev) => (prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c]));
+  };
+
+  const selectAll = () => setBCategories([...available]);
+  const clearAll = () => setBCategories([]);
+
+  const run = async () => {
+    if (bCategories.length === 0) {
+      setError("En az bir kategori seç");
+      return;
+    }
+    setRunning(true);
+    setError(null);
+    setResult(null);
+    try {
+      const r = await apiFetch("/admin/ai-content/bulk-generate", {
+        method: "POST",
+        body: JSON.stringify({
+          type: bType,
+          level: bLevel,
+          categories: bCategories,
+          countPerCategory: bCount,
+          autoImport: true,
+        }),
+      });
+      setResult({ totals: r.totals, batches: r.batches });
+    } catch (e: any) {
+      setError(e?.message ?? "Bulk üretim başarısız");
+    } finally {
+      setRunning(false);
+    }
+  };
+
+  const estimatedMinutes = Math.ceil((bCategories.length * (bType === "vocab" ? 15 : 10)) / 60);
+
+  return (
+    <div className="mt-8 border-2 border-dashed border-indigo-200 rounded-xl overflow-hidden">
+      <button
+        onClick={() => setOpen((s) => !s)}
+        className="w-full flex items-center justify-between px-4 py-3 bg-indigo-50 hover:bg-indigo-100 text-left"
+      >
+        <div className="flex items-center gap-2">
+          <Layers className="text-indigo-600" size={18} />
+          <span className="font-bold text-indigo-900">Toplu Üret</span>
+          <span className="text-xs text-indigo-600 font-semibold">
+            (birden fazla kategori tek istekte)
+          </span>
+        </div>
+        {open ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
+      </button>
+
+      {open && (
+        <div className="p-4 bg-white">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-600 mb-1">Tür</label>
+              <select
+                value={bType}
+                onChange={(e) => {
+                  setBType(e.target.value as ContentType);
+                  setBCategories([]);
+                }}
+                className="w-full border border-slate-200 rounded-md px-3 py-2 text-sm"
+                disabled={running}
+              >
+                <option value="vocab">Vocab</option>
+                <option value="scene">Scene</option>
+                <option value="reading">Reading</option>
+                <option value="business_card">İş Kartı</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-600 mb-1">Seviye</label>
+              <select
+                value={bLevel}
+                onChange={(e) => setBLevel(e.target.value as Cefr)}
+                className="w-full border border-slate-200 rounded-md px-3 py-2 text-sm"
+                disabled={running}
+              >
+                {CEFR_LEVELS.map((l) => (
+                  <option key={l} value={l}>{l}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-600 mb-1">
+                Adet / Kategori
+              </label>
+              <input
+                type="number"
+                min={1}
+                max={bType === "scene" ? 1 : bType === "business_card" ? 30 : bType === "reading" ? 10 : 50}
+                value={bCount}
+                onChange={(e) => setBCount(Math.max(1, parseInt(e.target.value) || 1))}
+                className="w-full border border-slate-200 rounded-md px-3 py-2 text-sm"
+                disabled={running || bType === "scene"}
+              />
+            </div>
+            <div className="flex items-end">
+              <button
+                onClick={run}
+                disabled={running || bCategories.length === 0}
+                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold disabled:bg-slate-300"
+              >
+                {running ? (
+                  <>
+                    <RefreshCw size={14} className="animate-spin" /> Üretiliyor…
+                  </>
+                ) : (
+                  <>
+                    <Zap size={14} /> {bCategories.length} Kategori × {bCount}
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+
+          {/* Kategori seçici */}
+          <div className="mb-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-bold text-slate-600 uppercase tracking-wider">
+                Kategoriler ({bCategories.length}/{available.length})
+              </span>
+              <div className="flex gap-2">
+                <button onClick={selectAll} className="text-xs font-semibold text-indigo-600 hover:text-indigo-800">
+                  Hepsi
+                </button>
+                <span className="text-slate-300">·</span>
+                <button onClick={clearAll} className="text-xs font-semibold text-slate-500 hover:text-slate-800">
+                  Temizle
+                </button>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-1.5">
+              {available.map((c) => {
+                const selected = bCategories.includes(c);
+                return (
+                  <button
+                    key={c}
+                    onClick={() => toggleCat(c)}
+                    disabled={running}
+                    className={`text-xs px-2 py-1.5 rounded-md border font-semibold text-left transition-colors ${
+                      selected
+                        ? "bg-indigo-100 border-indigo-400 text-indigo-900"
+                        : "bg-white border-slate-200 text-slate-600 hover:border-slate-300"
+                    }`}
+                  >
+                    {selected && "✓ "}{c}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {bCategories.length > 0 && (
+            <div className="text-xs text-slate-500 mb-3">
+              📊 Toplam: <strong>{bCategories.length * bCount}</strong> öğe · ~{estimatedMinutes} dakika sürer
+            </div>
+          )}
+
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded p-2 mb-3 text-sm text-red-700">
+              {error}
+            </div>
+          )}
+
+          {running && (
+            <div className="bg-blue-50 border border-blue-200 rounded p-3 mb-3 text-sm text-blue-800">
+              🚀 Üretim ve import devam ediyor — sekmeyi kapatma. Bu birkaç dakika sürebilir.
+            </div>
+          )}
+
+          {result && (
+            <div className="space-y-3">
+              <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3">
+                <div className="text-sm font-bold text-emerald-800 mb-1">
+                  ✅ {result.totals.imported} yeni öğe import edildi
+                </div>
+                <div className="text-xs text-emerald-700">
+                  {result.totals.batches} batch · {result.totals.generated} üretildi ·
+                  {" "}{result.totals.errors} hata
+                </div>
+              </div>
+              <div className="border border-slate-200 rounded-lg overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead className="bg-slate-50">
+                    <tr className="text-left text-xs text-slate-600 font-semibold uppercase">
+                      <th className="px-3 py-2">Kategori</th>
+                      <th className="px-3 py-2 text-right">Üretildi</th>
+                      <th className="px-3 py-2 text-right">Import</th>
+                      <th className="px-3 py-2 text-right">Atlandı</th>
+                      <th className="px-3 py-2">Not</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {result.batches.map((b, i) => (
+                      <tr key={i} className="hover:bg-slate-50">
+                        <td className="px-3 py-2 font-mono text-xs">{b.category}</td>
+                        <td className="px-3 py-2 text-right tabular-nums">{b.generated}</td>
+                        <td className="px-3 py-2 text-right tabular-nums font-bold text-emerald-700">
+                          {b.imported}
+                        </td>
+                        <td className="px-3 py-2 text-right tabular-nums text-slate-500">
+                          {b.skipped}
+                        </td>
+                        <td className="px-3 py-2 text-xs text-slate-500">
+                          {b.errors.length > 0 && (
+                            <span className="text-red-600">⚠ {b.errors[0]}</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
