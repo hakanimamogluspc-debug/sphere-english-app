@@ -31,7 +31,7 @@ const MODULES = [
   { key: "student_materials",   name: "Materyallerim",      icon: BookOpen,      color: "#64748b", href: "/m/pratik/materyaller" },
   { key: "student_speaking_club", name: "Speaking Club",    icon: Users,         color: "#06b6d4", href: "/m/pratik/speaking-club" },
   { key: "business_cards",      name: "İş Kartları",        icon: BookMarked,    color: "#f59e0b", href: "/is-kartlari" },
-  { key: "discover",            name: "Keşfet",             icon: Newspaper,     color: "#d946ef", href: "/kesfet" },
+  { key: "discover",            name: "Keşfet",             icon: Newspaper,     color: "#d946ef", href: "/m/pratik/kesfet" },
 ];
 
 async function apiFetch(path: string) {
