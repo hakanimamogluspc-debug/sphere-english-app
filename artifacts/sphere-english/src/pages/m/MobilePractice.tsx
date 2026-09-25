@@ -16,7 +16,7 @@ import {
 const TOKEN_KEY = "sphere_token";
 
 const MODULES = [
-  { key: "pronunciation_coach", name: "Konuşma Koçu",       icon: Mic,           color: "#a78bfa", href: "/student/pronunciation-coach" },
+  { key: "pronunciation_coach", name: "Konuşma Koçu",       icon: Mic,           color: "#a78bfa", href: "/m/pratik/konusma-kocu" },
   { key: "writing_coach",       name: "Yazma Koçu",         icon: PenLine,       color: "#60a5fa", href: "/student/writing-coach" },
   { key: "grammar_coach",       name: "Dilbilgisi Koçu",    icon: Brain,         color: "#6366f1", href: "/student/grammar-coach" },
   { key: "vocab_game",          name: "Kelime Oyunu",       icon: Gamepad2,      color: "#f472b6", href: "/student/vocab-game" },
@@ -147,7 +147,10 @@ export default function MobilePractice() {
             return (
               <button
                 key={m.key}
-                onClick={() => window.location.href = m.href}
+                onClick={() => {
+                  if (m.href.startsWith("/m/")) setLocation(m.href);
+                  else window.location.href = m.href;
+                }}
                 style={{
                   padding: 14, background: colors.white,
                   border: `1px solid ${visited ? colors.navy100 : colors.navy50}`,
