@@ -175,6 +175,19 @@
   @apply bg-muted-foreground/50;
 }
 
+/* Android WebView + iOS için: karanlık modu zorla kapat — Sphere UI light için tasarlandı */
+:root {
+  color-scheme: light only;
+}
+html {
+  color-scheme: light only;
+  background: white;
+}
+body {
+  color-scheme: light only;
+  background: white;
+}
+
 /* Android WebView + iOS için: input focus mavi flash'ı, tap highlight, autofill zemini */
 * {
   -webkit-tap-highlight-color: transparent;
