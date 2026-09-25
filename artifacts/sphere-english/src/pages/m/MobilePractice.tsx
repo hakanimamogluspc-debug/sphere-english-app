@@ -16,22 +16,22 @@ import {
 const TOKEN_KEY = "sphere_token";
 
 const MODULES = [
-  { key: "pronunciation_coach", name: "Konuşma Koçu",       icon: Mic,           color: "#a78bfa", href: "/m/pratik/konusma-kocu" },
-  { key: "writing_coach",       name: "Yazma Koçu",         icon: PenLine,       color: "#60a5fa", href: "/m/pratik/yazma-kocu" },
-  { key: "grammar_coach",       name: "Dilbilgisi Koçu",    icon: Brain,         color: "#6366f1", href: "/m/pratik/dilbilgisi-kocu" },
-  { key: "vocab_game",          name: "Kelime Oyunu",       icon: Gamepad2,      color: "#f472b6", href: "/m/pratik/kelime-oyunu" },
-  { key: "simulation_mode",     name: "İş Senaryoları",     icon: Briefcase,     color: "#fb923c", href: "/m/pratik/is-senaryolari" },
-  { key: "interview_sim",       name: "Mülakat Simülatörü", icon: GraduationCap, color: "#34d399", href: "/m/pratik/mulakat-sim" },
-  { key: "presentation_sim",    name: "Sunum Simülatörü",   icon: Presentation,  color: "#f97316", href: "/m/pratik/sunum-sim" },
-  { key: "ai_quiz",             name: "Akıllı Quiz",        icon: Wand2,         color: "#8b5cf6", href: "/m/pratik/akilli-quiz" },
-  { key: "ai_tutor",            name: "Kişisel AI Öğretmen", icon: GraduationCap, color: "#14b8a6", href: "/m/pratik/ai-ogretmen" },
-  { key: "learning_path",       name: "Öğrenme Yolu",       icon: Compass,       color: "#0ea5e9", href: "/m/pratik/ogrenme-yolu" },
-  { key: "level_exams",         name: "Seviye Sınavları",   icon: Trophy,        color: "#eab308", href: "/m/pratik/seviye-sinavlari" },
-  { key: "speaking_scenes",     name: "Konuşma Sahneleri",  icon: Mic,           color: "#f43f5e", href: "/m/pratik/konusma-sahneleri" },
-  { key: "student_materials",   name: "Materyallerim",      icon: BookOpen,      color: "#64748b", href: "/m/pratik/materyaller" },
-  { key: "student_speaking_club", name: "Speaking Club",    icon: Users,         color: "#06b6d4", href: "/m/pratik/speaking-club" },
-  { key: "business_cards",      name: "İş Kartları",        icon: BookMarked,    color: "#f59e0b", href: "/is-kartlari" },
-  { key: "discover",            name: "Keşfet",             icon: Newspaper,     color: "#d946ef", href: "/m/pratik/kesfet" },
+  { key: "pronunciation_coach",   name: "Konuşma Koçu",       icon: Mic,           color: "#a78bfa", href: "/m/pratik/konusma-kocu",       featureKey: "student-pronunciation-coach" },
+  { key: "writing_coach",         name: "Yazma Koçu",         icon: PenLine,       color: "#60a5fa", href: "/m/pratik/yazma-kocu",         featureKey: "student-writing-coach" },
+  { key: "grammar_coach",         name: "Dilbilgisi Koçu",    icon: Brain,         color: "#6366f1", href: "/m/pratik/dilbilgisi-kocu",    featureKey: "student-grammar-coach" },
+  { key: "vocab_game",            name: "Kelime Oyunu",       icon: Gamepad2,      color: "#f472b6", href: "/m/pratik/kelime-oyunu",       featureKey: "student-vocab-game" },
+  { key: "simulation_mode",       name: "İş Senaryoları",     icon: Briefcase,     color: "#fb923c", href: "/m/pratik/is-senaryolari",     featureKey: "student-simulation-mode" },
+  { key: "interview_sim",         name: "Mülakat Simülatörü", icon: GraduationCap, color: "#34d399", href: "/m/pratik/mulakat-sim",        featureKey: "student-interview-sim" },
+  { key: "presentation_sim",      name: "Sunum Simülatörü",   icon: Presentation,  color: "#f97316", href: "/m/pratik/sunum-sim",          featureKey: "student-presentation-sim" },
+  { key: "ai_quiz",               name: "Akıllı Quiz",        icon: Wand2,         color: "#8b5cf6", href: "/m/pratik/akilli-quiz",        featureKey: "student-ai-quiz" },
+  { key: "ai_tutor",              name: "Kişisel AI Öğretmen", icon: GraduationCap, color: "#14b8a6", href: "/m/pratik/ai-ogretmen",       featureKey: "student-ai-tutor" },
+  { key: "learning_path",         name: "Öğrenme Yolu",       icon: Compass,       color: "#0ea5e9", href: "/m/pratik/ogrenme-yolu",       featureKey: "student-learning-path" },
+  { key: "level_exams",           name: "Seviye Sınavları",   icon: Trophy,        color: "#eab308", href: "/m/pratik/seviye-sinavlari",   featureKey: "student-level-exams" },
+  { key: "speaking_scenes",       name: "Konuşma Sahneleri",  icon: Mic,           color: "#f43f5e", href: "/m/pratik/konusma-sahneleri",  featureKey: "student-speaking-scenes" },
+  { key: "student_materials",     name: "Materyallerim",      icon: BookOpen,      color: "#64748b", href: "/m/pratik/materyaller",        featureKey: "student-materials" },
+  { key: "student_speaking_club", name: "Speaking Club",      icon: Users,         color: "#06b6d4", href: "/m/pratik/speaking-club",      featureKey: "student-speaking-club" },
+  { key: "business_cards",        name: "İş Kartları",        icon: BookMarked,    color: "#f59e0b", href: "/is-kartlari",                 featureKey: undefined },
+  { key: "discover",              name: "Keşfet",             icon: Newspaper,     color: "#d946ef", href: "/m/pratik/kesfet",             featureKey: "student-discover" },
 ];
 
 async function apiFetch(path: string) {
@@ -44,10 +44,14 @@ async function apiFetch(path: string) {
   return data;
 }
 
+interface FeatureSetting { key: string; isEnabled: boolean; visibleTo: string[]; }
+
 export default function MobilePractice() {
   const [, setLocation] = useLocation();
   const [summary, setSummary] = useState<any>(null);
   const [moduleStats, setModuleStats] = useState<Record<string, any>>({});
+  const [features, setFeatures] = useState<FeatureSetting[] | null>(null);
+  const [userInfo, setUserInfo] = useState<{ role?: string; accountType?: string; company?: any } | null>(null);
 
   useEffect(() => {
     apiFetch("/student/learning-map")
@@ -60,7 +64,31 @@ export default function MobilePractice() {
         setModuleStats(stats);
       })
       .catch(() => {});
+    apiFetch("/feature-settings")
+      .then((d) => setFeatures(Array.isArray(d) ? d : []))
+      .catch(() => setFeatures([]));
+    apiFetch("/auth/me")
+      .then((u) => setUserInfo({ role: u.role, accountType: u.accountType, company: u.company }))
+      .catch(() => setUserInfo({}));
   }, []);
+
+  const isFeatureEnabled = (featureKey?: string): boolean => {
+    if (!featureKey) return true;
+    if (features === null) return true; // yükleniyor — flicker olmasın
+    const s = features.find((x) => x.key === featureKey);
+    if (!s) return true;
+    if (!s.isEnabled) return false;
+    if (userInfo?.role === "admin") return true;
+    if (userInfo?.role === "student") {
+      if (s.visibleTo.includes("student")) return true;
+      if (userInfo.accountType === "bireysel" && s.visibleTo.includes("bireysel_ogrenci")) return true;
+      if (userInfo.accountType === "kurumsal" && s.visibleTo.includes("kurumsal_ogrenci")) return true;
+      return false;
+    }
+    return s.visibleTo.includes(userInfo?.role || "");
+  };
+
+  const visibleModules = MODULES.filter((m) => isFeatureEnabled(m.featureKey));
 
   const handleTab = (t: TabKey) => {
     if (t === "home") setLocation("/m/anasayfa");
@@ -140,7 +168,7 @@ export default function MobilePractice() {
         <div style={{
           display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10,
         }}>
-          {MODULES.map((m) => {
+          {visibleModules.map((m) => {
             const stat = moduleStats[m.key];
             const visited = stat?.visited;
             const Icon = m.icon;

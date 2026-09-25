@@ -8,7 +8,7 @@ import {
   colors, fonts, radius,
   type TabKey, type BusinessCardData,
 } from "@/components/mobile";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Volume2 } from "lucide-react";
 
 /**
  * Mobil Ana Sayfa — /m/anasayfa
@@ -44,6 +44,7 @@ export default function MobileHome() {
   const [businessCards, setBusinessCards] = useState<BusinessCardData[]>([]);
   const [cardIdx, setCardIdx] = useState<number>(0);
   const [favMap, setFavMap] = useState<Record<number, boolean>>({});
+  const [wordOfDay, setWordOfDay] = useState<any>(null);
 
   const loadAll = async () => {
     await Promise.allSettled([
@@ -58,7 +59,19 @@ export default function MobileHome() {
         (r.cards ?? []).forEach((c: any) => { favs[c.id] = !!c.favorited; });
         setFavMap(favs);
       }),
+      apiFetch("/word-of-day/today")
+        .then((r) => setWordOfDay(r.word ?? null))
+        .catch(() => setWordOfDay(null)),
     ]);
+  };
+
+  const speakWord = (text: string) => {
+    try {
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = "en-US";
+      u.rate = 0.9;
+      window.speechSynthesis.speak(u);
+    } catch {}
   };
 
   useEffect(() => { loadAll().catch(() => {}); }, []);
@@ -186,6 +199,122 @@ export default function MobileHome() {
             ctaText="Devam"
             onCta={() => setLocation("/m/pratik")}
           />
+        )}
+
+        {/* Bugünün Kelimesi */}
+        {wordOfDay && (
+          <div style={{
+            position: "relative",
+            background: colors.white,
+            border: `1px solid ${colors.navy100}`,
+            borderRadius: radius.panel,
+            padding: "16px 18px",
+            marginTop: 16, marginBottom: 20,
+            overflow: "hidden",
+          }}>
+            {/* Sol dikey vurgu şeridi */}
+            <div style={{
+              position: "absolute", left: 0, top: 0, bottom: 0, width: 3,
+              background: `linear-gradient(to bottom, ${colors.navy}, ${colors.turq})`,
+            }} />
+
+            {/* Kaynak & tarih */}
+            <div style={{
+              display: "flex", alignItems: "center", gap: 8,
+              fontFamily: fonts.heading, fontWeight: 700, fontSize: 10,
+              color: colors.neutral, textTransform: "uppercase", letterSpacing: "0.14em",
+              marginBottom: 10,
+            }}>
+              <span style={{ width: 20, height: 1, background: colors.navy100 }} />
+              Bugünün Kelimesi
+            </div>
+
+            {/* Kelime + fonetik + POS + ses */}
+            <div style={{ display: "flex", alignItems: "flex-end", gap: 8, flexWrap: "wrap", marginBottom: 4 }}>
+              <div style={{
+                fontFamily: fonts.heading, fontWeight: 900, fontSize: 32,
+                color: colors.navy, letterSpacing: "-0.03em", lineHeight: 1,
+              }}>{wordOfDay.word}</div>
+              {wordOfDay.phonetic && (
+                <div style={{
+                  fontStyle: "italic", fontSize: 13, color: colors.neutral,
+                  fontWeight: 500,
+                }}>/{wordOfDay.phonetic}/</div>
+              )}
+              {wordOfDay.part_of_speech && (
+                <div style={{
+                  fontFamily: fonts.heading, fontWeight: 700, fontSize: 9,
+                  color: colors.turqDeep,
+                  padding: "2px 6px", borderRadius: 4,
+                  border: `1px solid ${colors.turq}55`,
+                  background: colors.turq + "10",
+                  textTransform: "uppercase", letterSpacing: "0.06em",
+                }}>{wordOfDay.part_of_speech}</div>
+              )}
+              <button
+                onClick={() => speakWord(wordOfDay.word)}
+                aria-label="Dinle"
+                style={{
+                  marginLeft: "auto",
+                  width: 34, height: 34, borderRadius: 17,
+                  background: colors.navy50, border: `1px solid ${colors.navy100}`,
+                  color: colors.navy, cursor: "pointer",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                }}
+              >
+                <Volume2 size={14} strokeWidth={2.5} />
+              </button>
+            </div>
+
+            {/* Ayırıcı */}
+            <div style={{
+              height: 1, background: colors.navy50,
+              margin: "12px 0",
+            }} />
+
+            {/* TR anlamı + EN definition */}
+            {wordOfDay.tr_meaning && (
+              <div style={{ marginBottom: 10 }}>
+                <div style={{
+                  fontFamily: fonts.heading, fontWeight: 800, fontSize: 9,
+                  color: "#047857", textTransform: "uppercase", letterSpacing: "0.14em",
+                  marginBottom: 4,
+                }}>Türkçe</div>
+                <div style={{
+                  fontSize: 14, color: colors.navy, fontWeight: 600, lineHeight: 1.4,
+                }}>{wordOfDay.tr_meaning}</div>
+              </div>
+            )}
+            {wordOfDay.definition_en && (
+              <div style={{ marginBottom: 10 }}>
+                <div style={{
+                  fontFamily: fonts.heading, fontWeight: 800, fontSize: 9,
+                  color: colors.neutral, textTransform: "uppercase", letterSpacing: "0.14em",
+                  marginBottom: 4,
+                }}>Meaning</div>
+                <div style={{
+                  fontSize: 13, color: colors.navy400, fontStyle: "italic",
+                  lineHeight: 1.5,
+                }}>{wordOfDay.definition_en}</div>
+              </div>
+            )}
+            {wordOfDay.tr_note && (
+              <div style={{
+                paddingLeft: 10,
+                borderLeft: `2px solid ${colors.navy100}`,
+                marginTop: 8,
+              }}>
+                <div style={{
+                  fontFamily: fonts.heading, fontWeight: 800, fontSize: 9,
+                  color: colors.neutral, textTransform: "uppercase", letterSpacing: "0.14em",
+                  marginBottom: 2,
+                }}>Kullanım</div>
+                <div style={{
+                  fontSize: 12, color: colors.neutral, lineHeight: 1.5,
+                }}>{wordOfDay.tr_note}</div>
+              </div>
+            )}
+          </div>
         )}
 
         {/* Günün iş kartı */}

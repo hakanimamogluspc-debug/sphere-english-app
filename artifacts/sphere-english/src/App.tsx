@@ -190,7 +190,8 @@ function ProtectedRoute({ component: Component, allowedRoles, skipPlacementCheck
 
   // Modül admin panelinden kapatıldıysa route'a direkt erişim de engelli
   if (featureKey && !featureEnabled && user?.role !== "admin") {
-    return <Redirect to="/dashboard" />;
+    // Mobil route'tan geldiyse mobil hub'a dön, aksi halde /dashboard
+    return <Redirect to={location.startsWith("/m/") ? "/m/pratik" : "/dashboard"} />;
   }
 
   if (
