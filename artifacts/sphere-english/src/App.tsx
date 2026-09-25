@@ -137,6 +137,8 @@ const MobileAITutor            = lazy(() => import("./pages/m/MobileAITutor"));
 const MobileLearningPath       = lazy(() => import("./pages/m/MobileLearningPath"));
 const MobileLevelExams         = lazy(() => import("./pages/m/MobileLevelExams"));
 const MobileLevelExamTaking    = lazy(() => import("./pages/m/MobileLevelExamTaking"));
+const MobileSpeakingScenes     = lazy(() => import("./pages/m/MobileSpeakingScenes"));
+const MobileSpeakingSceneRunner = lazy(() => import("./pages/m/MobileSpeakingSceneRunner"));
 const Discover                = lazy(() => import("./pages/student/Discover"));
 const MyReport                = lazy(() => import("./pages/student/MyReport"));
 const SpeakingSceneRunner     = lazy(() => import("./pages/student/SpeakingSceneRunner"));
@@ -359,6 +361,8 @@ function Router() {
         <Route path="/m/pratik/ogrenme-yolu"><LayoutWrapper component={MobileLearningPath} allowedRoles={['student', 'admin', 'teacher']} featureKey="student-learning-path" noLayout /></Route>
         <Route path="/m/pratik/seviye-sinavlari"><LayoutWrapper component={MobileLevelExams} allowedRoles={['student', 'admin', 'teacher']} featureKey="student-level-exams" noLayout /></Route>
         <Route path="/m/pratik/seviye-sinavlari/:level"><LayoutWrapper component={MobileLevelExamTaking} allowedRoles={['student', 'admin', 'teacher']} featureKey="student-level-exams" noLayout /></Route>
+        <Route path="/m/pratik/konusma-sahneleri"><LayoutWrapper component={MobileSpeakingScenes} allowedRoles={['student', 'admin', 'teacher']} featureKey="student-speaking-scenes" noLayout /></Route>
+        <Route path="/m/pratik/konusma-sahneleri/:slug"><LayoutWrapper component={MobileSpeakingSceneRunner} allowedRoles={['student', 'admin', 'teacher']} featureKey="student-speaking-scenes" noLayout /></Route>
         <Route path="/kesfet"><LayoutWrapper component={Discover} allowedRoles={['student', 'admin', 'corporate']} /></Route>
         <Route path="/raporum"><LayoutWrapper component={MyReport} allowedRoles={['student', 'admin', 'corporate']} /></Route>
         <Route path="/student/speaking-scenes/:slug"><LayoutWrapper component={SpeakingSceneRunner} allowedRoles={['student', 'admin']} featureKey="student-speaking-scenes" /></Route>
