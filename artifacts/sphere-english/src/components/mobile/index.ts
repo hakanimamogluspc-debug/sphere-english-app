@@ -28,3 +28,4 @@ export type { ToastType } from "./Toast";
 export { SwipeableCard, SwipeHint } from "./SwipeableCard";
 export { Skeleton, BusinessCardSkeleton, StatRowSkeleton, ModuleCardSkeleton } from "./Skeleton";
 export { PullToRefresh } from "./PullToRefresh";
+export { MobileBackFab } from "./MobileBackFab";

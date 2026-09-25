@@ -7,6 +7,7 @@ import { useFeature } from "./hooks/use-feature";
 import "./lib/fetch-interceptor";
 import { useEffect, lazy, Suspense, type ReactNode, type ComponentType } from "react";
 import { API } from "@/lib/api-url";
+import { MobileBackFab } from "@/components/mobile";
 import { DashboardLayout } from "./components/layout/DashboardLayout";
 import { SubscriptionProvider } from "./lib/subscription-context";
 import { withProGate } from "./components/subscription/ProGate";
@@ -208,6 +209,7 @@ function LayoutWrapper({ component: Component, allowedRoles, featureKey, noLayou
         noLayout ? <Component /> : (
           <DashboardLayout>
             <Component />
+            <MobileBackFab />
           </DashboardLayout>
         )
       )}
