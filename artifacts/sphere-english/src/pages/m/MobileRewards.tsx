@@ -40,6 +40,7 @@ export default function MobileRewards() {
   const [rewards, setRewards] = useState<Reward[]>([]);
   const { toast, show: showToast, hide: hideToast } = useToast();
   const [confirmId, setConfirmId] = useState<number | null>(null);
+  const [claiming, setClaiming] = useState(false);
 
   const load = () => {
     apiFetch("/student/streak-status").then((r) => {
@@ -59,7 +60,6 @@ export default function MobileRewards() {
     setConfirmId(r.id);
   };
 
-  const [claiming, setClaiming] = useState(false);
   const confirmClaim = async () => {
     const id = confirmId;
     const r = id != null ? rewards.find((x) => x.id === id) : null;

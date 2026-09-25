@@ -65,7 +65,7 @@ export default function Login() {
               <Label htmlFor="email">E-posta adresi</Label>
               <Input
                 id="email"
-                type="email"
+                type="text"
                 inputMode="email"
                 autoComplete="email"
                 autoCapitalize="none"
@@ -75,6 +75,7 @@ export default function Login() {
                 placeholder="ad@ornek.com"
                 error={errors.email?.message}
                 style={{ WebkitTapHighlightColor: "transparent" }}
+                data-lpignore="true"
                 {...register("email")}
               />
             </div>

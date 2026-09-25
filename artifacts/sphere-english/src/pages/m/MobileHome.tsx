@@ -65,45 +65,43 @@ export default function MobileHome() {
     ]);
   };
 
-  const speakWord = (text: string) => {
-    if (!("speechSynthesis" in window) || !("SpeechSynthesisUtterance" in window)) {
-      // WebView desteklemiyorsa Google Translate TTS ile fallback
+  const speakWord = async (text: string) => {
+    // Önce web Speech API dene
+    if ("speechSynthesis" in window && "SpeechSynthesisUtterance" in window) {
       try {
-        const url = `https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en&q=${encodeURIComponent(text)}`;
-        const audio = new Audio(url);
-        audio.play().catch(() => {});
-      } catch {}
-      return;
-    }
-    try {
-      const synth = window.speechSynthesis;
-      synth.cancel(); // Önceki utterance'ları temizle
-      const speakNow = () => {
+        const synth = window.speechSynthesis;
+        synth.cancel();
         const u = new SpeechSynthesisUtterance(text);
         u.lang = "en-US";
         u.rate = 0.9;
-        // İngilizce sesi tercih et
         const voices = synth.getVoices();
         const enVoice = voices.find(v => v.lang.startsWith("en"));
         if (enVoice) u.voice = enVoice;
+        let played = false;
+        u.onstart = () => { played = true; };
+        u.onerror = () => { /* fallback altında */ };
         synth.speak(u);
-      };
-      if (synth.getVoices().length === 0) {
-        // Voices henüz yüklenmedi — bir kez yüklendiğinde konuş
-        synth.addEventListener("voiceschanged", speakNow, { once: true });
-        // Emniyet: 500ms sonra da dene
-        setTimeout(speakNow, 500);
-      } else {
-        speakNow();
-      }
-    } catch {
-      // Fallback: Google TTS
-      try {
-        const url = `https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en&q=${encodeURIComponent(text)}`;
-        const audio = new Audio(url);
-        audio.play().catch(() => {});
-      } catch {}
+        // 1.2 sn sonra hala başlamadıysa fallback
+        setTimeout(() => {
+          if (!played) tryAudioFallback(text);
+        }, 1200);
+        return;
+      } catch { /* düş */ }
     }
+    tryAudioFallback(text);
+  };
+
+  const tryAudioFallback = (text: string) => {
+    // Backend'in TTS endpoint'i yok — Google Translate TTS bazen bloklanır.
+    // Native Audio element ile son çare olarak dene.
+    try {
+      const url = `https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en&q=${encodeURIComponent(text)}`;
+      const audio = new Audio(url);
+      audio.crossOrigin = "anonymous";
+      audio.play().catch(() => {
+        // Sessiz hata — kullanıcıya uyarı gerekmez
+      });
+    } catch { /* ignore */ }
   };
 
   useEffect(() => { loadAll().catch(() => {}); }, []);
