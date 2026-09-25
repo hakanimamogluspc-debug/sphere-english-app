@@ -23,7 +23,7 @@ const MODULES = [
   { key: "simulation_mode",     name: "İş Senaryoları",     icon: Briefcase,     color: "#fb923c", href: "/student/simulation-mode" },
   { key: "interview_sim",       name: "Mülakat Simülatörü", icon: GraduationCap, color: "#34d399", href: "/student/interview-sim" },
   { key: "presentation_sim",    name: "Sunum Simülatörü",   icon: Presentation,  color: "#f97316", href: "/student/presentation-sim" },
-  { key: "ai_quiz",             name: "Akıllı Quiz",        icon: Wand2,         color: "#8b5cf6", href: "/student/ai-quiz" },
+  { key: "ai_quiz",             name: "Akıllı Quiz",        icon: Wand2,         color: "#8b5cf6", href: "/m/pratik/akilli-quiz" },
   { key: "ai_tutor",            name: "Kişisel AI Öğretmen", icon: GraduationCap, color: "#14b8a6", href: "/student/ai-tutor" },
   { key: "learning_path",       name: "Öğrenme Yolu",       icon: Compass,       color: "#0ea5e9", href: "/student/learning-path" },
   { key: "level_exams",         name: "Seviye Sınavları",   icon: Trophy,        color: "#eab308", href: "/student/level-exams" },
