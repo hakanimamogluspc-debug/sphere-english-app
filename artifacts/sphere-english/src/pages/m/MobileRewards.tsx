@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { API } from "@/lib/api-url";
-import { TabBar, StreakHero, colors, fonts, radius, type TabKey } from "@/components/mobile";
+import { TabBar, StreakHero, Toast, useToast, colors, fonts, radius, type TabKey } from "@/components/mobile";
 import { Snowflake, Award, Gift, Check } from "lucide-react";
 
 /**
@@ -38,7 +38,8 @@ export default function MobileRewards() {
   const [streak, setStreak] = useState(0);
   const [freezes, setFreezes] = useState(0);
   const [rewards, setRewards] = useState<Reward[]>([]);
-  const [flash, setFlash] = useState<string | null>(null);
+  const { toast, show: showToast, hide: hideToast } = useToast();
+  const [confirmId, setConfirmId] = useState<number | null>(null);
 
   const load = () => {
     apiFetch("/student/streak-status").then((r) => {
@@ -53,17 +54,21 @@ export default function MobileRewards() {
 
   useEffect(() => { load(); }, []);
 
-  const claim = async (r: Reward) => {
+  const requestClaim = (r: Reward) => {
     if (!r.affordable || r.already_owned) return;
-    if (!confirm(`"${r.name}" — ${r.cost_freezes} freeze kullanılacak. Onaylıyor musun?`)) return;
+    setConfirmId(r.id);
+  };
+
+  const confirmClaim = async () => {
+    const r = rewards.find((x) => x.id === confirmId);
+    setConfirmId(null);
+    if (!r) return;
     try {
       await apiFetch(`/student/rewards/${r.id}/redeem`, { method: "POST" });
-      setFlash(`✓ ${r.name} kazanıldı!`);
+      showToast(`${r.name} kazanıldı!`, "success");
       load();
-      setTimeout(() => setFlash(null), 2400);
     } catch (e: any) {
-      setFlash(e?.message || "Ödül alınamadı");
-      setTimeout(() => setFlash(null), 2400);
+      showToast(e?.message || "Ödül alınamadı", "error");
     }
   };
 
@@ -157,7 +162,7 @@ export default function MobileRewards() {
         {rewards.map((r) => (
           <div
             key={r.id}
-            onClick={() => claim(r)}
+            onClick={() => requestClaim(r)}
             style={{
               display: "flex", alignItems: "center", gap: 12,
               padding: 14, marginBottom: 8,
@@ -217,19 +222,67 @@ export default function MobileRewards() {
         )}
       </div>
 
-      {/* Toast */}
-      {flash && (
-        <div style={{
-          position: "fixed", left: "50%", bottom: 96, transform: "translateX(-50%)",
-          background: colors.navy, color: colors.white,
-          padding: "12px 20px", borderRadius: 100,
-          fontFamily: fonts.heading, fontWeight: 700, fontSize: 13,
-          boxShadow: "0 4px 16px rgba(30, 58, 110, 0.16)",
-          zIndex: 40, whiteSpace: "nowrap",
-        }}>
-          {flash}
-        </div>
-      )}
+      {/* Onay sheet — native bottom sheet */}
+      {confirmId !== null && (() => {
+        const r = rewards.find((x) => x.id === confirmId);
+        if (!r) return null;
+        return (
+          <>
+            <div
+              onClick={() => setConfirmId(null)}
+              style={{
+                position: "fixed", inset: 0, background: "rgba(10, 20, 40, 0.5)",
+                zIndex: 50, animation: "fadeIn 0.2s ease-out",
+              }}
+            />
+            <div style={{
+              position: "fixed", left: 0, right: 0, bottom: 0,
+              background: colors.white, borderRadius: "24px 24px 0 0",
+              padding: "24px 20px 32px", zIndex: 51,
+              boxShadow: "0 -8px 32px rgba(30, 58, 110, 0.16)",
+              animation: "sheetUp 0.28s cubic-bezier(0.16, 1, 0.3, 1)",
+            }}>
+              <style>{`
+                @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+                @keyframes sheetUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+              `}</style>
+              <div style={{
+                width: 36, height: 4, background: colors.navy100, borderRadius: 100,
+                margin: "0 auto 20px",
+              }} />
+              <div style={{
+                fontFamily: fonts.heading, fontWeight: 800, fontSize: 18,
+                color: colors.navy, marginBottom: 8, letterSpacing: "-0.01em",
+              }}>{r.name}</div>
+              <div style={{ fontSize: 13, color: colors.neutral, marginBottom: 20 }}>
+                Bu ödülü almak için <strong style={{ color: colors.navy }}>{r.cost_freezes} freeze</strong> harcanacak.
+              </div>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button
+                  onClick={() => setConfirmId(null)}
+                  style={{
+                    flex: 1, padding: "14px 20px", borderRadius: 100,
+                    background: colors.navy50, color: colors.navy, border: "none",
+                    fontFamily: fonts.heading, fontWeight: 700, fontSize: 14,
+                    cursor: "pointer",
+                  }}
+                >Vazgeç</button>
+                <button
+                  onClick={confirmClaim}
+                  style={{
+                    flex: 1, padding: "14px 20px", borderRadius: 100,
+                    background: colors.turq, color: colors.navy, border: "none",
+                    fontFamily: fonts.heading, fontWeight: 800, fontSize: 14,
+                    cursor: "pointer",
+                  }}
+                >Al</button>
+              </div>
+            </div>
+          </>
+        );
+      })()}
+
+      <Toast {...toast} onClose={hideToast} />
 
       <TabBar active="rewards" onChange={handleTab} />
     </div>

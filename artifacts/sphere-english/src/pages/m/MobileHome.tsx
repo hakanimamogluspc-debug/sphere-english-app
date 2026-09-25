@@ -4,6 +4,7 @@ import { API } from "@/lib/api-url";
 import { useAuth } from "@/hooks/use-auth";
 import {
   StatRow, FocusCard, BusinessCard, TabBar, Button,
+  PullToRefresh, SwipeableCard,
   colors, fonts, radius,
   type TabKey, type BusinessCardData,
 } from "@/components/mobile";
@@ -44,25 +45,23 @@ export default function MobileHome() {
   const [cardIdx, setCardIdx] = useState<number>(0);
   const [favMap, setFavMap] = useState<Record<number, boolean>>({});
 
-  useEffect(() => {
-    apiFetch("/student/streak-status")
-      .then((r) => {
+  const loadAll = async () => {
+    await Promise.allSettled([
+      apiFetch("/student/streak-status").then((r) => {
         setStreak(r.streak ?? 0);
         setFreezeCount(r.freeze_count ?? 0);
-      })
-      .catch(() => {});
-    apiFetch("/student/today-task")
-      .then((r) => setTodayTask(r.task ?? null))
-      .catch(() => {});
-    apiFetch("/student/business-cards/daily")
-      .then((r) => {
+      }),
+      apiFetch("/student/today-task").then((r) => setTodayTask(r.task ?? null)),
+      apiFetch("/student/business-cards/daily").then((r) => {
         setBusinessCards(r.cards ?? []);
         const favs: Record<number, boolean> = {};
         (r.cards ?? []).forEach((c: any) => { favs[c.id] = !!c.favorited; });
         setFavMap(favs);
-      })
-      .catch(() => {});
-  }, []);
+      }),
+    ]);
+  };
+
+  useEffect(() => { loadAll().catch(() => {}); }, []);
 
   useEffect(() => {
     if (user?.currentLevel) setLevel(user.currentLevel);
@@ -99,12 +98,16 @@ export default function MobileHome() {
     weekday: "long", day: "numeric", month: "long",
   });
 
+  const goNext = () => setCardIdx((i) => Math.min(businessCards.length - 1, i + 1));
+  const goPrev = () => setCardIdx((i) => Math.max(0, i - 1));
+
   return (
     <div style={{
       minHeight: "100vh",
       background: colors.white,
       paddingBottom: 88, // TabBar için
     }}>
+     <PullToRefresh onRefresh={loadAll}>
       {/* HERO */}
       <div style={{ padding: "24px 20px 8px" }}>
         <div style={{
@@ -209,13 +212,18 @@ export default function MobileHome() {
               </button>
             </div>
 
-            <BusinessCard
-              card={currentCard}
-              cardNumber={String(cardIdx + 1).padStart(2, "0")}
-              totalCards={businessCards.length}
-              isFavorite={favMap[currentCard.id]}
-              onToggleFav={toggleFav}
-            />
+            <SwipeableCard
+              onSwipeLeft={cardIdx < businessCards.length - 1 ? goNext : undefined}
+              onSwipeRight={cardIdx > 0 ? goPrev : undefined}
+            >
+              <BusinessCard
+                card={currentCard}
+                cardNumber={String(cardIdx + 1).padStart(2, "0")}
+                totalCards={businessCards.length}
+                isFavorite={favMap[currentCard.id]}
+                onToggleFav={toggleFav}
+              />
+            </SwipeableCard>
 
             {/* Prev / Next */}
             <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
@@ -223,7 +231,7 @@ export default function MobileHome() {
                 variant="tertiary"
                 fullWidth
                 disabled={cardIdx === 0}
-                onClick={() => setCardIdx((i) => Math.max(0, i - 1))}
+                onClick={goPrev}
               >
                 ← Önceki
               </Button>
@@ -231,14 +239,19 @@ export default function MobileHome() {
                 variant="primary"
                 fullWidth
                 disabled={cardIdx >= businessCards.length - 1}
-                onClick={() => setCardIdx((i) => Math.min(businessCards.length - 1, i + 1))}
+                onClick={goNext}
               >
                 Sonraki →
               </Button>
             </div>
+            <div style={{
+              textAlign: "center", fontSize: 11, color: colors.neutral,
+              marginTop: 10, opacity: 0.7,
+            }}>← Kaydırarak geç →</div>
           </>
         )}
       </div>
+     </PullToRefresh>
 
       <TabBar active="home" onChange={handleTab} />
     </div>
