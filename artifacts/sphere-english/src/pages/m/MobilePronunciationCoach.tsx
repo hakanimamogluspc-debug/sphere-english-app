@@ -130,7 +130,7 @@ export default function MobilePronunciationCoach() {
       fd.append("systemPrompt", teacher.systemPrompt);
       fd.append("history", JSON.stringify(history));
 
-      const res = await fetch(`${API}/api/pronunciation/chat`, {
+      const res = await fetch(`${API}/pronunciation/chat`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
         body: fd,
