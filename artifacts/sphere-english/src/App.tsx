@@ -140,6 +140,7 @@ const MobileLevelExamTaking    = lazy(() => import("./pages/m/MobileLevelExamTak
 const MobileSpeakingScenes     = lazy(() => import("./pages/m/MobileSpeakingScenes"));
 const MobileSpeakingSceneRunner = lazy(() => import("./pages/m/MobileSpeakingSceneRunner"));
 const MobileMaterials          = lazy(() => import("./pages/m/MobileMaterials"));
+const MobileSpeakingClub       = lazy(() => import("./pages/m/MobileSpeakingClub"));
 const Discover                = lazy(() => import("./pages/student/Discover"));
 const MyReport                = lazy(() => import("./pages/student/MyReport"));
 const SpeakingSceneRunner     = lazy(() => import("./pages/student/SpeakingSceneRunner"));
@@ -365,6 +366,7 @@ function Router() {
         <Route path="/m/pratik/konusma-sahneleri"><LayoutWrapper component={MobileSpeakingScenes} allowedRoles={['student', 'admin', 'teacher']} featureKey="student-speaking-scenes" noLayout /></Route>
         <Route path="/m/pratik/konusma-sahneleri/:slug"><LayoutWrapper component={MobileSpeakingSceneRunner} allowedRoles={['student', 'admin', 'teacher']} featureKey="student-speaking-scenes" noLayout /></Route>
         <Route path="/m/pratik/materyaller"><LayoutWrapper component={MobileMaterials} allowedRoles={['student', 'admin', 'teacher']} featureKey="student-materials" noLayout /></Route>
+        <Route path="/m/pratik/speaking-club"><LayoutWrapper component={MobileSpeakingClub} allowedRoles={['student', 'admin', 'teacher']} featureKey="student-speaking-club" noLayout /></Route>
         <Route path="/kesfet"><LayoutWrapper component={Discover} allowedRoles={['student', 'admin', 'corporate']} /></Route>
         <Route path="/raporum"><LayoutWrapper component={MyReport} allowedRoles={['student', 'admin', 'corporate']} /></Route>
         <Route path="/student/speaking-scenes/:slug"><LayoutWrapper component={SpeakingSceneRunner} allowedRoles={['student', 'admin']} featureKey="student-speaking-scenes" /></Route>

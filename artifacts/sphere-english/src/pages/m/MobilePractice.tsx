@@ -29,7 +29,7 @@ const MODULES = [
   { key: "level_exams",         name: "Seviye Sınavları",   icon: Trophy,        color: "#eab308", href: "/m/pratik/seviye-sinavlari" },
   { key: "speaking_scenes",     name: "Konuşma Sahneleri",  icon: Mic,           color: "#f43f5e", href: "/m/pratik/konusma-sahneleri" },
   { key: "student_materials",   name: "Materyallerim",      icon: BookOpen,      color: "#64748b", href: "/m/pratik/materyaller" },
-  { key: "student_speaking_club", name: "Speaking Club",    icon: Users,         color: "#06b6d4", href: "/student/speaking-club" },
+  { key: "student_speaking_club", name: "Speaking Club",    icon: Users,         color: "#06b6d4", href: "/m/pratik/speaking-club" },
   { key: "business_cards",      name: "İş Kartları",        icon: BookMarked,    color: "#f59e0b", href: "/is-kartlari" },
   { key: "discover",            name: "Keşfet",             icon: Newspaper,     color: "#d946ef", href: "/kesfet" },
 ];
