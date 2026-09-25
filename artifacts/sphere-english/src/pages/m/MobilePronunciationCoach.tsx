@@ -3,7 +3,7 @@ import { API } from "@/lib/api-url";
 import {
   ModuleShell, LoadingState,
   MicButton, MicPermissionSheet, useMicRecorder,
-  Toast, useToast,
+  Toast, useToast, MobileModuleIntro,
   colors, fonts, radius,
 } from "@/components/mobile";
 import {
@@ -294,6 +294,7 @@ export default function MobilePronunciationCoach() {
   if (screen === "select" || !teacher) {
     return (
       <ModuleShell title="Konuşma Koçu" subtitle="Bir koç seç, konuşmaya başla">
+        <MobileModuleIntro moduleKey="pronunciation_coach" />
         <div style={{
           fontFamily: fonts.heading, fontWeight: 700, fontSize: 11,
           color: colors.turqDeep, textTransform: "uppercase", letterSpacing: "0.06em",

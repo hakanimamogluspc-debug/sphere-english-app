@@ -37,3 +37,4 @@ export { MicButton } from "./MicButton";
 export { MicPermissionSheet } from "./MicPermissionSheet";
 export { useMicRecorder } from "./useMicRecorder";
 export type { MicError, MicErrorCode, MicRecorder } from "./useMicRecorder";
+export { MobileModuleIntro } from "./MobileModuleIntro";

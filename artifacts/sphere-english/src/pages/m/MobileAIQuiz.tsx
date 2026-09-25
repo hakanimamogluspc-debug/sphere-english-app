@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { API } from "@/lib/api-url";
 import { useAuth } from "@/hooks/use-auth";
 import {
-  ModuleShell, LoadingState, Toast, useToast,
+  ModuleShell, LoadingState, Toast, useToast, MobileModuleIntro,
   colors, fonts, radius,
 } from "@/components/mobile";
 import {
@@ -727,6 +727,7 @@ export default function MobileAIQuiz() {
         <div style={{ width: 40, height: 40 }} />
       }
     >
+      <MobileModuleIntro moduleKey="ai_quiz" />
       {/* Kaldığın yerden devam kartı */}
       {pendingResume && (
         <div style={{
