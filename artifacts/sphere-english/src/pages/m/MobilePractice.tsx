@@ -20,7 +20,7 @@ const MODULES = [
   { key: "writing_coach",       name: "Yazma Koçu",         icon: PenLine,       color: "#60a5fa", href: "/m/pratik/yazma-kocu" },
   { key: "grammar_coach",       name: "Dilbilgisi Koçu",    icon: Brain,         color: "#6366f1", href: "/m/pratik/dilbilgisi-kocu" },
   { key: "vocab_game",          name: "Kelime Oyunu",       icon: Gamepad2,      color: "#f472b6", href: "/m/pratik/kelime-oyunu" },
-  { key: "simulation_mode",     name: "İş Senaryoları",     icon: Briefcase,     color: "#fb923c", href: "/student/simulation-mode" },
+  { key: "simulation_mode",     name: "İş Senaryoları",     icon: Briefcase,     color: "#fb923c", href: "/m/pratik/is-senaryolari" },
   { key: "interview_sim",       name: "Mülakat Simülatörü", icon: GraduationCap, color: "#34d399", href: "/student/interview-sim" },
   { key: "presentation_sim",    name: "Sunum Simülatörü",   icon: Presentation,  color: "#f97316", href: "/student/presentation-sim" },
   { key: "ai_quiz",             name: "Akıllı Quiz",        icon: Wand2,         color: "#8b5cf6", href: "/m/pratik/akilli-quiz" },

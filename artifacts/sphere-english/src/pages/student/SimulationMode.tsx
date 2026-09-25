@@ -79,7 +79,7 @@ const SECTOR_ICONS: Record<string, React.ReactNode> = {
   ),
 };
 
-const SECTORS = [
+export const SECTORS = [
   { id: 'finans', label: 'Finans', desc: 'Bankacılık, yatırım, sigortacılık' },
   { id: 'teknoloji', label: 'Teknoloji', desc: 'Yazılım, AI, dijital ürünler' },
   { id: 'saglik', label: 'Sağlık', desc: 'Sağlık hizmetleri, ilaç, medikal cihaz' },
@@ -96,7 +96,7 @@ const SECTORS = [
   { id: 'diger', label: 'Diğer', desc: 'Diğer sektörler' },
 ];
 
-const COACHES = [
+export const COACHES = [
   { id: 'sterling', name: 'Mr. Sterling', flag: '🇬🇧', specialty: 'CEO & Stratejik Yönetim', accent: 'Üst Segment İngiliz (RP)', color: '#1E3A5F', style: 'Otoriter, lakonik, vizyon odaklı', image: 'coach-sterling.png', initials: 'MS', voice: 'onyx', systemPrompt: `You are Mr. Sterling, a 57-year-old British executive from London. Refined RP accent, impeccably dressed. 30 years in boardrooms of global firms. Authoritative, precise, dry wit. You speak very concisely — every word counts.` },
   { id: 'jake', name: 'Jake', flag: '🇺🇸', specialty: 'Pazarlama & Dijital Medya', accent: 'West Coast Amerikan', color: '#EA580C', style: 'Enerjik, yaratıcı, trendy', image: 'coach-jake.png', initials: 'J', voice: 'echo', systemPrompt: `You are Jake, a 30-year-old San Francisco marketing guy. Laid-back, upbeat, West Coast accent. You work in digital marketing at a startup. Energetic, casual, always pitching ideas.` },
   { id: 'david', name: 'David', flag: '🇺🇸', specialty: 'Finans & Yatırım', accent: 'New York (Wall Street)', color: '#0369A1', style: 'Analitik, direkt, rakam odaklı', image: 'coach-david.png', initials: 'D', voice: 'echo', systemPrompt: `You are David, a 43-year-old New Yorker from Wall Street. Intense, sharp, data-driven. You think in numbers and risk. Direct, no-nonsense New York style.` },
@@ -111,7 +111,7 @@ const COACHES = [
   { id: 'olivia', name: 'Dr. Olivia', flag: '🇺🇸', specialty: 'Sağlık Turizmi İngilizcesi', accent: 'Amerikan (Miami / Sağlık Turizmi)', color: '#0891b2', style: 'Profesyonel, kültürel farkındalıklı, sıcak', image: 'coach-olivia-health.png', initials: 'DO', voice: 'nova', systemPrompt: `You are Dr. Olivia, a 38-year-old health tourism coordinator based in Miami. Professional, culturally aware, warm. You bridge medical and hospitality worlds for international patients.` },
 ];
 
-const SECTOR_COACHES: Record<string, string[]> = {
+export const SECTOR_COACHES: Record<string, string[]> = {
   enerji:      ['sterling', 'david', 'jake', 'james', 'elena'],
   finans:      ['david', 'elena', 'sterling'],
   teknoloji:   ['raj', 'jake', 'emma'],
@@ -128,7 +128,7 @@ const SECTOR_COACHES: Record<string, string[]> = {
   diger:       [],
 };
 
-const SCENARIO_MAP: Record<string, Record<string, string[]>> = {
+export const SCENARIO_MAP: Record<string, Record<string, string[]>> = {
   enerji: {
     sterling: [
       'Yatırım Sunumu: Ege\'deki yeni rüzgar santrali projesi için yabancı yatırımcılara vizyon sunumu',
