@@ -62,16 +62,25 @@ export default function MobileRewards() {
   const confirmClaim = async () => {
     const id = confirmId;
     const r = id != null ? rewards.find((x) => x.id === id) : null;
-    alert(`DEBUG: Al basıldı — id=${id}, bulundu=${!!r}, ad=${r?.name}`);
     setConfirmId(null);
     if (!r) return;
+    const url = `${API}/student/rewards/${r.id}/redeem`;
+    alert(`DEBUG 1: URL=${url}`);
     try {
-      const resp = await apiFetch(`/student/rewards/${r.id}/redeem`, { method: "POST" });
-      alert(`DEBUG: API başarılı — ${JSON.stringify(resp).slice(0, 200)}`);
+      const token = localStorage.getItem(TOKEN_KEY);
+      alert(`DEBUG 2: token var mı=${!!token}, ilk 20=${token?.slice(0, 20)}`);
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      });
+      alert(`DEBUG 3: fetch tamam status=${res.status}`);
+      const text = await res.text();
+      alert(`DEBUG 4: body=${text.slice(0, 300)}`);
+      if (!res.ok) throw new Error(text || `HTTP ${res.status}`);
       showToast(`${r.name} kazanıldı!`, "success");
       load();
     } catch (e: any) {
-      alert(`DEBUG: API HATA — ${e?.message || e}`);
+      alert(`DEBUG HATA: ${e?.message || String(e)}`);
       showToast(e?.message || "Ödül alınamadı", "error");
     }
   };
