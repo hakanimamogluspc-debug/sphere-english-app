@@ -1,8 +1,43 @@
 // Module-level token store — updated synchronously on login/logout
 let _token: string | null = null;
 
+// Cookie helpers — Capacitor WebView'de localStorage bazen resetleniyor;
+// cookie ile fallback persist sağlıyoruz (2 yıl geçerli).
+const COOKIE_NAME = "sphere_token";
+const COOKIE_MAX_AGE = 60 * 60 * 24 * 730; // 2 yıl
+
+function readCookie(name: string): string | null {
+  try {
+    const parts = document.cookie.split(";");
+    for (const p of parts) {
+      const [k, ...rest] = p.trim().split("=");
+      if (k === name) return decodeURIComponent(rest.join("="));
+    }
+  } catch { /* ignore */ }
+  return null;
+}
+
+function writeCookie(name: string, value: string | null) {
+  try {
+    if (value) {
+      document.cookie = `${name}=${encodeURIComponent(value)}; Path=/; Max-Age=${COOKIE_MAX_AGE}; SameSite=Lax`;
+    } else {
+      document.cookie = `${name}=; Path=/; Max-Age=0; SameSite=Lax`;
+    }
+  } catch { /* ignore */ }
+}
+
+// İlk yüklemede: önce localStorage, olmazsa cookie'den al.
+// Cookie'den geldiyse hemen localStorage'a da yaz (senkronize kalsın).
 try {
   _token = localStorage.getItem("sphere_token");
+  if (!_token) {
+    const fromCookie = readCookie(COOKIE_NAME);
+    if (fromCookie) {
+      _token = fromCookie;
+      try { localStorage.setItem("sphere_token", fromCookie); } catch {}
+    }
+  }
 } catch { /* localStorage blocked in some iframe contexts */ }
 
 export function setInterceptorToken(token: string | null) {
@@ -11,6 +46,8 @@ export function setInterceptorToken(token: string | null) {
     if (token) localStorage.setItem("sphere_token", token);
     else localStorage.removeItem("sphere_token");
   } catch { /* ignore */ }
+  // Cookie'yi de senkronize et
+  writeCookie(COOKIE_NAME, token);
 }
 
 export function getInterceptorToken(): string | null {
