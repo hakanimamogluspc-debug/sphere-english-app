@@ -17,7 +17,7 @@ const TOKEN_KEY = "sphere_token";
 
 const MODULES = [
   { key: "pronunciation_coach", name: "Konuşma Koçu",       icon: Mic,           color: "#a78bfa", href: "/m/pratik/konusma-kocu" },
-  { key: "writing_coach",       name: "Yazma Koçu",         icon: PenLine,       color: "#60a5fa", href: "/student/writing-coach" },
+  { key: "writing_coach",       name: "Yazma Koçu",         icon: PenLine,       color: "#60a5fa", href: "/m/pratik/yazma-kocu" },
   { key: "grammar_coach",       name: "Dilbilgisi Koçu",    icon: Brain,         color: "#6366f1", href: "/student/grammar-coach" },
   { key: "vocab_game",          name: "Kelime Oyunu",       icon: Gamepad2,      color: "#f472b6", href: "/student/vocab-game" },
   { key: "simulation_mode",     name: "İş Senaryoları",     icon: Briefcase,     color: "#fb923c", href: "/student/simulation-mode" },

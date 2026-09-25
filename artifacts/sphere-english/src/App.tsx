@@ -127,6 +127,7 @@ const MobileRewards           = lazy(() => import("./pages/m/MobileRewards"));
 const MobileProfile           = lazy(() => import("./pages/m/MobileProfile"));
 const MobilePronunciationCoach = lazy(() => import("./pages/m/MobilePronunciationCoach"));
 const MobileAIQuiz             = lazy(() => import("./pages/m/MobileAIQuiz"));
+const MobileWritingCoach       = lazy(() => import("./pages/m/MobileWritingCoach"));
 const Discover                = lazy(() => import("./pages/student/Discover"));
 const MyReport                = lazy(() => import("./pages/student/MyReport"));
 const SpeakingSceneRunner     = lazy(() => import("./pages/student/SpeakingSceneRunner"));
@@ -339,6 +340,7 @@ function Router() {
         <Route path="/m/profil"><LayoutWrapper component={MobileProfile} allowedRoles={['student', 'admin', 'teacher']} noLayout /></Route>
         <Route path="/m/pratik/konusma-kocu"><LayoutWrapper component={MobilePronunciationCoach} allowedRoles={['student', 'admin', 'teacher']} featureKey="student-pronunciation-coach" noLayout /></Route>
         <Route path="/m/pratik/akilli-quiz"><LayoutWrapper component={MobileAIQuiz} allowedRoles={['student', 'admin', 'teacher']} featureKey="student-ai-quiz" noLayout /></Route>
+        <Route path="/m/pratik/yazma-kocu"><LayoutWrapper component={MobileWritingCoach} allowedRoles={['student', 'admin', 'teacher']} featureKey="student-writing-coach" noLayout /></Route>
         <Route path="/kesfet"><LayoutWrapper component={Discover} allowedRoles={['student', 'admin', 'corporate']} /></Route>
         <Route path="/raporum"><LayoutWrapper component={MyReport} allowedRoles={['student', 'admin', 'corporate']} /></Route>
         <Route path="/student/speaking-scenes/:slug"><LayoutWrapper component={SpeakingSceneRunner} allowedRoles={['student', 'admin']} featureKey="student-speaking-scenes" /></Route>
