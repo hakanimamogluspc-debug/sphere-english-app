@@ -66,42 +66,54 @@ export default function MobileHome() {
   };
 
   const speakWord = async (text: string) => {
-    // Önce web Speech API dene
-    if ("speechSynthesis" in window && "SpeechSynthesisUtterance" in window) {
+    const hasSynth = "speechSynthesis" in window && "SpeechSynthesisUtterance" in window;
+
+    if (hasSynth) {
       try {
         const synth = window.speechSynthesis;
         synth.cancel();
         const u = new SpeechSynthesisUtterance(text);
         u.lang = "en-US";
         u.rate = 0.9;
+        u.volume = 1;
         const voices = synth.getVoices();
         const enVoice = voices.find(v => v.lang.startsWith("en"));
         if (enVoice) u.voice = enVoice;
-        let played = false;
-        u.onstart = () => { played = true; };
-        u.onerror = () => { /* fallback altında */ };
+
+        let started = false;
+        u.onstart = () => { started = true; };
+        u.onerror = (ev) => {
+          alert(`TTS hata: ${(ev as any)?.error || "bilinmiyor"} → fallback deniyor`);
+          tryAudioFallback(text);
+        };
         synth.speak(u);
-        // 1.2 sn sonra hala başlamadıysa fallback
+
         setTimeout(() => {
-          if (!played) tryAudioFallback(text);
-        }, 1200);
+          if (!started) {
+            alert(`TTS başlatılamadı (voices: ${voices.length}) → Google TTS deniyor`);
+            tryAudioFallback(text);
+          }
+        }, 1500);
         return;
-      } catch { /* düş */ }
+      } catch (e: any) {
+        alert(`TTS istisna: ${e?.message || e}`);
+      }
+    } else {
+      alert("Bu cihaz Web Speech API'yi desteklemiyor → Google TTS deniyor");
     }
     tryAudioFallback(text);
   };
 
   const tryAudioFallback = (text: string) => {
-    // Backend'in TTS endpoint'i yok — Google Translate TTS bazen bloklanır.
-    // Native Audio element ile son çare olarak dene.
     try {
       const url = `https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en&q=${encodeURIComponent(text)}`;
       const audio = new Audio(url);
-      audio.crossOrigin = "anonymous";
-      audio.play().catch(() => {
-        // Sessiz hata — kullanıcıya uyarı gerekmez
-      });
-    } catch { /* ignore */ }
+      audio.onplay = () => alert("Google TTS oynatıyor");
+      audio.onerror = () => alert(`Google TTS audio hatası (Android CORS ihtimali)`);
+      audio.play().catch((e) => alert(`Google TTS play() reddedildi: ${e?.message || e}`));
+    } catch (e: any) {
+      alert(`Google TTS istisna: ${e?.message || e}`);
+    }
   };
 
   useEffect(() => { loadAll().catch(() => {}); }, []);
