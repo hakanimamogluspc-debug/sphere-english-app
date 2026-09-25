@@ -132,6 +132,7 @@ const MobileGrammarCoach       = lazy(() => import("./pages/m/MobileGrammarCoach
 const MobileVocabGame          = lazy(() => import("./pages/m/MobileVocabGame"));
 const MobileSimulationMode     = lazy(() => import("./pages/m/MobileSimulationMode"));
 const MobileInterviewSim       = lazy(() => import("./pages/m/MobileInterviewSim"));
+const MobilePresentationSim    = lazy(() => import("./pages/m/MobilePresentationSim"));
 const Discover                = lazy(() => import("./pages/student/Discover"));
 const MyReport                = lazy(() => import("./pages/student/MyReport"));
 const SpeakingSceneRunner     = lazy(() => import("./pages/student/SpeakingSceneRunner"));
@@ -349,6 +350,7 @@ function Router() {
         <Route path="/m/pratik/kelime-oyunu"><LayoutWrapper component={MobileVocabGame} allowedRoles={['student', 'admin', 'teacher']} featureKey="student-vocab-game" noLayout /></Route>
         <Route path="/m/pratik/is-senaryolari"><LayoutWrapper component={MobileSimulationMode} allowedRoles={['student', 'admin', 'teacher']} featureKey="student-simulation-mode" noLayout /></Route>
         <Route path="/m/pratik/mulakat-sim"><LayoutWrapper component={MobileInterviewSim} allowedRoles={['student', 'admin', 'teacher']} featureKey="student-interview-sim" noLayout /></Route>
+        <Route path="/m/pratik/sunum-sim"><LayoutWrapper component={MobilePresentationSim} allowedRoles={['student', 'admin', 'teacher']} featureKey="student-presentation-sim" noLayout /></Route>
         <Route path="/kesfet"><LayoutWrapper component={Discover} allowedRoles={['student', 'admin', 'corporate']} /></Route>
         <Route path="/raporum"><LayoutWrapper component={MyReport} allowedRoles={['student', 'admin', 'corporate']} /></Route>
         <Route path="/student/speaking-scenes/:slug"><LayoutWrapper component={SpeakingSceneRunner} allowedRoles={['student', 'admin']} featureKey="student-speaking-scenes" /></Route>
