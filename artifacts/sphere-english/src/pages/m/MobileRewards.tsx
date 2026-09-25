@@ -60,14 +60,21 @@ export default function MobileRewards() {
   };
 
   const confirmClaim = async () => {
-    const r = rewards.find((x) => x.id === confirmId);
+    const id = confirmId;
+    const r = id != null ? rewards.find((x) => x.id === id) : null;
+    console.log("[rewards] confirmClaim", { id, found: !!r });
     setConfirmId(null);
-    if (!r) return;
+    if (!r) {
+      showToast("Ödül bulunamadı", "error");
+      return;
+    }
     try {
-      await apiFetch(`/student/rewards/${r.id}/redeem`, { method: "POST" });
+      const resp = await apiFetch(`/student/rewards/${r.id}/redeem`, { method: "POST" });
+      console.log("[rewards] redeem ok", resp);
       showToast(`${r.name} kazanıldı!`, "success");
       load();
     } catch (e: any) {
+      console.error("[rewards] redeem failed", e);
       showToast(e?.message || "Ödül alınamadı", "error");
     }
   };
