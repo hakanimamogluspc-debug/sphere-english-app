@@ -63,7 +63,20 @@ export default function Login() {
             
             <div>
               <Label htmlFor="email">E-posta adresi</Label>
-              <Input id="email" type="email" icon={<Mail size={18} />} placeholder="ad@ornek.com" error={errors.email?.message} {...register("email")} />
+              <Input
+                id="email"
+                type="email"
+                inputMode="email"
+                autoComplete="email"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
+                icon={<Mail size={18} />}
+                placeholder="ad@ornek.com"
+                error={errors.email?.message}
+                style={{ WebkitTapHighlightColor: "transparent" }}
+                {...register("email")}
+              />
             </div>
 
             <div>
@@ -76,7 +89,16 @@ export default function Login() {
                   Şifremi unuttum?
                 </Link>
               </div>
-              <Input id="password" type="password" icon={<Lock size={18} />} placeholder="••••••••" error={errors.password?.message} {...register("password")} />
+              <Input
+                id="password"
+                type="password"
+                autoComplete="current-password"
+                icon={<Lock size={18} />}
+                placeholder="••••••••"
+                error={errors.password?.message}
+                style={{ WebkitTapHighlightColor: "transparent" }}
+                {...register("password")}
+              />
             </div>
 
             <label className="flex items-center gap-2 cursor-pointer select-none group">

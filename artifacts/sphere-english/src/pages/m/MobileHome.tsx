@@ -66,12 +66,44 @@ export default function MobileHome() {
   };
 
   const speakWord = (text: string) => {
+    if (!("speechSynthesis" in window) || !("SpeechSynthesisUtterance" in window)) {
+      // WebView desteklemiyorsa Google Translate TTS ile fallback
+      try {
+        const url = `https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en&q=${encodeURIComponent(text)}`;
+        const audio = new Audio(url);
+        audio.play().catch(() => {});
+      } catch {}
+      return;
+    }
     try {
-      const u = new SpeechSynthesisUtterance(text);
-      u.lang = "en-US";
-      u.rate = 0.9;
-      window.speechSynthesis.speak(u);
-    } catch {}
+      const synth = window.speechSynthesis;
+      synth.cancel(); // Önceki utterance'ları temizle
+      const speakNow = () => {
+        const u = new SpeechSynthesisUtterance(text);
+        u.lang = "en-US";
+        u.rate = 0.9;
+        // İngilizce sesi tercih et
+        const voices = synth.getVoices();
+        const enVoice = voices.find(v => v.lang.startsWith("en"));
+        if (enVoice) u.voice = enVoice;
+        synth.speak(u);
+      };
+      if (synth.getVoices().length === 0) {
+        // Voices henüz yüklenmedi — bir kez yüklendiğinde konuş
+        synth.addEventListener("voiceschanged", speakNow, { once: true });
+        // Emniyet: 500ms sonra da dene
+        setTimeout(speakNow, 500);
+      } else {
+        speakNow();
+      }
+    } catch {
+      // Fallback: Google TTS
+      try {
+        const url = `https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en&q=${encodeURIComponent(text)}`;
+        const audio = new Audio(url);
+        audio.play().catch(() => {});
+      } catch {}
+    }
   };
 
   useEffect(() => { loadAll().catch(() => {}); }, []);

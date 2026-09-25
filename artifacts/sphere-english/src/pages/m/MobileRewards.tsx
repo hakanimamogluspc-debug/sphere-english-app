@@ -59,29 +59,34 @@ export default function MobileRewards() {
     setConfirmId(r.id);
   };
 
+  const [claiming, setClaiming] = useState(false);
   const confirmClaim = async () => {
     const id = confirmId;
     const r = id != null ? rewards.find((x) => x.id === id) : null;
     setConfirmId(null);
     if (!r) return;
-    const url = `${API}/student/rewards/${r.id}/redeem`;
-    alert(`DEBUG 1: URL=${url}`);
+    setClaiming(true);
+
+    // 15 saniyelik timeout — fetch takılırsa kullanıcı beklemesin
+    const ctrl = new AbortController();
+    const timeoutId = window.setTimeout(() => ctrl.abort(), 15_000);
+
     try {
-      const token = localStorage.getItem(TOKEN_KEY);
-      alert(`DEBUG 2: token var mı=${!!token}, ilk 20=${token?.slice(0, 20)}`);
-      const res = await fetch(url, {
+      const resp = await apiFetch(`/student/rewards/${r.id}/redeem`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({}),
+        signal: ctrl.signal,
       });
-      alert(`DEBUG 3: fetch tamam status=${res.status}`);
-      const text = await res.text();
-      alert(`DEBUG 4: body=${text.slice(0, 300)}`);
-      if (!res.ok) throw new Error(text || `HTTP ${res.status}`);
       showToast(`${r.name} kazanıldı!`, "success");
       load();
     } catch (e: any) {
-      alert(`DEBUG HATA: ${e?.message || String(e)}`);
-      showToast(e?.message || "Ödül alınamadı", "error");
+      const msg = e?.name === "AbortError"
+        ? "İstek zaman aşımına uğradı"
+        : (e?.message || "Ödül alınamadı");
+      showToast(msg, "error");
+    } finally {
+      window.clearTimeout(timeoutId);
+      setClaiming(false);
     }
   };
 
