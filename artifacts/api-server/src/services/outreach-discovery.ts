@@ -100,11 +100,10 @@ export const SEGMENT_CONFIGS: Record<
     description: "Türkiye'deki İK / Eğitim / L&D müdürleri",
     buildInput: (limit) => ({
       profileScraperMode: "Full + email search",
-      search: "HR Manager OR İK Müdürü OR Training Manager OR L&D",
-      currentJobTitles: ["HR Manager", "İK Müdürü", "Training Manager", "Learning and Development Manager", "Eğitim Müdürü"],
+      searchQuery: "HR Manager Turkey",
+      currentJobTitles: ["HR Manager", "İK Müdürü", "İnsan Kaynakları Müdürü", "Training Manager", "Learning and Development Manager", "Eğitim Müdürü"],
       locations: ["Turkey"],
-      takePages: Math.max(1, Math.ceil(limit / 25)), // 25 sonuç/sayfa
-      startPage: 1,
+      maxItems: limit,
     }),
   },
   b2b_sme: {
@@ -113,11 +112,10 @@ export const SEGMENT_CONFIGS: Record<
     description: "Türkiye'deki KOBİ kurucu / CEO / Genel Müdür",
     buildInput: (limit) => ({
       profileScraperMode: "Full + email search",
-      search: "Founder OR CEO OR Kurucu OR Genel Müdür",
+      searchQuery: "Founder Turkey",
       currentJobTitles: ["Founder", "CEO", "Co-Founder", "Genel Müdür", "Yönetici Ortak", "Managing Director"],
       locations: ["Turkey"],
-      takePages: Math.max(1, Math.ceil(limit / 25)),
-      startPage: 1,
+      maxItems: limit,
     }),
   },
   b2c_pro: {
@@ -126,11 +124,10 @@ export const SEGMENT_CONFIGS: Record<
     description: "Senior bireysel profesyoneller (mühendis, yönetici, avukat, doktor)",
     buildInput: (limit) => ({
       profileScraperMode: "Full + email search",
-      search: "Senior OR Lead OR Director OR Müdür",
+      searchQuery: "Senior Director Turkey",
       currentJobTitles: ["Senior Engineer", "Engineering Manager", "Director", "Senior Manager", "Müdür"],
       locations: ["Turkey"],
-      takePages: Math.max(1, Math.ceil(limit / 25)),
-      startPage: 1,
+      maxItems: limit,
     }),
   },
   partner: {
