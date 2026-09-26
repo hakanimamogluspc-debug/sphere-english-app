@@ -405,6 +405,48 @@ async function incrementCampaignCounter(campaignId: number, eventType: string) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════
+// UNSUBSCRIBE (public — KVKK zorunlu)
+// ═══════════════════════════════════════════════════════════════════════
+
+router.get("/outbound/unsubscribe", async (req: Request, res: Response) => {
+  try {
+    const campaignId = Number(req.query.c);
+    const leadId = Number(req.query.l);
+    if (!campaignId || !leadId) {
+      return res.status(400).send("Geçersiz link.");
+    }
+    // Kayıt: unsubscribe event + tüm aktif kampanyalardan çıkar
+    await db.insert(outboundEmailEventsTable).values({
+      campaignId, leadId,
+      eventType: "unsubscribed",
+      occurredAt: new Date(),
+    });
+    // Lead'i tüm kampanyalarda unsubscribed işaretle
+    await db.update(outboundCampaignLeadsTable)
+      .set({ status: "unsubscribed", lastEventAt: new Date() })
+      .where(eq(outboundCampaignLeadsTable.leadId, leadId));
+    // Lead'i archive et
+    await db.update(outreachLeadsTable)
+      .set({ status: "rejected", updatedAt: new Date() })
+      .where(eq(outreachLeadsTable.id, leadId));
+
+    return res.send(`
+      <!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8">
+      <title>Abonelikten Çıktınız — Sphere English</title>
+      <style>body{font-family:sans-serif;max-width:520px;margin:80px auto;padding:24px;text-align:center;color:#1e3a6e}
+      h1{font-weight:800;color:#1e3a6e}a{color:#0e7da6}</style></head>
+      <body><h1>Abonelikten Çıktınız</h1>
+      <p>E-posta listemizden çıkarıldınız. Bir daha e-posta almayacaksınız.</p>
+      <p>Fikrinizi değiştirirseniz veya sorunuz varsa <a href="mailto:destek@sphereenglish.com">destek@sphereenglish.com</a> adresine yazabilirsiniz.</p>
+      <p style="color:#8ba7d9;font-size:12px;margin-top:32px">Sphere English · İş İngilizcesi Eğitim Platformu</p>
+      </body></html>
+    `);
+  } catch (e: any) {
+    return res.status(500).send("Bir hata oluştu.");
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════════════
 // ANALYTICS
 // ═══════════════════════════════════════════════════════════════════════
 
