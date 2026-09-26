@@ -69,8 +69,12 @@ async function ensureSchema() {
 ensureSchema().catch((e) => console.warn("[rewards] ensureSchema warn:", e?.message));
 
 // ─── Yardımcı: ödül uygulama ───────────────────────────────────────────────
+// ÖNEMLİ: `client` transaction bağlantısı olarak geçilmeli — aksi halde
+// aynı bağlantı üzerinden kilit alınan users satırı için pool'dan yeni
+// bağlantı UPDATE denerken deadlock oluşuyor.
 
 async function applyReward(
+  client: any,
   userId: number,
   type: string,
   payload: any,
@@ -79,7 +83,7 @@ async function applyReward(
     if (type === "streak_freeze_bonus") {
       const amount = Number(payload?.amount ?? 0);
       if (amount <= 0) return { ok: false, error: "Geçersiz miktar" };
-      await pool.query(
+      await client.query(
         `UPDATE users SET streak_freeze_count = COALESCE(streak_freeze_count, 0) + $1 WHERE id = $2`,
         [amount, userId],
       );
@@ -89,8 +93,7 @@ async function applyReward(
     if (type === "badge") {
       const key = String(payload?.badge_key ?? "").trim();
       if (!key) return { ok: false, error: "Rozet anahtarı yok" };
-      // users.badges = text[] — zaten varsa tekrar ekleme
-      await pool.query(
+      await client.query(
         `UPDATE users
          SET badges = CASE
            WHEN $1 = ANY(COALESCE(badges, '{}'::text[])) THEN badges
@@ -236,8 +239,8 @@ router.post("/student/rewards/:id/redeem", authMiddleware, async (req: AuthReque
       [reward.cost_freezes, req.userId],
     );
 
-    // Ödülü uygula
-    const applied = await applyReward(req.userId, reward.type, reward.payload);
+    // Ödülü uygula — transaction'daki `client`i geçir (deadlock önlemek için)
+    const applied = await applyReward(client, req.userId, reward.type, reward.payload);
     if (!applied.ok) {
       await client.query("ROLLBACK");
       return res.status(500).json({ error: applied.error ?? "Ödül uygulanamadı" });
