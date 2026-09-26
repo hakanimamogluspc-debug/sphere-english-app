@@ -543,8 +543,7 @@ function TemplatePreviewModal({ template, onClose, onSendTest }: any) {
 
 function CampaignDetailModal({ campaign, templates, onClose, onUpdate, showToast }: any) {
   const [steps, setSteps] = useState<any[]>([]);
-  const [leadCount, setLeadCount] = useState(0);
-  const [addLeadsMode, setAddLeadsMode] = useState(false);
+  const [showAddLeads, setShowAddLeads] = useState(false);
 
   useEffect(() => {
     api(`/admin/outbound/campaigns/${campaign.id}`)
@@ -609,16 +608,179 @@ function CampaignDetailModal({ campaign, templates, onClose, onUpdate, showToast
             onAdd={addStep} />
         </div>
 
-        <div className="pt-3 border-t border-slate-200 flex items-start gap-3">
-          <div className="flex-1 text-xs text-slate-600 bg-blue-50 p-3 rounded-lg">
-            <p className="font-semibold mb-1">💡 Lead ekleme</p>
-            <p>Şu an için lead ekleme için Outreach sayfasından leadleri seç, sonra bu kampanyaya batch eklenebilir. (Sonraki turnda UI'a entegre edilecek)</p>
-            <p className="mt-2">Şimdilik test için API üzerinden ekleyebilirsin:</p>
-            <code className="block mt-1 p-2 bg-white rounded text-[10px]">
-              POST /admin/outbound/campaigns/{campaign.id}/add-leads<br/>
-              {"{ leadIds: [1,2,3] }"}
-            </code>
+        <div className="pt-3 border-t border-slate-200">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="font-bold text-[#1e3a6e] text-sm uppercase tracking-wider">
+              Lead Havuzu ({campaign.totalRecipients})
+            </h3>
+            <Button
+              onClick={() => setShowAddLeads(true)}
+              className="bg-[#13a9e0] hover:bg-[#0e7da6]"
+              size="sm"
+            >
+              <Users size={12} className="mr-1" /> Lead Ekle
+            </Button>
           </div>
+          <p className="text-xs text-slate-500">
+            Kampanyaya {campaign.segment} segmentindeki lead'lerini ekleyebilirsin.
+            Eklenen lead'lere step sırasına göre otomatik gönderim başlar.
+          </p>
+        </div>
+
+        {showAddLeads && (
+          <AddLeadsToCampaign
+            campaign={campaign}
+            onClose={() => setShowAddLeads(false)}
+            onAdded={(n) => {
+              setShowAddLeads(false);
+              showToast(`${n} lead kampanyaya eklendi`);
+              onUpdate();
+            }}
+          />
+        )}
+      </div>
+    </Modal>
+  );
+}
+
+function AddLeadsToCampaign({ campaign, onClose, onAdded }: any) {
+  const [leads, setLeads] = useState<any[]>([]);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [statusFilter, setStatusFilter] = useState("new");
+  const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    setLoading(true);
+    const params = new URLSearchParams({
+      segment: campaign.segment,
+      pageSize: "200",
+    });
+    if (statusFilter) params.set("status", statusFilter);
+    api(`/admin/outreach/leads?${params}`)
+      .then(d => setLeads(d.items || []))
+      .catch(() => setLeads([]))
+      .finally(() => setLoading(false));
+  }, [campaign.segment, statusFilter]);
+
+  const filtered = leads.filter(l => {
+    if (!search) return true;
+    const s = search.toLowerCase();
+    return (
+      (l.fullName || "").toLowerCase().includes(s) ||
+      (l.email || "").toLowerCase().includes(s) ||
+      (l.company || "").toLowerCase().includes(s)
+    );
+  });
+
+  const toggle = (id: number) => {
+    const next = new Set(selectedIds);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    setSelectedIds(next);
+  };
+
+  const toggleAll = () => {
+    if (selectedIds.size === filtered.length) setSelectedIds(new Set());
+    else setSelectedIds(new Set(filtered.map(l => l.id)));
+  };
+
+  const submit = async () => {
+    if (selectedIds.size === 0) return;
+    setSaving(true);
+    try {
+      const r = await api(`/admin/outbound/campaigns/${campaign.id}/add-leads`, {
+        method: "POST",
+        body: JSON.stringify({ leadIds: Array.from(selectedIds) }),
+      });
+      onAdded(r.added || selectedIds.size);
+    } catch (e: any) {
+      alert(e?.message || "Hata");
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Modal title={`"${campaign.name}" — Lead Ekle`} onClose={onClose} wide>
+      <div className="space-y-3">
+        <div className="flex flex-wrap gap-2 items-center">
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Ara: ad, e-posta, şirket…"
+            className="flex-1 min-w-[200px]"
+          />
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="border border-slate-200 rounded-lg px-3 py-2 text-sm"
+          >
+            <option value="new">Yeni</option>
+            <option value="viewed">Görüntülendi</option>
+            <option value="qualified">Kalifiye</option>
+            <option value="">Tümü</option>
+          </select>
+        </div>
+
+        <div className="flex items-center justify-between text-xs">
+          <div className="text-slate-600">
+            Segment: <strong>{campaign.segment}</strong> · Toplam: <strong>{leads.length}</strong> · Seçili: <strong className="text-[#13a9e0]">{selectedIds.size}</strong>
+          </div>
+          <button onClick={toggleAll} className="text-[#13a9e0] font-bold hover:underline">
+            {selectedIds.size === filtered.length ? "Seçimi kaldır" : "Tümünü seç"}
+          </button>
+        </div>
+
+        {loading ? (
+          <div className="text-center py-12 text-slate-500 text-sm">Yükleniyor…</div>
+        ) : filtered.length === 0 ? (
+          <div className="text-center py-12 bg-slate-50 rounded-lg">
+            <Users size={40} className="mx-auto mb-3 text-slate-300" />
+            <p className="text-slate-600 font-semibold">Bu segmentte lead yok</p>
+            <p className="text-xs text-slate-500 mt-1">Önce Apify ile lead keşfi yap</p>
+          </div>
+        ) : (
+          <div className="max-h-96 overflow-y-auto border border-slate-200 rounded-lg divide-y divide-slate-100">
+            {filtered.map(l => (
+              <label
+                key={l.id}
+                className={`flex items-center gap-3 p-3 hover:bg-slate-50 cursor-pointer ${selectedIds.has(l.id) ? "bg-blue-50" : ""}`}
+              >
+                <input
+                  type="checkbox"
+                  checked={selectedIds.has(l.id)}
+                  onChange={() => toggle(l.id)}
+                  className="w-4 h-4 accent-[#13a9e0]"
+                />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-sm text-[#1e3a6e] truncate">
+                      {l.fullName || `${l.firstName || ""} ${l.lastName || ""}`.trim() || "—"}
+                    </span>
+                    {l.emailVerified && (
+                      <span className="text-[9px] bg-emerald-100 text-emerald-700 font-bold px-1.5 py-0.5 rounded uppercase">✓ verified</span>
+                    )}
+                  </div>
+                  <div className="text-xs text-slate-600 truncate">{l.email}</div>
+                  <div className="text-[11px] text-slate-500 truncate">
+                    {l.jobTitle && <span>{l.jobTitle} · </span>}
+                    {l.company}
+                  </div>
+                </div>
+              </label>
+            ))}
+          </div>
+        )}
+
+        <div className="flex justify-end gap-2 pt-3 border-t border-slate-200">
+          <Button variant="outline" onClick={onClose}>Vazgeç</Button>
+          <Button
+            onClick={submit}
+            disabled={saving || selectedIds.size === 0}
+            className="bg-[#1e3a6e]"
+          >
+            {saving ? "Ekleniyor…" : `${selectedIds.size} lead'i ekle`}
+          </Button>
         </div>
       </div>
     </Modal>
