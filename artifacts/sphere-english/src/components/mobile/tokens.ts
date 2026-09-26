@@ -1,34 +1,37 @@
 /**
  * Sphere English — Mobile Design Tokens
  *
- * Marka kılavuzu v1.0 uyumlu. Tüm mobil bileşenler bu tokenları kullanır.
- * Değişiklik gerektiğinde tek yer.
+ * Marka kılavuzu v1.0 uyumlu + karanlık mod desteği.
+ * Tüm renkler CSS custom properties üzerinden gelir → tema geçişi otomatik.
+ * Global stil `index.css` içinde tanımlıdır.
  */
 
+// CSS custom property referansları — HTML'de `[data-mobile-theme="dark"]`
+// altında farklı değerler alırlar.
 export const colors = {
   // Ana
-  navy: "#1e3a6e",
-  navy700: "#1e3a6e",
-  navy400: "#4e77be",
-  navy200: "#8ba7d9",
-  navy100: "#c5d3ed",
-  navy50: "#e8eef8",
+  navy: "var(--m-navy)",
+  navy700: "var(--m-navy)",
+  navy400: "var(--m-navy-400)",
+  navy200: "var(--m-navy-200)",
+  navy100: "var(--m-navy-100)",
+  navy50: "var(--m-navy-50)",
 
   // Vurgu (metin değil)
-  turq: "#13a9e0",
-  turqDeep: "#0e7da6",
-  turqLight: "#4dcfff",
+  turq: "var(--m-turq)",
+  turqDeep: "var(--m-turq-deep)",
+  turqLight: "var(--m-turq-light)",
 
   // Nötr
-  neutral: "#64748b",
-  white: "#ffffff",
+  neutral: "var(--m-neutral)",
+  white: "var(--m-surface)",
 
   // Durum
-  success: "#22c55e",
-  warn: "#f59e0b",
-  error: "#ef4444",
+  success: "var(--m-success)",
+  warn: "var(--m-warn)",
+  error: "var(--m-error)",
 
-  // Dark mode
+  // Dark mode (backward-compat — kullanılmıyor artık)
   darkBg: "#0a1428",
   darkBg2: "#12213e",
 } as const;
@@ -61,17 +64,14 @@ export const fonts = {
 } as const;
 
 export const type = {
-  // Başlık (Outfit)
   hero: { family: fonts.heading, weight: 900, size: 56, lineHeight: 1.05, letterSpacing: "-0.02em" },
   h1: { family: fonts.heading, weight: 800, size: 36, lineHeight: 1.15, letterSpacing: "-0.02em" },
   h2: { family: fonts.heading, weight: 700, size: 24, lineHeight: 1.25, letterSpacing: "-0.02em" },
   h3: { family: fonts.heading, weight: 700, size: 18, lineHeight: 1.35, letterSpacing: "-0.01em" },
-  // Gövde (Jakarta)
   body: { family: fonts.body, weight: 400, size: 16, lineHeight: 1.6 },
   bodyBold: { family: fonts.body, weight: 600, size: 16, lineHeight: 1.6 },
   small: { family: fonts.body, weight: 400, size: 14, lineHeight: 1.5 },
   caption: { family: fonts.body, weight: 500, size: 12, lineHeight: 1.5 },
-  // Etiket / metadata (Outfit uppercase +0.06em)
   eyebrow: { family: fonts.heading, weight: 700, size: 11, lineHeight: 1, letterSpacing: "0.06em", textTransform: "uppercase" as const },
   meta: { family: fonts.heading, weight: 500, size: 11, lineHeight: 1, letterSpacing: "0.04em", textTransform: "uppercase" as const },
 } as const;

@@ -2,10 +2,10 @@ import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { API } from "@/lib/api-url";
 import { useAuth } from "@/hooks/use-auth";
-import { TabBar, colors, fonts, radius, type TabKey } from "@/components/mobile";
+import { TabBar, colors, fonts, radius, useTheme, type TabKey, type ThemeMode } from "@/components/mobile";
 import {
   Settings, Bell, LogOut, HelpCircle, Gift, MapPin,
-  ChevronRight, User as UserIcon,
+  ChevronRight, User as UserIcon, Sun, Moon, Monitor,
 } from "lucide-react";
 
 /**
@@ -29,6 +29,7 @@ export default function MobileProfile() {
   const [, setLocation] = useLocation();
   const { user, logout } = useAuth();
   const [stats, setStats] = useState<any>(null);
+  const { mode: themeMode, setMode: setThemeMode } = useTheme();
 
   useEffect(() => {
     apiFetch("/student/learning-map")
@@ -166,7 +167,42 @@ export default function MobileProfile() {
           </div>
         )}
 
+        {/* Görünüm — Tema */}
+        <div style={{
+          fontFamily: fonts.heading, fontWeight: 700, fontSize: 11,
+          color: colors.neutral, textTransform: "uppercase", letterSpacing: "0.06em",
+          marginTop: 20, marginBottom: 10,
+        }}>Görünüm</div>
+        <div style={{
+          display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6,
+          marginBottom: 24,
+        }}>
+          <ThemeButton
+            active={themeMode === "light"}
+            icon={<Sun size={16} strokeWidth={2.5} />}
+            label="Aydınlık"
+            onClick={() => setThemeMode("light")}
+          />
+          <ThemeButton
+            active={themeMode === "dark"}
+            icon={<Moon size={16} strokeWidth={2.5} />}
+            label="Karanlık"
+            onClick={() => setThemeMode("dark")}
+          />
+          <ThemeButton
+            active={themeMode === "system"}
+            icon={<Monitor size={16} strokeWidth={2.5} />}
+            label="Sistem"
+            onClick={() => setThemeMode("system")}
+          />
+        </div>
+
         {/* Menü */}
+        <div style={{
+          fontFamily: fonts.heading, fontWeight: 700, fontSize: 11,
+          color: colors.neutral, textTransform: "uppercase", letterSpacing: "0.06em",
+          marginBottom: 10,
+        }}>Ayarlar</div>
         <div>
           <MenuItem icon={<MapPin size={20} strokeWidth={2} />} label="Öğrenme Yolculuğum" onClick={() => window.location.href = "/yolculugum"} />
           <MenuItem icon={<Gift size={20} strokeWidth={2} />} label="Arkadaşını Davet Et" onClick={() => window.location.href = "/davet"} />
@@ -225,6 +261,30 @@ function MenuItem({
         {label}
       </div>
       <ChevronRight size={16} strokeWidth={2} color={colors.navy200} />
+    </button>
+  );
+}
+
+function ThemeButton({ active, icon, label, onClick }: {
+  active: boolean; icon: React.ReactNode; label: string; onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        padding: "12px 6px", borderRadius: 12,
+        background: active ? colors.navy : colors.white,
+        color: active ? colors.turq : colors.navy,
+        border: `1px solid ${active ? colors.navy : colors.navy100}`,
+        fontFamily: fonts.heading, fontWeight: 700, fontSize: 12,
+        cursor: "pointer",
+        display: "flex", flexDirection: "column",
+        alignItems: "center", gap: 6,
+        transition: "all 0.18s ease",
+      }}
+    >
+      {icon}
+      <span style={{ color: active ? colors.white : colors.navy }}>{label}</span>
     </button>
   );
 }
