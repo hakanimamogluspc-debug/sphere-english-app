@@ -28,6 +28,7 @@ import pronunciationRouter from "./pronunciation";
 import writingRouter from "./writing";
 import marketingRouter from "./marketing";
 import outreachRouter from "./outreach";
+import outboundRouter from "./outbound";
 import chatbotRouter from "./chatbot";
 import chatbotEmbedRouter from "./chatbot-embed";
 import activityRouter from "./activity";
@@ -197,6 +198,7 @@ router.use(adminEbookHealthRouter);
 // çalışır; chatbot /chat'e ulaşmadan önce requireSubscription 401 atıyordu.
 router.use(marketingRouter);
 router.use(outreachRouter);
+router.use(outboundRouter);
 router.use(chatbotRouter);
 router.use(chatbotEmbedRouter);
 // Speaking role-play sahneleri — authMiddleware endpoint bazında + free tier quota
