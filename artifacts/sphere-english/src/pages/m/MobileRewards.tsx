@@ -67,14 +67,12 @@ export default function MobileRewards() {
     if (!r) return;
     setClaiming(true);
 
-    // 12 saniyelik timeout
     const ctrl = new AbortController();
-    const timeoutId = window.setTimeout(() => ctrl.abort(), 12_000);
+    const timeoutId = window.setTimeout(() => ctrl.abort(), 15_000);
 
     try {
       const token = localStorage.getItem(TOKEN_KEY);
-      const url = `${API}/student/rewards/${r.id}/redeem`;
-      const res = await fetch(url, {
+      const res = await fetch(`${API}/student/rewards/${r.id}/redeem`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -85,29 +83,19 @@ export default function MobileRewards() {
       });
       window.clearTimeout(timeoutId);
 
-      const bodyText = await res.text();
-      let bodyJson: any = null;
-      try { bodyJson = bodyText ? JSON.parse(bodyText) : null; } catch { /* not json */ }
-
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        const err = bodyJson?.error || bodyText || `HTTP ${res.status}`;
-        alert(`Hata (${res.status}): ${err}`);
-        showToast(err, "error");
+        showToast((data as any)?.error || `Ödül alınamadı`, "error");
         return;
       }
-
-      alert(`✓ Ödül alındı: ${r.name}\nYeni freeze: ${bodyJson?.new_freeze_balance ?? "?"}`);
       showToast(`${r.name} kazanıldı!`, "success");
       load();
     } catch (e: any) {
       window.clearTimeout(timeoutId);
-      if (e?.name === "AbortError") {
-        alert("İstek zaman aşımına uğradı (12sn)");
-        showToast("İstek zaman aşımına uğradı", "error");
-      } else {
-        alert(`İstek hatası: ${e?.message || String(e)}`);
-        showToast(e?.message || "Ödül alınamadı", "error");
-      }
+      const msg = e?.name === "AbortError"
+        ? "İstek zaman aşımına uğradı"
+        : (e?.message || "Ödül alınamadı");
+      showToast(msg, "error");
     } finally {
       setClaiming(false);
     }
