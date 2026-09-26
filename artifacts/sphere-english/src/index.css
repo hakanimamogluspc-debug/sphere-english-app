@@ -181,48 +181,60 @@
  * Kontrast 4.66 kuralına uyumlu.
  */
 
-/* Light — default */
+/* Light — default. Navy hem branded bg hem light-mode text. */
 :root, :root[data-mobile-theme="light"] {
   color-scheme: light;
-  --m-navy: #1e3a6e;
-  --m-navy-400: #4e77be;
+
+  /* Semantic — adaptive */
+  --m-navy: #1e3a6e;              /* text + branded bg (aynı ışıkta) */
+  --m-navy-400: #4e77be;          /* muted text */
   --m-navy-200: #8ba7d9;
-  --m-navy-100: #c5d3ed;
-  --m-navy-50: #e8eef8;
+  --m-navy-100: #c5d3ed;          /* border */
+  --m-navy-50: #e8eef8;           /* soft surface */
 
   --m-turq: #13a9e0;
   --m-turq-deep: #0e7da6;
   --m-turq-light: #4dcfff;
 
-  --m-neutral: #64748b;
-  --m-surface: #ffffff;
-  --m-bg: #ffffff;
+  --m-neutral: #64748b;            /* secondary text */
+  --m-surface: #ffffff;            /* card bg */
+  --m-bg: #ffffff;                 /* page bg */
 
   --m-success: #22c55e;
   --m-warn: #f59e0b;
   --m-error: #ef4444;
+
+  /* Branded — light modda navy ile aynı, dark modda AYNI KALIR (branded bg değişmez) */
+  --m-brand: #1e3a6e;
+  --m-on-brand: #ffffff;           /* branded bg üstündeki text — her zaman beyaz */
 }
 
-/* Dark — Navy'nin daha derini + yüzeyler yarı şeffaf */
+/* Dark — v2 spec: zemin #0a1428, kartlar #12213e, metin beyaz, turkuaz aynı. */
 :root[data-mobile-theme="dark"] {
   color-scheme: dark;
-  --m-navy: #ffffff;             /* metin → beyaz */
-  --m-navy-400: #8ba7d9;
-  --m-navy-200: #c5d3ed;
-  --m-navy-100: rgba(197, 211, 237, 0.18);  /* border */
-  --m-navy-50:  rgba(30, 58, 110, 0.45);    /* soft yüzey */
 
-  --m-turq: #13a9e0;              /* turkuaz aynı — koyu zeminde patlar */
+  /* Text çıktıları BEYAZ (adaptive) — colors.navy artık dark modda beyaz */
+  --m-navy: #ffffff;
+  --m-navy-400: #c5d3ed;
+  --m-navy-200: #8ba7d9;
+  --m-navy-100: rgba(197, 211, 237, 0.20);
+  --m-navy-50: rgba(197, 211, 237, 0.10);
+
+  --m-turq: #13a9e0;
   --m-turq-deep: #4dcfff;
   --m-turq-light: #7de3ff;
 
   --m-neutral: #8ba7d9;
-  --m-surface: #12213e;           /* kartlar */
-  --m-bg: #0a1428;                /* sayfa zemini */
+  --m-surface: #12213e;
+  --m-bg: #0a1428;
 
   --m-success: #22c55e;
   --m-warn: #f59e0b;
   --m-error: #ef4444;
+
+  /* Branded bg her iki modda da NAVY kalır → Focus card / Streak / primary btn renk kaybetmez */
+  --m-brand: #1e3a6e;
+  --m-on-brand: #ffffff;
 }
 
 html, body {

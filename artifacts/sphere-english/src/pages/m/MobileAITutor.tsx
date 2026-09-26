@@ -496,7 +496,7 @@ export default function MobileAITutor() {
                 onClick={() => setShowFocusPicker(true)}
                 style={{
                   width: "100%", padding: "12px 14px", borderRadius: 12,
-                  background: colors.navy, color: colors.white, border: "none",
+                  background: colors.brand, color: colors.white, border: "none",
                   fontFamily: fonts.heading, fontWeight: 800, fontSize: 13,
                   cursor: "pointer", marginBottom: 12,
                   display: "flex", alignItems: "center", justifyContent: "center", gap: 6,

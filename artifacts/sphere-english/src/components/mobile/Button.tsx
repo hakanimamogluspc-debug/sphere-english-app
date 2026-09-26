@@ -54,8 +54,8 @@ export function Button({
     border: "none",
     width: fullWidth ? "100%" : "auto",
     transition: "transform 0.15s ease, opacity 0.15s ease",
-    ...(isPrimary && { background: colors.navy, color: colors.white }),
-    ...(isSecondary && { background: colors.turq, color: colors.navy }),
+    ...(isPrimary && { background: colors.brand, color: colors.onBrand }),
+    ...(isSecondary && { background: colors.turq, color: colors.brand }),
     ...(isTertiary && { background: "transparent", color: colors.navy, border: `1.5px solid ${colors.navy}` }),
     ...style,
   };

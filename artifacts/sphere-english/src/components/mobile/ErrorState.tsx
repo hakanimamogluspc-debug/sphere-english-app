@@ -70,7 +70,7 @@ export function ErrorState({
         <button
           onClick={onRetry}
           style={{
-            background: colors.navy, color: colors.white,
+            background: colors.brand, color: colors.white,
             border: "none", borderRadius: 100,
             padding: "12px 24px", cursor: "pointer",
             fontFamily: fonts.heading, fontWeight: 700, fontSize: 14,

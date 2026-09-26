@@ -9,7 +9,7 @@
 // CSS custom property referansları — HTML'de `[data-mobile-theme="dark"]`
 // altında farklı değerler alırlar.
 export const colors = {
-  // Ana
+  // Adaptive — text için (dark modda beyaz olur)
   navy: "var(--m-navy)",
   navy700: "var(--m-navy)",
   navy400: "var(--m-navy-400)",
@@ -24,14 +24,19 @@ export const colors = {
 
   // Nötr
   neutral: "var(--m-neutral)",
-  white: "var(--m-surface)",
+  white: "var(--m-surface)",  // adaptive card bg
+  bg: "var(--m-bg)",           // adaptive page bg
+
+  // Branded — her iki modda da NAVY kalır. Focus card, streak hero, primary btn için kullan.
+  brand: "var(--m-brand)",         // = #1e3a6e her zaman
+  onBrand: "var(--m-on-brand)",    // branded bg üstündeki text — her zaman beyaz
 
   // Durum
   success: "var(--m-success)",
   warn: "var(--m-warn)",
   error: "var(--m-error)",
 
-  // Dark mode (backward-compat — kullanılmıyor artık)
+  // Dark mode (backward-compat — kullanılmıyor)
   darkBg: "#0a1428",
   darkBg2: "#12213e",
 } as const;

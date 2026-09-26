@@ -300,7 +300,7 @@ export default function MobileSpeakingClub() {
                             onClick={() => openMeeting(c.meetingLink)}
                             style={{
                               flex: 1, padding: "10px 14px", borderRadius: 100,
-                              background: colors.navy, color: colors.white, border: "none",
+                              background: colors.brand, color: colors.white, border: "none",
                               fontFamily: fonts.heading, fontWeight: 800, fontSize: 13,
                               cursor: "pointer",
                               display: "flex", alignItems: "center", justifyContent: "center", gap: 4,

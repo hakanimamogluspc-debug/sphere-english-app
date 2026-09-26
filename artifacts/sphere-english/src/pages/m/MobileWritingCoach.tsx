@@ -187,7 +187,7 @@ export default function MobileWritingCoach() {
       >
         {/* Ana skor kartı */}
         <div style={{
-          background: colors.navy, color: colors.white,
+          background: colors.brand, color: colors.white,
           borderRadius: radius.panel, padding: 20, marginBottom: 16,
         }}>
           <div style={{
@@ -429,7 +429,7 @@ export default function MobileWritingCoach() {
           onClick={reset}
           style={{
             width: "100%", padding: "14px 20px", borderRadius: 100,
-            background: colors.navy, color: colors.white, border: "none",
+            background: colors.brand, color: colors.white, border: "none",
             fontFamily: fonts.heading, fontWeight: 800, fontSize: 14,
             cursor: "pointer", marginTop: 16,
           }}
@@ -566,7 +566,7 @@ export default function MobileWritingCoach() {
         disabled={text.trim().length < 20 || overLimit}
         style={{
           width: "100%", padding: "16px 20px", borderRadius: 100,
-          background: colors.navy, color: colors.white, border: "none",
+          background: colors.brand, color: colors.white, border: "none",
           fontFamily: fonts.heading, fontWeight: 800, fontSize: 15,
           cursor: text.trim().length < 20 ? "not-allowed" : "pointer",
           opacity: text.trim().length < 20 || overLimit ? 0.5 : 1,

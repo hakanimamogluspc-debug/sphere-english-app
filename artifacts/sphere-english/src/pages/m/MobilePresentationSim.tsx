@@ -398,7 +398,7 @@ export default function MobilePresentationSim() {
         }
       >
         <div style={{
-          background: colors.navy, color: colors.white,
+          background: colors.brand, color: colors.white,
           borderRadius: radius.panel, padding: 20, marginBottom: 12,
         }}>
           <div style={{
@@ -548,7 +548,7 @@ export default function MobilePresentationSim() {
                 lineHeight: 1.4, display: "flex", gap: 8, alignItems: "flex-start",
               }}>
                 <span style={{
-                  background: colors.navy, color: colors.white,
+                  background: colors.brand, color: colors.white,
                   minWidth: 20, height: 20, borderRadius: 10,
                   display: "flex", alignItems: "center", justifyContent: "center",
                   fontSize: 11, fontWeight: 800, flexShrink: 0,
@@ -563,7 +563,7 @@ export default function MobilePresentationSim() {
           onClick={reset}
           style={{
             width: "100%", padding: "14px 20px", borderRadius: 100,
-            background: colors.navy, color: colors.white, border: "none",
+            background: colors.brand, color: colors.white, border: "none",
             fontFamily: fonts.heading, fontWeight: 800, fontSize: 14,
             cursor: "pointer", marginTop: 16,
           }}
@@ -726,7 +726,7 @@ export default function MobilePresentationSim() {
               <div style={{ display: "flex", justifyContent: "flex-end" }}>
                 <div style={{
                   maxWidth: "84%", padding: "12px 16px", borderRadius: 16,
-                  background: colors.navy, color: colors.white,
+                  background: colors.brand, color: colors.white,
                   fontFamily: fonts.body, fontSize: 14, lineHeight: 1.5,
                 }}>{t.candidateAnswer}</div>
               </div>
@@ -972,7 +972,7 @@ export default function MobilePresentationSim() {
         disabled={starting || !setup.topic.trim()}
         style={{
           width: "100%", padding: "16px 20px", borderRadius: 100,
-          background: colors.navy, color: colors.white, border: "none",
+          background: colors.brand, color: colors.white, border: "none",
           fontFamily: fonts.heading, fontWeight: 800, fontSize: 15,
           cursor: starting ? "not-allowed" : "pointer",
           opacity: starting || !setup.topic.trim() ? 0.5 : 1,

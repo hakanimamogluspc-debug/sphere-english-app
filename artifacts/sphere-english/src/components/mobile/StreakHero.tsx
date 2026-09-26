@@ -13,7 +13,7 @@ interface Props {
 export function StreakHero({ days, subtitle }: Props) {
   return (
     <div style={{
-      background: colors.navy,
+      background: colors.brand,
       borderRadius: radius.panel,
       padding: "32px 24px",
       textAlign: "center",

@@ -411,7 +411,7 @@ export default function MobileSimulationMode() {
           }}
           style={{
             width: "100%", padding: 16, marginBottom: 8,
-            background: colors.navy, color: colors.white,
+            background: colors.brand, color: colors.white,
             border: "none", borderRadius: radius.card,
             display: "flex", alignItems: "center", gap: 12,
             cursor: "pointer", textAlign: "left",

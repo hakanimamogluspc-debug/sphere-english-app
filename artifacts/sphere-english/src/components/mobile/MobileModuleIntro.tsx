@@ -186,7 +186,7 @@ export function MobileModuleIntro({ moduleKey, autoOpen = true, onStart }: Props
               {/* İkon + başlık */}
               <div style={{
                 width: 56, height: 56, borderRadius: 16,
-                background: colors.navy,
+                background: colors.brand,
                 display: "flex", alignItems: "center", justifyContent: "center",
                 color: colors.turq,
                 marginBottom: 20,
@@ -277,7 +277,7 @@ export function MobileModuleIntro({ moduleKey, autoOpen = true, onStart }: Props
                   onClick={() => setSlideIdx((v) => Math.min(v + 1, slides.length - 1))}
                   style={{
                     flex: 1, padding: "12px 20px", borderRadius: 100,
-                    background: colors.navy, color: colors.white, border: "none",
+                    background: colors.brand, color: colors.white, border: "none",
                     fontFamily: fonts.heading, fontWeight: 800, fontSize: 14,
                     cursor: "pointer",
                     display: "flex", alignItems: "center", justifyContent: "center", gap: 6,

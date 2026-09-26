@@ -228,7 +228,7 @@ export default function MobileLevelExamTaking() {
             onClick={load}
             style={{
               flex: 1, padding: "12px 16px", borderRadius: 100,
-              background: colors.navy, color: colors.white, border: "none",
+              background: colors.brand, color: colors.white, border: "none",
               fontFamily: fonts.heading, fontWeight: 800, fontSize: 13,
               cursor: "pointer",
               display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
@@ -359,7 +359,7 @@ export default function MobileLevelExamTaking() {
               onClick={() => setCurrentIdx((i) => Math.min(questions.length - 1, i + 1))}
               style={{
                 flex: 1, padding: "14px 20px", borderRadius: 100,
-                background: colors.navy, color: colors.white, border: "none",
+                background: colors.brand, color: colors.white, border: "none",
                 fontFamily: fonts.heading, fontWeight: 800, fontSize: 14,
                 cursor: "pointer",
                 display: "flex", alignItems: "center", justifyContent: "center", gap: 6,

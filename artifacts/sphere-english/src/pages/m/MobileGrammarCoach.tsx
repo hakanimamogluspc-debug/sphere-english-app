@@ -340,7 +340,7 @@ export default function MobileGrammarCoach() {
             disabled={practiceLoading || !learnContent}
             style={{
               width: "100%", padding: "14px 20px", borderRadius: 100,
-              background: colors.navy, color: colors.white, border: "none",
+              background: colors.brand, color: colors.white, border: "none",
               fontFamily: fonts.heading, fontWeight: 800, fontSize: 14,
               cursor: practiceLoading ? "not-allowed" : "pointer",
               opacity: practiceLoading || !learnContent ? 0.5 : 1,
@@ -465,7 +465,7 @@ export default function MobileGrammarCoach() {
               onClick={nextQuestion}
               style={{
                 width: "100%", padding: "14px 20px", borderRadius: 100,
-                background: colors.navy, color: colors.white, border: "none",
+                background: colors.brand, color: colors.white, border: "none",
                 fontFamily: fonts.heading, fontWeight: 800, fontSize: 14,
                 cursor: "pointer",
                 display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
@@ -700,7 +700,7 @@ export default function MobileGrammarCoach() {
             disabled={practiceLoading}
             style={{
               flex: 1, padding: "14px 20px", borderRadius: 100,
-              background: colors.navy, color: colors.white, border: "none",
+              background: colors.brand, color: colors.white, border: "none",
               fontFamily: fonts.heading, fontWeight: 800, fontSize: 14,
               cursor: practiceLoading ? "not-allowed" : "pointer",
               opacity: practiceLoading ? 0.5 : 1,

@@ -393,7 +393,7 @@ export default function MobilePronunciationCoach() {
       >
         {/* Genel skor */}
         <div style={{
-          background: colors.navy, color: colors.white,
+          background: colors.brand, color: colors.white,
           borderRadius: radius.panel, padding: 24,
           marginBottom: 16, textAlign: "center",
         }}>
@@ -497,7 +497,7 @@ export default function MobilePronunciationCoach() {
             onClick={resetToSelect}
             style={{
               flex: 1, padding: "14px 20px", borderRadius: 100,
-              background: colors.navy, color: colors.white, border: "none",
+              background: colors.brand, color: colors.white, border: "none",
               fontFamily: fonts.heading, fontWeight: 800, fontSize: 14,
               cursor: "pointer",
             }}
@@ -728,7 +728,7 @@ function ReportSection({ title, count, icon, children }: { title: string; count:
         <span style={{ color: colors.turqDeep }}>{icon}</span>
         {title}
         <span style={{
-          background: colors.navy, color: colors.white,
+          background: colors.brand, color: colors.white,
           borderRadius: 100, padding: "1px 6px", fontSize: 9,
           marginLeft: 4,
         }}>{count}</span>

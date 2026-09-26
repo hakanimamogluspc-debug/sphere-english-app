@@ -28,10 +28,10 @@ export function FocusCard({
 }: Props) {
   return (
     <div style={{
-      background: colors.navy,
+      background: colors.brand,
       borderRadius: radius.panel,
       padding: "32px 24px",
-      color: colors.white,
+      color: colors.onBrand,
       marginBottom: 24,
       position: "relative",
       overflow: "hidden",
@@ -57,7 +57,7 @@ export function FocusCard({
       <div style={{
         fontFamily: fonts.heading, fontWeight: 800, fontSize: 22,
         lineHeight: 1.2, letterSpacing: "-0.02em",
-        marginBottom: 8, color: colors.white, position: "relative",
+        marginBottom: 8, color: colors.onBrand, position: "relative",
       }}>{title}</div>
 
       {description && (
@@ -81,7 +81,7 @@ export function FocusCard({
               }}>{m.label}</span>
               <span style={{
                 fontFamily: fonts.heading, fontWeight: 700, fontSize: 14,
-                color: colors.white,
+                color: colors.onBrand,
               }}>{m.value}</span>
             </div>
           ))}

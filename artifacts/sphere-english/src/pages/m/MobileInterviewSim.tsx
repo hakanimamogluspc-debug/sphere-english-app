@@ -333,7 +333,7 @@ export default function MobileInterviewSim() {
       >
         {/* Genel skor */}
         <div style={{
-          background: colors.navy, color: colors.white,
+          background: colors.brand, color: colors.white,
           borderRadius: radius.panel, padding: 20, marginBottom: 12,
         }}>
           <div style={{
@@ -480,7 +480,7 @@ export default function MobileInterviewSim() {
                 display: "flex", gap: 8, alignItems: "flex-start",
               }}>
                 <span style={{
-                  background: colors.navy, color: colors.white,
+                  background: colors.brand, color: colors.white,
                   minWidth: 20, height: 20, borderRadius: 10,
                   display: "flex", alignItems: "center", justifyContent: "center",
                   fontSize: 11, fontWeight: 800, flexShrink: 0,
@@ -495,7 +495,7 @@ export default function MobileInterviewSim() {
           onClick={reset}
           style={{
             width: "100%", padding: "14px 20px", borderRadius: 100,
-            background: colors.navy, color: colors.white, border: "none",
+            background: colors.brand, color: colors.white, border: "none",
             fontFamily: fonts.heading, fontWeight: 800, fontSize: 14,
             cursor: "pointer", marginTop: 16,
           }}
@@ -796,7 +796,7 @@ export default function MobileInterviewSim() {
         disabled={starting || !setup.targetRole.trim()}
         style={{
           width: "100%", padding: "16px 20px", borderRadius: 100,
-          background: colors.navy, color: colors.white, border: "none",
+          background: colors.brand, color: colors.white, border: "none",
           fontFamily: fonts.heading, fontWeight: 800, fontSize: 15,
           cursor: starting ? "not-allowed" : "pointer",
           opacity: starting || !setup.targetRole.trim() ? 0.5 : 1,

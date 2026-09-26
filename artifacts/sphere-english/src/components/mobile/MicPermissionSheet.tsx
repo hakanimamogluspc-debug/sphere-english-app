@@ -100,7 +100,7 @@ export function MicPermissionSheet({ visible, onClose, onRetry }: Props) {
               onClick={() => { onRetry(); onClose(); }}
               style={{
                 flex: 1, padding: "14px 20px", borderRadius: 100,
-                background: colors.navy, color: colors.white, border: "none",
+                background: colors.brand, color: colors.white, border: "none",
                 fontFamily: fonts.heading, fontWeight: 800, fontSize: 14,
                 cursor: "pointer",
               }}

@@ -692,7 +692,7 @@ function ArticleSheet({
                 href={article.url} target="_blank" rel="noreferrer"
                 style={{
                   display: "block", padding: 16, marginBottom: 16,
-                  background: colors.navy, color: colors.white,
+                  background: colors.brand, color: colors.white,
                   borderRadius: 12, textAlign: "center",
                   textDecoration: "none",
                 }}
@@ -758,7 +758,7 @@ function ArticleSheet({
                     style={{
                       marginTop: 8, marginLeft: "auto", display: "flex",
                       padding: "8px 14px", borderRadius: 100,
-                      background: colors.navy, color: colors.white, border: "none",
+                      background: colors.brand, color: colors.white, border: "none",
                       fontFamily: fonts.heading, fontWeight: 800, fontSize: 12,
                       cursor: saving ? "not-allowed" : "pointer",
                       opacity: saving ? 0.5 : 1,

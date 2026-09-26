@@ -115,7 +115,7 @@ export default function MobileLevelExams() {
 
       {/* Genel özet */}
       <div style={{
-        background: colors.navy, color: colors.white,
+        background: colors.brand, color: colors.white,
         borderRadius: radius.panel, padding: 16, marginBottom: 20,
         display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12,
       }}>

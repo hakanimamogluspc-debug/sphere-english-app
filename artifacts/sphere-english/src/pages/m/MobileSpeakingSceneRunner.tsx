@@ -219,7 +219,7 @@ export default function MobileSpeakingSceneRunner() {
       >
         <div style={{
           padding: 24, textAlign: "center",
-          background: colors.navy, borderRadius: radius.panel,
+          background: colors.brand, borderRadius: radius.panel,
           color: colors.white, marginBottom: 16,
         }}>
           <div style={{
@@ -303,7 +303,7 @@ export default function MobileSpeakingSceneRunner() {
             onClick={boot}
             style={{
               flex: 1, padding: "14px 16px", borderRadius: 100,
-              background: colors.navy, color: colors.white, border: "none",
+              background: colors.brand, color: colors.white, border: "none",
               fontFamily: fonts.heading, fontWeight: 800, fontSize: 13,
               cursor: "pointer",
               display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
@@ -365,7 +365,7 @@ export default function MobileSpeakingSceneRunner() {
             disabled={completing}
             style={{
               width: "100%", padding: "14px 20px", borderRadius: 100,
-              background: colors.navy, color: colors.white, border: "none",
+              background: colors.brand, color: colors.white, border: "none",
               fontFamily: fonts.heading, fontWeight: 800, fontSize: 14,
               cursor: completing ? "not-allowed" : "pointer",
               opacity: completing ? 0.5 : 1,
@@ -462,7 +462,7 @@ export default function MobileSpeakingSceneRunner() {
       {showScoreCard && lastScores && (
         <div style={{ marginBottom: 16 }}>
           <div style={{
-            padding: 14, background: colors.navy, color: colors.white,
+            padding: 14, background: colors.brand, color: colors.white,
             borderRadius: radius.card, marginBottom: 8,
           }}>
             <div style={{

@@ -188,7 +188,7 @@ export default function MobileHome() {
           </div>
           <div style={{
             width: 44, height: 44, borderRadius: 14,
-            background: colors.navy, color: colors.white,
+            background: colors.brand, color: colors.white,
             display: "flex", alignItems: "center", justifyContent: "center",
             fontFamily: fonts.heading, fontWeight: 800, fontSize: 18,
           }}>

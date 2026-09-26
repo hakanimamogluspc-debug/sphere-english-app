@@ -237,7 +237,7 @@ export default function MobileLearningPath() {
             onClick={generate}
             style={{
               width: "100%", padding: "16px 20px", borderRadius: 100,
-              background: colors.navy, color: colors.white, border: "none",
+              background: colors.brand, color: colors.white, border: "none",
               fontFamily: fonts.heading, fontWeight: 800, fontSize: 15,
               cursor: "pointer",
               display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
@@ -317,7 +317,7 @@ export default function MobileLearningPath() {
               onClick={generate}
               style={{
                 flex: 1, padding: "8px 14px", borderRadius: 100,
-                background: colors.navy, color: colors.white, border: "none",
+                background: colors.brand, color: colors.white, border: "none",
                 fontFamily: fonts.heading, fontWeight: 800, fontSize: 12,
                 cursor: "pointer",
                 display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
@@ -332,7 +332,7 @@ export default function MobileLearningPath() {
 
       {/* Hedef kartı */}
       <div style={{
-        background: colors.navy, color: colors.white,
+        background: colors.brand, color: colors.white,
         borderRadius: radius.panel, padding: 20, marginBottom: 16,
       }}>
         <div style={{

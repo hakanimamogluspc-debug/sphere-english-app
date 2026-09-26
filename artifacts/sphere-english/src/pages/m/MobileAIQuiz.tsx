@@ -412,7 +412,7 @@ export default function MobileAIQuiz() {
                 display: "flex", gap: 8, alignItems: "flex-start",
               }}>
                 <span style={{
-                  background: colors.navy, color: colors.white,
+                  background: colors.brand, color: colors.white,
                   minWidth: 20, height: 20, borderRadius: 10,
                   display: "flex", alignItems: "center", justifyContent: "center",
                   fontSize: 11, fontWeight: 800, flexShrink: 0,
@@ -562,7 +562,7 @@ export default function MobileAIQuiz() {
                 onClick={() => setCurrentIdx((i) => Math.min(questions.length - 1, i + 1))}
                 style={{
                   flex: 1, padding: "14px 20px", borderRadius: 100,
-                  background: colors.navy, color: colors.white, border: "none",
+                  background: colors.brand, color: colors.white, border: "none",
                   fontFamily: fonts.heading, fontWeight: 800, fontSize: 14,
                   cursor: "pointer",
                   display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
@@ -762,7 +762,7 @@ export default function MobileAIQuiz() {
               onClick={resumeQuiz}
               style={{
                 flex: 1, padding: "8px 14px", borderRadius: 100,
-                background: colors.navy, color: colors.white, border: "none",
+                background: colors.brand, color: colors.white, border: "none",
                 fontFamily: fonts.heading, fontWeight: 800, fontSize: 12,
                 cursor: "pointer",
               }}
@@ -877,7 +877,7 @@ export default function MobileAIQuiz() {
         onClick={generateQuiz}
         style={{
           width: "100%", padding: "16px 20px", borderRadius: 100,
-          background: colors.navy, color: colors.white, border: "none",
+          background: colors.brand, color: colors.white, border: "none",
           fontFamily: fonts.heading, fontWeight: 800, fontSize: 15,
           cursor: "pointer",
           display: "flex", alignItems: "center", justifyContent: "center", gap: 8,

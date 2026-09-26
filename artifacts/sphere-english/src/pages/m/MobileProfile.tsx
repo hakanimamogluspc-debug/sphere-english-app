@@ -61,7 +61,7 @@ export default function MobileProfile() {
         }}>
           <div style={{
             width: 88, height: 88, borderRadius: 24,
-            background: colors.navy, color: colors.white,
+            background: colors.brand, color: colors.white,
             display: "flex", alignItems: "center", justifyContent: "center",
             fontFamily: fonts.heading, fontWeight: 800, fontSize: 36,
             letterSpacing: "-0.02em", position: "relative", marginBottom: 16,
