@@ -57,6 +57,7 @@ const AdminSmokeTests     = lazy(() => import("./pages/admin/AdminSmokeTests"));
 const AdminBundles        = lazy(() => import("./pages/admin/AdminBundles"));
 const AdminInvoices       = lazy(() => import("./pages/admin/AdminInvoices"));
 const AdminMailTemplates  = lazy(() => import("./pages/admin/AdminMailTemplates"));
+const AdminOutbound       = lazy(() => import("./pages/admin/Outbound"));
 const AdminDemo           = lazy(() => import("./pages/admin/AdminDemo"));
 const AdminContent        = lazy(() => import("./pages/admin/AdminContent"));
 const AdminScenes         = lazy(() => import("./pages/admin/AdminScenes"));
@@ -423,6 +424,7 @@ function Router() {
         <Route path="/admin/bundles"><LayoutWrapper component={AdminBundles} allowedRoles={['admin']} /></Route>
         <Route path="/admin/faturalar"><LayoutWrapper component={AdminInvoices} allowedRoles={['admin']} /></Route>
         <Route path="/admin/mail-sablonlari"><LayoutWrapper component={AdminMailTemplates} allowedRoles={['admin']} /></Route>
+        <Route path="/admin/outbound"><LayoutWrapper component={AdminOutbound} allowedRoles={['admin']} /></Route>
         <Route path="/admin/demo"><LayoutWrapper component={AdminDemo} allowedRoles={['admin']} /></Route>
         <Route path="/admin/content"><LayoutWrapper component={AdminContent} allowedRoles={['admin']} /></Route>
         <Route path="/admin/scenes"><LayoutWrapper component={AdminScenes} allowedRoles={['admin']} /></Route>

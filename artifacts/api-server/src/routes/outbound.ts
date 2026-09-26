@@ -482,4 +482,14 @@ router.get("/admin/outbound/stats", authMiddleware, requireRole("admin"),
     } catch (e: any) { return res.status(500).json({ error: e?.message }); }
   });
 
+// Seed hazır şablonlar (yalnızca boşsa)
+router.post("/admin/outbound/seed", authMiddleware, requireRole("admin"),
+  async (_req: AuthRequest, res: Response) => {
+    try {
+      const { seedOutboundTemplates } = await import("../seeds/outbound-templates.js");
+      await seedOutboundTemplates();
+      return res.json({ ok: true });
+    } catch (e: any) { return res.status(500).json({ error: e?.message }); }
+  });
+
 export default router;
