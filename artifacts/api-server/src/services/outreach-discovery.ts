@@ -100,8 +100,8 @@ export const SEGMENT_CONFIGS: Record<
     description: "Türkiye'deki İK / Eğitim / L&D müdürleri",
     buildInput: (limit) => ({
       profileScraperMode: "Full + email search",
-      searchQuery: "İK Müdürü İstanbul",
-      locations: ["Istanbul, Turkey"],
+      searchQuery: "İK Müdürü",
+      locations: ["Türkiye"],
       maxItems: limit,
     }),
   },
@@ -111,8 +111,8 @@ export const SEGMENT_CONFIGS: Record<
     description: "Türkiye'deki KOBİ kurucu / CEO / Genel Müdür",
     buildInput: (limit) => ({
       profileScraperMode: "Full + email search",
-      searchQuery: "CEO Founder Istanbul",
-      locations: ["Istanbul, Turkey"],
+      searchQuery: "CEO Founder",
+      locations: ["Türkiye"],
       maxItems: limit,
     }),
   },
@@ -122,8 +122,8 @@ export const SEGMENT_CONFIGS: Record<
     description: "Senior bireysel profesyoneller (mühendis, yönetici, avukat, doktor)",
     buildInput: (limit) => ({
       profileScraperMode: "Full + email search",
-      searchQuery: "Senior Manager Istanbul",
-      locations: ["Istanbul, Turkey"],
+      searchQuery: "Senior Manager",
+      locations: ["Türkiye"],
       maxItems: limit,
     }),
   },
