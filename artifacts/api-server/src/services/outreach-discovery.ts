@@ -667,40 +667,6 @@ export const LEAD_PRESETS: LeadPreset[] = [
     ]),
   },
 
-  // ─── Partner (dil eğitimi ekosistemi) ─────────────────────────────
-  {
-    id: "partner_language_schools_gmaps",
-    label: "Dil Okulları (Google Maps)",
-    description: "Türkiye'deki İngilizce kursları — partner adayları",
-    segment: "partner",
-    icon: "🏫",
-    actorId: "compass/crawler-google-places",
-    parser: "gmaps",
-    buildInput: (limit) => ({
-      searchStringsArray: [
-        "İngilizce kursu İstanbul",
-        "dil okulu Ankara",
-        "İngilizce kursu İzmir",
-        "language school Turkey",
-      ],
-      maxCrawledPlacesPerSearch: Math.ceil(limit / 4),
-      language: "tr",
-      countryCode: "tr",
-      scrapeContacts: true,
-    }),
-  },
-  {
-    id: "partner_corporate_training",
-    label: "Kurumsal Eğitim Firmaları",
-    description: "Kurumsal eğitim = doğal partnership fırsatı",
-    segment: "partner",
-    icon: "📚",
-    buildInput: li("Corporate Training Kurumsal Eğitim Turkey", [
-      "Corporate Training Manager",
-      "Kurumsal Eğitim Sahibi",
-      "Training Consultant",
-    ]),
-  },
 ];
 
 /**
