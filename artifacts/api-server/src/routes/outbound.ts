@@ -41,6 +41,7 @@
  */
 
 import { Router, type Response, type Request } from "express";
+import crypto from "crypto";
 import {
   db,
   outboundTemplatesTable, outboundCampaignsTable,
@@ -414,6 +415,39 @@ function mapSendGridEvent(e: string): any {
 // }
 router.post("/webhooks/resend", async (req: Request, res: Response) => {
   try {
+    // İmza doğrulaması (opsiyonel — RESEND_WEBHOOK_SECRET set edildiğinde)
+    // Resend Svix formatı: svix-id, svix-timestamp, svix-signature başlıkları
+    // ÖNEMLİ: HMAC hesaplaması için raw body lazım. `req.rawBody`'yi index.ts'de
+    // capture ediyoruz (express.json({ verify: (req, _res, buf) => req.rawBody = buf })).
+    const secret = process.env.RESEND_WEBHOOK_SECRET;
+    if (secret) {
+      const svixId = req.header("svix-id");
+      const svixTimestamp = req.header("svix-timestamp");
+      const svixSignature = req.header("svix-signature");
+      const rawBody: Buffer | string | undefined = (req as any).rawBody;
+
+      if (!svixId || !svixTimestamp || !svixSignature) {
+        return res.status(401).json({ error: "İmza başlıkları eksik" });
+      }
+      if (!rawBody) {
+        console.warn("[resend webhook] rawBody yok — imza atlandı");
+      } else {
+        // Timestamp tazelik kontrolü (5 dk tolerans)
+        const ts = Number(svixTimestamp);
+        if (!ts || Math.abs(Date.now() / 1000 - ts) > 300) {
+          return res.status(401).json({ error: "Timestamp geçersiz" });
+        }
+        const bodyStr = Buffer.isBuffer(rawBody) ? rawBody.toString("utf8") : String(rawBody);
+        const signed = `${svixId}.${svixTimestamp}.${bodyStr}`;
+        const secretBytes = Buffer.from(secret.replace(/^whsec_/, ""), "base64");
+        const expected = "v1," + crypto.createHmac("sha256", secretBytes).update(signed).digest("base64");
+        const provided = svixSignature.split(" ").map((s) => s.trim());
+        if (!provided.includes(expected)) {
+          return res.status(401).json({ error: "İmza doğrulanamadı" });
+        }
+      }
+    }
+
     const payload = req.body || {};
     const eventType = mapResendEvent(payload.type);
     if (!eventType) return res.json({ ok: true, skipped: payload.type });

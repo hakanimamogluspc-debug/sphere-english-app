@@ -129,7 +129,12 @@ app.use(cors({
   allowedHeaders: ["Content-Type", "Authorization"],
 }));
 app.use(cookieParser());
-app.use(express.json());
+app.use(express.json({
+  // Webhook imza doğrulaması için raw body capture (Resend/SendGrid/Stripe için gerekli)
+  verify: (req: any, _res, buf) => {
+    if (buf && buf.length) req.rawBody = buf;
+  },
+}));
 app.use(express.urlencoded({ extended: true }));
 
 app.get("/health", (_req, res) => {
