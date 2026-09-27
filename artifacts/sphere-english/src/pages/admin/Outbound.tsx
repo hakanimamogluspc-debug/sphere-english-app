@@ -662,6 +662,14 @@ function LeadPool({ showToast }: any) {
   const [emailStatusFilter, setEmailStatusFilter] = useState("");
   const [search, setSearch] = useState("");
   const [running, setRunning] = useState<null | string>(null);
+  const [showPresetPicker, setShowPresetPicker] = useState(false);
+  const [presets, setPresets] = useState<any[]>([]);
+
+  useEffect(() => {
+    api("/admin/outreach/presets")
+      .then(d => setPresets(d.presets || []))
+      .catch(() => {});
+  }, []);
 
   const load = () => {
     setLoading(true);
@@ -681,12 +689,13 @@ function LeadPool({ showToast }: any) {
 
   useEffect(() => { load(); }, [page, segmentFilter, statusFilter, emailStatusFilter]);
 
-  const triggerDiscovery = async (segment: string) => {
+  const triggerPreset = async (presetId: string, limit: number = 50) => {
     setRunning("discovery");
+    setShowPresetPicker(false);
     try {
-      const r = await api("/admin/outreach/trigger", {
+      const r = await api("/admin/outreach/trigger-preset", {
         method: "POST",
-        body: JSON.stringify({ segment, limit: 50 }),
+        body: JSON.stringify({ presetId, limit }),
       });
       showToast(r.message || "Keşif başlatıldı");
     } catch (e: any) { showToast(e?.message || "Hata", "error"); }
@@ -772,15 +781,15 @@ function LeadPool({ showToast }: any) {
           >
             {running === "verify" ? "Doğrulanıyor…" : "Email Doğrula"}
           </Button>
-          <select
+          <Button
             disabled={running === "discovery"}
-            onChange={(e) => e.target.value && triggerDiscovery(e.target.value)}
-            defaultValue=""
-            className="border border-[#1e3a6e] bg-[#1e3a6e] text-white rounded-lg px-3 py-2 text-xs font-semibold"
+            onClick={() => setShowPresetPicker(true)}
+            className="bg-[#1e3a6e] hover:bg-[#12213e] text-white"
+            size="sm"
           >
-            <option value="">+ Yeni Keşif</option>
-            {SEGMENTS.map(s => <option key={s.id} value={s.id} className="text-black">{s.label} keşfet</option>)}
-          </select>
+            <Sparkles size={12} className="mr-1" />
+            {running === "discovery" ? "Keşfediliyor…" : "+ Lead Araştır"}
+          </Button>
         </div>
       </div>
 
@@ -845,7 +854,88 @@ function LeadPool({ showToast }: any) {
           <Button variant="outline" size="sm" disabled={page >= Math.ceil(total / 50)} onClick={() => setPage(p => p + 1)}>Sonraki →</Button>
         </div>
       )}
+
+      {/* Preset Picker Modal */}
+      {showPresetPicker && (
+        <PresetPickerModal
+          presets={presets}
+          onClose={() => setShowPresetPicker(false)}
+          onPick={triggerPreset}
+        />
+      )}
     </div>
+  );
+}
+
+function PresetPickerModal({ presets, onClose, onPick }: any) {
+  const [limit, setLimit] = useState(50);
+  const [pickedId, setPickedId] = useState<string | null>(null);
+
+  const grouped = presets.reduce((acc: any, p: any) => {
+    (acc[p.segment] ||= []).push(p);
+    return acc;
+  }, {});
+
+  return (
+    <Modal title="Lead Araştır — Hedef Profil Seç" onClose={onClose} wide>
+      <div className="space-y-4">
+        <div className="text-sm text-slate-600 bg-blue-50 p-3 rounded-lg">
+          Sphere English için hazırlanmış {presets.length} hedef profil.
+          Her biri Türkiye'deki spesifik bir kitleyi tarayıp e-posta çekmeye çalışır.
+          <br/><strong>Maliyet:</strong> ~$50/1000 profil (Apify Starter Bronze discount ile daha ucuz).
+        </div>
+
+        {SEGMENTS.map(seg => grouped[seg.id]?.length && (
+          <div key={seg.id}>
+            <h3 className="font-bold text-[#1e3a6e] text-xs uppercase tracking-wider mb-2 mt-3">
+              {seg.label} ({grouped[seg.id].length} profil)
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+              {grouped[seg.id].map((p: any) => (
+                <button
+                  key={p.id}
+                  onClick={() => setPickedId(p.id)}
+                  className={`text-left p-3 rounded-lg border-2 transition ${pickedId === p.id ? "border-[#13a9e0] bg-blue-50" : "border-slate-200 hover:border-slate-300 bg-white"}`}
+                >
+                  <div className="flex items-start gap-2">
+                    <span className="text-lg leading-none">{p.icon}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-bold text-sm text-[#1e3a6e]">{p.label}</div>
+                      <div className="text-xs text-slate-600 mt-0.5">{p.description}</div>
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        ))}
+
+        <div className="pt-3 border-t border-slate-200 flex items-center gap-3">
+          <Label className="text-xs uppercase font-bold text-slate-500">Kaç lead çekelim?</Label>
+          <select
+            value={limit}
+            onChange={(e) => setLimit(Number(e.target.value))}
+            className="border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white"
+          >
+            <option value={25}>25 lead</option>
+            <option value={50}>50 lead (~$2.5)</option>
+            <option value={100}>100 lead (~$5)</option>
+            <option value={200}>200 lead (~$10)</option>
+          </select>
+        </div>
+
+        <div className="flex justify-end gap-2 pt-2">
+          <Button variant="outline" onClick={onClose}>Vazgeç</Button>
+          <Button
+            onClick={() => pickedId && onPick(pickedId, limit)}
+            disabled={!pickedId}
+            className="bg-[#1e3a6e]"
+          >
+            <Sparkles size={14} className="mr-1" /> Araştırmayı Başlat
+          </Button>
+        </div>
+      </div>
+    </Modal>
   );
 }
 

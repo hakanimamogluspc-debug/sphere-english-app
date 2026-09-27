@@ -17,7 +17,7 @@ import { Router, type Response } from "express";
 import { db, outreachLeadsTable, outreachRunsTable } from "@workspace/db";
 import { and, count, desc, eq, gte, ilike, inArray, or, sql } from "drizzle-orm";
 import { authMiddleware, requireRole, type AuthRequest } from "../middlewares/auth.js";
-import { discoverAllSegments, discoverSegment } from "../services/outreach-discovery.js";
+import { discoverAllSegments, discoverSegment, discoverByPreset, LEAD_PRESETS } from "../services/outreach-discovery.js";
 import { verifyPendingLeads } from "../services/outreach-verifier.js";
 import type { OutreachSegment } from "@workspace/db";
 
@@ -301,6 +301,52 @@ router.post(
         console.error("[outreach] discoverAllSegments failed:", err);
       });
       return res.json({ ok: true, message: "4 segment için keşif arka planda başladı. ~5-10 dakika sürer." });
+    } catch (e: any) {
+      return res.status(500).json({ error: e?.message ?? "Tetikleme başarısız." });
+    }
+  },
+);
+
+// ─── GET /admin/outreach/presets — Hazır lead profil şablonları ───────────
+router.get(
+  "/admin/outreach/presets",
+  authMiddleware,
+  requireRole("admin"),
+  async (_req: AuthRequest, res: Response) => {
+    return res.json({
+      presets: LEAD_PRESETS.map((p) => ({
+        id: p.id,
+        label: p.label,
+        description: p.description,
+        segment: p.segment,
+        icon: p.icon,
+      })),
+    });
+  },
+);
+
+// ─── POST /admin/outreach/trigger-preset — Preset ile keşif tetikle ───────
+router.post(
+  "/admin/outreach/trigger-preset",
+  authMiddleware,
+  requireRole("admin"),
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const { presetId, limit } = req.body as { presetId: string; limit?: number };
+      if (!process.env.APIFY_API_TOKEN) {
+        return res.status(400).json({ error: "APIFY_API_TOKEN tanımlı değil." });
+      }
+      const preset = LEAD_PRESETS.find((p) => p.id === presetId);
+      if (!preset) return res.status(404).json({ error: "Preset bulunamadı." });
+
+      // Arka planda çalıştır
+      discoverByPreset(presetId, { limit: limit ?? 50 }).catch((err) => {
+        console.error(`[outreach] discoverByPreset(${presetId}) failed:`, err);
+      });
+      return res.json({
+        ok: true,
+        message: `"${preset.label}" keşfi arka planda başladı (${limit ?? 50} lead).`,
+      });
     } catch (e: any) {
       return res.status(500).json({ error: e?.message ?? "Tetikleme başarısız." });
     }

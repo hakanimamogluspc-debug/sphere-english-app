@@ -482,3 +482,255 @@ export async function discoverAllSegments(
   const results = await Promise.all(segments.map((s) => discoverSegment(s, { limit })));
   return results;
 }
+
+/**
+ * ═══════════════════════════════════════════════════════════════════════
+ * HAZIR LEAD PRESET'LERİ — Sphere English müşteri profiline göre
+ * ═══════════════════════════════════════════════════════════════════════
+ * Admin panelden tek tıkla tetiklenir. Segment'ler geniş; preset'ler dar.
+ */
+export interface LeadPreset {
+  id: string;
+  label: string;
+  description: string;
+  segment: OutreachSegment;
+  icon: string;
+  buildInput: (limit: number) => Record<string, unknown>;
+  actorId?: string;
+  parser?: "linkedin_people" | "gmaps";
+}
+
+const li = (searchQuery: string, jobTitles?: string[]) => (limit: number) => ({
+  profileScraperMode: "Full + email search",
+  searchQuery,
+  ...(jobTitles ? { currentJobTitles: jobTitles } : {}),
+  locations: ["Türkiye"],
+  maxItems: limit,
+});
+
+export const LEAD_PRESETS: LeadPreset[] = [
+  // ─── B2B HR (İK / Eğitim / L&D karar vericileri) ─────────────────
+  {
+    id: "hr_manager_tr",
+    label: "İK Müdürleri (Türkiye)",
+    description: "Klasik İK müdürü — orta ve büyük kurumsal firma",
+    segment: "b2b_hr",
+    icon: "👥",
+    buildInput: li("İK Müdürü", ["İK Müdürü", "HR Manager", "İnsan Kaynakları Müdürü"]),
+  },
+  {
+    id: "learning_development_tr",
+    label: "L&D / Eğitim ve Gelişim Müdürleri",
+    description: "En hedefli — kurumsal eğitim bütçesinden sorumlu",
+    segment: "b2b_hr",
+    icon: "🎓",
+    buildInput: li("Learning Development Eğitim Müdürü", [
+      "Learning and Development Manager",
+      "Training Manager",
+      "Eğitim ve Gelişim Müdürü",
+      "L&D Manager",
+    ]),
+  },
+  {
+    id: "talent_management_tr",
+    label: "Yetenek Yönetimi Direktörleri",
+    description: "İK direktör seviyesi — büyük bütçe kararı verebilir",
+    segment: "b2b_hr",
+    icon: "🏆",
+    buildInput: li("Talent Yetenek Yönetimi", [
+      "Talent Management Director",
+      "Talent Acquisition Manager",
+      "Yetenek Yönetimi Direktörü",
+      "Head of People",
+      "Chief People Officer",
+    ]),
+  },
+  {
+    id: "internal_comms_tr",
+    label: "Kurumsal İletişim Müdürleri",
+    description: "Uluslararası iletişim eğitimi doğrudan ilgi alanı",
+    segment: "b2b_hr",
+    icon: "📢",
+    buildInput: li("Kurumsal İletişim Corporate Communications", [
+      "Corporate Communications Manager",
+      "Internal Communications Manager",
+      "Kurumsal İletişim Müdürü",
+    ]),
+  },
+
+  // ─── B2B SME (KOBİ karar vericileri — İngilizce ihtiyacı yüksek sektörler) ───
+  {
+    id: "sme_tech_ceo",
+    label: "Yazılım / Teknoloji Şirket CEO'ları",
+    description: "Yurtdışı müşteri var — ekip İngilizcesi kritik",
+    segment: "b2b_sme",
+    icon: "💻",
+    buildInput: li("CEO Software Technology Startup Turkey", [
+      "CEO",
+      "Founder",
+      "Co-Founder",
+      "CTO",
+      "Managing Director",
+    ]),
+  },
+  {
+    id: "sme_export_manager",
+    label: "İhracat / Dış Ticaret Müdürleri",
+    description: "İngilizce iş konuşması günlük iş — %90 ihtiyaç",
+    segment: "b2b_sme",
+    icon: "🌍",
+    buildInput: li("İhracat Dış Ticaret Export Manager", [
+      "Export Manager",
+      "Export Sales Manager",
+      "İhracat Müdürü",
+      "Dış Ticaret Müdürü",
+      "International Sales Manager",
+    ]),
+  },
+  {
+    id: "sme_tourism",
+    label: "Turizm Sektörü Sahipleri",
+    description: "Otel, tur operatörü — çalışan İngilizcesi doğrudan gelir",
+    segment: "b2b_sme",
+    icon: "🏨",
+    buildInput: li("Hotel Tourism Manager Turkey", [
+      "General Manager",
+      "Hotel Manager",
+      "Tourism Manager",
+      "Otel Genel Müdürü",
+    ]),
+  },
+  {
+    id: "sme_consulting",
+    label: "Danışmanlık / Ajans Sahipleri",
+    description: "Uluslararası müşteri portföyü yüksek",
+    segment: "b2b_sme",
+    icon: "💼",
+    buildInput: li("Consulting Danışmanlık Founder Turkey", [
+      "Founder",
+      "Managing Partner",
+      "CEO Consulting",
+      "Danışmanlık Şirket Sahibi",
+    ]),
+  },
+  {
+    id: "sme_logistics",
+    label: "Lojistik / Nakliye Firma Sahipleri",
+    description: "Uluslararası nakliye = sürekli İngilizce yazışma",
+    segment: "b2b_sme",
+    icon: "🚢",
+    buildInput: li("Logistics Lojistik Nakliye Turkey", [
+      "Logistics Manager",
+      "Supply Chain Manager",
+      "Lojistik Müdürü",
+      "Operations Director",
+    ]),
+  },
+
+  // ─── B2C Profesyoneller (bireysel abonelik satışı) ─────────────────
+  {
+    id: "b2c_software_engineers",
+    label: "Yazılım Geliştiriciler (Senior/Lead)",
+    description: "Remote iş — İngilizce = maaş artışı motivasyonu",
+    segment: "b2c_pro",
+    icon: "👨‍💻",
+    buildInput: li("Senior Software Engineer Turkey Remote", [
+      "Senior Software Engineer",
+      "Lead Engineer",
+      "Staff Engineer",
+      "Yazılım Geliştirici",
+    ]),
+  },
+  {
+    id: "b2c_engineers_intl",
+    label: "Uluslararası Proje Mühendisleri",
+    description: "Global mühendislik firmalarında çalışan TR uyruklular",
+    segment: "b2c_pro",
+    icon: "⚙️",
+    buildInput: li("Project Engineer International Turkey", [
+      "Project Engineer",
+      "Senior Engineer",
+      "Proje Mühendisi",
+      "Kıdemli Mühendis",
+    ]),
+  },
+  {
+    id: "b2c_lawyers_intl",
+    label: "Uluslararası Hukuk Avukatları",
+    description: "İngilizce yüksek seviye = zorunluluk",
+    segment: "b2c_pro",
+    icon: "⚖️",
+    buildInput: li("International Law Avukat Turkey", [
+      "International Lawyer",
+      "Corporate Lawyer",
+      "Uluslararası Hukuk Uzmanı",
+    ]),
+  },
+
+  // ─── Partner (dil eğitimi ekosistemi) ─────────────────────────────
+  {
+    id: "partner_language_schools_gmaps",
+    label: "Dil Okulları (Google Maps)",
+    description: "Türkiye'deki İngilizce kursları — partner adayları",
+    segment: "partner",
+    icon: "🏫",
+    actorId: "compass/crawler-google-places",
+    parser: "gmaps",
+    buildInput: (limit) => ({
+      searchStringsArray: [
+        "İngilizce kursu İstanbul",
+        "dil okulu Ankara",
+        "İngilizce kursu İzmir",
+        "language school Turkey",
+      ],
+      maxCrawledPlacesPerSearch: Math.ceil(limit / 4),
+      language: "tr",
+      countryCode: "tr",
+      scrapeContacts: true,
+    }),
+  },
+  {
+    id: "partner_corporate_training",
+    label: "Kurumsal Eğitim Firmaları",
+    description: "Kurumsal eğitim = doğal partnership fırsatı",
+    segment: "partner",
+    icon: "📚",
+    buildInput: li("Corporate Training Kurumsal Eğitim Turkey", [
+      "Corporate Training Manager",
+      "Kurumsal Eğitim Sahibi",
+      "Training Consultant",
+    ]),
+  },
+];
+
+/**
+ * Preset'e göre lead keşfi — LEAD_PRESETS'i kullanır.
+ */
+export async function discoverByPreset(
+  presetId: string,
+  options: { limit?: number; client?: ApifyClient } = {},
+): Promise<DiscoverySegmentResult & { presetId: string }> {
+  const preset = LEAD_PRESETS.find((p) => p.id === presetId);
+  if (!preset) throw new Error(`Preset bulunamadı: ${presetId}`);
+
+  const limit = options.limit ?? 50;
+  const actorId = preset.actorId ?? SEGMENT_CONFIGS[preset.segment].actorId;
+  const parser = preset.parser ?? SEGMENT_CONFIGS[preset.segment].parser;
+
+  // Geçici bir config oluşturup discoverSegment'i taklit et — kod tekrarı yerine
+  // SEGMENT_CONFIGS'e mutabık override et.
+  const originalConfig = SEGMENT_CONFIGS[preset.segment];
+  SEGMENT_CONFIGS[preset.segment] = {
+    actorId,
+    parser,
+    description: preset.description,
+    buildInput: preset.buildInput,
+  };
+  try {
+    const result = await discoverSegment(preset.segment, options);
+    return { ...result, presetId };
+  } finally {
+    // Config'i eski haline getir
+    SEGMENT_CONFIGS[preset.segment] = originalConfig;
+  }
+}
