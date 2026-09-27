@@ -42,7 +42,7 @@ const SEGMENTS = [
 ];
 
 export default function Outbound() {
-  const [tab, setTab] = useState<"campaigns" | "templates" | "stats">("campaigns");
+  const [tab, setTab] = useState<"campaigns" | "templates" | "leads" | "stats">("campaigns");
   const [stats, setStats] = useState<any>(null);
   const [campaigns, setCampaigns] = useState<any[]>([]);
   const [templates, setTemplates] = useState<any[]>([]);
@@ -131,6 +131,9 @@ export default function Outbound() {
         </TabButton>
         <TabButton active={tab === "templates"} onClick={() => setTab("templates")}>
           Şablonlar ({templates.length})
+        </TabButton>
+        <TabButton active={tab === "leads"} onClick={() => setTab("leads")}>
+          Lead Havuzu
         </TabButton>
         <TabButton active={tab === "stats"} onClick={() => setTab("stats")}>
           Analitik
@@ -221,6 +224,11 @@ export default function Outbound() {
             </div>
           )}
         </div>
+      )}
+
+      {/* Lead Havuzu Tab */}
+      {!loading && tab === "leads" && (
+        <LeadPool showToast={showToast} />
       )}
 
       {/* Analitik Tab */}
@@ -640,6 +648,204 @@ function CampaignDetailModal({ campaign, templates, onClose, onUpdate, showToast
         )}
       </div>
     </Modal>
+  );
+}
+
+// ─── Lead Havuzu Tab ─────────────────────────────────────────────────
+function LeadPool({ showToast }: any) {
+  const [leads, setLeads] = useState<any[]>([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [segmentFilter, setSegmentFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [emailStatusFilter, setEmailStatusFilter] = useState("");
+  const [search, setSearch] = useState("");
+  const [running, setRunning] = useState<null | string>(null);
+
+  const load = () => {
+    setLoading(true);
+    const params = new URLSearchParams({ page: String(page), pageSize: "50" });
+    if (segmentFilter) params.set("segment", segmentFilter);
+    if (statusFilter) params.set("status", statusFilter);
+    if (emailStatusFilter) params.set("emailStatus", emailStatusFilter);
+    if (search) params.set("search", search);
+    api(`/admin/outreach/leads?${params}`)
+      .then(d => {
+        setLeads(d.items || []);
+        setTotal(d.pagination?.total || 0);
+      })
+      .catch(() => setLeads([]))
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => { load(); }, [page, segmentFilter, statusFilter, emailStatusFilter]);
+
+  const triggerDiscovery = async (segment: string) => {
+    setRunning("discovery");
+    try {
+      const r = await api("/admin/outreach/trigger", {
+        method: "POST",
+        body: JSON.stringify({ segment, limit: 50 }),
+      });
+      showToast(r.message || "Keşif başlatıldı");
+    } catch (e: any) { showToast(e?.message || "Hata", "error"); }
+    finally { setRunning(null); }
+  };
+
+  const triggerVerify = async () => {
+    setRunning("verify");
+    try {
+      const r = await api("/admin/outreach/verify", {
+        method: "POST",
+        body: JSON.stringify({ batchSize: 200 }),
+      });
+      showToast(`${r.verified || 0} email doğrulandı (✓${r.valid || 0} ✗${r.invalid || 0})`);
+      load();
+    } catch (e: any) { showToast(e?.message || "Hata", "error"); }
+    finally { setRunning(null); }
+  };
+
+  const badge = (status: string, val: any) => {
+    const colors: any = {
+      valid: "bg-emerald-100 text-emerald-700",
+      invalid: "bg-red-100 text-red-700",
+      risky: "bg-amber-100 text-amber-700",
+      catch_all: "bg-amber-100 text-amber-700",
+      unknown: "bg-slate-100 text-slate-600",
+      new: "bg-blue-100 text-blue-700",
+      contacted: "bg-purple-100 text-purple-700",
+      qualified: "bg-emerald-100 text-emerald-700",
+      rejected: "bg-red-100 text-red-700",
+      archived: "bg-slate-100 text-slate-500",
+      viewed: "bg-slate-100 text-slate-700",
+    };
+    return (
+      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase ${colors[status] || "bg-slate-100 text-slate-600"}`}>
+        {val}
+      </span>
+    );
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Aksiyon Bar */}
+      <div className="flex flex-wrap items-center justify-between gap-2 bg-slate-50 border border-slate-200 rounded-xl p-3">
+        <div className="flex flex-wrap gap-2 items-center">
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && load()}
+            placeholder="Ara: ad, e-posta, şirket…"
+            className="w-56"
+          />
+          <select value={segmentFilter} onChange={(e) => { setSegmentFilter(e.target.value); setPage(1); }}
+            className="border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white">
+            <option value="">Tüm Segmentler</option>
+            {SEGMENTS.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
+          </select>
+          <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
+            className="border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white">
+            <option value="">Tüm Durumlar</option>
+            <option value="new">Yeni</option>
+            <option value="viewed">Görüntülendi</option>
+            <option value="contacted">İletişime Geçildi</option>
+            <option value="qualified">Kalifiye</option>
+            <option value="rejected">Reddedildi</option>
+            <option value="archived">Arşiv</option>
+          </select>
+          <select value={emailStatusFilter} onChange={(e) => { setEmailStatusFilter(e.target.value); setPage(1); }}
+            className="border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white">
+            <option value="">Tüm Emailler</option>
+            <option value="valid">✓ Valid</option>
+            <option value="risky">⚠ Risky</option>
+            <option value="invalid">✗ Invalid</option>
+            <option value="unknown">? Unknown</option>
+          </select>
+        </div>
+        <div className="flex gap-2">
+          <Button
+            variant="secondary"
+            disabled={running === "verify"}
+            onClick={triggerVerify}
+            className="text-xs"
+          >
+            {running === "verify" ? "Doğrulanıyor…" : "Email Doğrula"}
+          </Button>
+          <select
+            disabled={running === "discovery"}
+            onChange={(e) => e.target.value && triggerDiscovery(e.target.value)}
+            defaultValue=""
+            className="border border-[#1e3a6e] bg-[#1e3a6e] text-white rounded-lg px-3 py-2 text-xs font-semibold"
+          >
+            <option value="">+ Yeni Keşif</option>
+            {SEGMENTS.map(s => <option key={s.id} value={s.id} className="text-black">{s.label} keşfet</option>)}
+          </select>
+        </div>
+      </div>
+
+      <div className="text-xs text-slate-500">
+        Toplam <strong>{total}</strong> lead · Sayfa {page} / {Math.ceil(total / 50) || 1}
+      </div>
+
+      {loading ? (
+        <div className="text-center py-12 text-slate-500 text-sm">Yükleniyor…</div>
+      ) : leads.length === 0 ? (
+        <Card><CardContent className="py-16 text-center">
+          <Users size={40} className="mx-auto mb-3 text-slate-300" />
+          <p className="text-slate-600 font-semibold">Lead yok</p>
+          <p className="text-xs text-slate-500 mt-1">"+ Yeni Keşif" ile Apify'dan lead çek</p>
+        </CardContent></Card>
+      ) : (
+        <div className="border border-slate-200 rounded-xl overflow-hidden">
+          <table className="w-full text-sm">
+            <thead className="bg-slate-50 border-b border-slate-200">
+              <tr className="text-left text-xs uppercase font-bold text-slate-500">
+                <th className="px-3 py-2">Kişi</th>
+                <th className="px-3 py-2">Şirket / Pozisyon</th>
+                <th className="px-3 py-2">Segment</th>
+                <th className="px-3 py-2">Email Durum</th>
+                <th className="px-3 py-2">Lead Durum</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {leads.map(l => (
+                <tr key={l.id} className="hover:bg-slate-50">
+                  <td className="px-3 py-2">
+                    <div className="font-semibold text-[#1e3a6e]">
+                      {l.fullName || `${l.firstName || ""} ${l.lastName || ""}`.trim() || "—"}
+                    </div>
+                    <div className="text-xs text-slate-500">{l.email}</div>
+                    {l.linkedinUrl && (
+                      <a href={l.linkedinUrl} target="_blank" rel="noreferrer"
+                        className="text-[10px] text-blue-600 hover:underline">LinkedIn ↗</a>
+                    )}
+                  </td>
+                  <td className="px-3 py-2">
+                    <div className="font-semibold text-slate-700">{l.company || "—"}</div>
+                    <div className="text-xs text-slate-500">{l.jobTitle || "—"}</div>
+                  </td>
+                  <td className="px-3 py-2 text-xs">
+                    {SEGMENTS.find(s => s.id === l.segment)?.label || l.segment}
+                  </td>
+                  <td className="px-3 py-2">{badge(l.emailStatus, l.emailStatus || "?")}</td>
+                  <td className="px-3 py-2">{badge(l.status, l.status)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Pagination */}
+      {total > 50 && (
+        <div className="flex justify-center gap-2">
+          <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>← Önceki</Button>
+          <span className="text-sm py-2">{page} / {Math.ceil(total / 50)}</span>
+          <Button variant="outline" size="sm" disabled={page >= Math.ceil(total / 50)} onClick={() => setPage(p => p + 1)}>Sonraki →</Button>
+        </div>
+      )}
+    </div>
   );
 }
 
