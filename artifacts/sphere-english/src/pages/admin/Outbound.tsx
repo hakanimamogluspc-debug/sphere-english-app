@@ -922,11 +922,13 @@ function PresetPickerModal({ presets, onClose, onPick }: any) {
             onChange={(e) => setLimit(Number(e.target.value))}
             className="border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white"
           >
-            <option value={25}>25 lead</option>
+            <option value={25}>25 lead (~$1.25)</option>
             <option value={50}>50 lead (~$2.5)</option>
-            <option value={100}>100 lead (~$5)</option>
-            <option value={200}>200 lead (~$10)</option>
+            <option value={75}>75 lead (~$3.75) ⚠️ timeout riski</option>
           </select>
+          <div className="text-[10px] text-slate-500 mt-1 w-full">
+            ⚠️ 75+ lead Apify'ın 300s sync sınırını aşabilir — sonuçlar Apify'da kalır, DB'ye gelmez.
+          </div>
         </div>
 
         <div className="flex justify-end gap-2 pt-2">

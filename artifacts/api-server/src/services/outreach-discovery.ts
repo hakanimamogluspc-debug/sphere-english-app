@@ -248,6 +248,32 @@ function parseLinkedInPerson(raw: LinkedInPersonRaw, segment: OutreachSegment): 
     industry = industry ?? raw.company.industry;
   }
   company = company ?? raw.companyName ?? raw.currentCompany?.name ?? raw.currentPosition?.company;
+
+  // harvestapi bazı sonuçları "experience" array'i içinde döner
+  const experience = Array.isArray((raw as any).experience) ? (raw as any).experience : [];
+  const currentExp = experience.find((e: any) => e?.isCurrent || e?.current || !e?.endDate) || experience[0];
+  if (!company && currentExp) {
+    company = currentExp.companyName || currentExp.company || currentExp.title;
+  }
+  if (!companyWebsite && currentExp) {
+    companyWebsite = currentExp.companyUrl || currentExp.companyWebsite || currentExp.url;
+  }
+
+  // Job title / headline'dan "X at Y" veya "X @ Y" veya "Y şirketinde X" şeklinde company çıkar
+  const titleStr = jobTitle || "";
+  if (!company && titleStr) {
+    const atMatch = titleStr.match(/\b(?:at|@)\s+([^,|·•–—-]+)/i);
+    const trMatch = titleStr.match(/([^,|·•–—-]+)\s+şirketinde/i);
+    company = atMatch?.[1]?.trim() || trMatch?.[1]?.trim();
+  }
+
+  // Email domain'inden şirket domain'i (fallback)
+  const emailDomain = email.split("@")[1];
+  const isPersonalDomain = /^(gmail|yahoo|hotmail|outlook|icloud|yandex|mail|protonmail)\./.test(emailDomain);
+  if (!companyWebsite && !isPersonalDomain) {
+    companyWebsite = `https://${emailDomain}`;
+  }
+
   companyWebsite =
     companyWebsite ??
     raw.companyWebsite ??
@@ -819,49 +845,56 @@ export const LEAD_PRESETS: LeadPreset[] = [
   {
     id: "affiliate_instagram_english",
     label: "Instagram: İngilizce Öğrenme İçerikçileri",
-    description: "İngilizce öğreten Instagram hesapları (bio'da email varsa)",
+    description: "İngilizce öğreten Instagram profilleri (bio'da email varsa)",
     segment: "partner",
     icon: "📸",
-    actorId: "apify/instagram-search-scraper",
+    actorId: "apify/instagram-profile-scraper",
     parser: "instagram",
     buildInput: (limit) => ({
-      search: "ingilizceöğren",
-      searchType: "hashtag",
-      searchLimit: 3,
+      // Türkiye'de bilinen İngilizce eğitim IG hesapları — otomatik hashtag→profil pipeline'ı yerine seed'li direkt profil
+      usernames: [
+        "cambly", "duolingo", "bbclearningenglish", "englishaddictwithmr.duncan",
+        "english_addict", "bakim.efe", "ozgureduprep", "englishwithkatie",
+        "erkanmutlu", "arda_ingilizce", "aynurhanci", "engvideo",
+      ],
       resultsLimit: limit,
-      addParentData: true,
+      resultsType: "details",
     }),
   },
   {
     id: "affiliate_instagram_career",
     label: "Instagram: Kariyer Koçları",
-    description: "#kariyerkocu, #kariyerdanışmanı hashtag'leri",
+    description: "Türkiye'nin bilinen kariyer koçları — direkt profil scan",
     segment: "partner",
     icon: "🎬",
-    actorId: "apify/instagram-search-scraper",
+    actorId: "apify/instagram-profile-scraper",
     parser: "instagram",
     buildInput: (limit) => ({
-      search: "kariyerkocu",
-      searchType: "hashtag",
-      searchLimit: 3,
+      usernames: [
+        "meltemcanbayekiz", "duyguuomeraydin", "yigitulusoy_kariyerkocu",
+        "ipekvergi", "kariyerdanismanligim", "cansugokceyalcin",
+        "sedaerdem_", "melisatik", "ozgurirmakli", "aysendemirkiraz",
+      ],
       resultsLimit: limit,
-      addParentData: true,
+      resultsType: "details",
     }),
   },
   {
     id: "affiliate_instagram_abroad",
     label: "Instagram: Yurtdışı Yaşam/Eğitim",
-    description: "#yurtdışıyaşam, #erasmus, #masterabroad içerik üreticileri",
+    description: "Yurtdışı eğitim/kariyer içerik hesapları",
     segment: "partner",
     icon: "🌎",
-    actorId: "apify/instagram-search-scraper",
+    actorId: "apify/instagram-profile-scraper",
     parser: "instagram",
     buildInput: (limit) => ({
-      search: "yurtdışıeğitim",
-      searchType: "hashtag",
-      searchLimit: 3,
+      usernames: [
+        "cambridgeturkey", "britishcouncil.turkey", "americanturkishassociation",
+        "erasmusplusinturkey", "yurtdisiegitimplatformu", "amerikanhaberleri",
+        "kanadadaokulyasami", "ingilteredehayat", "amerikadahayattr",
+      ],
       resultsLimit: limit,
-      addParentData: true,
+      resultsType: "details",
     }),
   },
 

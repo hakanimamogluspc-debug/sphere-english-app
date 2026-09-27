@@ -392,6 +392,98 @@ function mapSendGridEvent(e: string): any {
   return map[e] || null;
 }
 
+// ═══════════════════════════════════════════════════════════════════════
+// RESEND WEBHOOK — event tracking
+// ═══════════════════════════════════════════════════════════════════════
+//
+// Resend Dashboard → Webhooks → Add Endpoint:
+//   URL: https://api.sphereenglish.com/webhooks/resend
+//   Events: hepsi (email.sent, delivered, opened, clicked, bounced, complained, delivery_delayed)
+//
+// Payload formatı (Resend v1):
+// {
+//   "type": "email.opened" | "email.clicked" | ...,
+//   "created_at": "2026-09-28T...",
+//   "data": {
+//     "email_id": "uuid",
+//     "tags": [{ "name": "campaign_id", "value": "1" }, ...],
+//     "click": { "link": "..." },        // click event için
+//     "bounce": { "message": "..." },     // bounce event için
+//     ...
+//   }
+// }
+router.post("/webhooks/resend", async (req: Request, res: Response) => {
+  try {
+    const payload = req.body || {};
+    const eventType = mapResendEvent(payload.type);
+    if (!eventType) return res.json({ ok: true, skipped: payload.type });
+
+    const data = payload.data || {};
+    const tags: Array<{ name: string; value: string }> = Array.isArray(data.tags) ? data.tags : [];
+    const tagMap: Record<string, string> = {};
+    for (const t of tags) if (t?.name && t?.value != null) tagMap[t.name] = String(t.value);
+
+    const campaignId = Number(tagMap.campaign_id);
+    const leadId = Number(tagMap.lead_id);
+    const stepId = tagMap.step_id ? Number(tagMap.step_id) : null;
+    const templateId = tagMap.template_id ? Number(tagMap.template_id) : null;
+    if (!campaignId || !leadId) return res.json({ ok: true, skipped: "no campaign/lead tag" });
+
+    const occurredAt = payload.created_at ? new Date(payload.created_at) : new Date();
+
+    await db.insert(outboundEmailEventsTable).values({
+      campaignId, leadId, stepId, templateId,
+      eventType,
+      providerMessageId: data.email_id || null,
+      userAgent: data.user_agent || null,
+      ipAddress: data.ip || null,
+      clickUrl: data.click?.link || data.click?.url || null,
+      bounceReason: data.bounce?.message || data.bounce?.reason || null,
+      rawData: payload,
+      occurredAt,
+    });
+
+    // Kampanya sayaç
+    await incrementCampaignCounter(campaignId, eventType);
+
+    // Lead durumu
+    if (eventType === "replied") {
+      await db.update(outboundCampaignLeadsTable)
+        .set({ status: "replied", lastEventAt: new Date() })
+        .where(and(eq(outboundCampaignLeadsTable.campaignId, campaignId), eq(outboundCampaignLeadsTable.leadId, leadId)));
+    } else if (eventType === "bounced") {
+      await db.update(outboundCampaignLeadsTable)
+        .set({ status: "bounced", lastEventAt: new Date() })
+        .where(and(eq(outboundCampaignLeadsTable.campaignId, campaignId), eq(outboundCampaignLeadsTable.leadId, leadId)));
+    } else if (eventType === "unsubscribed") {
+      await db.update(outboundCampaignLeadsTable)
+        .set({ status: "unsubscribed", lastEventAt: new Date() })
+        .where(and(eq(outboundCampaignLeadsTable.campaignId, campaignId), eq(outboundCampaignLeadsTable.leadId, leadId)));
+    }
+
+    return res.json({ ok: true });
+  } catch (e: any) {
+    console.error("[resend webhook]", e?.message);
+    return res.status(500).json({ ok: false, error: e?.message });
+  }
+});
+
+function mapResendEvent(type: string | undefined): any {
+  if (!type) return null;
+  const map: Record<string, string> = {
+    "email.sent": "sent",
+    "email.delivered": "delivered",
+    "email.delivery_delayed": null as any, // ignore
+    "email.opened": "opened",
+    "email.clicked": "clicked",
+    "email.bounced": "bounced",
+    "email.complained": "spam",
+    // Resend'in bazı sürümlerinde `email.failed` de olabilir
+    "email.failed": "bounced",
+  };
+  return map[type] || null;
+}
+
 async function incrementCampaignCounter(campaignId: number, eventType: string) {
   const fieldMap: Record<string, string> = {
     opened: "emails_opened", clicked: "emails_clicked",
