@@ -833,6 +833,11 @@ function LeadPool({ showToast }: any) {
                   <td className="px-3 py-2">
                     <div className="font-semibold text-slate-700">{l.company || "—"}</div>
                     <div className="text-xs text-slate-500">{l.jobTitle || "—"}</div>
+                    {(l.rawData?.followers || l.rawData?.subscribers) && (
+                      <div className="text-[10px] font-bold text-[#13a9e0] mt-0.5">
+                        {(l.rawData.followers || l.rawData.subscribers).toLocaleString("tr-TR")} {l.rawData.platform === "youtube" ? "abone" : "takipçi"}
+                      </div>
+                    )}
                   </td>
                   <td className="px-3 py-2 text-xs">
                     {SEGMENTS.find(s => s.id === l.segment)?.label || l.segment}

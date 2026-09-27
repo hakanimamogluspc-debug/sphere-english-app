@@ -90,7 +90,7 @@ export const SEGMENT_CONFIGS: Record<
   {
     actorId: string;
     buildInput: (limit: number) => Record<string, unknown>;
-    parser: "linkedin_people" | "gmaps";
+    parser: "linkedin_people" | "gmaps" | "instagram" | "youtube";
     description: string;
   }
 > = {
@@ -287,6 +287,66 @@ function parseLinkedInPerson(raw: LinkedInPersonRaw, segment: OutreachSegment): 
   };
 }
 
+// ─── Instagram Parser ───────────────────────────────────────────────────
+// apify/instagram-profile-scraper output format
+function parseInstagram(raw: any, segment: OutreachSegment): InsertOutreachLead | null {
+  // Bio'dan e-posta çıkar
+  const bio: string = raw.biography || raw.bio || "";
+  const bioEmail = bio.match(EMAIL_REGEX)?.[0];
+  const email = pickEmail(raw.emails, raw.businessEmail || raw.email || bioEmail);
+  if (!email) return null;
+
+  const username = raw.username || raw.userName;
+  const followers = raw.followersCount ?? raw.followers ?? raw.followerCount;
+  const fullName = raw.fullName || raw.full_name || username;
+
+  return {
+    email,
+    fullName: fullName || undefined,
+    linkedinUrl: undefined,
+    jobTitle: raw.businessCategoryName || "Instagram Creator",
+    company: `@${username}`,
+    companyWebsite: raw.externalUrl || raw.website,
+    companyDomain: extractDomain(raw.externalUrl || raw.website),
+    location: raw.city || raw.businessAddressJson?.city,
+    industry: raw.businessCategoryName,
+    segment,
+    source: "apify_instagram",
+    sourceUrl: `https://instagram.com/${username}`,
+    rawData: { ...raw, platform: "instagram", followers, username, bio } as any,
+    notes: `${followers ? `${followers.toLocaleString("tr-TR")} takipçi · ` : ""}${bio.slice(0, 200)}`,
+  };
+}
+
+// ─── YouTube Parser ─────────────────────────────────────────────────────
+// streamers/youtube-scraper channel result format
+function parseYouTube(raw: any, segment: OutreachSegment): InsertOutreachLead | null {
+  const desc: string = raw.channelDescription || raw.description || "";
+  const descEmail = desc.match(EMAIL_REGEX)?.[0];
+  const email = pickEmail(raw.emails, raw.email || descEmail);
+  if (!email) return null;
+
+  const handle = raw.channelName || raw.channelHandle || raw.author;
+  const subs = raw.numberOfSubscribers ?? raw.subscribers ?? raw.subscriberCount;
+  const channelUrl = raw.channelUrl || raw.url || (handle ? `https://youtube.com/${handle}` : undefined);
+
+  return {
+    email,
+    fullName: handle || undefined,
+    linkedinUrl: undefined,
+    jobTitle: "YouTuber",
+    company: handle,
+    companyWebsite: channelUrl,
+    location: raw.country,
+    industry: "İçerik Üretimi",
+    segment,
+    source: "apify_youtube",
+    sourceUrl: channelUrl,
+    rawData: { ...raw, platform: "youtube", subscribers: subs, handle, description: desc } as any,
+    notes: `${subs ? `${subs.toLocaleString("tr-TR")} abone · ` : ""}${desc.slice(0, 200)}`,
+  };
+}
+
 function parseGoogleMaps(raw: GoogleMapsRaw, segment: OutreachSegment): InsertOutreachLead | null {
   const email = pickEmail(raw.emails);
   if (!email) return null;
@@ -381,6 +441,10 @@ export async function discoverSegment(
         parsed = parseLinkedInPerson(item as LinkedInPersonRaw, segment);
       } else if (config.parser === "gmaps") {
         parsed = parseGoogleMaps(item as GoogleMapsRaw, segment);
+      } else if (config.parser === "instagram") {
+        parsed = parseInstagram(item, segment);
+      } else if (config.parser === "youtube") {
+        parsed = parseYouTube(item, segment);
       }
 
       if (!parsed) {
@@ -497,7 +561,7 @@ export interface LeadPreset {
   icon: string;
   buildInput: (limit: number) => Record<string, unknown>;
   actorId?: string;
-  parser?: "linkedin_people" | "gmaps";
+  parser?: "linkedin_people" | "gmaps" | "instagram" | "youtube";
 }
 
 const li = (searchQuery: string, jobTitles?: string[]) => (limit: number) => ({
@@ -739,8 +803,8 @@ export const LEAD_PRESETS: LeadPreset[] = [
   },
   {
     id: "affiliate_youtuber_podcast",
-    label: "YouTuber / Podcaster (Kariyer & Eğitim)",
-    description: "Kanal / podcast sahipleri — sponsorluk/affiliate hazır",
+    label: "YouTuber / Podcaster (LinkedIn'den)",
+    description: "LinkedIn'de kariyer/eğitim podcast sahipleri",
     segment: "partner",
     icon: "🎙️",
     buildInput: li("YouTuber Podcaster Content Creator Turkey Education Career", [
@@ -749,6 +813,88 @@ export const LEAD_PRESETS: LeadPreset[] = [
       "Podcast Host",
       "Video Content Creator",
     ]),
+  },
+
+  // ─── Instagram Affiliate ──────────────────────────────────────────
+  {
+    id: "affiliate_instagram_english",
+    label: "Instagram: İngilizce Öğrenme İçerikçileri",
+    description: "İngilizce öğreten Instagram hesapları (bio'da email varsa)",
+    segment: "partner",
+    icon: "📸",
+    actorId: "apify/instagram-search-scraper",
+    parser: "instagram",
+    buildInput: (limit) => ({
+      search: "ingilizceöğren",
+      searchType: "hashtag",
+      searchLimit: 3,
+      resultsLimit: limit,
+      addParentData: true,
+    }),
+  },
+  {
+    id: "affiliate_instagram_career",
+    label: "Instagram: Kariyer Koçları",
+    description: "#kariyerkocu, #kariyerdanışmanı hashtag'leri",
+    segment: "partner",
+    icon: "🎬",
+    actorId: "apify/instagram-search-scraper",
+    parser: "instagram",
+    buildInput: (limit) => ({
+      search: "kariyerkocu",
+      searchType: "hashtag",
+      searchLimit: 3,
+      resultsLimit: limit,
+      addParentData: true,
+    }),
+  },
+  {
+    id: "affiliate_instagram_abroad",
+    label: "Instagram: Yurtdışı Yaşam/Eğitim",
+    description: "#yurtdışıyaşam, #erasmus, #masterabroad içerik üreticileri",
+    segment: "partner",
+    icon: "🌎",
+    actorId: "apify/instagram-search-scraper",
+    parser: "instagram",
+    buildInput: (limit) => ({
+      search: "yurtdışıeğitim",
+      searchType: "hashtag",
+      searchLimit: 3,
+      resultsLimit: limit,
+      addParentData: true,
+    }),
+  },
+
+  // ─── YouTube Affiliate ────────────────────────────────────────────
+  {
+    id: "affiliate_youtube_english",
+    label: "YouTube: İngilizce Öğrenme Kanalları",
+    description: "Türkiye'de İngilizce öğreten YouTube kanalları",
+    segment: "partner",
+    icon: "📺",
+    actorId: "streamers/youtube-scraper",
+    parser: "youtube",
+    buildInput: (limit) => ({
+      searchQueries: ["İngilizce öğren Türkçe", "İngilizce dersi", "English learning Turkish"],
+      maxResults: limit,
+      maxResultsShorts: 0,
+      maxResultStreams: 0,
+    }),
+  },
+  {
+    id: "affiliate_youtube_career",
+    label: "YouTube: Kariyer & Motivasyon Kanalları",
+    description: "Kariyer koçluğu / motivasyon YouTube kanalları",
+    segment: "partner",
+    icon: "🎥",
+    actorId: "streamers/youtube-scraper",
+    parser: "youtube",
+    buildInput: (limit) => ({
+      searchQueries: ["kariyer koçluğu", "kişisel gelişim Türkçe", "yurtdışında çalışmak"],
+      maxResults: limit,
+      maxResultsShorts: 0,
+      maxResultStreams: 0,
+    }),
   },
 ];
 
