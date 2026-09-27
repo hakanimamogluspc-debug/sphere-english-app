@@ -393,27 +393,9 @@ function mapSendGridEvent(e: string): any {
   return map[e] || null;
 }
 
-// ═══════════════════════════════════════════════════════════════════════
-// RESEND WEBHOOK — event tracking
-// ═══════════════════════════════════════════════════════════════════════
-//
-// Resend Dashboard → Webhooks → Add Endpoint:
-//   URL: https://api.sphereenglish.com/webhooks/resend
-//   Events: hepsi (email.sent, delivered, opened, clicked, bounced, complained, delivery_delayed)
-//
-// Payload formatı (Resend v1):
-// {
-//   "type": "email.opened" | "email.clicked" | ...,
-//   "created_at": "2026-09-28T...",
-//   "data": {
-//     "email_id": "uuid",
-//     "tags": [{ "name": "campaign_id", "value": "1" }, ...],
-//     "click": { "link": "..." },        // click event için
-//     "bounce": { "message": "..." },     // bounce event için
-//     ...
-//   }
-// }
-router.post("/webhooks/resend", async (req: Request, res: Response) => {
+// NOT: /webhooks/resend routes/webhooks.ts'te tanımlı (her iki sistem için de handle eder)
+// Aşağıdaki eski handler dead-code — orada tutuluyor ki merge conflict çıkmasın
+router.post("/webhooks/resend-DEPRECATED", async (req: Request, res: Response) => {
   try {
     // İmza doğrulaması (opsiyonel — RESEND_WEBHOOK_SECRET set edildiğinde)
     // Resend Svix formatı: svix-id, svix-timestamp, svix-signature başlıkları
