@@ -38,7 +38,7 @@ const SEGMENTS = [
   { id: "b2b_hr",  label: "B2B İK" },
   { id: "b2b_sme", label: "B2B KOBİ" },
   { id: "b2c_pro", label: "B2C Profesyonel" },
-  { id: "partner", label: "Partner" },
+  { id: "partner", label: "Affiliate / İnfluencer" },
 ];
 
 export default function Outbound() {

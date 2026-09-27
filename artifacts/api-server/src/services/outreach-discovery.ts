@@ -667,6 +667,89 @@ export const LEAD_PRESETS: LeadPreset[] = [
     ]),
   },
 
+  // ─── Affiliate / İnfluencer (LinkedIn içerik üreticileri) ─────────
+  // Not: Bu preset'ler LinkedIn arama üzerinden çalışır. Instagram/YouTube
+  // için ayrı actor'lar gerekir; ileride eklenebilir.
+  {
+    id: "affiliate_career_coach",
+    label: "Kariyer Koçları",
+    description: "Sphere'i kendi takipçilerine önerebilir — en yüksek dönüşüm",
+    segment: "partner",
+    icon: "🧭",
+    buildInput: li("Kariyer Koçu Career Coach LinkedIn Top Voice", [
+      "Career Coach",
+      "Kariyer Koçu",
+      "Career Consultant",
+      "Executive Coach",
+      "Life Coach",
+    ]),
+  },
+  {
+    id: "affiliate_english_teacher",
+    label: "İngilizce Eğitmenleri (Bağımsız)",
+    description: "Kendi öğrenci havuzunu Sphere'e yönlendirebilir",
+    segment: "partner",
+    icon: "📝",
+    buildInput: li("İngilizce Eğitmeni English Teacher Content Creator", [
+      "English Teacher",
+      "İngilizce Eğitmeni",
+      "IELTS Instructor",
+      "TOEFL Coach",
+      "English Trainer",
+    ]),
+  },
+  {
+    id: "affiliate_abroad_content",
+    label: "Yurtdışı Kariyer İçerik Üreticileri",
+    description: "\"Yurtdışında çalışmak\" içeriği üreten profiller",
+    segment: "partner",
+    icon: "✈️",
+    buildInput: li("Yurtdışı Kariyer Content Creator Immigration Coach", [
+      "Content Creator",
+      "İçerik Üreticisi",
+      "Immigration Consultant",
+      "Study Abroad Consultant",
+    ]),
+  },
+  {
+    id: "affiliate_linkedin_creator",
+    label: "LinkedIn Top Voice / İK İçerik Üreticileri",
+    description: "LinkedIn'de yüksek takipçili İK / kariyer içeriği üretenler",
+    segment: "partner",
+    icon: "⭐",
+    buildInput: li("LinkedIn Top Voice HR Career Turkey Content Creator", [
+      "LinkedIn Top Voice",
+      "Content Creator",
+      "Thought Leader",
+      "İçerik Üreticisi",
+    ]),
+  },
+  {
+    id: "affiliate_edu_influencer",
+    label: "Eğitim / Kişisel Gelişim İnfluencerleri",
+    description: "Eğitim tavsiyeleri veren orta ölçekli takipçili profiller",
+    segment: "partner",
+    icon: "🎯",
+    buildInput: li("Kişisel Gelişim Eğitim Danışmanı Personal Development", [
+      "Personal Development Coach",
+      "Kişisel Gelişim Uzmanı",
+      "Eğitim Danışmanı",
+      "Motivational Speaker",
+    ]),
+  },
+  {
+    id: "affiliate_youtuber_podcast",
+    label: "YouTuber / Podcaster (Kariyer & Eğitim)",
+    description: "Kanal / podcast sahipleri — sponsorluk/affiliate hazır",
+    segment: "partner",
+    icon: "🎙️",
+    buildInput: li("YouTuber Podcaster Content Creator Turkey Education Career", [
+      "YouTuber",
+      "Podcaster",
+      "Podcast Host",
+      "Video Content Creator",
+    ]),
+  },
 ];
 
 /**

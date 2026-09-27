@@ -127,5 +127,5 @@ export const SEGMENT_LABELS: Record<OutreachSegment, string> = {
   b2b_hr: "B2B İK Müdürleri",
   b2b_sme: "B2B KOBİ Sahipleri",
   b2c_pro: "B2C Profesyoneller",
-  partner: "Eğitim Partnerleri",
+  partner: "Affiliate / İnfluencer",
 };
