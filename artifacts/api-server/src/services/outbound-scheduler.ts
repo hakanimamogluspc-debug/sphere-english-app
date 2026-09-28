@@ -29,6 +29,7 @@ let running = false;
 let lastTickAt: Date | null = null;
 let lastTickError: string | null = null;
 let tickCount = 0;
+let lastDebug: any = null;
 
 export function getSchedulerStatus() {
   return {
@@ -40,6 +41,7 @@ export function getSchedulerStatus() {
     envEnabled: process.env.OUTBOUND_SCHEDULER_ENABLED === "true",
     skipBusinessHours: process.env.OUTBOUND_SKIP_BUSINESS_HOURS === "true",
     inBusinessHours: isInBusinessHours(),
+    lastDebug,
   };
 }
 
@@ -114,12 +116,16 @@ function isInBusinessHours(): boolean {
 }
 
 async function processCampaign(campaign: any) {
+  const dbg: any = { campaignId: campaign.id, campaignName: campaign.name };
+  lastDebug = dbg;
+
   // Bu kampanyanın step'leri
   const steps = await db.select().from(outboundSequenceStepsTable)
     .where(eq(outboundSequenceStepsTable.campaignId, campaign.id))
     .orderBy(outboundSequenceStepsTable.stepOrder);
 
-  if (steps.length === 0) return; // Step yok, iş yok
+  dbg.stepsCount = steps.length;
+  if (steps.length === 0) { dbg.exit = "no_steps"; return; }
 
   // Günlük gönderilen sayısı (bugün, bu kampanya)
   const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
@@ -133,7 +139,9 @@ async function processCampaign(campaign: any) {
     ));
 
   const remainingBudget = campaign.dailySendLimit - Number(sentToday);
-  if (remainingBudget <= 0) return;
+  dbg.sentToday = Number(sentToday);
+  dbg.remainingBudget = remainingBudget;
+  if (remainingBudget <= 0) { dbg.exit = "no_budget"; return; }
 
   // Gönderilecek lead'leri bul: pending/in_progress + next_send_at <= now + status uygun
   const readyLeads = await db.select().from(outboundCampaignLeadsTable)
@@ -144,13 +152,21 @@ async function processCampaign(campaign: any) {
     ))
     .limit(remainingBudget);
 
+  dbg.readyLeadsCount = readyLeads.length;
+  dbg.readyLeadIds = readyLeads.map(l => l.leadId);
+
+  const sendResults: any[] = [];
   for (const cl of readyLeads) {
     try {
-      await sendNextStep(campaign, cl, steps);
+      const r = await sendNextStep(campaign, cl, steps);
+      sendResults.push({ leadId: cl.leadId, ...r });
     } catch (e: any) {
       console.error(`[outbound-scheduler] lead ${cl.leadId} in campaign ${campaign.id}:`, e?.message);
+      sendResults.push({ leadId: cl.leadId, error: e?.message });
     }
   }
+  dbg.sendResults = sendResults;
+  dbg.exit = "completed";
 }
 
 async function sendNextStep(campaign: any, cl: any, steps: any[]) {
@@ -160,20 +176,20 @@ async function sendNextStep(campaign: any, cl: any, steps: any[]) {
     await db.update(outboundCampaignLeadsTable)
       .set({ status: "completed", nextSendAt: null, lastEventAt: new Date() })
       .where(eq(outboundCampaignLeadsTable.id, cl.id));
-    return;
+    return { skipped: "all_steps_done" };
   }
   const step = steps[nextStepIdx];
 
   // Template'i çek
   const [tpl] = await db.select().from(outboundTemplatesTable)
     .where(eq(outboundTemplatesTable.id, step.templateId));
-  if (!tpl) return;
+  if (!tpl) return { skipped: "template_not_found", templateId: step.templateId };
 
   // Lead'i çek
   const [lead] = await db.select().from(outreachLeadsTable)
     .where(eq(outreachLeadsTable.id, cl.leadId));
-  if (!lead) return;
-  if (!lead.email) return;
+  if (!lead) return { skipped: "lead_not_found", leadId: cl.leadId };
+  if (!lead.email) return { skipped: "no_email", leadId: cl.leadId };
 
   // Kontrol: bu step'te "no_reply" koşulu varsa ve reply gelmiş mi?
   if (step.condition === "no_reply" && cl.status === "replied") {
@@ -205,7 +221,7 @@ async function sendNextStep(campaign: any, cl: any, steps: any[]) {
 
   if (!result.ok) {
     console.error(`[outbound-scheduler] send failed lead ${lead.id}: ${result.error}`);
-    return;
+    return { sendFailed: result.error, leadEmail: lead.email };
   }
 
   // Event kaydet
@@ -245,6 +261,7 @@ async function sendNextStep(campaign: any, cl: any, steps: any[]) {
 
   // Log
   console.log(`[outbound-scheduler] ✓ campaign=${campaign.id} lead=${cl.leadId} step=${nextStepIdx + 1}/${steps.length}`);
+  return { sent: true, to: lead.email, step: nextStepIdx + 1, messageId: result.messageId };
 }
 
 /**
