@@ -1855,9 +1855,48 @@ async function seedVocabWords() {
   }
 }
 
+// ─── Kritik env kontrolü — production'da güvenlik açığı yaratacak eksiklikleri log'la
+function validateCriticalEnvs() {
+  const isProd = process.env.NODE_ENV === "production";
+  const critical: Array<{ name: string; severity: "error" | "warn"; note: string }> = [
+    { name: "DATABASE_URL", severity: "error", note: "Boot fail eder — DB bağlantısı zorunlu" },
+    { name: "JWT_SECRET", severity: "error", note: "Auth çalışmaz" },
+    { name: "IYZICO_API_KEY", severity: "error", note: "Ödeme kırık" },
+    { name: "IYZICO_SECRET_KEY", severity: "error", note: "Ödeme kırık" },
+    { name: "INTERNAL_TOKEN", severity: "error", note: "Unsubscribe token vs internal cron endpoint'ler güvenli değil" },
+    { name: "RESEND_API_KEY", severity: "warn", note: "Transactional mail göndermez" },
+    { name: "SENTRY_DSN", severity: "warn", note: "Error tracking devre dışı" },
+    { name: "OUTBOUND_SCHEDULER_ENABLED", severity: "warn", note: "B2B outbound kampanyaları çalışmaz" },
+    { name: "RESEND_WEBHOOK_SECRET", severity: "warn", note: "Resend webhook imza doğrulaması devre dışı" },
+    { name: "OPENAI_API_KEY", severity: "warn", note: "AI özellikleri (tutor/quiz) çalışmaz" },
+  ];
+  const missing = critical.filter(c => !process.env[c.name] || process.env[c.name]!.trim() === "");
+  if (missing.length === 0) {
+    logger.info("[env-check] ✓ Tüm kritik env'ler mevcut");
+    return;
+  }
+  for (const c of missing) {
+    if (c.severity === "error") {
+      logger.error({ env: c.name }, `[env-check] KRITIK EKSİK: ${c.name} — ${c.note}`);
+      if (isProd && (c.name === "JWT_SECRET" || c.name === "INTERNAL_TOKEN")) {
+        console.error(`[env-check] BOOT DURDURULDU: ${c.name} production'da zorunlu`);
+        process.exit(1);
+      }
+    } else {
+      logger.warn({ env: c.name }, `[env-check] uyarı: ${c.name} eksik — ${c.note}`);
+    }
+  }
+  // Zayıf INTERNAL_TOKEN
+  const it = process.env.INTERNAL_TOKEN;
+  if (it && it.length < 32) {
+    logger.warn(`[env-check] INTERNAL_TOKEN sadece ${it.length} karakter — en az 32 karakterlik random string kullan (openssl rand -hex 32)`);
+  }
+}
+
 // ─── Cluster modu — tüm CPU çekirdeklerini kullan ────────────────────────────
 if (cluster.isPrimary) {
   // Sadece primary süreç migration + seed çalıştırır
+  validateCriticalEnvs();
   runStartupMigrations()
     .then(() => seedDatabase())
     .then(() => seedVocabWords())

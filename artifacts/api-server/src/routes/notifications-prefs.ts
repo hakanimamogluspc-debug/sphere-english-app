@@ -107,11 +107,28 @@ router.get("/notifications/unsubscribe", async (req: Request, res: Response) => 
     const type = String(req.query.type ?? "");
     if (!token || !type) return res.status(400).send("Eksik parametre");
 
-    const secret = process.env.INTERNAL_TOKEN ?? "dev";
+    // GÜVENLİK: INTERNAL_TOKEN prod'da mutlaka set edilmiş olmalı.
+    // Yoksa "dev" fallback ile herhangi biri token üretip istediği user'ın
+    // aboneliğini iptal edebilir. Fallback KALDIRILDI.
+    const secret = process.env.INTERNAL_TOKEN;
+    if (!secret) {
+      console.error("[unsubscribe] INTERNAL_TOKEN yok — güvenlik nedeniyle reddedildi");
+      return res.status(503).send("Servis geçici olarak kullanılamıyor. Lütfen daha sonra tekrar deneyin.");
+    }
+    if (secret.length < 32) {
+      console.warn("[unsubscribe] INTERNAL_TOKEN zayıf (<32 karakter) — üretimde en az 32 karakterlik random secret kullan");
+    }
+
     const [uidStr, hmac] = token.split(".");
     const userId = parseInt(uidStr, 10);
+    if (!userId || !hmac) return res.status(400).send("Geçersiz token");
     const expected = crypto.createHmac("sha256", secret).update(`${userId}:${type}`).digest("hex").slice(0, 24);
-    if (!userId || hmac !== expected) return res.status(400).send("Geçersiz token");
+    // Constant-time karşılaştırma — timing attack koruması
+    const hmacBuf = Buffer.from(hmac);
+    const expectedBuf = Buffer.from(expected);
+    if (hmacBuf.length !== expectedBuf.length || !crypto.timingSafeEqual(hmacBuf, expectedBuf)) {
+      return res.status(400).send("Geçersiz token");
+    }
 
     const col = type === "streak_risk" ? "streak_risk_email"
               : type === "comeback" || type === "inactivity" ? "inactivity_email"
