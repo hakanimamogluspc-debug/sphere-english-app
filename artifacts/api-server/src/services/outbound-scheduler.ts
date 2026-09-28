@@ -26,6 +26,27 @@ import { sendOutboundEmail, renderTemplate } from "./email-provider.js";
 const TICK_INTERVAL_MS = 5 * 60 * 1000; // 5 dakika
 let timer: NodeJS.Timeout | null = null;
 let running = false;
+let lastTickAt: Date | null = null;
+let lastTickError: string | null = null;
+let tickCount = 0;
+
+export function getSchedulerStatus() {
+  return {
+    started: timer !== null,
+    running,
+    lastTickAt,
+    lastTickError,
+    tickCount,
+    envEnabled: process.env.OUTBOUND_SCHEDULER_ENABLED === "true",
+    skipBusinessHours: process.env.OUTBOUND_SKIP_BUSINESS_HOURS === "true",
+    inBusinessHours: isInBusinessHours(),
+  };
+}
+
+/** Manuel tick — admin panel'den tetiklenir, business hours atlar */
+export async function forceTick() {
+  await tick(true);
+}
 
 export function startOutboundScheduler() {
   if (process.env.OUTBOUND_SCHEDULER_ENABLED !== "true") {
@@ -45,12 +66,18 @@ export function stopOutboundScheduler() {
   if (timer) { clearInterval(timer); timer = null; }
 }
 
-async function tick() {
+async function tick(force = false) {
   if (running) return;
   running = true;
+  lastTickAt = new Date();
+  tickCount++;
   try {
     // Business hours kontrolü — TR zaman diliminde çalıştır
-    if (!isInBusinessHours()) return;
+    if (!force && !isInBusinessHours()) {
+      lastTickError = "outside_business_hours";
+      return;
+    }
+    lastTickError = null;
 
     // Aktif kampanyaları çek
     const activeCampaigns = await db.select().from(outboundCampaignsTable)
