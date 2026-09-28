@@ -51,6 +51,7 @@ export default function Outbound() {
   const [showNewTemplate, setShowNewTemplate] = useState(false);
   const [selectedCampaign, setSelectedCampaign] = useState<any>(null);
   const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
+  const [editTemplate, setEditTemplate] = useState<any>(null);
   const [toast, setToast] = useState<{ msg: string; type: "success" | "error" } | null>(null);
 
   const showToast = (msg: string, type: "success" | "error" = "success") => {
@@ -273,6 +274,7 @@ export default function Outbound() {
         <TemplatePreviewModal
           template={selectedTemplate}
           onClose={() => setSelectedTemplate(null)}
+          onEdit={() => { setEditTemplate(selectedTemplate); setSelectedTemplate(null); }}
           onSendTest={async (email) => {
             try {
               await api("/admin/outbound/send-test", {
@@ -282,6 +284,13 @@ export default function Outbound() {
               showToast("Test e-postası gönderildi");
             } catch (e: any) { showToast(e?.message || "Hata", "error"); }
           }}
+        />
+      )}
+      {editTemplate && (
+        <NewTemplateModal
+          editTemplate={editTemplate}
+          onClose={() => setEditTemplate(null)}
+          onCreated={() => { setEditTemplate(null); loadAll(); showToast("Şablon güncellendi"); }}
         />
       )}
       {selectedCampaign && (
@@ -465,72 +474,178 @@ function NewCampaignModal({ templates, onClose, onCreated }: any) {
   );
 }
 
-function NewTemplateModal({ onClose, onCreated }: any) {
-  const [form, setForm] = useState({ name: "", subject: "", bodyHtml: "", segment: "b2b_hr" });
+// ─── Şablon değişkenlerini örnek verilerle doldur (canlı önizleme için) ─────
+const SAMPLE_VARS: Record<string, string> = {
+  firstName: "Hakan",
+  lastName: "İmamoğlu",
+  fullName: "Hakan İmamoğlu",
+  company: "Sphere Test A.Ş.",
+  position: "İK Müdürü",
+  email: "test@ornek.com",
+};
+function renderSample(str: string): string {
+  return (str || "").replace(/\{\{(\w+)\}\}/g, (_, k) => SAMPLE_VARS[k] || `{{${k}}}`);
+}
+
+// Gmail benzeri iframe önizleme
+function HtmlPreviewFrame({ html, subject, from = "Hakan İmamoğlu <hakan@sphereenglish.com>", mobile = false }: {
+  html: string; subject: string; from?: string; mobile?: boolean;
+}) {
+  const doc = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>
+    body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#202124;background:#fff;}
+    .gmail-wrap{padding:${mobile ? "12px" : "24px"};max-width:640px;margin:0 auto;}
+    .gmail-head{padding-bottom:12px;border-bottom:1px solid #e8eaed;margin-bottom:16px;font-size:13px;color:#5f6368;}
+    .gmail-subject{font-size:${mobile ? "16px" : "18px"};font-weight:500;color:#202124;margin-bottom:4px;}
+    .gmail-body{font-size:14px;line-height:1.55;}
+    a{color:#1a73e8;}
+  </style></head><body><div class="gmail-wrap">
+    <div class="gmail-head"><div class="gmail-subject">${renderSample(subject)}</div>${from}</div>
+    <div class="gmail-body">${renderSample(html)}</div>
+  </div></body></html>`;
+  return (
+    <iframe
+      srcDoc={doc}
+      title="preview"
+      className={`w-full ${mobile ? "max-w-[380px] mx-auto" : ""} bg-white border border-slate-200 rounded-lg`}
+      style={{ height: 500 }}
+    />
+  );
+}
+
+function NewTemplateModal({ onClose, onCreated, editTemplate }: any) {
+  const [form, setForm] = useState(editTemplate ? {
+    name: editTemplate.name, subject: editTemplate.subject,
+    bodyHtml: editTemplate.bodyHtml, segment: editTemplate.segment || "b2b_hr",
+  } : { name: "", subject: "", bodyHtml: "", segment: "b2b_hr" });
   const [saving, setSaving] = useState(false);
+  const [mobile, setMobile] = useState(false);
+  const [showEditor, setShowEditor] = useState(true);
   const submit = async () => {
     setSaving(true);
     try {
-      await api("/admin/outbound/templates", {
-        method: "POST",
-        body: JSON.stringify({ ...form, bodyText: form.bodyHtml.replace(/<[^>]+>/g, "") }),
-      });
+      const payload = { ...form, bodyText: form.bodyHtml.replace(/<[^>]+>/g, "") };
+      if (editTemplate) {
+        await api(`/admin/outbound/templates/${editTemplate.id}`, {
+          method: "PATCH",
+          body: JSON.stringify(payload),
+        });
+      } else {
+        await api("/admin/outbound/templates", { method: "POST", body: JSON.stringify(payload) });
+      }
       onCreated();
     } catch (e: any) { alert(e?.message || "Hata"); }
     finally { setSaving(false); }
   };
   return (
-    <Modal title="Yeni Şablon" onClose={onClose} wide>
-      <div className="space-y-3">
-        <Field label="Şablon adı">
-          <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="B2B HR · Cold Intro" />
-        </Field>
-        <Field label="Segment">
-          <select value={form.segment} onChange={(e) => setForm({ ...form, segment: e.target.value })}
-            className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
-            {SEGMENTS.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
-          </select>
-        </Field>
-        <Field label="E-posta konusu (subject)">
-          <Input value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })} placeholder="{{firstName}}, {{company}} için 5 dk'lık bir fikir" />
-        </Field>
-        <Field label="HTML gövde">
-          <textarea
-            value={form.bodyHtml}
-            onChange={(e) => setForm({ ...form, bodyHtml: e.target.value })}
-            rows={12}
-            className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm font-mono"
-            placeholder={`<p>Merhaba {{firstName}},</p>\n<p>{{company}} ile ilgili...</p>`}
-          />
-        </Field>
-        <div className="text-xs bg-slate-50 border border-slate-200 rounded-lg p-3">
-          <strong>Kullanılabilir değişkenler:</strong> {"{{firstName}}"}, {"{{lastName}}"}, {"{{fullName}}"}, {"{{company}}"}, {"{{position}}"}, {"{{email}}"}
+    <Modal title={editTemplate ? `Şablonu Düzenle: ${editTemplate.name}` : "Yeni Şablon"} onClose={onClose} wide>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* SOL: Form */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xs uppercase tracking-wider font-bold text-slate-500">Şablon</h3>
+            <button
+              type="button"
+              className="lg:hidden text-xs text-[#13a9e0] font-bold"
+              onClick={() => setShowEditor(v => !v)}
+            >{showEditor ? "Önizleme →" : "Düzenle →"}</button>
+          </div>
+          {(showEditor || window.innerWidth >= 1024) && (
+            <>
+              <Field label="Şablon adı">
+                <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="B2B HR · Cold Intro" />
+              </Field>
+              <Field label="Segment">
+                <select value={form.segment} onChange={(e) => setForm({ ...form, segment: e.target.value })}
+                  className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
+                  {SEGMENTS.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
+                </select>
+              </Field>
+              <Field label="E-posta konusu (subject)">
+                <Input value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })} placeholder="{{firstName}}, {{company}} için 5 dk'lık bir fikir" />
+              </Field>
+              <Field label="HTML gövde">
+                <textarea
+                  value={form.bodyHtml}
+                  onChange={(e) => setForm({ ...form, bodyHtml: e.target.value })}
+                  rows={16}
+                  className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs font-mono"
+                  placeholder={`<p>Merhaba {{firstName}},</p>\n<p>{{company}} ile ilgili...</p>`}
+                />
+              </Field>
+              <div className="text-[11px] bg-slate-50 border border-slate-200 rounded-lg p-2">
+                <strong>Değişkenler:</strong> {"{{firstName}}"}, {"{{lastName}}"}, {"{{fullName}}"}, {"{{company}}"}, {"{{position}}"}, {"{{email}}"}
+              </div>
+            </>
+          )}
         </div>
-        <div className="flex justify-end gap-2 pt-2">
-          <Button variant="outline" onClick={onClose}>Vazgeç</Button>
-          <Button onClick={submit} disabled={saving || !form.name || !form.subject || !form.bodyHtml} className="bg-[#1e3a6e]">
-            {saving ? "..." : "Oluştur"}
-          </Button>
+
+        {/* SAĞ: Canlı önizleme */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xs uppercase tracking-wider font-bold text-slate-500">Canlı Önizleme (Gmail görünümü)</h3>
+            <div className="flex gap-1 border border-slate-200 rounded-full p-0.5">
+              <button
+                type="button"
+                onClick={() => setMobile(false)}
+                className={`px-2 py-0.5 text-[10px] font-bold rounded-full ${!mobile ? "bg-[#1e3a6e] text-white" : "text-slate-500"}`}
+              >Masaüstü</button>
+              <button
+                type="button"
+                onClick={() => setMobile(true)}
+                className={`px-2 py-0.5 text-[10px] font-bold rounded-full ${mobile ? "bg-[#1e3a6e] text-white" : "text-slate-500"}`}
+              >Mobil</button>
+            </div>
+          </div>
+          {form.bodyHtml ? (
+            <HtmlPreviewFrame html={form.bodyHtml} subject={form.subject || "(konu boş)"} mobile={mobile} />
+          ) : (
+            <div className="flex items-center justify-center h-[500px] border border-dashed border-slate-300 rounded-lg text-sm text-slate-400">
+              HTML yaz, canlı önizleme burada belirir
+            </div>
+          )}
+          <div className="text-[10px] text-slate-500">
+            Örnek değerler kullanıldı: firstName=<strong>Hakan</strong>, company=<strong>Sphere Test A.Ş.</strong> vs.
+          </div>
         </div>
+      </div>
+
+      <div className="flex justify-end gap-2 pt-4 mt-4 border-t border-slate-200">
+        <Button variant="outline" onClick={onClose}>Vazgeç</Button>
+        <Button onClick={submit} disabled={saving || !form.name || !form.subject || !form.bodyHtml} className="bg-[#1e3a6e]">
+          {saving ? "..." : (editTemplate ? "Kaydet" : "Oluştur")}
+        </Button>
       </div>
     </Modal>
   );
 }
 
-function TemplatePreviewModal({ template, onClose, onSendTest }: any) {
+function TemplatePreviewModal({ template, onClose, onSendTest, onEdit }: any) {
   const [testEmail, setTestEmail] = useState("");
   const [sending, setSending] = useState(false);
+  const [mobile, setMobile] = useState(false);
   return (
     <Modal title={template.name} onClose={onClose} wide>
-      <div className="space-y-4">
-        <div className="p-3 bg-slate-50 rounded-lg">
-          <div className="text-xs text-slate-500 uppercase font-bold">Konu</div>
-          <div className="text-sm font-semibold text-[#1e3a6e]">{template.subject}</div>
+      <div className="space-y-3">
+        <div className="flex items-center justify-between gap-3 p-3 bg-slate-50 rounded-lg">
+          <div className="min-w-0">
+            <div className="text-xs text-slate-500 uppercase font-bold">Konu</div>
+            <div className="text-sm font-semibold text-[#1e3a6e] truncate">{renderSample(template.subject)}</div>
+          </div>
+          <div className="flex gap-2 shrink-0">
+            <div className="flex gap-1 border border-slate-200 rounded-full p-0.5">
+              <button onClick={() => setMobile(false)}
+                className={`px-2 py-0.5 text-[10px] font-bold rounded-full ${!mobile ? "bg-[#1e3a6e] text-white" : "text-slate-500"}`}>Masaüstü</button>
+              <button onClick={() => setMobile(true)}
+                className={`px-2 py-0.5 text-[10px] font-bold rounded-full ${mobile ? "bg-[#1e3a6e] text-white" : "text-slate-500"}`}>Mobil</button>
+            </div>
+            {onEdit && (
+              <Button size="sm" variant="outline" onClick={onEdit}>Düzenle</Button>
+            )}
+          </div>
         </div>
-        <div className="p-4 border border-slate-200 rounded-lg bg-white max-h-96 overflow-auto">
-          <div className="text-xs text-slate-500 uppercase font-bold mb-2">HTML Önizleme</div>
-          <div dangerouslySetInnerHTML={{ __html: template.bodyHtml }} className="prose prose-sm max-w-none" />
-        </div>
+
+        <HtmlPreviewFrame html={template.bodyHtml} subject={template.subject} mobile={mobile} />
+
         <div className="pt-3 border-t border-slate-200">
           <Label>Test gönderimi (kendi e-postana)</Label>
           <div className="flex gap-2 mt-2">
@@ -552,6 +667,7 @@ function TemplatePreviewModal({ template, onClose, onSendTest }: any) {
 function CampaignDetailModal({ campaign, templates, onClose, onUpdate, showToast }: any) {
   const [steps, setSteps] = useState<any[]>([]);
   const [showAddLeads, setShowAddLeads] = useState(false);
+  const [previewTpl, setPreviewTpl] = useState<any>(null);
 
   useEffect(() => {
     api(`/admin/outbound/campaigns/${campaign.id}`)
@@ -598,13 +714,21 @@ function CampaignDetailModal({ campaign, templates, onClose, onUpdate, showToast
               return (
                 <div key={s.id} className="flex items-center gap-3 p-3 border border-slate-200 rounded-lg">
                   <div className="w-8 h-8 rounded-full bg-[#1e3a6e] text-white flex items-center justify-center font-bold text-sm">{i + 1}</div>
-                  <div className="flex-1">
-                    <div className="text-sm font-semibold text-[#1e3a6e]">{tpl?.name || "?"}</div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-semibold text-[#1e3a6e] truncate">{tpl?.name || "?"}</div>
                     <div className="text-xs text-slate-500">
                       {s.delayDays === 0 ? "Hemen" : `${s.delayDays} gün sonra`}
                       {s.condition && s.condition !== "always" && ` · Koşul: ${s.condition}`}
                     </div>
                   </div>
+                  {tpl && (
+                    <button
+                      onClick={() => setPreviewTpl(tpl)}
+                      className="text-[10px] text-[#13a9e0] hover:text-[#0e7da6] font-bold uppercase tracking-wider px-2 py-1 rounded border border-[#13a9e0]/30 hover:bg-[#13a9e0]/10"
+                    >
+                      <Eye size={12} className="inline mr-1" /> Önizle
+                    </button>
+                  )}
                   <button onClick={() => deleteStep(s.id)} className="text-slate-400 hover:text-red-500 p-1">
                     <Trash2 size={14} />
                   </button>
@@ -643,6 +767,22 @@ function CampaignDetailModal({ campaign, templates, onClose, onUpdate, showToast
               setShowAddLeads(false);
               showToast(`${n} lead kampanyaya eklendi`);
               onUpdate();
+            }}
+          />
+        )}
+
+        {previewTpl && (
+          <TemplatePreviewModal
+            template={previewTpl}
+            onClose={() => setPreviewTpl(null)}
+            onSendTest={async (email: string) => {
+              try {
+                await api("/admin/outbound/send-test", {
+                  method: "POST",
+                  body: JSON.stringify({ templateId: previewTpl.id, testEmail: email }),
+                });
+                showToast("Test e-postası gönderildi");
+              } catch (e: any) { showToast(e?.message || "Hata", "error"); }
             }}
           />
         )}
