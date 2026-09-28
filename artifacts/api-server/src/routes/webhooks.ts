@@ -99,9 +99,17 @@ router.post("/webhooks/resend", async (req: Request, res: Response) => {
 
     // ─── Yeni B2B Outbound sistemi ─────────────────────────────────────
     // Resend'e gönderilen tag'lerde campaign_id + lead_id varsa outbound sistemine yaz
-    const tags: Array<{ name: string; value: string }> = Array.isArray(data.tags) ? data.tags : [];
+    // NOT: Resend send API'de tags array ({name,value}[]), ama webhook payload'ında OBJE olarak dönüyor
     const tagMap: Record<string, string> = {};
-    for (const t of tags) if (t?.name && t?.value != null) tagMap[t.name] = String(t.value);
+    if (Array.isArray(data.tags)) {
+      for (const t of data.tags) {
+        if (t?.name && t?.value != null) tagMap[t.name] = String(t.value);
+      }
+    } else if (data.tags && typeof data.tags === "object") {
+      for (const [k, v] of Object.entries(data.tags)) {
+        if (v != null) tagMap[k] = String(v);
+      }
+    }
 
     const obCampaignId = Number(tagMap.campaign_id);
     const obLeadId = Number(tagMap.lead_id);
