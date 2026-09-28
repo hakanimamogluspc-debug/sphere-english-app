@@ -315,16 +315,22 @@ function parseLinkedInPerson(raw: LinkedInPersonRaw, segment: OutreachSegment): 
 
 // ─── Instagram Parser ───────────────────────────────────────────────────
 // apify/instagram-profile-scraper output format
+// NOT: Email opsiyonel — yoksa synthetic placeholder + email_status='unknown' (kampanyaya girmez)
 function parseInstagram(raw: any, segment: OutreachSegment): InsertOutreachLead | null {
-  // Bio'dan e-posta çıkar
+  const username = raw.username || raw.userName;
+  if (!username) return null; // handle zorunlu
+
+  // Bio'dan e-posta çıkar (opsiyonel)
   const bio: string = raw.biography || raw.bio || "";
   const bioEmail = bio.match(EMAIL_REGEX)?.[0];
-  const email = pickEmail(raw.emails, raw.businessEmail || raw.email || bioEmail);
-  if (!email) return null;
+  const foundEmail = pickEmail(raw.emails, raw.businessEmail || raw.email || bioEmail);
 
-  const username = raw.username || raw.userName;
   const followers = raw.followersCount ?? raw.followers ?? raw.followerCount;
   const fullName = raw.fullName || raw.full_name || username;
+
+  // Email yoksa manuel DM için placeholder ata
+  const email = foundEmail || `${username}@instagram.manual`;
+  const emailStatus: "valid" | "invalid" | "unknown" = foundEmail ? "unknown" : "invalid"; // invalid = kampanyaya girmez
 
   return {
     email,
@@ -339,22 +345,31 @@ function parseInstagram(raw: any, segment: OutreachSegment): InsertOutreachLead 
     segment,
     source: "apify_instagram",
     sourceUrl: `https://instagram.com/${username}`,
-    rawData: { ...raw, platform: "instagram", followers, username, bio } as any,
-    notes: `${followers ? `${followers.toLocaleString("tr-TR")} takipçi · ` : ""}${bio.slice(0, 200)}`,
+    emailStatus,
+    emailVerified: foundEmail ? false : true, // manuel'e verified=true diyoruz ki tekrar verify listesine düşmesin
+    emailVerifiedAt: foundEmail ? null : new Date(),
+    rawData: { ...raw, platform: "instagram", followers, username, bio, hasEmail: !!foundEmail } as any,
+    notes: `${foundEmail ? "📧 " : "📷 DM only · "}${followers ? `${Number(followers).toLocaleString("tr-TR")} takipçi · ` : ""}${bio.slice(0, 200)}`,
   };
 }
 
 // ─── YouTube Parser ─────────────────────────────────────────────────────
 // streamers/youtube-scraper channel result format
+// NOT: Email opsiyonel — yoksa synthetic placeholder + email_status='invalid'
 function parseYouTube(raw: any, segment: OutreachSegment): InsertOutreachLead | null {
+  const handle = raw.channelName || raw.channelHandle || raw.author;
+  if (!handle) return null;
+
   const desc: string = raw.channelDescription || raw.description || "";
   const descEmail = desc.match(EMAIL_REGEX)?.[0];
-  const email = pickEmail(raw.emails, raw.email || descEmail);
-  if (!email) return null;
+  const foundEmail = pickEmail(raw.emails, raw.email || descEmail);
 
-  const handle = raw.channelName || raw.channelHandle || raw.author;
   const subs = raw.numberOfSubscribers ?? raw.subscribers ?? raw.subscriberCount;
-  const channelUrl = raw.channelUrl || raw.url || (handle ? `https://youtube.com/${handle}` : undefined);
+  const channelUrl = raw.channelUrl || raw.url || (handle ? `https://youtube.com/${handle.startsWith("@") ? handle : "@" + handle}` : undefined);
+
+  const slug = String(handle).replace(/[^\w]/g, "").toLowerCase() || `channel${Date.now()}`;
+  const email = foundEmail || `${slug}@youtube.manual`;
+  const emailStatus: "valid" | "invalid" | "unknown" = foundEmail ? "unknown" : "invalid";
 
   return {
     email,
@@ -368,8 +383,11 @@ function parseYouTube(raw: any, segment: OutreachSegment): InsertOutreachLead | 
     segment,
     source: "apify_youtube",
     sourceUrl: channelUrl,
-    rawData: { ...raw, platform: "youtube", subscribers: subs, handle, description: desc } as any,
-    notes: `${subs ? `${subs.toLocaleString("tr-TR")} abone · ` : ""}${desc.slice(0, 200)}`,
+    emailStatus,
+    emailVerified: foundEmail ? false : true,
+    emailVerifiedAt: foundEmail ? null : new Date(),
+    rawData: { ...raw, platform: "youtube", subscribers: subs, handle, description: desc, hasEmail: !!foundEmail } as any,
+    notes: `${foundEmail ? "📧 " : "📺 Manuel iletişim · "}${subs ? `${Number(subs).toLocaleString("tr-TR")} abone · ` : ""}${desc.slice(0, 200)}`,
   };
 }
 
