@@ -143,7 +143,11 @@ async function sendViaResend(payload: EmailPayload): Promise<SendResult> {
       body: JSON.stringify({
         from: payload.fromName ? `${payload.fromName} <${payload.from}>` : payload.from,
         to: [payload.to],
-        reply_to: payload.replyTo,
+        // Resend geçersiz reply_to'ya 422 döndürüyor — sadece geçerli format geçir
+        // Kabul: "email@x.com" veya "Name <email@x.com>"
+        ...(payload.replyTo && /^([^<>]*<)?[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+>?$/.test(payload.replyTo.trim())
+          ? { reply_to: payload.replyTo.trim() }
+          : {}),
         subject: payload.subject,
         html: payload.html,
         text: payload.text,
