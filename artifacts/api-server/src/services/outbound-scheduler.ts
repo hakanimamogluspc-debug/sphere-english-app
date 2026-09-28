@@ -69,13 +69,19 @@ async function tick() {
 }
 
 function isInBusinessHours(): boolean {
+  // Test / dev için tüm kontrolleri atla
+  if (process.env.OUTBOUND_SKIP_BUSINESS_HOURS === "true") return true;
+
   const startHour = Number(process.env.OUTBOUND_SEND_HOURS_START || 9);
   const endHour = Number(process.env.OUTBOUND_SEND_HOURS_END || 17);
   const now = new Date();
   // TR saati
   const tr = new Date(now.toLocaleString("en-US", { timeZone: "Europe/Istanbul" }));
   const dow = tr.getDay(); // 0=Sunday, 6=Saturday
-  if (dow === 0 || dow === 6) return false; // Hafta sonu gönderim yok
+  if (dow === 0 || dow === 6) {
+    // Hafta sonu — opsiyonel bypass
+    if (process.env.OUTBOUND_ALLOW_WEEKEND !== "true") return false;
+  }
   const h = tr.getHours();
   return h >= startHour && h < endHour;
 }

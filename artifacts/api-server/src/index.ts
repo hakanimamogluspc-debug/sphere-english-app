@@ -1895,8 +1895,9 @@ if (cluster.isPrimary) {
       process.exit(1);
     }
     logger.info({ port, pid: process.pid, worker: cluster.worker?.id }, "Worker hazır");
-    // B2B Outbound sequence scheduler — sadece primary worker'da çalışsın
-    if (cluster.worker?.id === 1) {
+    // B2B Outbound sequence scheduler — primary worker (id=1) veya cluster'sız çalışan tek süreç
+    if (!cluster.worker || cluster.worker.id === 1) {
+      logger.info("outbound-scheduler başlatılıyor…");
       import("./services/outbound-scheduler.js")
         .then(({ startOutboundScheduler }) => startOutboundScheduler())
         .catch(err => logger.error({ err }, "outbound-scheduler başlatılamadı"));
