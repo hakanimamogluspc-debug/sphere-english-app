@@ -107,7 +107,22 @@ export default function Login() {
                 type="checkbox"
                 checked={rememberMe}
                 onChange={(e) => setRememberMe(e.target.checked)}
-                className="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary/40 cursor-pointer"
+                className="cursor-pointer"
+                style={{
+                  // Android WebView + iOS Safari + Chrome native checkbox — accent-color ile marka rengi
+                  appearance: "auto",
+                  WebkitAppearance: "checkbox",
+                  accentColor: "#13a9e0",
+                  width: 18,
+                  height: 18,
+                  minWidth: 18,
+                  minHeight: 18,
+                  flexShrink: 0,
+                  cursor: "pointer",
+                  border: "1px solid #cbd5e1",
+                  borderRadius: 4,
+                  backgroundColor: "#ffffff",
+                }}
               />
               <span className="text-sm text-slate-700 group-hover:text-slate-900">
                 Beni hatırla <span className="text-xs text-slate-400">(6 ay boyunca çıkma)</span>

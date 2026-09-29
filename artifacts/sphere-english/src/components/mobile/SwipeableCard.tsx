@@ -40,31 +40,20 @@ export function SwipeableCard({
     setDragging(false);
 
     if (Math.abs(offset) >= threshold) {
-      // Swipe kabul edildi
+      // Swipe kabul edildi — callback'i tetikle, offset'i hemen sıfırla
+      // (Ekrandan uçurma animasyonu React state timing sorunları çıkarıyordu)
       if (offset < 0 && onSwipeLeft) {
-        setOffset(-window.innerWidth); // Ekrandan uçur
-        setTimeout(() => {
-          onSwipeLeft();
-          setOffset(0);
-        }, 200);
+        onSwipeLeft();
       } else if (offset > 0 && onSwipeRight) {
-        setOffset(window.innerWidth);
-        setTimeout(() => {
-          onSwipeRight();
-          setOffset(0);
-        }, 200);
-      } else {
-        setOffset(0);
+        onSwipeRight();
       }
-    } else {
-      // Threshold altında, geri dön
-      setOffset(0);
     }
+    setOffset(0);
   };
 
-  // Kaydırma sırasında opaklık + rotasyon
-  const rotation = offset / 20; // hafif eğim
-  const opacity = 1 - Math.min(Math.abs(offset) / (threshold * 3), 0.3);
+  // Kaydırma sırasında opaklık + hafif eğim (rotation daha az agresif)
+  const rotation = offset / 40;
+  const opacity = 1 - Math.min(Math.abs(offset) / (threshold * 4), 0.2);
 
   return (
     <div
