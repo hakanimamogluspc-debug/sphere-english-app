@@ -2,6 +2,7 @@ import { initSentry } from "./lib/sentry.js";
 import { startBackupCron } from "./lib/db-backup.js";
 import { startEbookRecoveryCron } from "./lib/ebook-recovery-cron.js";
 import { startCartAbandonedCron } from "./lib/cart-abandoned-cron.js";
+import { startFailedPaymentRetryCron } from "./jobs/failed-payment-retry-cron.js";
 import { seedSpeakingScenes } from "./lib/scenes-seed.js";
 import cluster from "node:cluster";
 import os from "node:os";
@@ -1867,6 +1868,7 @@ function validateCriticalEnvs() {
     { name: "RESEND_API_KEY", severity: "warn", note: "Transactional mail göndermez" },
     { name: "SENTRY_DSN", severity: "warn", note: "Error tracking devre dışı" },
     { name: "OUTBOUND_SCHEDULER_ENABLED", severity: "warn", note: "B2B outbound kampanyaları çalışmaz" },
+    { name: "PAYMENT_RETRY_CRON_ENABLED", severity: "warn", note: "Başarısız ödeme için kullanıcı bildirimleri gönderilmez" },
     { name: "RESEND_WEBHOOK_SECRET", severity: "warn", note: "Resend webhook imza doğrulaması devre dışı" },
     { name: "OPENAI_API_KEY", severity: "warn", note: "AI özellikleri (tutor/quiz) çalışmaz" },
   ];
@@ -1906,6 +1908,7 @@ if (cluster.isPrimary) {
       startBackupCron();
       startEbookRecoveryCron();
       startCartAbandonedCron();
+      startFailedPaymentRetryCron();
       // Speaking scenes seed (idempotent — sadece yoksa ekler)
       void seedSpeakingScenes();
       // Learning cron'ları (content ingest + weekly report) — primary'de tek instance
