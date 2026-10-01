@@ -609,6 +609,18 @@ router.post("/admin/outbound/scheduler-tick", authMiddleware, requireRole("admin
     } catch (e: any) { return res.status(500).json({ error: e?.message }); }
   });
 
+// Suppression list — unsubscribed / bounced / spam olmuş leadIds
+// KVKK uyumu: bu leadlere herhangi bir kampanyadan mail gönderilmez
+router.get("/admin/outbound/suppressed-leads", authMiddleware, requireRole("admin"),
+  async (_req: AuthRequest, res: Response) => {
+    try {
+      const rows = await db.selectDistinct({ leadId: outboundEmailEventsTable.leadId })
+        .from(outboundEmailEventsTable)
+        .where(inArray(outboundEmailEventsTable.eventType, ["unsubscribed", "spam", "bounced"]));
+      return res.json({ ok: true, leadIds: rows.map((r) => r.leadId), count: rows.length });
+    } catch (e: any) { return res.status(500).json({ error: e?.message }); }
+  });
+
 // Seed hazır şablonlar (yalnızca boşsa)
 router.post("/admin/outbound/seed", authMiddleware, requireRole("admin"),
   async (_req: AuthRequest, res: Response) => {

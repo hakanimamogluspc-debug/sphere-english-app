@@ -1088,11 +1088,13 @@ function PresetPickerModal({ presets, onClose, onPick }: any) {
 
 function AddLeadsToCampaign({ campaign, onClose, onAdded }: any) {
   const [leads, setLeads] = useState<any[]>([]);
+  const [suppressedIds, setSuppressedIds] = useState<Set<number>>(new Set());
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [statusFilter, setStatusFilter] = useState("new");
   const [search, setSearch] = useState("");
+  const [hideSuppressed, setHideSuppressed] = useState(true);
 
   useEffect(() => {
     setLoading(true);
@@ -1101,13 +1103,18 @@ function AddLeadsToCampaign({ campaign, onClose, onAdded }: any) {
       pageSize: "200",
     });
     if (statusFilter) params.set("status", statusFilter);
-    api(`/admin/outreach/leads?${params}`)
-      .then(d => setLeads(d.items || []))
-      .catch(() => setLeads([]))
-      .finally(() => setLoading(false));
+    Promise.all([
+      api(`/admin/outreach/leads?${params}`).catch(() => ({ items: [] })),
+      api("/admin/outbound/suppressed-leads").catch(() => ({ leadIds: [] })),
+    ]).then(([leadsData, suppData]: [any, any]) => {
+      setLeads(leadsData.items || []);
+      setSuppressedIds(new Set(suppData.leadIds || []));
+    }).finally(() => setLoading(false));
   }, [campaign.segment, statusFilter]);
 
   const filtered = leads.filter(l => {
+    // Suppressed olanları filtrele (opsiyonel)
+    if (hideSuppressed && suppressedIds.has(l.id)) return false;
     if (!search) return true;
     const s = search.toLowerCase();
     return (
@@ -1116,6 +1123,8 @@ function AddLeadsToCampaign({ campaign, onClose, onAdded }: any) {
       (l.company || "").toLowerCase().includes(s)
     );
   });
+
+  const suppressedInList = leads.filter(l => suppressedIds.has(l.id)).length;
 
   const toggle = (id: number) => {
     const next = new Set(selectedIds);
@@ -1165,14 +1174,38 @@ function AddLeadsToCampaign({ campaign, onClose, onAdded }: any) {
           </select>
         </div>
 
-        <div className="flex items-center justify-between text-xs">
+        <div className="flex items-center justify-between text-xs flex-wrap gap-2">
           <div className="text-slate-600">
             Segment: <strong>{campaign.segment}</strong> · Toplam: <strong>{leads.length}</strong> · Seçili: <strong className="text-[#13a9e0]">{selectedIds.size}</strong>
+            {suppressedInList > 0 && (
+              <span className="ml-2 text-red-600">
+                · <strong>{suppressedInList}</strong> unsubscribe/bounce (gönderim yapılmaz)
+              </span>
+            )}
           </div>
-          <button onClick={toggleAll} className="text-[#13a9e0] font-bold hover:underline">
-            {selectedIds.size === filtered.length ? "Seçimi kaldır" : "Tümünü seç"}
-          </button>
+          <div className="flex items-center gap-3">
+            {suppressedInList > 0 && (
+              <label className="flex items-center gap-1 text-slate-600 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={hideSuppressed}
+                  onChange={(e) => setHideSuppressed(e.target.checked)}
+                  className="w-3.5 h-3.5"
+                />
+                <span>Suppressed'ları gizle</span>
+              </label>
+            )}
+            <button onClick={toggleAll} className="text-[#13a9e0] font-bold hover:underline">
+              {selectedIds.size === filtered.length ? "Seçimi kaldır" : "Tümünü seç"}
+            </button>
+          </div>
         </div>
+
+        {suppressedInList > 0 && !hideSuppressed && (
+          <div className="text-[11px] bg-amber-50 border border-amber-200 text-amber-800 rounded-lg p-2">
+            ⚠️ <strong>KVKK uyumu:</strong> Suppressed (unsubscribe/bounce) lead'leri seçsen bile scheduler bu kişilere mail göndermez.
+          </div>
+        )}
 
         {loading ? (
           <div className="text-center py-12 text-slate-500 text-sm">Yükleniyor…</div>

@@ -143,14 +143,38 @@ async function processCampaign(campaign: any) {
   dbg.remainingBudget = remainingBudget;
   if (remainingBudget <= 0) { dbg.exit = "no_budget"; return; }
 
+  // Global suppression list — unsubscribe veya spam/bounce olmuş leadIds
+  // KVKK: Herhangi bir kampanyada unsubscribe olan user başka kampanyaya eklense bile mail almasın
+  const suppressedRows = await db.selectDistinct({ leadId: outboundEmailEventsTable.leadId })
+    .from(outboundEmailEventsTable)
+    .where(inArray(outboundEmailEventsTable.eventType, ["unsubscribed", "spam", "bounced"]));
+  const suppressedIds = new Set(suppressedRows.map((r) => r.leadId));
+  dbg.suppressedCount = suppressedIds.size;
+
   // Gönderilecek lead'leri bul: pending/in_progress + next_send_at <= now + status uygun
-  const readyLeads = await db.select().from(outboundCampaignLeadsTable)
+  const candidateLeads = await db.select().from(outboundCampaignLeadsTable)
     .where(and(
       eq(outboundCampaignLeadsTable.campaignId, campaign.id),
       inArray(outboundCampaignLeadsTable.status, ["pending", "in_progress"]),
       lte(outboundCampaignLeadsTable.nextSendAt, new Date()),
     ))
-    .limit(remainingBudget);
+    .limit(remainingBudget * 2); // suppressed filtresi sonrası yetsin diye 2x al
+
+  // Suppression filtresi uygula
+  const readyLeads = candidateLeads
+    .filter((cl) => !suppressedIds.has(cl.leadId))
+    .slice(0, remainingBudget);
+
+  const skippedBySuppression = candidateLeads.length - readyLeads.length;
+  if (skippedBySuppression > 0) dbg.skippedBySuppression = skippedBySuppression;
+
+  // Suppressed leadleri bu kampanya için de "unsubscribed" olarak işaretle (bir daha denenmesin)
+  const toMarkSuppressed = candidateLeads.filter((cl) => suppressedIds.has(cl.leadId));
+  for (const cl of toMarkSuppressed) {
+    await db.update(outboundCampaignLeadsTable)
+      .set({ status: "unsubscribed", lastEventAt: new Date(), nextSendAt: null })
+      .where(eq(outboundCampaignLeadsTable.id, cl.id));
+  }
 
   dbg.readyLeadsCount = readyLeads.length;
   dbg.readyLeadIds = readyLeads.map(l => l.leadId);
