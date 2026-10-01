@@ -52,7 +52,7 @@ export default function MobileProfile() {
   const level = user?.currentLevel ?? "—";
 
   return (
-    <div style={{ minHeight: "100vh", background: colors.white, paddingBottom: 88 }}>
+    <div style={{ minHeight: "100dvh", background: colors.white, paddingTop: "env(safe-area-inset-top, 0px)", paddingBottom: "calc(88px + env(safe-area-inset-bottom, 0px))" }}>
       <div style={{ padding: "32px 20px 0" }}>
         {/* Kimlik */}
         <div style={{

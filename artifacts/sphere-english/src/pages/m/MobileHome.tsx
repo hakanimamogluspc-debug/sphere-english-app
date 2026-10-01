@@ -146,9 +146,10 @@ export default function MobileHome() {
 
   return (
     <div style={{
-      minHeight: "100vh",
+      minHeight: "100dvh",
       background: colors.white,
-      paddingBottom: 88, // TabBar için
+      paddingTop: "env(safe-area-inset-top, 0px)",
+      paddingBottom: "calc(88px + env(safe-area-inset-bottom, 0px))",
     }}>
      <PullToRefresh onRefresh={loadAll}>
       {/* HERO */}

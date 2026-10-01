@@ -1055,25 +1055,40 @@ function SimulationMode() {
 
   if (step === 'chat' && coach) {
     return (
-      <div className="flex flex-col h-[calc(100vh-64px)]">
-        <div className="px-5 py-3 border-b flex items-center gap-3 shadow-sm flex-shrink-0" style={{ background: '#fff', borderColor: SILVER_MID }}>
+      <div className="flex flex-col" style={{ height: "100dvh" }}>
+        <div
+          className="border-b flex items-center gap-2 shadow-sm flex-shrink-0"
+          style={{
+            background: '#fff',
+            borderColor: SILVER_MID,
+            paddingTop: 'calc(10px + env(safe-area-inset-top, 0px))',
+            paddingBottom: 10,
+            paddingLeft: 'calc(16px + env(safe-area-inset-left, 0px))',
+            paddingRight: 'calc(12px + env(safe-area-inset-right, 0px))',
+          }}
+        >
           <CoachAvatar coach={coach} size={36} />
           <div className="flex-1 min-w-0">
             <div className="font-bold text-sm truncate" style={{ color: NAVY }}>{coach.name}</div>
-            <div className="text-xs text-slate-400 truncate max-w-xs">{scenario}</div>
+            <div className="text-[11px] text-slate-500 truncate">{scenario}</div>
           </div>
           {sessionStarted ? (
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-1.5">
-                <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-                <span className="text-xs text-slate-400">Aktif</span>
-              </div>
-              <button onClick={handleEndSession} className="px-3 py-1.5 rounded-lg text-xs font-bold text-white" style={{ background: '#dc2626' }}>
-                Oturumu Bitir
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" title="Aktif" />
+              <button
+                onClick={handleEndSession}
+                className="px-3 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wider transition-colors"
+                style={{
+                  color: NAVY,
+                  background: 'transparent',
+                  border: `1.5px solid ${NAVY}`,
+                }}
+              >
+                Bitir
               </button>
             </div>
           ) : (
-            <button onClick={reset} className="text-xs text-slate-400 hover:text-slate-600 transition-colors">← Geri</button>
+            <button onClick={reset} className="text-xs text-slate-400 hover:text-slate-600 transition-colors flex-shrink-0">← Geri</button>
           )}
         </div>
 
@@ -1149,7 +1164,14 @@ function SimulationMode() {
           <div ref={bottomRef} />
         </div>
 
-        <div className="border-t flex-shrink-0" style={{ background: '#fff', borderColor: SILVER_MID }}>
+        <div
+          className="border-t flex-shrink-0"
+          style={{
+            background: '#fff',
+            borderColor: SILVER_MID,
+            paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+          }}
+        >
           {error && (
             <div className="mx-5 mt-3 px-4 py-2.5 rounded-xl text-sm text-red-700 bg-red-50 border border-red-200">{error}</div>
           )}

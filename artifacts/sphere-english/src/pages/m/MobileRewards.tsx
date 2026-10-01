@@ -115,7 +115,7 @@ export default function MobileRewards() {
   const progressPct = Math.min(100, (streak / nextMs) * 100);
 
   return (
-    <div style={{ minHeight: "100vh", background: colors.white, paddingBottom: 88 }}>
+    <div style={{ minHeight: "100dvh", background: colors.white, paddingTop: "env(safe-area-inset-top, 0px)", paddingBottom: "calc(88px + env(safe-area-inset-bottom, 0px))" }}>
       <div style={{ padding: "24px 20px 0" }}>
         <div style={{
           fontFamily: fonts.heading, fontWeight: 700, fontSize: 11,

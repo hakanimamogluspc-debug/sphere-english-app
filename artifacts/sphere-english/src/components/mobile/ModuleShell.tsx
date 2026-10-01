@@ -31,7 +31,7 @@ export function ModuleShell({
   const bottomPad = footer ? 24 : (withTabBar ? 88 : 24);
   return (
     <div style={{
-      minHeight: "100vh",
+      minHeight: "100dvh", // dynamic viewport height (iOS Safari bar fix)
       background: bg,
       display: "flex",
       flexDirection: "column",
@@ -43,7 +43,8 @@ export function ModuleShell({
       <main style={{
         flex: 1,
         padding: contentPadding,
-        paddingBottom: bottomPad,
+        // Bottom safe area (Android gesture nav + iOS home indicator)
+        paddingBottom: `calc(${bottomPad}px + env(safe-area-inset-bottom, 0px))`,
       }}>
         {children}
       </main>
@@ -52,7 +53,10 @@ export function ModuleShell({
           position: "sticky", bottom: 0, zIndex: 30,
           background: colors.white,
           borderTop: `1px solid ${colors.navy50}`,
-          padding: "12px 16px 20px",
+          padding: "12px 16px",
+          paddingBottom: "calc(20px + env(safe-area-inset-bottom, 0px))",
+          paddingLeft: "calc(16px + env(safe-area-inset-left, 0px))",
+          paddingRight: "calc(16px + env(safe-area-inset-right, 0px))",
         }}>
           {footer}
         </div>

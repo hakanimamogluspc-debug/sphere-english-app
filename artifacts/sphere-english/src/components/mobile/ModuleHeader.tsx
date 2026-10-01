@@ -44,7 +44,11 @@ export function ModuleHeader({ title, subtitle, backTo, rightAction, transparent
       zIndex: 50,
       background: transparent ? "transparent" : colors.white,
       borderBottom: transparent ? "none" : `1px solid ${colors.navy50}`,
-      padding: "12px 16px",
+      // Status bar / notch için safe-area insert
+      paddingTop: "calc(12px + env(safe-area-inset-top, 0px))",
+      paddingBottom: 12,
+      paddingLeft: "calc(16px + env(safe-area-inset-left, 0px))",
+      paddingRight: "calc(16px + env(safe-area-inset-right, 0px))",
       display: "flex",
       alignItems: "center",
       gap: 12,
