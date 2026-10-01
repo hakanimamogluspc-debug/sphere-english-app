@@ -126,6 +126,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       { name: 'Aktivite Analizi',    href: '/admin/analytics',                icon: Activity },
       { name: 'Mail Şablonları',     href: '/admin/mail-sablonlari',          icon: Mail },
       { name: 'B2B Outbound',        href: '/admin/outbound',                 icon: Send },
+      { name: 'Ödemeler & İade',     href: '/admin/payments',                 icon: Receipt },
       { name: 'Demo Randevular',     href: '/admin/demo',                     icon: Calendar },
       { name: 'İçerik Kütüphanesi',  href: '/admin/content',                  icon: Newspaper },
       { name: 'İçerik Envanteri',    href: '/admin/content-envanteri',        icon: BarChart3 },

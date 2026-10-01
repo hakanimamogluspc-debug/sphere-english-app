@@ -29,6 +29,7 @@ import writingRouter from "./writing";
 import marketingRouter from "./marketing";
 import outreachRouter from "./outreach";
 import outboundRouter from "./outbound";
+import adminPaymentsRouter from "./admin-payments";
 import chatbotRouter from "./chatbot";
 import chatbotEmbedRouter from "./chatbot-embed";
 import activityRouter from "./activity";
@@ -199,6 +200,7 @@ router.use(adminEbookHealthRouter);
 router.use(marketingRouter);
 router.use(outreachRouter);
 router.use(outboundRouter);
+router.use(adminPaymentsRouter);
 router.use(chatbotRouter);
 router.use(chatbotEmbedRouter);
 // Speaking role-play sahneleri — authMiddleware endpoint bazında + free tier quota
