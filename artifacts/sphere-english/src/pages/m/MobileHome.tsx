@@ -66,19 +66,39 @@ export default function MobileHome() {
   };
 
   const speakWord = async (text: string) => {
+    const log = (msg: string) => {
+      try {
+        (window as any).__tts_log = ((window as any).__tts_log || []).concat([`${Date.now()}: ${msg}`]);
+        console.log("[TTS]", msg);
+      } catch {}
+    };
+
     // 1. Capacitor TextToSpeech plugin (native Android TTS) — en güvenilir
     try {
       const cap = (window as any).Capacitor;
+      const isNative = cap?.isNativePlatform?.() ?? cap?.getPlatform?.() !== "web";
+      log(`cap=${!!cap} isNative=${isNative} plugin=${!!cap?.Plugins?.TextToSpeech}`);
+
       if (cap?.Plugins?.TextToSpeech) {
+        // Önce varsa önceki konuşmayı durdur
+        try { await cap.Plugins.TextToSpeech.stop(); } catch {}
+
         await cap.Plugins.TextToSpeech.speak({
           text,
           lang: "en-US",
           rate: 1.0,
+          pitch: 1.0,
           volume: 1.0,
+          category: "ambient",   // iOS için
         });
+        log("✓ Native TTS tetiklendi");
         return;
       }
-    } catch { /* düş */ }
+    } catch (e: any) {
+      log(`Native TTS hata: ${e?.message || e}`);
+      // Visible: kullanıcı native TTS kullanıyorsa failed olduğunu bilsin
+      alert(`Ses çalınamadı (native): ${e?.message || e}`);
+    }
 
     // 2. Web Speech API (desktop + bazı WebView'ler)
     if ("speechSynthesis" in window && "SpeechSynthesisUtterance" in window) {
@@ -88,20 +108,29 @@ export default function MobileHome() {
         const u = new SpeechSynthesisUtterance(text);
         u.lang = "en-US";
         u.rate = 0.9;
+        // Voices async yüklenir — getVoices boş dönebilir, event bekle
         const voices = synth.getVoices();
         const enVoice = voices.find(v => v.lang.startsWith("en"));
         if (enVoice) u.voice = enVoice;
+        u.onerror = (ev) => log(`speech synth error: ${(ev as any).error || "unknown"}`);
+        u.onend = () => log("✓ Web Speech bitti");
         synth.speak(u);
+        log(`Web Speech başlatıldı (voice=${enVoice?.name || "default"})`);
         return;
-      } catch { /* düş */ }
+      } catch (e: any) { log(`Web Speech hata: ${e?.message}`); }
     }
 
     // 3. Fallback: Google Translate TTS
     try {
       const url = `https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en&q=${encodeURIComponent(text)}`;
       const audio = new Audio(url);
-      audio.play().catch(() => {});
-    } catch {}
+      audio.crossOrigin = "anonymous";
+      await audio.play();
+      log("✓ Google TTS tetiklendi");
+    } catch (e: any) {
+      log(`Google TTS hata: ${e?.message}`);
+      alert(`Hoparlör çalışmıyor. Lütfen cihazınızda TTS motoru yüklü olduğundan emin olun (Ayarlar > Erişilebilirlik > Text-to-Speech).`);
+    }
   };
 
   useEffect(() => { loadAll().catch(() => {}); }, []);
