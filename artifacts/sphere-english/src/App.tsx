@@ -86,6 +86,7 @@ const Profile       = lazy(() => import("./pages/profile/Profile"));
 const TeacherCourses        = lazy(() => import("./pages/teacher/TeacherCourses"));
 const TeacherStudents       = lazy(() => import("./pages/teacher/TeacherStudents"));
 const TeacherProgress       = lazy(() => import("./pages/teacher/TeacherProgress"));
+const TeacherProgressDetail = lazy(() => import("./pages/teacher/TeacherProgressDetail"));
 const TeacherQuizzes        = lazy(() => import("./pages/teacher/TeacherQuizzes"));
 const TeacherSpeakingClub   = lazy(() => import("./pages/teacher/TeacherSpeakingClub"));
 const TeacherMessages       = lazy(() => import("./pages/teacher/TeacherMessages"));
@@ -385,6 +386,7 @@ function Router() {
         <Route path="/teacher/materials"><LayoutWrapper component={TeacherMaterials} allowedRoles={['teacher', 'admin']} /></Route>
         <Route path="/teacher/students"><LayoutWrapper component={TeacherStudents} allowedRoles={['teacher', 'admin']} /></Route>
         <Route path="/teacher/progress"><LayoutWrapper component={TeacherProgress} allowedRoles={['teacher', 'admin']} /></Route>
+        <Route path="/teacher/progress/:studentId"><LayoutWrapper component={TeacherProgressDetail} allowedRoles={['teacher', 'admin']} /></Route>
         <Route path="/teacher/quizzes"><LayoutWrapper component={TeacherQuizzes} allowedRoles={['teacher', 'admin']} /></Route>
         <Route path="/teacher/speaking-club"><LayoutWrapper component={TeacherSpeakingClub} allowedRoles={['teacher', 'admin']} /></Route>
         <Route path="/teacher/messages"><LayoutWrapper component={TeacherMessages} allowedRoles={['teacher', 'admin']} /></Route>

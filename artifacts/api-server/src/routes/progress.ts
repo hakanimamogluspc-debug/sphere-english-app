@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { db, usersTable, lessonProgressTable, enrollmentsTable, coursesTable, modulesTable, lessonsTable } from "@workspace/db";
+import { db, usersTable, lessonProgressTable, enrollmentsTable, coursesTable, modulesTable, lessonsTable, groupsTable, groupMembersTable } from "@workspace/db";
 import { eq, and, count, inArray, gte, sql } from "drizzle-orm";
 import { authMiddleware, type AuthRequest } from "../middlewares/auth.js";
 
@@ -130,6 +130,38 @@ router.get("/progress/me", authMiddleware, async (req: AuthRequest, res) => {
 
 router.get("/progress/students/:studentId", authMiddleware, async (req: AuthRequest, res) => {
   const studentId = parseInt(req.params.studentId);
+  const requesterId = req.userId!;
+  const role = req.userRole;
+
+  // Yetki kontrolü:
+  // - admin → her öğrenciye erişebilir
+  // - kullanıcı kendi datasına erişebilir
+  // - teacher → sadece kendi gruplarındaki öğrencilere
+  if (role !== "admin" && requesterId !== studentId) {
+    if (role !== "teacher") {
+      res.status(403).json({ error: "Forbidden" });
+      return;
+    }
+    // Teacher: öğrenci teacher'ın gruplarından birinde mi?
+    const groupIds = (await db.select({ id: groupsTable.id })
+      .from(groupsTable).where(eq(groupsTable.teacherId, requesterId)))
+      .map(g => g.id);
+    if (groupIds.length === 0) {
+      res.status(403).json({ error: "Forbidden" });
+      return;
+    }
+    const [member] = await db.select({ sid: groupMembersTable.studentId })
+      .from(groupMembersTable)
+      .where(and(
+        inArray(groupMembersTable.groupId, groupIds),
+        eq(groupMembersTable.studentId, studentId),
+      )).limit(1);
+    if (!member) {
+      res.status(403).json({ error: "Forbidden" });
+      return;
+    }
+  }
+
   const overview = await buildProgressOverview(studentId);
   if (!overview) { res.status(404).json({ error: "Student not found" }); return; }
   res.json(overview);

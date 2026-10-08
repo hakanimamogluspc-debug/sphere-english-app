@@ -1,7 +1,7 @@
-import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Card, Badge } from "@/components/ui/core";
-import { LineChart, CheckCircle2, XCircle, Target, Flame, Star } from "lucide-react";
+import { useLocation } from "wouter";
+import { Card } from "@/components/ui/core";
+import { LineChart, Target, Flame, Star, ChevronRight } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { motion } from "framer-motion";
 import { abbrevName } from "@/lib/utils";
@@ -33,13 +33,8 @@ async function apiFetch(url: string) {
   return res.json();
 }
 
-function ScoreBadge({ pct }: { pct: number }) {
-  const color = pct >= 70 ? "text-green-600 bg-green-50" : pct >= 50 ? "text-yellow-600 bg-yellow-50" : "text-red-600 bg-red-50";
-  return <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${color}`}>{pct}%</span>;
-}
-
 export default function TeacherProgress() {
-  const [selectedStudent, setSelectedStudent] = useState<StudentProgress | null>(null);
+  const [, navigate] = useLocation();
 
   const { data: students = [], isLoading } = useQuery<StudentProgress[]>({
     queryKey: ["/api/teacher/progress"],
@@ -89,7 +84,7 @@ export default function TeacherProgress() {
             <motion.div key={s.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
               <Card
                 className="p-4 border-2 border-border hover:border-primary/30 transition-colors cursor-pointer"
-                onClick={() => setSelectedStudent(selectedStudent?.id === s.id ? null : s)}
+                onClick={() => navigate(`/teacher/progress/${s.id}`)}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -119,6 +114,7 @@ export default function TeacherProgress() {
                     <div className="flex items-center gap-1 text-yellow-500 text-sm font-semibold">
                       <Star className="h-4 w-4" />{s.totalPoints}
                     </div>
+                    <ChevronRight className="h-5 w-5 text-muted-foreground" />
                   </div>
                 </div>
 
@@ -127,34 +123,6 @@ export default function TeacherProgress() {
                   <div className="mt-3">
                     <Progress value={s.averageScore} className="h-1.5" />
                   </div>
-                )}
-
-                {/* Son denemeler (açıldığında) */}
-                {selectedStudent?.id === s.id && s.recentAttempts.length > 0 && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    className="mt-4 pt-4 border-t border-border space-y-2"
-                  >
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Son Denemeler</p>
-                    {s.recentAttempts.map((a) => (
-                      <div key={a.id} className="flex items-center justify-between py-1.5 px-3 rounded-lg bg-secondary/40">
-                        <div className="flex items-center gap-2">
-                          {a.passed
-                            ? <CheckCircle2 className="h-4 w-4 text-green-500" />
-                            : <XCircle className="h-4 w-4 text-red-400" />
-                          }
-                          <span className="text-sm">Quiz #{a.quizId}</span>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <ScoreBadge pct={Math.round(a.percentage)} />
-                          <span className="text-xs text-muted-foreground">
-                            {new Date(a.submittedAt).toLocaleDateString("tr-TR")}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </motion.div>
                 )}
               </Card>
             </motion.div>
