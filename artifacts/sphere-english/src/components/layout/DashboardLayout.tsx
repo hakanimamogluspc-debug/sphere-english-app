@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { Avatar } from "../ui/core";
 import { NotificationBell } from "../NotificationBell";
+import SupportFab from "../support/SupportFab";
 
 const API = import.meta.env.BASE_URL.replace(/\/$/, "") + "/api";
 
@@ -409,6 +410,9 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           </div>
         </main>
       </div>
+
+      {/* Floating "Bize bildir" FAB — her sayfada */}
+      <SupportFab />
     </div>
   );
 }

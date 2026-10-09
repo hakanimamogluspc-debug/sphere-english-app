@@ -31,3 +31,4 @@ export * from "./payments";
 export * from "./teacher-applications";
 export * from "./ebooks";
 export * from "./placement-test";
+export * from "./support-tickets";
