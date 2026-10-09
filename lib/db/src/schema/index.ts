@@ -30,3 +30,4 @@ export * from "./subscriptions";
 export * from "./payments";
 export * from "./teacher-applications";
 export * from "./ebooks";
+export * from "./placement-test";

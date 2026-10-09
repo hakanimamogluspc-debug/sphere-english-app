@@ -11,7 +11,9 @@ interface Question {
   options: { A: string; B: string; C: string };
 }
 
-const QUESTIONS: Question[] = [
+// Fallback — API'den soru gelmezse veya hata olursa kullanılır.
+// DB'ye seed'li aynı 60 soru. Deploy sırası güvenliği için burada tutuluyor.
+const FALLBACK_QUESTIONS: Question[] = [
   { id: 1, text: 'My name ___ Richard Smith.', options: { A: 'is', B: 'are', C: 'am' } },
   { id: 2, text: "I'm from ___.", options: { A: 'Italy', B: 'Italian', C: 'the Italy' } },
   { id: 3, text: '___ company is Microsoft.', options: { A: 'She', B: "She's", C: 'Her' } },
@@ -247,6 +249,35 @@ export default function PlacementTest() {
   const [answers, setAnswers] = useState<Record<number, string>>(initial?.answers ?? {});
   const [currentPage, setCurrentPage] = useState(initial?.currentPage ?? 0);
   const [submitting, setSubmitting] = useState(false);
+  // Sorular — önce fallback, sonra API'den gelirse override
+  const [QUESTIONS, setQuestions] = useState<Question[]>(FALLBACK_QUESTIONS);
+  // Testin başlangıç zamanı — süre takibi için
+  const [startedAt] = useState<string>(() => new Date().toISOString());
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/placement-test/questions");
+        if (!res.ok) return;
+        const data = await res.json();
+        if (cancelled) return;
+        if (Array.isArray(data?.questions) && data.questions.length > 0) {
+          // API formatı: { id, text, options, cefrLevel }
+          setQuestions(
+            data.questions.map((q: any) => ({
+              id: q.id,
+              text: q.text,
+              options: q.options,
+            })),
+          );
+        }
+      } catch {
+        // Fallback zaten yüklü, sessizce devam
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
   const [result, setResult] = useState<{
     score: number;
     level: string;
@@ -312,7 +343,7 @@ export default function PlacementTest() {
           "Content-Type": "application/json",
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify({ answers, questions: QUESTIONS }),
+        body: JSON.stringify({ answers, questions: QUESTIONS, startedAt }),
       });
       if (!res.ok) {
         const data = await res.json();
