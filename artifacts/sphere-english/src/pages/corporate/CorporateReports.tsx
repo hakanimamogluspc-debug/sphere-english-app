@@ -1,8 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { Card } from "@/components/ui/core";
-import { BarChart3, Users, Activity, Star, TrendingUp, Award, Building2, Hash } from "lucide-react";
+import {
+  BarChart3, Users, Activity, Star, TrendingUp, Award, Building2, Hash,
+  BookOpen, Target, UserX, Download, Calendar, AlertCircle,
+} from "lucide-react";
 import { motion } from "framer-motion";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
 const levelColors: Record<string, string> = {
   A1: "bg-emerald-400", A2: "bg-emerald-500",
@@ -66,6 +70,37 @@ export default function CorporateReports() {
           </div>
         </Card>
       )}
+
+      {/* CSV indirme butonu */}
+      <div className="flex justify-end">
+        <button
+          type="button"
+          onClick={async () => {
+            try {
+              const token = localStorage.getItem("sphere_token");
+              const res = await fetch("/api/corporate/reports/csv", {
+                headers: token ? { Authorization: `Bearer ${token}` } : {},
+              });
+              if (!res.ok) throw new Error("İndirme başarısız");
+              const blob = await res.blob();
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = url;
+              const dateStr = new Date().toISOString().split("T")[0];
+              a.download = `kurumsal-rapor-${dateStr}.csv`;
+              document.body.appendChild(a);
+              a.click();
+              a.remove();
+              URL.revokeObjectURL(url);
+            } catch (e: any) {
+              alert("CSV indirilemedi: " + (e?.message ?? "bilinmeyen hata"));
+            }
+          }}
+          className="inline-flex items-center gap-2 text-sm px-4 py-2 rounded-xl bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
+        >
+          <Download className="h-4 w-4" /> CSV olarak indir
+        </button>
+      </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
@@ -200,6 +235,129 @@ export default function CorporateReports() {
           </div>
         </div>
       </Card>
+
+      {/* Yeni: Engagement istatistikleri */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {[
+          { label: "Tamamlanan Ders", value: reports?.summary?.totalLessonsCompleted ?? 0, icon: BookOpen, color: "text-indigo-600", bg: "bg-indigo-50" },
+          { label: "Ders / Öğrenci", value: reports?.summary?.avgLessonsPerStudent ?? 0, icon: BookOpen, color: "text-indigo-600", bg: "bg-indigo-50" },
+          { label: "Toplam Quiz", value: reports?.summary?.totalQuizAttempts ?? 0, icon: Target, color: "text-rose-600", bg: "bg-rose-50" },
+          { label: "Placement %", value: `${reports?.summary?.placementCompletedPct ?? 0}%`, icon: Target, color: "text-teal-600", bg: "bg-teal-50" },
+        ].map((stat, i) => (
+          <motion.div key={stat.label} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.05 }}>
+            <Card className="p-5">
+              <div className={`h-10 w-10 rounded-xl ${stat.bg} flex items-center justify-center mb-3`}>
+                <stat.icon className={`h-5 w-5 ${stat.color}`} />
+              </div>
+              <p className="text-2xl font-bold">{typeof stat.value === "number" ? stat.value.toLocaleString("tr-TR") : stat.value}</p>
+              <p className="text-xs text-muted-foreground mt-1">{stat.label}</p>
+            </Card>
+          </motion.div>
+        ))}
+      </div>
+
+      {/* Yeni: Haftalık trend grafiği */}
+      {Array.isArray(reports?.weeklyTrend) && reports.weeklyTrend.length > 0 && (
+        <Card className="p-6">
+          <div className="flex items-center gap-2 mb-5">
+            <Calendar className="h-5 w-5 text-primary" />
+            <h3 className="font-semibold text-lg">Son 8 Hafta Aktivite</h3>
+          </div>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={reports.weeklyTrend}>
+                <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+                <XAxis
+                  dataKey="weekStart"
+                  tickFormatter={(d: string) =>
+                    new Date(d).toLocaleDateString("tr-TR", { day: "2-digit", month: "short" })
+                  }
+                  tick={{ fontSize: 12 }}
+                />
+                <YAxis tick={{ fontSize: 12 }} allowDecimals={false} />
+                <Tooltip
+                  labelFormatter={(d: string) =>
+                    new Date(d).toLocaleDateString("tr-TR", { day: "2-digit", month: "short", year: "numeric" })
+                  }
+                  formatter={(v: number, name: string) => {
+                    const label = name === "lessonsCompleted" ? "Ders" : name === "activeStudents" ? "Aktif öğrenci" : "Puan";
+                    return [v.toLocaleString("tr-TR"), label];
+                  }}
+                />
+                <Bar dataKey="lessonsCompleted" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="activeStudents" fill="#22c55e" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </Card>
+      )}
+
+      {/* Yeni: Placement sonuçları + Pasif öğrenciler */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {reports?.summary?.avgPlacementScore !== null && reports?.summary?.avgPlacementScore !== undefined && (
+          <Card className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Target className="h-5 w-5 text-primary" />
+                <h3 className="font-semibold text-lg">Son Placement Testleri</h3>
+              </div>
+              <span className="text-sm text-muted-foreground">
+                Ort: <span className="font-semibold text-foreground">{reports.summary.avgPlacementScore}%</span>
+              </span>
+            </div>
+            {!reports?.recentPlacements?.length ? (
+              <p className="text-sm text-muted-foreground italic">Henüz placement testi yapılmadı.</p>
+            ) : (
+              <div className="space-y-2">
+                {reports.recentPlacements.map((p: any) => {
+                  const pct = Math.round((p.score / p.total) * 100);
+                  return (
+                    <div key={`${p.userId}-${p.completedAt}`} className="flex items-center justify-between py-2 px-3 rounded-lg bg-secondary/40">
+                      <div className="text-sm font-medium truncate">{p.firstName} {p.lastName}</div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-xs text-muted-foreground">{p.cefrLevel}</span>
+                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${pct >= 70 ? "text-green-600 bg-green-50" : pct >= 50 ? "text-yellow-600 bg-yellow-50" : "text-red-600 bg-red-50"}`}>{pct}%</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </Card>
+        )}
+
+        <Card className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <UserX className="h-5 w-5 text-amber-600" />
+              <h3 className="font-semibold text-lg">Pasif Öğrenciler</h3>
+            </div>
+            <span className="text-sm text-muted-foreground">
+              Son 14 gün aktivitesiz: <span className="font-semibold text-amber-600">{reports?.summary?.inactiveCount ?? 0}</span>
+            </span>
+          </div>
+          {!reports?.inactiveStudents?.length ? (
+            <div className="flex items-center gap-2 text-sm text-green-600">
+              <AlertCircle className="h-4 w-4" />
+              <span>Harika — pasif öğrenci yok.</span>
+            </div>
+          ) : (
+            <div className="space-y-1.5 max-h-72 overflow-auto">
+              {reports.inactiveStudents.map((s: any) => (
+                <div key={s.id} className="flex items-center justify-between py-1.5 px-3 rounded-lg hover:bg-secondary/40 transition-colors">
+                  <div className="text-sm truncate">
+                    {s.firstName} {s.lastName}
+                    <span className="text-xs text-muted-foreground ml-2">{s.currentLevel ?? "—"}</span>
+                  </div>
+                  <span className="text-xs text-muted-foreground shrink-0">
+                    {s.lastActiveDate ? new Date(s.lastActiveDate).toLocaleDateString("tr-TR") : "Hiç"}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+      </div>
     </div>
   );
 }
