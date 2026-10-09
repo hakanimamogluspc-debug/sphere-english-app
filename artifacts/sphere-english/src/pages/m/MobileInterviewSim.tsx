@@ -68,8 +68,8 @@ const INDUSTRY_OPTIONS = [
 const HIRE_STYLES: Record<string, { color: string; bg: string }> = {
   strong_hire: { color: "#047857", bg: "#d1fae5" },
   hire:        { color: "#0369a1", bg: "#dbeafe" },
-  lean_hire:   { color: "#b45309", bg: "#fef3c7" },
-  no_hire:     { color: "#b91c1c", bg: "#fee2e2" },
+  lean_hire:   { color: colors.warnText, bg: colors.warnBg },
+  no_hire:     { color: colors.errorText, bg: colors.errorBg },
 };
 
 async function apiFetch(path: string, init: RequestInit = {}) {
@@ -403,10 +403,10 @@ export default function MobileInterviewSim() {
                 background: "#f0fdf4", borderRadius: 10,
                 border: `1px solid #bbf7d0`,
               }}>
-                <div style={{ fontFamily: fonts.heading, fontWeight: 700, fontSize: 13, color: "#166534", marginBottom: 2 }}>
+                <div style={{ fontFamily: fonts.heading, fontWeight: 700, fontSize: 13, color: colors.successText, marginBottom: 2 }}>
                   {p.title}
                 </div>
-                <div style={{ fontSize: 12, color: "#166534", lineHeight: 1.4 }}>{p.detail}</div>
+                <div style={{ fontSize: 12, color: colors.successText, lineHeight: 1.4 }}>{p.detail}</div>
               </div>
             ))}
           </ReportSection>
@@ -418,13 +418,13 @@ export default function MobileInterviewSim() {
             {report.weakPoints.map((p, i) => (
               <div key={i} style={{
                 padding: 12, marginBottom: 6,
-                background: "#fef3c7", borderRadius: 10,
-                border: `1px solid #fcd34d`,
+                background: colors.warnBg, borderRadius: 10,
+                border: `1px solid ${colors.warnBorder}`,
               }}>
-                <div style={{ fontFamily: fonts.heading, fontWeight: 700, fontSize: 13, color: "#92400e", marginBottom: 4 }}>
+                <div style={{ fontFamily: fonts.heading, fontWeight: 700, fontSize: 13, color: colors.warnText, marginBottom: 4 }}>
                   {p.title}
                 </div>
-                <div style={{ fontSize: 12, color: "#92400e", lineHeight: 1.4, marginBottom: 6 }}>{p.detail}</div>
+                <div style={{ fontSize: 12, color: colors.warnText, lineHeight: 1.4, marginBottom: 6 }}>{p.detail}</div>
                 <div style={{
                   fontSize: 12, color: colors.turqDeep, fontWeight: 600,
                   padding: "6px 10px", background: colors.turqDeep + "15",
@@ -627,19 +627,19 @@ export default function MobileInterviewSim() {
       {pendingResume && (
         <div style={{
           padding: 14, marginBottom: 20,
-          background: "#fef3c7", borderRadius: 12,
-          border: `1px solid #fcd34d`,
+          background: colors.warnBg, borderRadius: 12,
+          border: `1px solid ${colors.warnBorder}`,
         }}>
           <div style={{
             fontFamily: fonts.heading, fontWeight: 700, fontSize: 11,
-            color: "#92400e", textTransform: "uppercase", letterSpacing: "0.06em",
+            color: colors.warnText, textTransform: "uppercase", letterSpacing: "0.06em",
             marginBottom: 4,
           }}>Devam eden mülakat</div>
           <div style={{
             fontFamily: fonts.heading, fontWeight: 800, fontSize: 14,
             color: "#78350f", marginBottom: 8, letterSpacing: "-0.01em",
           }}>{pendingResume.targetRole}</div>
-          <div style={{ fontSize: 12, color: "#92400e", marginBottom: 12 }}>
+          <div style={{ fontSize: 12, color: colors.warnText, marginBottom: 12 }}>
             {pendingResume.questionsAsked} / {pendingResume.targetQuestions} soru cevaplandı
           </div>
           <div style={{ display: "flex", gap: 8 }}>
@@ -647,8 +647,8 @@ export default function MobileInterviewSim() {
               onClick={discardResume}
               style={{
                 padding: "8px 14px", borderRadius: 100,
-                background: colors.white, color: "#92400e",
-                border: `1px solid #fcd34d`,
+                background: colors.white, color: colors.warnText,
+                border: `1px solid ${colors.warnBorder}`,
                 fontFamily: fonts.heading, fontWeight: 700, fontSize: 12,
                 cursor: "pointer",
               }}
@@ -657,7 +657,7 @@ export default function MobileInterviewSim() {
               onClick={handleResume}
               style={{
                 flex: 1, padding: "8px 14px", borderRadius: 100,
-                background: "#b45309", color: colors.white,
+                background: colors.warnText, color: colors.white,
                 border: "none", fontFamily: fonts.heading,
                 fontWeight: 800, fontSize: 12, cursor: "pointer",
               }}

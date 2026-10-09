@@ -31,10 +31,21 @@ export const colors = {
   brand: "var(--m-brand)",         // = #1e3a6e her zaman
   onBrand: "var(--m-on-brand)",    // branded bg üstündeki text — her zaman beyaz
 
-  // Durum
+  // Durum — solid renkler (icon, button, border için)
   success: "var(--m-success)",
   warn: "var(--m-warn)",
   error: "var(--m-error)",
+
+  // Durum container'ları — adaptive (bg + text + border üçlüsü, dark modda otomatik)
+  successBg: "var(--m-success-bg)",
+  successText: "var(--m-success-text)",
+  successBorder: "var(--m-success-border)",
+  warnBg: "var(--m-warn-bg)",
+  warnText: "var(--m-warn-text)",
+  warnBorder: "var(--m-warn-border)",
+  errorBg: "var(--m-error-bg)",
+  errorText: "var(--m-error-text)",
+  errorBorder: "var(--m-error-border)",
 
   // Dark mode (backward-compat — kullanılmıyor)
   darkBg: "#0a1428",

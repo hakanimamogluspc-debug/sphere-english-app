@@ -204,6 +204,17 @@
   --m-warn: #f59e0b;
   --m-error: #ef4444;
 
+  /* Durum container'ları — bg/text/border üçlüsü, dark modda otomatik adapte */
+  --m-success-bg: #dcfce7;
+  --m-success-text: #166534;
+  --m-success-border: #86efac;
+  --m-warn-bg: #fef3c7;
+  --m-warn-text: #92400e;
+  --m-warn-border: #fcd34d;
+  --m-error-bg: #fee2e2;
+  --m-error-text: #991b1b;
+  --m-error-border: #fca5a5;
+
   /* Branded — light modda navy ile aynı, dark modda AYNI KALIR (branded bg değişmez) */
   --m-brand: #1e3a6e;
   --m-on-brand: #ffffff;           /* branded bg üstündeki text — her zaman beyaz */
@@ -231,6 +242,17 @@
   --m-success: #22c55e;
   --m-warn: #f59e0b;
   --m-error: #ef4444;
+
+  /* Durum container'ları — dark modda yarı şeffaf, metin açık ton */
+  --m-success-bg: rgba(34, 197, 94, 0.15);
+  --m-success-text: #86efac;
+  --m-success-border: rgba(34, 197, 94, 0.4);
+  --m-warn-bg: rgba(245, 158, 11, 0.15);
+  --m-warn-text: #fcd34d;
+  --m-warn-border: rgba(245, 158, 11, 0.4);
+  --m-error-bg: rgba(239, 68, 68, 0.15);
+  --m-error-text: #fca5a5;
+  --m-error-border: rgba(239, 68, 68, 0.4);
 
   /* Branded bg her iki modda da NAVY kalır → Focus card / Streak / primary btn renk kaybetmez */
   --m-brand: #1e3a6e;

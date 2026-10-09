@@ -40,7 +40,7 @@ const FOCUS_OPTIONS = [
 const CATEGORY_BADGES: Record<string, { label: string; bg: string; color: string }> = {
   level:    { label: "Seviye",   bg: "#dbeafe", color: "#1e40af" },
   goal:     { label: "Hedef",    bg: "#ede9fe", color: "#5b21b6" },
-  weakness: { label: "Zayıflık", bg: "#fef3c7", color: "#92400e" },
+  weakness: { label: "Zayıflık", bg: colors.warnBg, color: colors.warnText },
   strength: { label: "Güçlü",    bg: "#d1fae5", color: "#065f46" },
   interest: { label: "İlgi",     bg: "#fce7f3", color: "#9d174d" },
   context:  { label: "Bağlam",   bg: "#f3f4f6", color: "#374151" },

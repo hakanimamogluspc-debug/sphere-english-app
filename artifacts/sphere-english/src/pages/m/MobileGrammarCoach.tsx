@@ -515,9 +515,9 @@ export default function MobileGrammarCoach() {
             let textColor = colors.navy;
             if (selected !== null) {
               if (isCorrectOpt) {
-                bg = "#dcfce7"; border = "#22c55e"; textColor = "#166534";
+                bg = colors.successBg; border = colors.success; textColor = colors.successText;
               } else if (isWrongChosen) {
-                bg = "#fee2e2"; border = colors.error; textColor = "#991b1b";
+                bg = colors.errorBg; border = colors.error; textColor = colors.errorText;
               } else {
                 bg = colors.white; border = colors.navy100; textColor = colors.neutral;
               }
@@ -539,7 +539,7 @@ export default function MobileGrammarCoach() {
               >
                 <div style={{
                   width: 22, height: 22, borderRadius: 11,
-                  background: isCorrectOpt ? "#22c55e" : isWrongChosen ? colors.error : colors.navy50,
+                  background: isCorrectOpt ? colors.success : isWrongChosen ? colors.error : colors.navy50,
                   color: isCorrectOpt || isWrongChosen ? colors.white : colors.navy,
                   display: "flex", alignItems: "center", justifyContent: "center",
                   fontSize: 11, fontWeight: 800,
@@ -558,13 +558,13 @@ export default function MobileGrammarCoach() {
         {/* Doğru cevap açıklaması */}
         {selected !== null && isCorrect && (
           <div style={{
-            padding: 14, background: "#dcfce7",
-            border: `1px solid #86efac`, borderRadius: 12,
+            padding: 14, background: colors.successBg,
+            border: `1px solid ${colors.successBorder}`, borderRadius: 12,
             marginBottom: 16,
           }}>
             <div style={{
               fontFamily: fonts.heading, fontWeight: 800, fontSize: 12,
-              color: "#166534", marginBottom: 4,
+              color: colors.successText, marginBottom: 4,
               display: "flex", alignItems: "center", gap: 6,
               textTransform: "uppercase", letterSpacing: "0.06em",
             }}>
@@ -572,7 +572,7 @@ export default function MobileGrammarCoach() {
               Doğru!
             </div>
             {q.explanation && (
-              <div style={{ fontSize: 13, color: "#166534", lineHeight: 1.5 }}>
+              <div style={{ fontSize: 13, color: colors.successText, lineHeight: 1.5 }}>
                 {q.explanation}
               </div>
             )}

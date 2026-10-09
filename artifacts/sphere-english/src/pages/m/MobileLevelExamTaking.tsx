@@ -164,8 +164,8 @@ export default function MobileLevelExamTaking() {
         {/* Ana sonuç */}
         <div style={{
           padding: 24, textAlign: "center",
-          background: passed ? "#dcfce7" : "#fef3c7",
-          border: `1px solid ${passed ? "#86efac" : "#fcd34d"}`,
+          background: passed ? colors.successBg : colors.warnBg,
+          border: `1px solid ${passed ? colors.successBorder : colors.warnBorder}`,
           borderRadius: radius.panel, marginBottom: 16,
         }}>
           <div style={{
@@ -181,19 +181,19 @@ export default function MobileLevelExamTaking() {
           </div>
           <div style={{
             fontFamily: fonts.heading, fontWeight: 900, fontSize: 22,
-            color: passed ? "#166534" : "#92400e", letterSpacing: "-0.02em",
+            color: passed ? colors.successText : colors.warnText, letterSpacing: "-0.02em",
             marginBottom: 6,
           }}>
             {passed ? "Tebrikler, geçtin!" : "Bu sefer olmadı"}
           </div>
           <div style={{
-            fontSize: 13, color: passed ? "#166534" : "#92400e",
+            fontSize: 13, color: passed ? colors.successText : colors.warnText,
             marginBottom: 6,
           }}>
             {result.score} / {result.total} doğru · <strong>%{result.percent}</strong>
           </div>
           <div style={{
-            fontSize: 11, color: passed ? "#166534" : "#92400e", opacity: 0.75,
+            fontSize: 11, color: passed ? colors.successText : colors.warnText, opacity: 0.75,
             marginBottom: 12,
           }}>Geçer not: %{result.passThresholdPercent}</div>
 
@@ -249,7 +249,7 @@ export default function MobileLevelExamTaking() {
           <div key={r.questionId} style={{
             padding: 12, marginBottom: 8,
             background: colors.white,
-            border: `1px solid ${r.isCorrect ? "#86efac" : "#fca5a5"}`,
+            border: `1px solid ${r.isCorrect ? colors.successBorder : colors.errorBorder}`,
             borderRadius: 12,
           }}>
             <div style={{ display: "flex", gap: 8, alignItems: "flex-start", marginBottom: 6 }}>
@@ -270,8 +270,8 @@ export default function MobileLevelExamTaking() {
                 const isCorrect = oi === r.correctIndex;
                 const isSelected = oi === r.selectedIndex;
                 let bg = "transparent"; let color = colors.neutral; let fw = 400;
-                if (isCorrect) { bg = "#dcfce7"; color = "#166534"; fw = 700; }
-                else if (isSelected) { bg = "#fee2e2"; color = "#991b1b"; }
+                if (isCorrect) { bg = colors.successBg; color = colors.successText; fw = 700; }
+                else if (isSelected) { bg = colors.errorBg; color = colors.errorText; }
                 return (
                   <div key={oi} style={{
                     display: "flex", alignItems: "center", gap: 6,
@@ -283,7 +283,7 @@ export default function MobileLevelExamTaking() {
                       {String.fromCharCode(65 + oi)}
                     </span>
                     <span style={{ flex: 1 }}>{opt}</span>
-                    {isCorrect && <CheckCircle2 size={11} color="#166534" strokeWidth={3} />}
+                    {isCorrect && <CheckCircle2 size={11} color={colors.successText} strokeWidth={3} />}
                     {isSelected && !isCorrect && <XCircle size={11} color={colors.error} strokeWidth={3} />}
                   </div>
                 );
