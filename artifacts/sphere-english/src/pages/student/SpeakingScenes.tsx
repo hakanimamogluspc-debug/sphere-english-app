@@ -97,23 +97,7 @@ function SpeakingScenes() {
     };
   }, []);
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-24">
-        <Loader2 className="w-8 h-8 animate-spin text-cyan-500" />
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="max-w-2xl mx-auto mt-12 p-6 bg-red-50 border border-red-200 rounded-xl text-red-900">
-        <p className="font-semibold mb-1">Hata</p>
-        <p className="text-sm">{error}</p>
-      </div>
-    );
-  }
-
+  // Hooks ÖNCE — early return'lerden önce, Rules of Hooks ihlali önlensin
   const scenes = data?.scenes ?? [];
   const categories = Array.from(new Set(scenes.map((s) => s.category)));
 
@@ -146,6 +130,23 @@ function SpeakingScenes() {
       return a.sort_order - b.sort_order;
     });
   }, [byCategory, levelFilter, userIdx]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <Loader2 className="w-8 h-8 animate-spin text-cyan-500" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="max-w-2xl mx-auto mt-12 p-6 bg-red-50 border border-red-200 rounded-xl text-red-900">
+        <p className="font-semibold mb-1">Hata</p>
+        <p className="text-sm">{error}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-6xl mx-auto px-4 lg:px-8 py-8">
