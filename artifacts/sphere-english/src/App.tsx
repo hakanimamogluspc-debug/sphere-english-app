@@ -41,6 +41,8 @@ const AdminCourseOrders         = lazy(() => import("./pages/admin/AdminCourseOr
 const Announcements       = lazy(() => import("./pages/admin/Announcements"));
 const AdminCompanies      = lazy(() => import("./pages/admin/Companies"));
 const AdminSupport        = lazy(() => import("./pages/admin/AdminSupport"));
+const AdminVocab          = lazy(() => import("./pages/admin/AdminVocab"));
+const VocabHub            = lazy(() => import("./pages/student/VocabHub"));
 const AdminGroups         = lazy(() => import("./pages/admin/Groups"));
 const AdminTeachers       = lazy(() => import("./pages/admin/Teachers"));
 const AdminStudents       = lazy(() => import("./pages/admin/Students"));
@@ -396,6 +398,8 @@ function Router() {
         <Route path="/admin/companies"><LayoutWrapper component={AdminCompanies} allowedRoles={['admin']} /></Route>
         <Route path="/admin/users"><LayoutWrapper component={AdminUsers} allowedRoles={['admin']} /></Route>
         <Route path="/admin/support"><LayoutWrapper component={AdminSupport} allowedRoles={['admin']} /></Route>
+        <Route path="/admin/vocab"><LayoutWrapper component={AdminVocab} allowedRoles={['admin']} /></Route>
+        <Route path="/student/vocab-hub"><LayoutWrapper component={VocabHub} allowedRoles={['student', 'admin']} /></Route>
         <Route path="/admin/analytics"><LayoutWrapper component={AdminAnalytics} allowedRoles={['admin']} /></Route>
         <Route path="/admin/content-engine"><LayoutWrapper component={AdminContentEngine} allowedRoles={['admin']} /></Route>
         <Route path="/admin/teacher-applications"><LayoutWrapper component={AdminTeacherApps} allowedRoles={['admin']} /></Route>
