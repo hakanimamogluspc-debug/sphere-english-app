@@ -172,8 +172,79 @@ const apiLimiter = rateLimit({
   skip: (req) => req.path.startsWith("/uploads"),
 });
 
+/**
+ * Yardımcı: authenticated kullanıcıda userId'ye göre, değilse IP'ye göre
+ * key üretir. Böylece bir kullanıcının birden fazla IP'den (örn. mobile data
+ * + wifi) aynı limiti paylaşmasını sağlar.
+ */
+function userOrIp(req: any): string {
+  return req.userId ? `u:${req.userId}` : `ip:${req.ip || req.connection?.remoteAddress || "unknown"}`;
+}
+
+// Forgot password: 15 dakikada en fazla 3 deneme (email flooding önleme)
+const forgotPasswordLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 3,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Çok fazla şifre sıfırlama talebi. Lütfen 15 dakika sonra tekrar deneyin." },
+});
+
+// AI endpoint'leri: dakikada en fazla 20 istek (OpenAI maliyet kontrolü)
+const aiLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: userOrIp,
+  message: { error: "AI isteği limiti aşıldı. Lütfen bir dakika bekleyin." },
+});
+
+// Chatbot (anon public): dakikada en fazla 30 istek per IP
+const chatbotLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Çok hızlı yazıyorsunuz. Lütfen biraz yavaşlayın." },
+});
+
+// Payment: 10 dakikada en fazla 10 işlem (ödeme deneme spamı önleme)
+const paymentLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: userOrIp,
+  message: { error: "Çok fazla ödeme denemesi. Lütfen 10 dakika sonra tekrar deneyin." },
+  // Provider webhook'u korunmasın — provider sunucusundan geliyor
+  skip: (req) => req.path.includes("/webhook"),
+});
+
 app.use("/api/auth/login", loginLimiter);
 app.use("/api/auth/register", registerLimiter);
+app.use("/api/auth/forgot-password", forgotPasswordLimiter);
+
+// AI endpoint'leri — OpenAI maliyet kontrolü
+app.use("/api/pronunciation", aiLimiter);
+app.use("/api/writing", aiLimiter);
+app.use("/api/grammar", aiLimiter);
+app.use("/api/interview", aiLimiter);
+app.use("/api/presentation", aiLimiter);
+app.use("/api/ai-quiz", aiLimiter);
+app.use("/api/tutor", aiLimiter);
+app.use("/api/scenes", aiLimiter);
+app.use("/api/vocab-game/game/guess", aiLimiter);
+app.use("/api/vocab-game/game/hint", aiLimiter);
+
+// Chatbot (anon)
+app.use("/api/chat", chatbotLimiter);
+
+// Payment — checkout flow, provider webhook'u skip ediliyor (yukarıdaki config)
+app.use("/api/checkout", paymentLimiter);
+app.use("/api/internal/payment", paymentLimiter);
+app.use("/api/internal/subscription", paymentLimiter);
+
 app.use("/api", apiLimiter);
 
 // Serve uploaded materials files
