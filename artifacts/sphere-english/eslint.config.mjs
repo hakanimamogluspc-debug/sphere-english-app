@@ -86,13 +86,19 @@ export default [
       "react-hooks": reactHooks,
     },
     rules: {
-      // Kritik — prod'u koruyan iki kural:
+      // Kritik — SpeakingScenes bug'ını yakalayan kural:
       "react-hooks/rules-of-hooks": "error",
-      "no-undef": "error",
+
+      // no-undef: TypeScript'in zaten daha iyi yaptığı iş.
+      // Tanımsız referansları (TeacherProgress'teki ScoreBadge gibi)
+      // tsc --noEmit yakalıyor. Burada aktif bırakmak React 17+ JSX
+      // transform ve DOM globals'ı (HTMLAudioElement vb.) yüzlerce
+      // false-positive üretir.
+      "no-undef": "off",
 
       // Yararlı ama kırma değil:
       "react-hooks/exhaustive-deps": "warn",
-      "no-unused-vars": "off", // TypeScript parser için no-unused-vars gereksiz
+      "no-unused-vars": "off",
       "no-case-declarations": "warn",
       "no-empty": "warn",
       "no-prototype-builtins": "warn",

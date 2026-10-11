@@ -8,8 +8,9 @@
     "build": "vite build --config vite.config.ts",
     "serve": "vite preview --config vite.config.ts --host 0.0.0.0",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "lint": "eslint 'src/**/*.{ts,tsx}'",
-    "lint:fix": "eslint 'src/**/*.{ts,tsx}' --fix"
+    "lint": "eslint src",
+    "lint:fix": "eslint src --fix",
+    "verify": "tsc -p tsconfig.json --noEmit && eslint src"
   },
   "devDependencies": {
     "@hookform/resolvers": "^3.10.0",

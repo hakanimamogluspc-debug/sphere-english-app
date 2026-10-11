@@ -441,7 +441,6 @@ function AssetPicker({
                     }`}
                   >
                     <div onClick={() => toggleSelect(a)} className="aspect-square bg-gray-100 relative">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={a.url}
                         alt={a.filename}
