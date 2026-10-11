@@ -549,7 +549,7 @@ function ExploreTab({ onOpenWord }: { onOpenWord: (id: number) => void }) {
             type="text"
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-            placeholder="Kelime ara..."
+            placeholder="İngilizce veya Türkçe ara..."
             style={{
               width: "100%", padding: "8px 10px 8px 30px",
               border: `1px solid ${colors.navy100}`,
