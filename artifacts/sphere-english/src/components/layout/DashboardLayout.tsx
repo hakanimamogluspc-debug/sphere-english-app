@@ -83,6 +83,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       { name: 'Konuşma Sahneleri',   href: '/student/speaking-scenes',        icon: Mic,           moduleKey: 'student-speaking-scenes',      group: 'ai-studio' },
       { name: 'Yazma Koçu',          href: '/student/writing-coach',          icon: PenLine,       moduleKey: 'student-writing-coach',        group: 'ai-studio' },
       { name: 'Kelime Oyunu',        href: '/student/vocab-game',             icon: Gamepad2,      moduleKey: 'student-vocab-game',           group: 'ai-studio' },
+      { name: 'Kelime Tekrarı',      href: '/student/vocab-hub',              icon: BookMarked,                                               group: 'ai-studio' },
       { name: 'Dilbilgisi Koçu',    href: '/student/grammar-coach',          icon: Brain,         moduleKey: 'student-grammar-coach',        group: 'ai-studio' },
       { name: 'İş Senaryoları',     href: '/student/simulation-mode',        icon: Briefcase,     moduleKey: 'student-simulation-mode',      group: 'ai-studio' },
       { name: 'Mülakat Simülatörü', href: '/student/interview-sim',          icon: GraduationCap, moduleKey: 'student-interview-sim',        group: 'ai-studio' },
@@ -134,6 +135,9 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       { name: 'AI İçerik Üretici',   href: '/admin/ai-icerik',                icon: Sparkles },
       { name: 'Kariyer & Motivasyon',href: '/admin/career',                   icon: Compass },
       { name: 'Konuşma Sahneleri',   href: '/admin/scenes',                   icon: Mic },
+      // ─── Yeni araçlar (2026-10) ───
+      { name: 'Kelime Havuzu',       href: '/admin/vocab',                    icon: BookMarked },
+      { name: 'Destek Talepleri',    href: '/admin/support',                  icon: Ticket },
       { name: 'Eğitmen Başvuruları', href: '/admin/teacher-applications',     icon: UserPlus },
       { name: 'E-Kitap Yönetimi',    href: '/admin/ebooks',                   icon: BookOpen },
       { name: 'E-Kitap Paketleri',   href: '/admin/bundles',                  icon: Package },
