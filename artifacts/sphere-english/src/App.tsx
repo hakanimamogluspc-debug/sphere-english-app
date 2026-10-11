@@ -136,6 +136,7 @@ const MobileAIQuiz             = lazy(() => import("./pages/m/MobileAIQuiz"));
 const MobileWritingCoach       = lazy(() => import("./pages/m/MobileWritingCoach"));
 const MobileGrammarCoach       = lazy(() => import("./pages/m/MobileGrammarCoach"));
 const MobileVocabGame          = lazy(() => import("./pages/m/MobileVocabGame"));
+const MobileVocabHub           = lazy(() => import("./pages/m/MobileVocabHub"));
 const MobileSimulationMode     = lazy(() => import("./pages/m/MobileSimulationMode"));
 const MobileInterviewSim       = lazy(() => import("./pages/m/MobileInterviewSim"));
 const MobilePresentationSim    = lazy(() => import("./pages/m/MobilePresentationSim"));
@@ -364,6 +365,7 @@ function Router() {
         <Route path="/m/pratik/yazma-kocu"><LayoutWrapper component={MobileWritingCoach} allowedRoles={['student', 'admin', 'teacher']} featureKey="student-writing-coach" noLayout /></Route>
         <Route path="/m/pratik/dilbilgisi-kocu"><LayoutWrapper component={MobileGrammarCoach} allowedRoles={['student', 'admin', 'teacher']} featureKey="student-grammar-coach" noLayout /></Route>
         <Route path="/m/pratik/kelime-oyunu"><LayoutWrapper component={MobileVocabGame} allowedRoles={['student', 'admin', 'teacher']} featureKey="student-vocab-game" noLayout /></Route>
+        <Route path="/m/pratik/kelime-hub"><LayoutWrapper component={MobileVocabHub} allowedRoles={['student', 'admin', 'teacher']} noLayout /></Route>
         <Route path="/m/pratik/is-senaryolari"><LayoutWrapper component={MobileSimulationMode} allowedRoles={['student', 'admin', 'teacher']} featureKey="student-simulation-mode" noLayout /></Route>
         <Route path="/m/pratik/mulakat-sim"><LayoutWrapper component={MobileInterviewSim} allowedRoles={['student', 'admin', 'teacher']} featureKey="student-interview-sim" noLayout /></Route>
         <Route path="/m/pratik/sunum-sim"><LayoutWrapper component={MobilePresentationSim} allowedRoles={['student', 'admin', 'teacher']} featureKey="student-presentation-sim" noLayout /></Route>

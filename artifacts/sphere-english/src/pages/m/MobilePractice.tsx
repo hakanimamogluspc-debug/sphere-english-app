@@ -4,7 +4,7 @@ import { API } from "@/lib/api-url";
 import { TabBar, colors, fonts, radius, type TabKey } from "@/components/mobile";
 import {
   Mic, PenLine, Brain, Gamepad2, Briefcase, GraduationCap, Presentation,
-  Wand2, Compass, Trophy, BookOpen, Users, BookMarked, Newspaper,
+  Wand2, Compass, Trophy, BookOpen, Users, BookMarked, Newspaper, Heart,
   ChevronRight,
 } from "lucide-react";
 
@@ -20,6 +20,7 @@ const MODULES = [
   { key: "writing_coach",         name: "Yazma Koçu",         icon: PenLine,       color: "#60a5fa", href: "/m/pratik/yazma-kocu",         featureKey: "student-writing-coach" },
   { key: "grammar_coach",         name: "Dilbilgisi Koçu",    icon: Brain,         color: "#6366f1", href: "/m/pratik/dilbilgisi-kocu",    featureKey: "student-grammar-coach" },
   { key: "vocab_game",            name: "Kelime Oyunu",       icon: Gamepad2,      color: "#f472b6", href: "/m/pratik/kelime-oyunu",       featureKey: "student-vocab-game" },
+  { key: "vocab_hub",             name: "Kelime Tekrarı",     icon: Heart,         color: "#ec4899", href: "/m/pratik/kelime-hub",         featureKey: undefined },
   { key: "simulation_mode",       name: "İş Senaryoları",     icon: Briefcase,     color: "#fb923c", href: "/m/pratik/is-senaryolari",     featureKey: "student-simulation-mode" },
   { key: "interview_sim",         name: "Mülakat Simülatörü", icon: GraduationCap, color: "#34d399", href: "/m/pratik/mulakat-sim",        featureKey: "student-interview-sim" },
   { key: "presentation_sim",      name: "Sunum Simülatörü",   icon: Presentation,  color: "#f97316", href: "/m/pratik/sunum-sim",          featureKey: "student-presentation-sim" },
