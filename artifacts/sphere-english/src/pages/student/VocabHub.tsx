@@ -324,6 +324,7 @@ function ExploreTab({ onOpenWord }: { onOpenWord: (id: number) => void }) {
   const [level, setLevel] = useState<string>("");
   const [letter, setLetter] = useState<string>("");
   const [page, setPage] = useState(1);
+  const qc = useQueryClient();
 
   const qp = new URLSearchParams();
   if (search.trim()) qp.set("q", search.trim());
@@ -336,6 +337,21 @@ function ExploreTab({ onOpenWord }: { onOpenWord: (id: number) => void }) {
     queryKey: ["/api/vocab/words", search, level, letter, page],
     queryFn: () => apiJson(`/api/vocab/words?${qp.toString()}`),
   });
+
+  // Favoriler setini çek — Keşfet'te kalp durumunu göstermek için
+  const { data: favData } = useQuery<{ words: Word[] }>({
+    queryKey: ["/api/vocab/favorites"],
+    queryFn: () => apiJson("/api/vocab/favorites"),
+  });
+  const favoriteSet = new Set((favData?.words ?? []).map((w) => w.id));
+
+  const toggleFav = async (wordId: number, isFav: boolean) => {
+    try {
+      await apiJson(`/api/vocab/favorites/${wordId}`, { method: isFav ? "DELETE" : "POST" });
+      qc.invalidateQueries({ queryKey: ["/api/vocab/favorites"] });
+      qc.invalidateQueries({ queryKey: ["/api/vocab/review/stats"] });
+    } catch { /* ignore */ }
+  };
 
   const words = data?.words ?? [];
   const totalPages = data ? Math.ceil(data.total / 24) : 1;
@@ -394,28 +410,39 @@ function ExploreTab({ onOpenWord }: { onOpenWord: (id: number) => void }) {
       ) : (
         <>
           <div className="grid gap-2">
-            {words.map((w) => (
-              <Card
-                key={w.id}
-                className="p-3 cursor-pointer hover:border-primary/30 transition-colors border-2 border-border"
-                onClick={() => onOpenWord(w.id)}
-              >
-                <div className="flex items-center gap-3">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="font-semibold">{w.word}</p>
-                      {w.pronunciation && (
-                        <span className="text-xs text-muted-foreground font-mono">{w.pronunciation}</span>
-                      )}
+            {words.map((w) => {
+              const isFav = favoriteSet.has(w.id);
+              return (
+                <Card
+                  key={w.id}
+                  className="p-3 cursor-pointer hover:border-primary/30 transition-colors border-2 border-border"
+                  onClick={() => onOpenWord(w.id)}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <p className="font-semibold">{w.word}</p>
+                        {w.pronunciation && (
+                          <span className="text-xs text-muted-foreground font-mono">{w.pronunciation}</span>
+                        )}
+                      </div>
+                      <p className="text-sm text-muted-foreground truncate">{w.turkish}</p>
                     </div>
-                    <p className="text-sm text-muted-foreground truncate">{w.turkish}</p>
+                    <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-secondary shrink-0">
+                      {w.level}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); toggleFav(w.id, isFav); }}
+                      className="h-8 w-8 rounded-full hover:bg-red-50 flex items-center justify-center shrink-0 transition-colors"
+                      aria-label={isFav ? "Favoriden çıkar" : "Favorilere ekle"}
+                    >
+                      <Heart className={`h-4 w-4 ${isFav ? "fill-red-500 text-red-500" : "text-muted-foreground"}`} />
+                    </button>
                   </div>
-                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-secondary shrink-0">
-                    {w.level}
-                  </span>
-                </div>
-              </Card>
-            ))}
+                </Card>
+              );
+            })}
           </div>
 
           {totalPages > 1 && (

@@ -511,6 +511,30 @@ function ExploreTab({ onOpenWord }: { onOpenWord: (id: number) => void }) {
   const [words, setWords] = useState<Word[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [favorites, setFavorites] = useState<Set<number>>(new Set());
+
+  const loadFavorites = async () => {
+    try {
+      const data = await apiJson("/api/vocab/favorites");
+      setFavorites(new Set((data.words || []).map((w: Word) => w.id)));
+    } catch { /* ignore */ }
+  };
+  useEffect(() => { loadFavorites(); }, []);
+
+  const toggleFav = async (wordId: number, isFav: boolean) => {
+    // Optimistik güncelle
+    setFavorites((prev) => {
+      const next = new Set(prev);
+      if (isFav) next.delete(wordId); else next.add(wordId);
+      return next;
+    });
+    try {
+      await apiJson(`/api/vocab/favorites/${wordId}`, { method: isFav ? "DELETE" : "POST" });
+    } catch {
+      // revert on error
+      loadFavorites();
+    }
+  };
 
   useEffect(() => {
     const t = setTimeout(async () => {
@@ -635,43 +659,61 @@ function ExploreTab({ onOpenWord }: { onOpenWord: (id: number) => void }) {
       ) : (
         <>
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            {words.map((w) => (
-              <div
-                key={w.id}
-                onClick={() => onOpenWord(w.id)}
-                style={{
-                  background: colors.white,
-                  borderRadius: radius.card,
-                  border: `1px solid ${colors.navy100}`,
-                  padding: 12,
-                  display: "flex", alignItems: "center", gap: 10,
-                  cursor: "pointer",
-                }}
-              >
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-                    <div style={{ fontFamily: fonts.heading, fontWeight: 700, fontSize: 15, color: colors.navy }}>
-                      {w.word}
-                    </div>
-                    {w.pronunciation && (
-                      <div style={{ fontFamily: "monospace", fontSize: 10, color: colors.neutral }}>
-                        {w.pronunciation}
+            {words.map((w) => {
+              const isFav = favorites.has(w.id);
+              return (
+                <div
+                  key={w.id}
+                  onClick={() => onOpenWord(w.id)}
+                  style={{
+                    background: colors.white,
+                    borderRadius: radius.card,
+                    border: `1px solid ${colors.navy100}`,
+                    padding: 12,
+                    display: "flex", alignItems: "center", gap: 10,
+                    cursor: "pointer",
+                  }}
+                >
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+                      <div style={{ fontFamily: fonts.heading, fontWeight: 700, fontSize: 15, color: colors.navy }}>
+                        {w.word}
                       </div>
-                    )}
+                      {w.pronunciation && (
+                        <div style={{ fontFamily: "monospace", fontSize: 10, color: colors.neutral }}>
+                          {w.pronunciation}
+                        </div>
+                      )}
+                    </div>
+                    <div style={{ fontFamily: fonts.body, fontSize: 12, color: colors.navy400, marginTop: 2 }}>
+                      {w.turkish}
+                    </div>
                   </div>
-                  <div style={{ fontFamily: fonts.body, fontSize: 12, color: colors.navy400, marginTop: 2 }}>
-                    {w.turkish}
+                  <div style={{
+                    fontSize: 10, fontWeight: 700, fontFamily: fonts.heading,
+                    padding: "2px 6px", borderRadius: radius.pill,
+                    background: colors.navy50, color: colors.navy,
+                  }}>
+                    {w.level}
                   </div>
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); toggleFav(w.id, isFav); }}
+                    style={{
+                      background: "none", border: "none", padding: 6, cursor: "pointer",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                    }}
+                    aria-label={isFav ? "Favoriden çıkar" : "Favorilere ekle"}
+                  >
+                    <Heart
+                      size={16}
+                      color={isFav ? "#ef4444" : colors.neutral}
+                      fill={isFav ? "#ef4444" : "none"}
+                    />
+                  </button>
                 </div>
-                <div style={{
-                  fontSize: 10, fontWeight: 700, fontFamily: fonts.heading,
-                  padding: "2px 6px", borderRadius: radius.pill,
-                  background: colors.navy50, color: colors.navy,
-                }}>
-                  {w.level}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {totalPages > 1 && (

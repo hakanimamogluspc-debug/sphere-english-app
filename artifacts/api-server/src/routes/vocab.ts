@@ -162,14 +162,21 @@ router.post("/vocab/favorites/:wordId", authMiddleware, async (req: AuthRequest,
     )).limit(1);
 
   if (existing) {
+    // Zaten takipte — favori yap, review queue'da yoksa oraya al
+    const patch: any = { isFavorite: true, updatedAt: new Date() };
+    if (!existing.nextReviewAt && !existing.isLearned) {
+      patch.nextReviewAt = new Date();
+    }
     await db.update(userVocabProgressTable)
-      .set({ isFavorite: true, updatedAt: new Date() })
+      .set(patch)
       .where(eq(userVocabProgressTable.id, existing.id));
   } else {
+    // Yeni kayıt — hemen tekrar edilebilir
     await db.insert(userVocabProgressTable).values({
       userId: req.userId!,
       wordId,
       isFavorite: true,
+      nextReviewAt: new Date(),
     });
   }
   res.json({ ok: true, isFavorite: true });
