@@ -274,6 +274,7 @@ const QUICK_ACTIONS: QuickAction[] = [
   { label: "Yazma Koçu",        subtitle: "Metnini geliştir",        href: "/student/writing-coach",      icon: BookMarked,    bg: "",  accent: "#c2410c",  featureKey: "student-writing-coach" },
   { label: "Dilbilgisi Koçu",   subtitle: "Kurallara hakim ol",      href: "/student/grammar-coach",      icon: Cpu,           bg: "",  accent: "#7c3aed",  featureKey: "student-grammar-coach" },
   { label: "Kelime Oyunu",      subtitle: "Kelime dağarcığını aç",   href: "/student/vocab-game",         icon: Trophy,        bg: "",  accent: "#b45309",  featureKey: "student-vocab-game" },
+  { label: "Kelime Tekrarı",    subtitle: "Keşfet, favori, SRS",     href: "/student/vocab-hub",          icon: BookMarked,    bg: "",  accent: "#db2777" },
   { label: "Keşfet",            subtitle: "Haberler & makaleler",    href: "/kesfet",                     icon: Newspaper,     bg: "",  accent: "#0ea5e9" },
 ];
 

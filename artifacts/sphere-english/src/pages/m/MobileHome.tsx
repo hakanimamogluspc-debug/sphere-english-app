@@ -66,41 +66,24 @@ export default function MobileHome() {
   };
 
   const speakWord = async (text: string) => {
-    const log = (msg: string) => {
-      try {
-        (window as any).__tts_log = ((window as any).__tts_log || []).concat([`${Date.now()}: ${msg}`]);
-        console.log("[TTS]", msg);
-      } catch {}
-    };
-
     // 1. Capacitor TextToSpeech plugin (native Android TTS) — en güvenilir
     try {
       const cap = (window as any).Capacitor;
-      const isNative = cap?.isNativePlatform?.() ?? cap?.getPlatform?.() !== "web";
-      log(`cap=${!!cap} isNative=${isNative} plugin=${!!cap?.Plugins?.TextToSpeech}`);
-
       if (cap?.Plugins?.TextToSpeech) {
-        // Önce varsa önceki konuşmayı durdur
         try { await cap.Plugins.TextToSpeech.stop(); } catch {}
-
         await cap.Plugins.TextToSpeech.speak({
           text,
           lang: "en-US",
           rate: 1.0,
           pitch: 1.0,
           volume: 1.0,
-          category: "ambient",   // iOS için
+          category: "ambient",
         });
-        log("✓ Native TTS tetiklendi");
         return;
       }
-    } catch (e: any) {
-      log(`Native TTS hata: ${e?.message || e}`);
-      // Visible: kullanıcı native TTS kullanıyorsa failed olduğunu bilsin
-      alert(`Ses çalınamadı (native): ${e?.message || e}`);
-    }
+    } catch (e) { console.warn("[TTS] native fail:", e); }
 
-    // 2. Web Speech API (desktop + bazı WebView'ler)
+    // 2. Web Speech API
     if ("speechSynthesis" in window && "SpeechSynthesisUtterance" in window) {
       try {
         const synth = window.speechSynthesis;
@@ -108,16 +91,12 @@ export default function MobileHome() {
         const u = new SpeechSynthesisUtterance(text);
         u.lang = "en-US";
         u.rate = 0.9;
-        // Voices async yüklenir — getVoices boş dönebilir, event bekle
         const voices = synth.getVoices();
         const enVoice = voices.find(v => v.lang.startsWith("en"));
         if (enVoice) u.voice = enVoice;
-        u.onerror = (ev) => log(`speech synth error: ${(ev as any).error || "unknown"}`);
-        u.onend = () => log("✓ Web Speech bitti");
         synth.speak(u);
-        log(`Web Speech başlatıldı (voice=${enVoice?.name || "default"})`);
         return;
-      } catch (e: any) { log(`Web Speech hata: ${e?.message}`); }
+      } catch (e) { console.warn("[TTS] web speech fail:", e); }
     }
 
     // 3. Fallback: Google Translate TTS
@@ -126,11 +105,7 @@ export default function MobileHome() {
       const audio = new Audio(url);
       audio.crossOrigin = "anonymous";
       await audio.play();
-      log("✓ Google TTS tetiklendi");
-    } catch (e: any) {
-      log(`Google TTS hata: ${e?.message}`);
-      alert(`Hoparlör çalışmıyor. Lütfen cihazınızda TTS motoru yüklü olduğundan emin olun (Ayarlar > Erişilebilirlik > Text-to-Speech).`);
-    }
+    } catch (e) { console.warn("[TTS] google fail:", e); }
   };
 
   useEffect(() => { loadAll().catch(() => {}); }, []);
@@ -260,6 +235,43 @@ export default function MobileHome() {
             onCta={() => setLocation("/m/pratik")}
           />
         )}
+
+        {/* Kelime Tekrarı CTA */}
+        <div
+          onClick={() => setLocation("/m/pratik/kelime-hub")}
+          style={{
+            marginTop: 16,
+            background: `linear-gradient(135deg, ${colors.brand}, ${colors.turqDeep})`,
+            borderRadius: radius.panel,
+            padding: "18px 20px",
+            display: "flex", alignItems: "center", gap: 12,
+            cursor: "pointer", color: colors.onBrand,
+          }}
+        >
+          <div style={{
+            width: 44, height: 44, borderRadius: "50%",
+            background: "rgba(255,255,255,0.18)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            flexShrink: 0,
+          }}>
+            <span style={{ fontSize: 22 }}>📚</span>
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{
+              fontFamily: fonts.heading, fontWeight: 800, fontSize: 15,
+              letterSpacing: "-0.01em",
+            }}>
+              Kelime Keşfet & Tekrar Et
+            </div>
+            <div style={{
+              fontFamily: fonts.body, fontSize: 12,
+              opacity: 0.9, marginTop: 2,
+            }}>
+              1400+ kelime · telaffuz · günlük tekrar
+            </div>
+          </div>
+          <ArrowRight size={20} strokeWidth={2.5} />
+        </div>
 
         {/* Bugünün Kelimesi */}
         {wordOfDay && (
