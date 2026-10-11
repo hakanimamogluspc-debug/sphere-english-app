@@ -33,6 +33,13 @@ async function apiFetch(url: string) {
   return res.json();
 }
 
+function ScoreBadge({ pct }: { pct: number }) {
+  const color = pct >= 70 ? "text-green-600 bg-green-50"
+    : pct >= 50 ? "text-yellow-600 bg-yellow-50"
+    : "text-red-600 bg-red-50";
+  return <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${color}`}>{pct}%</span>;
+}
+
 export default function TeacherProgress() {
   const [, navigate] = useLocation();
 
