@@ -506,6 +506,7 @@ function FavoritesTab({ onOpenWord }: { onOpenWord: (id: number) => void }) {
 function ExploreTab({ onOpenWord }: { onOpenWord: (id: number) => void }) {
   const [search, setSearch] = useState("");
   const [level, setLevel] = useState<string>("");
+  const [letter, setLetter] = useState<string>("");
   const [page, setPage] = useState(1);
   const [words, setWords] = useState<Word[]>([]);
   const [total, setTotal] = useState(0);
@@ -518,6 +519,7 @@ function ExploreTab({ onOpenWord }: { onOpenWord: (id: number) => void }) {
         const qp = new URLSearchParams();
         if (search.trim()) qp.set("q", search.trim());
         if (level) qp.set("level", level);
+        if (letter) qp.set("startsWith", letter);
         qp.set("page", String(page));
         qp.set("limit", "20");
         const data = await apiJson(`/api/vocab/words?${qp.toString()}`);
@@ -530,7 +532,7 @@ function ExploreTab({ onOpenWord }: { onOpenWord: (id: number) => void }) {
       }
     }, 250);
     return () => clearTimeout(t);
-  }, [search, level, page]);
+  }, [search, level, letter, page]);
 
   const totalPages = Math.max(1, Math.ceil(total / 20));
 
@@ -572,6 +574,49 @@ function ExploreTab({ onOpenWord }: { onOpenWord: (id: number) => void }) {
           <option value="">Hepsi</option>
           {["A1","A2","B1","B2","C1","C2"].map((l) => <option key={l} value={l}>{l}</option>)}
         </select>
+      </div>
+
+      {/* Alfabe filtresi — yatay scroll */}
+      <div style={{
+        display: "flex", gap: 4, marginBottom: 12,
+        overflowX: "auto", paddingBottom: 4,
+        WebkitOverflowScrolling: "touch",
+      }}>
+        <button
+          type="button"
+          onClick={() => { setLetter(""); setPage(1); }}
+          style={{
+            flexShrink: 0,
+            padding: "6px 10px",
+            borderRadius: radius.chip,
+            border: "none",
+            background: letter === "" ? colors.brand : colors.navy50,
+            color: letter === "" ? colors.onBrand : colors.navy,
+            fontFamily: fonts.heading, fontWeight: 700, fontSize: 11,
+            cursor: "pointer",
+          }}
+        >
+          Hepsi
+        </button>
+        {"ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").map((l) => (
+          <button
+            key={l}
+            type="button"
+            onClick={() => { setLetter(l.toLowerCase()); setPage(1); }}
+            style={{
+              flexShrink: 0,
+              width: 28, height: 28,
+              borderRadius: radius.chip,
+              border: "none",
+              background: letter === l.toLowerCase() ? colors.brand : colors.navy50,
+              color: letter === l.toLowerCase() ? colors.onBrand : colors.navy,
+              fontFamily: fonts.heading, fontWeight: 700, fontSize: 12,
+              cursor: "pointer",
+            }}
+          >
+            {l}
+          </button>
+        ))}
       </div>
 
       {loading ? (

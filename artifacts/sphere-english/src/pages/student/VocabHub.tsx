@@ -322,16 +322,18 @@ function ReviewTab({ onOpenWord }: { onOpenWord: (id: number) => void }) {
 function ExploreTab({ onOpenWord }: { onOpenWord: (id: number) => void }) {
   const [search, setSearch] = useState("");
   const [level, setLevel] = useState<string>("");
+  const [letter, setLetter] = useState<string>("");
   const [page, setPage] = useState(1);
 
   const qp = new URLSearchParams();
   if (search.trim()) qp.set("q", search.trim());
   if (level) qp.set("level", level);
+  if (letter) qp.set("startsWith", letter);
   qp.set("page", String(page));
   qp.set("limit", "24");
 
   const { data, isLoading } = useQuery<{ words: Word[]; total: number }>({
-    queryKey: ["/api/vocab/words", search, level, page],
+    queryKey: ["/api/vocab/words", search, level, letter, page],
     queryFn: () => apiJson(`/api/vocab/words?${qp.toString()}`),
   });
 
@@ -359,6 +361,27 @@ function ExploreTab({ onOpenWord }: { onOpenWord: (id: number) => void }) {
           <option value="">Tüm seviyeler</option>
           {["A1","A2","B1","B2","C1","C2"].map((l) => <option key={l} value={l}>{l}</option>)}
         </select>
+      </div>
+
+      {/* Alfabe filtresi */}
+      <div className="flex flex-wrap gap-1">
+        <button
+          type="button"
+          onClick={() => { setLetter(""); setPage(1); }}
+          className={`px-2 py-1 text-xs font-semibold rounded ${letter === "" ? "bg-primary text-primary-foreground" : "bg-secondary hover:bg-secondary/70"}`}
+        >
+          Hepsi
+        </button>
+        {"ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").map((l) => (
+          <button
+            key={l}
+            type="button"
+            onClick={() => { setLetter(l.toLowerCase()); setPage(1); }}
+            className={`w-7 h-7 text-xs font-semibold rounded ${letter === l.toLowerCase() ? "bg-primary text-primary-foreground" : "bg-secondary hover:bg-secondary/70"}`}
+          >
+            {l}
+          </button>
+        ))}
       </div>
 
       {isLoading ? (

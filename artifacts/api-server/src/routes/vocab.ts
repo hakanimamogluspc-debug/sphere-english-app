@@ -84,6 +84,14 @@ router.get("/vocab/words", authMiddleware, async (req: AuthRequest, res) => {
     const term = `%${q.q.trim()}%`;
     conds.push(or(ilike(vocabWordsTable.word, term), ilike(vocabWordsTable.turkish, term)));
   }
+  // Harf filtresi: ör. startsWith=a → word ILIKE 'a%'
+  if (typeof q.startsWith === "string" && q.startsWith.trim()) {
+    const letter = q.startsWith.trim().toLowerCase();
+    // Sadece tek harfe izin ver, injection önlensin
+    if (/^[a-z]$/.test(letter)) {
+      conds.push(ilike(vocabWordsTable.word, `${letter}%`));
+    }
+  }
   const where = conds.length ? and(...conds) : undefined;
 
   const words = await db.select(WORD_COLS).from(vocabWordsTable)
