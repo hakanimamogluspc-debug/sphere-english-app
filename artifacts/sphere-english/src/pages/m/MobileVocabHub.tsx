@@ -3,9 +3,10 @@ import {
   ModuleShell, LoadingState, ErrorState,
   colors, fonts, radius,
 } from "@/components/mobile";
+import VocabWordDetailModal from "@/components/vocab/VocabWordDetailModal";
 import {
   Heart, Volume2, X, Check, CheckCircle2, Target, Brain, Sparkles,
-  BookOpen,
+  BookOpen, Search, Compass,
 } from "lucide-react";
 
 /**
@@ -62,9 +63,10 @@ function playTTS(text: string) {
 }
 
 export default function MobileVocabHub() {
-  const [tab, setTab] = useState<"review" | "favorites">("review");
+  const [tab, setTab] = useState<"review" | "favorites" | "explore">("review");
   const [stats, setStats] = useState<Stats | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [selectedWordId, setSelectedWordId] = useState<number | null>(null);
 
   const loadStats = async () => {
     try {
@@ -101,8 +103,9 @@ export default function MobileVocabHub() {
         marginBottom: 16,
       }}>
         {[
-          { key: "review", label: `Günlük Tekrar${stats?.due ? ` (${stats.due})` : ""}` },
+          { key: "review", label: `Tekrar${stats?.due ? ` (${stats.due})` : ""}` },
           { key: "favorites", label: `Favoriler${stats?.favorites ? ` (${stats.favorites})` : ""}` },
+          { key: "explore", label: "Keşfet" },
         ].map((t) => (
           <button
             key={t.key}
@@ -128,7 +131,16 @@ export default function MobileVocabHub() {
 
       {tab === "review"
         ? <ReviewTab onDone={loadStats} />
-        : <FavoritesTab />}
+        : tab === "favorites"
+        ? <FavoritesTab onOpenWord={setSelectedWordId} />
+        : <ExploreTab onOpenWord={setSelectedWordId} />}
+
+      {selectedWordId !== null && (
+        <VocabWordDetailModal wordId={selectedWordId} onClose={() => {
+          setSelectedWordId(null);
+          loadStats(); // modalda favori değişmiş olabilir
+        }} />
+      )}
     </ModuleShell>
   );
 }
@@ -400,7 +412,7 @@ function AnswerButton({ variant, icon, label, onClick, disabled }: {
 
 // ─── Favoriler ─────────────────────────────────────────────────────────
 
-function FavoritesTab() {
+function FavoritesTab({ onOpenWord }: { onOpenWord: (id: number) => void }) {
   const [words, setWords] = useState<Word[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -441,12 +453,14 @@ function FavoritesTab() {
       {words.map((w) => (
         <div
           key={w.id}
+          onClick={() => onOpenWord(w.id)}
           style={{
             background: colors.white,
             borderRadius: radius.card,
             border: `1px solid ${colors.navy100}`,
             padding: 14,
             display: "flex", alignItems: "center", gap: 10,
+            cursor: "pointer",
           }}
         >
           <div style={{ flex: 1, minWidth: 0 }}>
@@ -473,7 +487,7 @@ function FavoritesTab() {
           </div>
           <button
             type="button"
-            onClick={() => playTTS(w.word)}
+            onClick={(e) => { e.stopPropagation(); playTTS(w.word); }}
             style={{
               background: "none", border: "none", padding: 6, cursor: "pointer",
               color: colors.turqDeep,
@@ -483,6 +497,180 @@ function FavoritesTab() {
           </button>
         </div>
       ))}
+    </div>
+  );
+}
+
+// ─── Keşfet ─────────────────────────────────────────────────────────────
+
+function ExploreTab({ onOpenWord }: { onOpenWord: (id: number) => void }) {
+  const [search, setSearch] = useState("");
+  const [level, setLevel] = useState<string>("");
+  const [page, setPage] = useState(1);
+  const [words, setWords] = useState<Word[]>([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const t = setTimeout(async () => {
+      setLoading(true);
+      try {
+        const qp = new URLSearchParams();
+        if (search.trim()) qp.set("q", search.trim());
+        if (level) qp.set("level", level);
+        qp.set("page", String(page));
+        qp.set("limit", "20");
+        const data = await apiJson(`/api/vocab/words?${qp.toString()}`);
+        setWords(data.words || []);
+        setTotal(data.total || 0);
+      } catch (e) {
+        /* ignore */
+      } finally {
+        setLoading(false);
+      }
+    }, 250);
+    return () => clearTimeout(t);
+  }, [search, level, page]);
+
+  const totalPages = Math.max(1, Math.ceil(total / 20));
+
+  return (
+    <div>
+      {/* Search + level filter */}
+      <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+        <div style={{ flex: 1, position: "relative" }}>
+          <Search size={14} style={{
+            position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)",
+            color: colors.neutral,
+          }} />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+            placeholder="Kelime ara..."
+            style={{
+              width: "100%", padding: "8px 10px 8px 30px",
+              border: `1px solid ${colors.navy100}`,
+              borderRadius: radius.chip,
+              fontFamily: fonts.body, fontSize: 13,
+              background: colors.white, color: colors.navy,
+              outline: "none",
+            }}
+          />
+        </div>
+        <select
+          value={level}
+          onChange={(e) => { setLevel(e.target.value); setPage(1); }}
+          style={{
+            padding: "8px 10px",
+            border: `1px solid ${colors.navy100}`,
+            borderRadius: radius.chip,
+            fontFamily: fonts.body, fontSize: 13,
+            background: colors.white, color: colors.navy,
+          }}
+        >
+          <option value="">Hepsi</option>
+          {["A1","A2","B1","B2","C1","C2"].map((l) => <option key={l} value={l}>{l}</option>)}
+        </select>
+      </div>
+
+      {loading ? (
+        <LoadingState message="Yükleniyor..." />
+      ) : words.length === 0 ? (
+        <div style={{
+          padding: 32, textAlign: "center",
+          background: colors.white, borderRadius: radius.panel,
+          border: `1px solid ${colors.navy100}`,
+        }}>
+          <Compass size={32} color={colors.navy100} style={{ margin: "0 auto 10px" }} />
+          <div style={{ fontFamily: fonts.body, fontSize: 13, color: colors.neutral }}>
+            Sonuç bulunamadı
+          </div>
+        </div>
+      ) : (
+        <>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            {words.map((w) => (
+              <div
+                key={w.id}
+                onClick={() => onOpenWord(w.id)}
+                style={{
+                  background: colors.white,
+                  borderRadius: radius.card,
+                  border: `1px solid ${colors.navy100}`,
+                  padding: 12,
+                  display: "flex", alignItems: "center", gap: 10,
+                  cursor: "pointer",
+                }}
+              >
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+                    <div style={{ fontFamily: fonts.heading, fontWeight: 700, fontSize: 15, color: colors.navy }}>
+                      {w.word}
+                    </div>
+                    {w.pronunciation && (
+                      <div style={{ fontFamily: "monospace", fontSize: 10, color: colors.neutral }}>
+                        {w.pronunciation}
+                      </div>
+                    )}
+                  </div>
+                  <div style={{ fontFamily: fonts.body, fontSize: 12, color: colors.navy400, marginTop: 2 }}>
+                    {w.turkish}
+                  </div>
+                </div>
+                <div style={{
+                  fontSize: 10, fontWeight: 700, fontFamily: fonts.heading,
+                  padding: "2px 6px", borderRadius: radius.pill,
+                  background: colors.navy50, color: colors.navy,
+                }}>
+                  {w.level}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {totalPages > 1 && (
+            <div style={{
+              display: "flex", justifyContent: "center", alignItems: "center",
+              gap: 10, marginTop: 16,
+            }}>
+              <button
+                type="button"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page === 1}
+                style={{
+                  padding: "6px 12px", borderRadius: radius.chip,
+                  border: `1px solid ${colors.navy100}`,
+                  background: colors.white, color: colors.navy,
+                  fontFamily: fonts.body, fontSize: 12,
+                  opacity: page === 1 ? 0.5 : 1,
+                  cursor: page === 1 ? "default" : "pointer",
+                }}
+              >
+                Önceki
+              </button>
+              <div style={{ fontFamily: fonts.body, fontSize: 12, color: colors.neutral }}>
+                {page} / {totalPages}
+              </div>
+              <button
+                type="button"
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
+                style={{
+                  padding: "6px 12px", borderRadius: radius.chip,
+                  border: `1px solid ${colors.navy100}`,
+                  background: colors.white, color: colors.navy,
+                  fontFamily: fonts.body, fontSize: 12,
+                  opacity: page === totalPages ? 0.5 : 1,
+                  cursor: page === totalPages ? "default" : "pointer",
+                }}
+              >
+                Sonraki
+              </button>
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }

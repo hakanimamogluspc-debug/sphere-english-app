@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card } from "@/components/ui/core";
 import {
   Heart, BookOpen, Brain, Target, Volume2, X, Check,
-  CheckCircle2, Loader2, Sparkles,
+  CheckCircle2, Loader2, Sparkles, Search, Compass,
 } from "lucide-react";
 import VocabWordDetailModal from "@/components/vocab/VocabWordDetailModal";
 
@@ -61,7 +61,7 @@ function playTTS(text: string) {
 }
 
 export default function VocabHub() {
-  const [tab, setTab] = useState<"review" | "favorites">("review");
+  const [tab, setTab] = useState<"review" | "favorites" | "explore">("review");
   const [selectedWordId, setSelectedWordId] = useState<number | null>(null);
 
   const { data: stats } = useQuery<Stats>({
@@ -140,12 +140,23 @@ export default function VocabHub() {
         >
           Favoriler {stats && stats.favorites > 0 && `(${stats.favorites})`}
         </button>
+        <button
+          type="button"
+          onClick={() => setTab("explore")}
+          className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
+            tab === "explore" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          Keşfet
+        </button>
       </div>
 
       {tab === "review" ? (
         <ReviewTab onOpenWord={setSelectedWordId} />
-      ) : (
+      ) : tab === "favorites" ? (
         <FavoritesTab onOpenWord={setSelectedWordId} />
+      ) : (
+        <ExploreTab onOpenWord={setSelectedWordId} />
       )}
 
       {selectedWordId !== null && (
@@ -302,6 +313,111 @@ function ReviewTab({ onOpenWord }: { onOpenWord: (id: number) => void }) {
       >
         Detayları gör →
       </button>
+    </div>
+  );
+}
+
+// ─── Keşfet ─────────────────────────────────────────────────────────────
+
+function ExploreTab({ onOpenWord }: { onOpenWord: (id: number) => void }) {
+  const [search, setSearch] = useState("");
+  const [level, setLevel] = useState<string>("");
+  const [page, setPage] = useState(1);
+
+  const qp = new URLSearchParams();
+  if (search.trim()) qp.set("q", search.trim());
+  if (level) qp.set("level", level);
+  qp.set("page", String(page));
+  qp.set("limit", "24");
+
+  const { data, isLoading } = useQuery<{ words: Word[]; total: number }>({
+    queryKey: ["/api/vocab/words", search, level, page],
+    queryFn: () => apiJson(`/api/vocab/words?${qp.toString()}`),
+  });
+
+  const words = data?.words ?? [];
+  const totalPages = data ? Math.ceil(data.total / 24) : 1;
+
+  return (
+    <div className="space-y-4">
+      <div className="flex gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+            placeholder="Kelime ara (İngilizce veya Türkçe)..."
+            className="w-full pl-10 pr-3 py-2 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+          />
+        </div>
+        <select
+          value={level}
+          onChange={(e) => { setLevel(e.target.value); setPage(1); }}
+          className="px-3 py-2 border border-border rounded-lg bg-background"
+        >
+          <option value="">Tüm seviyeler</option>
+          {["A1","A2","B1","B2","C1","C2"].map((l) => <option key={l} value={l}>{l}</option>)}
+        </select>
+      </div>
+
+      {isLoading ? (
+        <div className="flex items-center justify-center h-32"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
+      ) : words.length === 0 ? (
+        <Card className="p-8 text-center">
+          <Compass className="h-10 w-10 text-muted-foreground mx-auto mb-2" />
+          <p className="text-muted-foreground">Sonuç bulunamadı</p>
+        </Card>
+      ) : (
+        <>
+          <div className="grid gap-2">
+            {words.map((w) => (
+              <Card
+                key={w.id}
+                className="p-3 cursor-pointer hover:border-primary/30 transition-colors border-2 border-border"
+                onClick={() => onOpenWord(w.id)}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="font-semibold">{w.word}</p>
+                      {w.pronunciation && (
+                        <span className="text-xs text-muted-foreground font-mono">{w.pronunciation}</span>
+                      )}
+                    </div>
+                    <p className="text-sm text-muted-foreground truncate">{w.turkish}</p>
+                  </div>
+                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-secondary shrink-0">
+                    {w.level}
+                  </span>
+                </div>
+              </Card>
+            ))}
+          </div>
+
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="px-3 py-1 rounded border border-border text-sm disabled:opacity-50"
+              >
+                Önceki
+              </button>
+              <span className="text-sm text-muted-foreground">{page} / {totalPages}</span>
+              <button
+                type="button"
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
+                className="px-3 py-1 rounded border border-border text-sm disabled:opacity-50"
+              >
+                Sonraki
+              </button>
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }

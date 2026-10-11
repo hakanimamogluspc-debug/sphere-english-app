@@ -68,6 +68,34 @@ function sm2Update(prev: { easeFactor: number; intervalDays: number; streak: num
 // ─── Kullanıcı tarafı ───────────────────────────────────────────────
 
 /**
+ * GET /vocab/words — kelime havuzunda filtrelenebilir arama (student için).
+ * Query: level, category, q (word veya turkish'te), page (1), limit (default 20, max 100)
+ */
+router.get("/vocab/words", authMiddleware, async (req: AuthRequest, res) => {
+  const page = Math.max(1, parseInt(String(req.query.page || "1")));
+  const limit = Math.min(100, Math.max(1, parseInt(String(req.query.limit || "20"))));
+  const offset = (page - 1) * limit;
+
+  const conds: any[] = [];
+  const q = req.query;
+  if (typeof q.level === "string" && q.level) conds.push(eq(vocabWordsTable.level, q.level));
+  if (typeof q.category === "string" && q.category) conds.push(eq(vocabWordsTable.category, q.category));
+  if (typeof q.q === "string" && q.q.trim()) {
+    const term = `%${q.q.trim()}%`;
+    conds.push(or(ilike(vocabWordsTable.word, term), ilike(vocabWordsTable.turkish, term)));
+  }
+  const where = conds.length ? and(...conds) : undefined;
+
+  const words = await db.select(WORD_COLS).from(vocabWordsTable)
+    .where(where)
+    .orderBy(asc(vocabWordsTable.word))
+    .limit(limit).offset(offset);
+  const [{ total }] = await db.select({ total: count() }).from(vocabWordsTable).where(where);
+
+  res.json({ words, total: Number(total), page, limit });
+});
+
+/**
  * GET /vocab/words/:id — tek kelime detayı + user'ın progress'i (varsa)
  */
 router.get("/vocab/words/:id", authMiddleware, async (req: AuthRequest, res) => {
