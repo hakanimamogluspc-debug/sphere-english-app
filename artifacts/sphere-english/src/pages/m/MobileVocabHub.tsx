@@ -79,14 +79,14 @@ export default function MobileVocabHub() {
 
   if (error && !stats) {
     return (
-      <ModuleShell title="Kelime Çalışma" backTo="/m">
+      <ModuleShell title="Kelime Çalışma" backTo="/m/pratik">
         <ErrorState message={error} />
       </ModuleShell>
     );
   }
 
   return (
-    <ModuleShell title="Kelime Çalışma" subtitle="Günlük tekrar + favoriler" backTo="/m" withTabBar>
+    <ModuleShell title="Kelime Çalışma" subtitle="Günlük tekrar + favoriler" backTo="/m/pratik" withTabBar>
       {/* Stats */}
       {stats && (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 8, marginBottom: 16 }}>
