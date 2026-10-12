@@ -13,6 +13,7 @@ import TodayTaskCard from "@/components/TodayTaskCard";
 import StreakCard from "@/components/StreakCard";
 import WeeklyLeaderboard from "@/components/WeeklyLeaderboard";
 import BusinessCardsDaily from "@/components/BusinessCardsDaily";
+import GuidedJourneyCard from "@/components/journey/GuidedJourneyCard";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 function useAnnouncements() {
@@ -60,6 +61,11 @@ function StudentDashboard() {
             </span>
           </div>
         </div>
+      )}
+
+      {/* 📅 Post-placement 7 günlük plan (R0 — yeni kullanıcı guided journey) */}
+      {user?.role === "student" && (
+        <GuidedJourneyCard />
       )}
 
       {/* 🎯 Bugün için 1 iş + Streak (R1.A + R1.B) */}

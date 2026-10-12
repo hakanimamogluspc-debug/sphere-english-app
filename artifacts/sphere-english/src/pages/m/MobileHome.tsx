@@ -9,6 +9,7 @@ import {
   type TabKey, type BusinessCardData,
 } from "@/components/mobile";
 import { ArrowRight, Volume2 } from "lucide-react";
+import MobileGuidedJourneyCard from "@/components/journey/MobileGuidedJourneyCard";
 
 /**
  * Mobil Ana Sayfa — /m/anasayfa
@@ -235,6 +236,9 @@ export default function MobileHome() {
             onCta={() => setLocation("/m/pratik")}
           />
         )}
+
+        {/* 7 Günlük Başlangıç Planı */}
+        <MobileGuidedJourneyCard />
 
         {/* Kelime Tekrarı CTA */}
         <div
