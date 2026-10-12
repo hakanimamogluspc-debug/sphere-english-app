@@ -64,7 +64,7 @@ function mailHtml(firstName: string): string {
                 <tr>
                   <td style="padding:8px;">
                     <div style="font-size:13px;font-weight:700;color:#1e3a6e;margin-bottom:4px;">🎯 Günlük tekrar (SRS algoritması)</div>
-                    <div style="font-size:13px;color:#64748b;">Beyin bilimine dayalı aralıklı tekrar — Duolingo stili ama iş İngilizcesi için.</div>
+                    <div style="font-size:13px;color:#64748b;">Beyin bilimine dayalı aralıklı tekrar — iş İngilizcesi için optimize edilmiş.</div>
                   </td>
                 </tr>
                 <tr>
