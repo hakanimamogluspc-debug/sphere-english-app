@@ -419,7 +419,8 @@ router.get("/ebooks/asset/:assetId", async (req: Request, res: Response) => {
 
     res.setHeader("Content-Type", asset.mime_type || "application/octet-stream");
     res.setHeader("Content-Length", String(asset.size_bytes));
-    res.setHeader("Cache-Control", "public, max-age=3600, immutable");
+    // Asset id'si değişmez (yeni upload = yeni id) → uzun cache güvenli
+    res.setHeader("Cache-Control", "public, max-age=2592000, immutable");
     // Cross-origin <img> tag'lerinin yükleyebilmesi için CORP override
     // (Header'sız asset'leri tarayıcı bloklamasın)
     res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");

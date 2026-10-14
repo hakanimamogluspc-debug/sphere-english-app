@@ -201,7 +201,8 @@ router.get("/bundle-cover/:id", async (req: Request, res: Response) => {
     if (asset.cover_size) res.setHeader("Content-Length", String(asset.cover_size));
     // Cache 5 dakika + must-revalidate — re-upload'da yeni görsel gözükür
     // (immutable kaldırıldı; URL zaten ?v=<ts> cache-buster taşıyor)
-    res.setHeader("Cache-Control", "public, max-age=300, must-revalidate");
+    // URL ?v=<ts> cache-buster taşıdığı için uzun cache güvenli
+    res.setHeader("Cache-Control", "public, max-age=604800, immutable");
     res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
     res.setHeader("Access-Control-Allow-Origin", "*");
 
