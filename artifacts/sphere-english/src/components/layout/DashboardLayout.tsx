@@ -113,54 +113,75 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     ],
     admin: [
       { name: 'Genel Bakış',         href: '/dashboard',                      icon: LayoutDashboard },
-      { name: 'Kurumlar',            href: '/admin/companies',                icon: Building2 },
-      { name: 'Kullanıcılar',        href: '/admin/users',                    icon: Users },
-      { name: 'Öğretmenler',         href: '/admin/teachers',                 icon: GraduationCap },
+
+      // ─── Kullanıcılar & Kurumlar ───
+      { name: 'Kullanıcılar',        href: '',                                icon: Users,         isSectionHeader: true },
+      { name: 'Tüm Kullanıcılar',    href: '/admin/users',                    icon: Users },
       { name: 'Öğrenciler',          href: '/admin/students',                 icon: Users },
+      { name: 'Öğretmenler',         href: '/admin/teachers',                 icon: GraduationCap },
+      { name: 'Eğitmen Başvuruları', href: '/admin/teacher-applications',     icon: UserPlus },
+      { name: 'Kurumlar',            href: '/admin/companies',                icon: Building2 },
       { name: 'Gruplar',             href: '/admin/groups',                   icon: Users },
-      { name: 'Tüm Kurslar',         href: '/admin/courses',                  icon: BookOpen },
+
+      // ─── Eğitim ───
+      { name: 'Eğitim',              href: '',                                icon: BookOpen,      isSectionHeader: true },
+      { name: 'Platform Kursları',   href: '/admin/courses',                  icon: BookOpen },
+      { name: 'Satılan Kurslar',     href: '/admin/kurslar',                  icon: GraduationCap },
       { name: 'Quiz Yönetimi',       href: '/teacher/quizzes',                icon: FileQuestion },
       { name: 'Materyaller',         href: '/admin/materials',                icon: FolderOpen },
       { name: 'Canlı Dersler',       href: '/admin/live-classes',             icon: Video },
       { name: 'Speaking Club',       href: '/admin/speaking-club',            icon: Mic },
-      { name: 'Duyurular',           href: '/admin/announcements',            icon: Megaphone },
-      { name: 'Sistem Raporları',    href: '/admin/reports',                  icon: LineChart },
-      { name: 'Aktivite Analizi',    href: '/admin/analytics',                icon: Activity },
-      { name: 'Mail Şablonları',     href: '/admin/mail-sablonlari',          icon: Mail },
-      { name: 'B2B Outbound',        href: '/admin/outbound',                 icon: Send },
-      { name: 'Ödemeler & İade',     href: '/admin/payments',                 icon: Receipt },
       { name: 'Demo Randevular',     href: '/admin/demo',                     icon: Calendar },
+
+      // ─── İçerik & AI ───
+      { name: 'İçerik & AI',         href: '',                                icon: Sparkles,      isSectionHeader: true },
+      { name: 'AI İçerik Üretici',   href: '/admin/ai-icerik',                icon: Sparkles },
       { name: 'İçerik Kütüphanesi',  href: '/admin/content',                  icon: Newspaper },
       { name: 'İçerik Envanteri',    href: '/admin/content-envanteri',        icon: BarChart3 },
-      { name: 'AI İçerik Üretici',   href: '/admin/ai-icerik',                icon: Sparkles },
-      { name: 'Kariyer & Motivasyon',href: '/admin/career',                   icon: Compass },
-      { name: 'Konuşma Sahneleri',   href: '/admin/scenes',                   icon: Mic },
-      // ─── Yeni araçlar (2026-10) ───
       { name: 'Kelime Havuzu',       href: '/admin/vocab',                    icon: BookMarked },
-      { name: 'Destek Talepleri',    href: '/admin/support',                  icon: Ticket },
-      { name: 'Eğitmen Başvuruları', href: '/admin/teacher-applications',     icon: UserPlus },
-      { name: 'E-Kitap Yönetimi',    href: '/admin/ebooks',                   icon: BookOpen },
-      { name: 'E-Kitap Paketleri',   href: '/admin/bundles',                  icon: Package },
+      { name: 'Konuşma Sahneleri',   href: '/admin/scenes',                   icon: Mic },
+      { name: 'Kariyer & Motivasyon',href: '/admin/career',                   icon: Compass },
+      { name: 'Kelime Oyunu 🎮',     href: '/student/vocab-game',             icon: Gamepad2 },
+
+      // ─── E-Kitaplar ───
+      { name: 'E-Kitaplar',          href: '',                                icon: Package,       isSectionHeader: true },
+      { name: 'Kitaplar',            href: '/admin/ebooks',                   icon: BookOpen },
+      { name: 'Paketler',            href: '/admin/bundles',                  icon: Package },
       { name: 'E-Kitap Sayfası',     href: '/admin/ebook-marketing',          icon: Megaphone },
-      { name: 'Kurs Yönetimi',       href: '/admin/kurslar',                  icon: GraduationCap },
-      // ─── Satışlar bölümü ───
-      { name: 'Satışlar',            href: '',                                icon: ShoppingBag,   isSectionHeader: true },
+
+      // ─── Satış & Finans ───
+      { name: 'Satış & Finans',      href: '',                                icon: ShoppingBag,   isSectionHeader: true },
       { name: 'E-Kitap Satışları',   href: '/admin/ebook-purchases',          icon: ShoppingBag },
       { name: 'Kurs Satışları',      href: '/admin/kurs-satislari',           icon: ShoppingBag },
+      { name: 'Abonelikler',         href: '/admin/subscriptions',            icon: Crown },
+      { name: 'Ödemeler & İade',     href: '/admin/payments',                 icon: Receipt },
       { name: 'E-Faturalar',         href: '/admin/faturalar',                icon: Receipt },
-      { name: 'MEB Aktivite Raporu', href: '/admin/meb-report',               icon: BarChart3 },
+      { name: 'Kupon Kodları',       href: '/admin/coupons',                  icon: Ticket },
+      { name: 'Affiliate Program',   href: '/admin/affiliates',               icon: Award },
+
+      // ─── Pazarlama & İletişim ───
+      { name: 'Pazarlama',           href: '',                                icon: TrendingUp,    isSectionHeader: true },
       { name: 'Pazarlama & E-posta', href: '/admin/marketing',                icon: TrendingUp },
-      { name: 'Web Analiz',          href: '/admin/web-analytics',            icon: Activity },
+      { name: 'Mail Şablonları',     href: '/admin/mail-sablonlari',          icon: Mail },
+      { name: 'B2B Outbound',        href: '/admin/outbound',                 icon: Send },
+      { name: 'Duyurular',           href: '/admin/announcements',            icon: Megaphone },
       { name: 'Chatbot (Sphere Asistan)', href: '/admin/chatbot',             icon: Bot },
       { name: 'Instagram Bot',       href: '/admin/instagram-bot',            icon: MessageCircle },
       { name: 'WhatsApp Bot',        href: '/admin/whatsapp-bot',             icon: Phone },
-      { name: 'Affiliate Program',   href: '/admin/affiliates',               icon: Award },
-      { name: 'Kupon Kodları',       href: '/admin/coupons',                  icon: Ticket },
+
+      // ─── Raporlar ───
+      { name: 'Raporlar',            href: '',                                icon: LineChart,     isSectionHeader: true },
+      { name: 'Sistem Raporları',    href: '/admin/reports',                  icon: LineChart },
+      { name: 'Aktivite Analizi',    href: '/admin/analytics',                icon: Activity },
+      { name: 'Web Analiz',          href: '/admin/web-analytics',            icon: Activity },
+      { name: 'MEB Aktivite Raporu', href: '/admin/meb-report',               icon: BarChart3 },
+
+      // ─── Sistem ───
+      { name: 'Sistem',              href: '',                                icon: Settings2,     isSectionHeader: true },
+      { name: 'Destek Talepleri',    href: '/admin/support',                  icon: Ticket },
+      { name: 'Modül Yönetimi',      href: '/admin/modules',                  icon: Settings2 },
       { name: 'DB Yedekleri',        href: '/admin/backups',                  icon: HardDrive },
       { name: 'Smoke Testleri',      href: '/admin/smoke-tests',              icon: Activity },
-      { name: 'Modül Yönetimi',      href: '/admin/modules',                  icon: Settings2 },
-      { name: 'Abonelikler',         href: '/admin/subscriptions',            icon: Crown },
-      { name: 'Kelime Oyunu 🎮',     href: '/student/vocab-game',             icon: Gamepad2 },
     ],
     corporate: [
       { name: 'Genel Bakış',         href: '/corporate/dashboard',            icon: LayoutDashboard },
