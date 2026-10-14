@@ -209,6 +209,15 @@ const chatbotLimiter = rateLimit({
   message: { error: "Çok hızlı yazıyorsunuz. Lütfen biraz yavaşlayın." },
 });
 
+// E-kitap "Haberdar ol" formu (anon public): saatte en fazla 5 kayıt per IP
+const waitlistLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Çok fazla kayıt denemesi. Lütfen daha sonra tekrar deneyin." },
+});
+
 // Payment: 10 dakikada en fazla 10 işlem (ödeme deneme spamı önleme)
 const paymentLimiter = rateLimit({
   windowMs: 10 * 60 * 1000,
@@ -241,6 +250,9 @@ app.use("/api/vocab-game/game/hint", aiLimiter);
 app.use("/api/chat", chatbotLimiter);
 
 // Payment — checkout flow, provider webhook'u skip ediliyor (yukarıdaki config)
+app.use("/api/ebook-marketing/waitlist", waitlistLimiter);
+app.use("/api-server/api/ebook-marketing/waitlist", waitlistLimiter);
+
 app.use("/api/checkout", paymentLimiter);
 app.use("/api/internal/payment", paymentLimiter);
 app.use("/api/internal/subscription", paymentLimiter);

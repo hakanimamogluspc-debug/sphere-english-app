@@ -30,5 +30,6 @@ export * from "./subscriptions";
 export * from "./payments";
 export * from "./teacher-applications";
 export * from "./ebooks";
+export * from "./ebook-marketing";
 export * from "./placement-test";
 export * from "./support-tickets";

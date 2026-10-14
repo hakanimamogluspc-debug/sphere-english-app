@@ -31,6 +31,7 @@ const AdminAnalytics      = lazy(() => import("./pages/admin/Analytics"));
 const AdminContentEngine  = lazy(() => import("./pages/admin/ContentEngine"));
 const AdminTeacherApps    = lazy(() => import("./pages/admin/TeacherApplications"));
 const AdminEbooks         = lazy(() => import("./pages/admin/AdminEbooks"));
+const AdminEbookMarketing = lazy(() => import("./pages/admin/AdminEbookMarketing"));
 const AdminEbookForm      = lazy(() => import("./pages/admin/AdminEbookForm"));
 const AdminEbookPurchases = lazy(() => import("./pages/admin/AdminEbookPurchases"));
 const AdminCourses        = lazy(() => import("./pages/admin/Courses"));
@@ -408,6 +409,8 @@ function Router() {
         <Route path="/admin/ebooks"><LayoutWrapper component={AdminEbooks} allowedRoles={['admin']} /></Route>
         <Route path="/admin/ebooks/yeni"><LayoutWrapper component={AdminEbookForm} allowedRoles={['admin']} /></Route>
         <Route path="/admin/ebook-purchases"><LayoutWrapper component={AdminEbookPurchases} allowedRoles={['admin']} /></Route>
+        <Route path="/admin/ebook-marketing"><LayoutWrapper component={AdminEbookMarketing} allowedRoles={['admin']} /></Route>
+        <Route path="/admin/ebook-waitlist"><LayoutWrapper component={AdminEbookMarketing} allowedRoles={['admin']} /></Route>
         <Route path="/admin/ebooks/:id"><LayoutWrapper component={AdminEbookForm} allowedRoles={['admin']} /></Route>
         {/* Marketing site kurs kataloğu (bireysel grup programları) */}
         <Route path="/admin/kurslar"><LayoutWrapper component={AdminMarketingCourses} allowedRoles={['admin']} /></Route>

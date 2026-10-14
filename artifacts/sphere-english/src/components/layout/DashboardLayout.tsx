@@ -141,6 +141,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       { name: 'Eğitmen Başvuruları', href: '/admin/teacher-applications',     icon: UserPlus },
       { name: 'E-Kitap Yönetimi',    href: '/admin/ebooks',                   icon: BookOpen },
       { name: 'E-Kitap Paketleri',   href: '/admin/bundles',                  icon: Package },
+      { name: 'E-Kitap Sayfası',     href: '/admin/ebook-marketing',          icon: Megaphone },
       { name: 'Kurs Yönetimi',       href: '/admin/kurslar',                  icon: GraduationCap },
       // ─── Satışlar bölümü ───
       { name: 'Satışlar',            href: '',                                icon: ShoppingBag,   isSectionHeader: true },

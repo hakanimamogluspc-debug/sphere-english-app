@@ -124,6 +124,27 @@ export async function notifyNewTeacherApplication(opts: {
   await notifyAll(`[Sphere] Yeni eğitmen başvurusu — ${opts.fullName}`, html);
 }
 
+export async function notifyNewEbookWaitlist(opts: {
+  entryId: number;
+  email: string;
+  interestLabel: string;
+  totalCount: number;
+}): Promise<void> {
+  const url = `${getAppUrl()}/admin/ebook-waitlist`;
+  const html = wrapHtml(
+    "E-Kitap: Yeni \"Haberdar ol\" kaydı",
+    `/e-kitaplar sayfasından yeni bir bekleme listesi kaydı geldi.<br><br>${fieldList([
+      { label: "E-posta", value: opts.email },
+      { label: "İlgi alanı", value: opts.interestLabel },
+      { label: "Toplam kayıt", value: String(opts.totalCount) },
+      { label: "Kayıt ID", value: `#${opts.entryId}` },
+    ])}`,
+    url,
+    "Listeyi Aç",
+  );
+  await notifyAll(`[Sphere] E-kitap bekleme listesi — ${opts.email}`, html);
+}
+
 export async function notifyNewPartnerApplication(opts: {
   affiliateId?: number;
   fullName: string;
