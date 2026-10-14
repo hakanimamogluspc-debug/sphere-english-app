@@ -254,6 +254,29 @@ export class LucaProvider implements InvoiceProvider {
   }
 
   async issueInvoice(input: IssueInvoiceInput): Promise<IssueInvoiceResult> {
+    // Pre-check: Kurumsal alıcıda vergi no varsa e-Fatura mükellefi mi
+    // kontrol et. Mükellefse postbox tag'ini otomatik ekleyip e-Fatura
+    // kesilmesini sağla. Aksi halde Luca "E-Arşiv kesilemez, E-Fatura
+    // kesmeniz gerekmektedir" hatası döner.
+    if (
+      input.buyer.type === "corporate" &&
+      input.buyer.taxId &&
+      !input.buyer.receiverInboxTag
+    ) {
+      try {
+        const info = await this.lookupTaxPayer(input.buyer.taxId);
+        if (info?.isRegistered && info.postboxes.length > 0) {
+          input = {
+            ...input,
+            buyer: { ...input.buyer, receiverInboxTag: info.postboxes[0] },
+          };
+          console.info(`[luca] Alıcı e-Fatura mükellefi (${input.buyer.taxId}), postbox=${info.postboxes[0]} ile e-Fatura kesiliyor`);
+        }
+      } catch (e: any) {
+        console.warn(`[luca] lookupTaxPayer hata: ${e?.message}, e-Arşiv denenecek`);
+      }
+    }
+
     const invoiceType = decideInvoiceType(input.buyer);
     const externalCode = generateExternalCode(this.cfg.invoicePrefix, Date.now());
     const ettn = randomUUID();
