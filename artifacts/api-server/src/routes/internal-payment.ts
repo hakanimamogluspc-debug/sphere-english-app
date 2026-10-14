@@ -248,7 +248,7 @@ router.post("/internal/payment/activate", async (req: Request, res: Response) =>
     }
 
     // 3) Subscription'ı aktif yap (upsert) — fatura bilgileriyle
-    const months = plan.billingType === "recurring" ? 1 : (plan.durationMonths ?? 1);
+    const months = plan.durationMonths;
     await db.execute(sql`
       INSERT INTO subscriptions (
         user_id, plan_key, plan_label, amount, currency,

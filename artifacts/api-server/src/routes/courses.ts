@@ -76,7 +76,7 @@ router.get("/courses", async (_req: Request, res: Response) => {
 
 router.get("/courses/:slug", async (req: Request, res: Response) => {
   try {
-    const slug = String(req.params.slug ?? "").trim();
+    const slug = String((req.params.slug as string) ?? "").trim();
     // Hem slug (foundation/diplomacy) hem level_slug (a1-a2/b1-b2) ile lookup
     const r: any = await pool.query(
       `SELECT * FROM marketing_courses
@@ -95,7 +95,7 @@ router.get("/courses/:slug", async (req: Request, res: Response) => {
 /** Level slug lookup (URL parameter'dan) — açık endpoint */
 router.get("/courses/level/:levelSlug", async (req: Request, res: Response) => {
   try {
-    const levelSlug = String(req.params.levelSlug ?? "").trim();
+    const levelSlug = String((req.params.levelSlug as string) ?? "").trim();
     const r: any = await pool.query(
       `SELECT * FROM marketing_courses WHERE level_slug = $1 AND is_active = true LIMIT 1`,
       [levelSlug],
@@ -125,7 +125,7 @@ router.get("/admin/courses", authMiddleware, requireRole("admin"), async (_req: 
 /** GET single by id (edit için) */
 router.get("/admin/courses/:id", authMiddleware, requireRole("admin"), async (req: AuthRequest, res: Response) => {
   try {
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt((req.params.id as string), 10);
     if (!id) return res.status(400).json({ error: "Geçersiz id" });
     const r: any = await pool.query(`SELECT * FROM marketing_courses WHERE id = $1 LIMIT 1`, [id]);
     const course = r.rows[0];
@@ -218,7 +218,7 @@ router.post("/admin/courses", authMiddleware, requireRole("admin"), async (req: 
 /** PATCH update */
 router.patch("/admin/courses/:id", authMiddleware, requireRole("admin"), async (req: AuthRequest, res: Response) => {
   try {
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt((req.params.id as string), 10);
     if (!id) return res.status(400).json({ error: "Geçersiz id" });
 
     const body = req.body ?? {};
@@ -263,7 +263,7 @@ router.patch("/admin/courses/:id", authMiddleware, requireRole("admin"), async (
 /** DELETE — soft (is_active=false) */
 router.delete("/admin/courses/:id", authMiddleware, requireRole("admin"), async (req: AuthRequest, res: Response) => {
   try {
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt((req.params.id as string), 10);
     if (!id) return res.status(400).json({ error: "Geçersiz id" });
     const r: any = await pool.query(
       `UPDATE marketing_courses SET is_active = false, updated_at = NOW() WHERE id = $1 RETURNING id`,

@@ -60,7 +60,7 @@ router.get("/live-classes", authMiddleware, async (req: AuthRequest, res) => {
 });
 
 router.get("/live-classes/:id", authMiddleware, async (req: AuthRequest, res) => {
-  const id = parseInt(req.params.id);
+  const id = parseInt((req.params.id as string));
   const [lc] = await db.select().from(liveClassesTable).where(eq(liveClassesTable.id, id)).limit(1);
   if (!lc) { res.status(404).json({ error: "Live class not found" }); return; }
   res.json(await enrichLiveClass(lc, req.userId));
@@ -107,7 +107,7 @@ router.post("/live-classes", authMiddleware, requireRole("admin", "teacher"), as
 });
 
 router.patch("/live-classes/:id", authMiddleware, requireRole("admin", "teacher"), async (req: AuthRequest, res) => {
-  const id = parseInt(req.params.id);
+  const id = parseInt((req.params.id as string));
   const { title, description, startTime, duration, meetingLink, maxStudents } = req.body;
   const updates: any = {};
   if (title !== undefined) updates.title = title;
@@ -123,7 +123,7 @@ router.patch("/live-classes/:id", authMiddleware, requireRole("admin", "teacher"
 });
 
 router.delete("/live-classes/:id", authMiddleware, requireRole("admin", "teacher"), async (req: AuthRequest, res) => {
-  const id = parseInt(req.params.id);
+  const id = parseInt((req.params.id as string));
   const [lc] = await db.select().from(liveClassesTable).where(eq(liveClassesTable.id, id)).limit(1);
   if (lc?.zoomMeetingId && zoomConfigured()) {
     try { await deleteZoomMeeting(lc.zoomMeetingId); } catch {}
@@ -133,7 +133,7 @@ router.delete("/live-classes/:id", authMiddleware, requireRole("admin", "teacher
 });
 
 router.post("/live-classes/:id/join", authMiddleware, async (req: AuthRequest, res) => {
-  const liveClassId = parseInt(req.params.id);
+  const liveClassId = parseInt((req.params.id as string));
   const studentId = req.userId!;
 
   const [lc] = await db.select().from(liveClassesTable).where(eq(liveClassesTable.id, liveClassId)).limit(1);
@@ -168,7 +168,7 @@ router.post("/live-classes/:id/join", authMiddleware, async (req: AuthRequest, r
 });
 
 router.post("/live-classes/:id/leave", authMiddleware, async (req: AuthRequest, res) => {
-  const liveClassId = parseInt(req.params.id);
+  const liveClassId = parseInt((req.params.id as string));
   const studentId = req.userId!;
 
   const [att] = await db.select().from(liveClassAttendanceTable)
@@ -188,7 +188,7 @@ router.post("/live-classes/:id/leave", authMiddleware, async (req: AuthRequest, 
 });
 
 router.get("/live-classes/:id/attendance", authMiddleware, requireRole("admin", "teacher"), async (req: AuthRequest, res) => {
-  const liveClassId = parseInt(req.params.id);
+  const liveClassId = parseInt((req.params.id as string));
 
   const [lc] = await db.select().from(liveClassesTable).where(eq(liveClassesTable.id, liveClassId)).limit(1);
   if (!lc) { res.status(404).json({ error: "Live class not found" }); return; }
@@ -232,7 +232,7 @@ router.get("/admin/live-classes", authMiddleware, requireRole("admin"), async (r
   const { teacherId, type, dateFrom, dateTo, status, search } = req.query;
   let conds: any[] = [];
   if (teacherId && teacherId !== "all") conds.push(eq(liveClassesTable.teacherId, parseInt(teacherId as string)));
-  if (type && type !== "all") conds.push(eq(liveClassesTable.type, type as string));
+  if (type && type !== "all") conds.push(eq(liveClassesTable.type, type as typeof liveClassesTable.$inferSelect.type));
   if (dateFrom) conds.push(gte(liveClassesTable.startTime, new Date(dateFrom as string)));
   if (dateTo) conds.push(lte(liveClassesTable.startTime, new Date(dateTo as string)));
   if (status === "upcoming") conds.push(gte(liveClassesTable.startTime, new Date()));
@@ -275,7 +275,7 @@ router.get("/admin/live-classes", authMiddleware, requireRole("admin"), async (r
 
 // ─── Admin: oturuma öğrenci ekle ─────────────────────────────────────────────
 router.post("/admin/live-classes/:id/students", authMiddleware, requireRole("admin"), async (req: AuthRequest, res) => {
-  const liveClassId = parseInt(req.params.id);
+  const liveClassId = parseInt((req.params.id as string));
   const { studentIds } = req.body;
   if (!Array.isArray(studentIds) || studentIds.length === 0) {
     res.status(400).json({ error: "studentIds gereklidir" }); return;
@@ -288,8 +288,8 @@ router.post("/admin/live-classes/:id/students", authMiddleware, requireRole("adm
 
 // ─── Admin: oturumdan öğrenci çıkar ──────────────────────────────────────────
 router.delete("/admin/live-classes/:id/students/:studentId", authMiddleware, requireRole("admin"), async (req: AuthRequest, res) => {
-  const liveClassId = parseInt(req.params.id);
-  const studentId = parseInt(req.params.studentId);
+  const liveClassId = parseInt((req.params.id as string));
+  const studentId = parseInt((req.params.studentId as string));
   await db.delete(liveClassAttendanceTable)
     .where(and(eq(liveClassAttendanceTable.liveClassId, liveClassId), eq(liveClassAttendanceTable.studentId, studentId)));
   res.json({ success: true });

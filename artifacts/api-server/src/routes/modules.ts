@@ -14,7 +14,7 @@ router.post("/modules", authMiddleware, requireRole("admin", "teacher"), async (
 });
 
 router.patch("/modules/:id", authMiddleware, requireRole("admin", "teacher"), async (req: AuthRequest, res) => {
-  const id = parseInt(req.params.id);
+  const id = parseInt((req.params.id as string));
   const { title, description, order } = req.body;
   const updates: any = {};
   if (title !== undefined) updates.title = title;
@@ -28,7 +28,7 @@ router.patch("/modules/:id", authMiddleware, requireRole("admin", "teacher"), as
 });
 
 router.delete("/modules/:id", authMiddleware, requireRole("admin", "teacher"), async (req: AuthRequest, res) => {
-  const id = parseInt(req.params.id);
+  const id = parseInt((req.params.id as string));
   await db.delete(modulesTable).where(eq(modulesTable.id, id));
   res.json({ success: true, message: "Module deleted" });
 });

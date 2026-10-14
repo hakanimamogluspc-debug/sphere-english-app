@@ -30,7 +30,7 @@ const router = Router();
 async function requireAdmin(req: Request, res: Response, next: () => void) {
   const userId = (req as any).userId as number;
   const [me] = await db.select({ role: usersTable.role }).from(usersTable).where(eq(usersTable.id, userId)).limit(1);
-  if (!me || me.role !== "admin") return res.status(403).json({ error: "Admin yetkisi gerekli" });
+  if (!me || me.role !== "admin") { res.status(403).json({ error: "Admin yetkisi gerekli" }); return; }
   next();
 }
 
@@ -388,7 +388,7 @@ router.get(
   requireAdmin,
   async (req: Request, res: Response) => {
     try {
-      const id = parseInt(req.params.id, 10);
+      const id = parseInt((req.params.id as string), 10);
       const r: any = await db.execute(sql`SELECT * FROM invoice_drafts WHERE id = ${id} LIMIT 1`);
       const draft = (r.rows ?? r)[0];
       if (!draft) return res.status(404).json({ error: "Taslak bulunamadı" });
@@ -406,7 +406,7 @@ router.post(
   requireAdmin,
   async (req: Request, res: Response) => {
     try {
-      const id = parseInt(req.params.id, 10);
+      const id = parseInt((req.params.id as string), 10);
       const r: any = await db.execute(sql`SELECT * FROM invoice_drafts WHERE id = ${id} AND issued_at IS NULL LIMIT 1`);
       const draft = (r.rows ?? r)[0];
       if (!draft) return res.status(404).json({ ok: false, error: "Taslak bulunamadı veya zaten kesilmiş" });
@@ -436,7 +436,7 @@ router.delete(
   requireAdmin,
   async (req: Request, res: Response) => {
     try {
-      const id = parseInt(req.params.id, 10);
+      const id = parseInt((req.params.id as string), 10);
       await db.execute(sql`DELETE FROM invoice_drafts WHERE id = ${id} AND issued_at IS NULL`);
       return res.json({ ok: true });
     } catch (e: any) {
@@ -803,7 +803,7 @@ router.get(
   requireAdmin,
   async (req: Request, res: Response) => {
     try {
-      const id = parseInt(String(req.params.id ?? ""), 10);
+      const id = parseInt(String((req.params.id as string) ?? ""), 10);
       if (!Number.isFinite(id)) return res.status(400).json({ error: "Geçersiz id" });
 
       const rows = await db.execute(sql`SELECT * FROM invoices WHERE id = ${id} LIMIT 1`);
@@ -823,7 +823,7 @@ router.post(
   requireAdmin,
   async (req: Request, res: Response) => {
     try {
-      const id = parseInt(String(req.params.id ?? ""), 10);
+      const id = parseInt(String((req.params.id as string) ?? ""), 10);
       const r = await refreshViewerUrl(id);
       if (!r) return res.status(404).json({ error: "Viewer alınamadı" });
       return res.json({ ok: true, ...r });
@@ -840,7 +840,7 @@ router.post(
   requireAdmin,
   async (req: Request, res: Response) => {
     try {
-      const id = parseInt(String(req.params.id ?? ""), 10);
+      const id = parseInt(String((req.params.id as string) ?? ""), 10);
       const reason = String(req.body?.reason ?? "İade / iptal").slice(0, 200);
       const r = await cancelInvoice(id, reason);
       return res.json(r);
@@ -858,7 +858,7 @@ router.post(
   requireAdmin,
   async (req: Request, res: Response) => {
     try {
-      const id = parseInt(String(req.params.id ?? ""), 10);
+      const id = parseInt(String((req.params.id as string) ?? ""), 10);
       const rows = await db.execute(sql`SELECT * FROM invoices WHERE id = ${id} LIMIT 1`);
       const row = (rows.rows ?? rows)[0] as any;
       if (!row) return res.status(404).json({ error: "Fatura bulunamadı" });

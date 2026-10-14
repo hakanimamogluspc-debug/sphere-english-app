@@ -129,7 +129,7 @@ router.get("/progress/me", authMiddleware, async (req: AuthRequest, res) => {
 });
 
 router.get("/progress/students/:studentId", authMiddleware, async (req: AuthRequest, res) => {
-  const studentId = parseInt(req.params.studentId);
+  const studentId = parseInt((req.params.studentId as string));
   const requesterId = req.userId!;
   const role = req.userRole;
 
@@ -168,7 +168,7 @@ router.get("/progress/students/:studentId", authMiddleware, async (req: AuthRequ
 });
 
 router.get("/progress/courses/:courseId", authMiddleware, async (req: AuthRequest, res) => {
-  const courseId = parseInt(req.params.courseId);
+  const courseId = parseInt((req.params.courseId as string));
   const enrollments = await db.select({ studentId: enrollmentsTable.studentId }).from(enrollmentsTable).where(eq(enrollmentsTable.courseId, courseId));
   const [course] = await db.select().from(coursesTable).where(eq(coursesTable.id, courseId)).limit(1);
   if (!course) { res.status(404).json({ error: "Course not found" }); return; }

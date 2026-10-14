@@ -107,7 +107,7 @@ router.get(
   requireRole("admin"),
   async (req: AuthRequest, res: Response) => {
     try {
-      const id = Number(req.params.id);
+      const id = Number((req.params.id as string));
       const [lead] = await db
         .select()
         .from(outreachLeadsTable)
@@ -128,7 +128,7 @@ router.patch(
   requireRole("admin"),
   async (req: AuthRequest, res: Response) => {
     try {
-      const id = Number(req.params.id);
+      const id = Number((req.params.id as string));
       const { status, notes, tags } = req.body as { status?: string; notes?: string; tags?: string };
 
       const update: Record<string, any> = { updatedAt: new Date() };
@@ -151,7 +151,7 @@ router.delete(
   requireRole("admin"),
   async (req: AuthRequest, res: Response) => {
     try {
-      const id = Number(req.params.id);
+      const id = Number((req.params.id as string));
       await db
         .update(outreachLeadsTable)
         .set({ status: "archived", updatedAt: new Date() })

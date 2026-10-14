@@ -59,7 +59,7 @@ router.post("/admin/groups", authMiddleware, requireRole("admin"), async (req: A
 
 // PATCH /admin/groups/:id
 router.patch("/admin/groups/:id", authMiddleware, requireRole("admin"), async (req: AuthRequest, res) => {
-  const id = parseInt(req.params.id);
+  const id = parseInt((req.params.id as string));
   const { name, description, teacherId } = req.body;
 
   const updates: any = {};
@@ -95,14 +95,14 @@ router.patch("/admin/groups/:id", authMiddleware, requireRole("admin"), async (r
 
 // DELETE /admin/groups/:id
 router.delete("/admin/groups/:id", authMiddleware, requireRole("admin"), async (req: AuthRequest, res) => {
-  const id = parseInt(req.params.id);
+  const id = parseInt((req.params.id as string));
   await db.delete(groupsTable).where(eq(groupsTable.id, id));
   res.json({ success: true });
 });
 
 // GET /admin/teachers/:id/groups — öğretmenin grupları + öğrenci sayısı
 router.get("/admin/teachers/:id/groups", authMiddleware, requireRole("admin"), async (req: AuthRequest, res) => {
-  const teacherId = parseInt(req.params.id);
+  const teacherId = parseInt((req.params.id as string));
   const groups = await db.select().from(groupsTable).where(eq(groupsTable.teacherId, teacherId));
   const result = await Promise.all(groups.map(async (g) => {
     const [{ mc }] = await db.select({ mc: count() }).from(groupMembersTable).where(eq(groupMembersTable.groupId, g.id));
@@ -113,7 +113,7 @@ router.get("/admin/teachers/:id/groups", authMiddleware, requireRole("admin"), a
 
 // GET /admin/groups/:id/students — gruptaki öğrenciler
 router.get("/admin/groups/:id/students", authMiddleware, requireRole("admin"), async (req: AuthRequest, res) => {
-  const groupId = parseInt(req.params.id);
+  const groupId = parseInt((req.params.id as string));
   const members = await db.select({ studentId: groupMembersTable.studentId })
     .from(groupMembersTable).where(eq(groupMembersTable.groupId, groupId));
   if (members.length === 0) { res.json([]); return; }
@@ -127,7 +127,7 @@ router.get("/admin/groups/:id/students", authMiddleware, requireRole("admin"), a
 
 // POST /admin/groups/:id/students — gruba öğrenci ekle (tek tek veya kurumdan)
 router.post("/admin/groups/:id/students", authMiddleware, requireRole("admin"), async (req: AuthRequest, res) => {
-  const groupId = parseInt(req.params.id);
+  const groupId = parseInt((req.params.id as string));
   const { studentIds, companyId } = req.body;
   let idsToAdd: number[] = Array.isArray(studentIds) ? studentIds.map(Number) : [];
   if (companyId) {
@@ -144,8 +144,8 @@ router.post("/admin/groups/:id/students", authMiddleware, requireRole("admin"), 
 
 // DELETE /admin/groups/:groupId/students/:studentId — gruptan öğrenci çıkar
 router.delete("/admin/groups/:groupId/students/:studentId", authMiddleware, requireRole("admin"), async (req: AuthRequest, res) => {
-  const groupId = parseInt(req.params.groupId);
-  const studentId = parseInt(req.params.studentId);
+  const groupId = parseInt((req.params.groupId as string));
+  const studentId = parseInt((req.params.studentId as string));
   await db.delete(groupMembersTable)
     .where(and(eq(groupMembersTable.groupId, groupId), eq(groupMembersTable.studentId, studentId)));
   res.json({ success: true });

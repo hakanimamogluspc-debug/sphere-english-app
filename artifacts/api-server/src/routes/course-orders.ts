@@ -448,7 +448,7 @@ router.post("/internal/course-orders/mark-failed", async (req: Request, res: Res
 // ─── PUBLIC: Order lookup (kayıt formu için) ────────────────────
 router.get("/course-orders/:token", async (req: Request, res: Response) => {
   try {
-    const token = String(req.params.token ?? "");
+    const token = String((req.params.token as string) ?? "");
     const r: any = await pool.query(
       `SELECT order_token, programme_slug, programme_title,
               buyer_name, buyer_email, buyer_phone,
@@ -468,7 +468,7 @@ router.get("/course-orders/:token", async (req: Request, res: Response) => {
 // ─── PUBLIC: Kayıt formu submit ────────────────────────────────
 router.post("/course-orders/:token/register", async (req: Request, res: Response) => {
   try {
-    const token = String(req.params.token ?? "");
+    const token = String((req.params.token as string) ?? "");
     const { tcKimlik, age, sector, gender } = req.body ?? {};
 
     if (!tcKimlik || !age || !sector || !gender) {
@@ -544,7 +544,7 @@ router.get("/admin/course-orders", authMiddleware, requireRole("admin"), async (
 
 router.patch("/admin/course-orders/:id", authMiddleware, requireRole("admin"), async (req: AuthRequest, res: Response) => {
   try {
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt((req.params.id as string), 10);
     const allowed = ["admin_notes", "assigned_group_id", "contacted_at"];
     const sets: string[] = []; const params: any[] = [];
     for (const k of allowed) {

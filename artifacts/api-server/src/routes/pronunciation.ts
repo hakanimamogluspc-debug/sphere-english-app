@@ -78,7 +78,7 @@ async function transcribeVerbose(
       finalMime = "audio/webm";
     }
 
-    const audioFile = new File([finalBuffer], `audio.${finalExt}`, { type: finalMime });
+    const audioFile = new File([new Uint8Array(finalBuffer)], `audio.${finalExt}`, { type: finalMime });
     const res = await getOpenAI().audio.transcriptions.create({
       model: "whisper-1",
       file: audioFile,
@@ -701,7 +701,7 @@ router.get("/pronunciation/assessments", authMiddleware, async (req: Request, re
 router.get("/pronunciation/assessments/:id", authMiddleware, async (req: Request, res: Response) => {
   try {
     const userId = (req as any).userId as number;
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt((req.params.id as string), 10);
     if (!Number.isFinite(id)) return res.status(400).json({ error: "Geçersiz id." });
 
     const rows = await db

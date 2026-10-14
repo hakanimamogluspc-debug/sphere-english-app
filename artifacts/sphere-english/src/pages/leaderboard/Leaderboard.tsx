@@ -3,6 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle, Badge } from "@/components/ui
 import { useAuth } from "@/hooks/use-auth";
 import { Trophy, Crown, Medal, Flame } from "lucide-react";
 
+/** "Ad Soyad" → "AS" (API userName döner, ad/soyad ayrı gelmez) */
+const initials = (name?: string | null) =>
+  (name ?? "").split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]?.toUpperCase() ?? "").join("");
+
 const podiumColors = [
   "bg-gradient-to-b from-yellow-400 to-yellow-300 text-yellow-900",
   "bg-gradient-to-b from-slate-400 to-slate-300 text-slate-800",
@@ -45,10 +49,10 @@ export default function Leaderboard() {
                     return (
                       <div key={entry?.userId} className="flex flex-col items-center flex-1 max-w-[160px]">
                         <div className={`w-16 h-16 rounded-full flex items-center justify-center text-xl font-bold mb-2 shadow-lg ${actualRank === 0 ? 'bg-yellow-100 text-yellow-800 ring-4 ring-yellow-400' : 'bg-secondary'}`}>
-                          {entry?.firstName?.[0]}{entry?.lastName?.[0]}
+                          {initials(entry?.userName)}
                         </div>
                         <div className="mb-1">{podiumIcons[actualRank]}</div>
-                        <p className="font-bold text-sm text-center">{entry?.firstName} {entry?.lastName}</p>
+                        <p className="font-bold text-sm text-center">{entry?.userName}</p>
                         <p className="text-xs text-muted-foreground">{entry?.totalPoints?.toLocaleString('tr-TR')} puan</p>
                         <div className={`w-full mt-3 rounded-t-xl flex items-end justify-center pb-2 ${podiumColors[actualRank]} ${podiumHeights[actualRank]}`}>
                           <span className="font-black text-2xl opacity-60">#{actualRank + 1}</span>
@@ -82,12 +86,12 @@ export default function Leaderboard() {
                       </div>
 
                       <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center font-bold text-primary shrink-0">
-                        {entry.firstName?.[0]}{entry.lastName?.[0]}
+                        {initials(entry.userName)}
                       </div>
 
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-foreground truncate">
-                          {entry.firstName} {entry.lastName}
+                          {entry.userName}
                           {isCurrentUser && <span className="ml-2 text-xs text-primary font-medium">(Siz)</span>}
                         </p>
                         <div className="flex items-center gap-2 flex-wrap">
@@ -96,7 +100,7 @@ export default function Leaderboard() {
                               #{(entry as any).studentNumber}
                             </span>
                           )}
-                          <span className="text-xs text-muted-foreground">{entry.currentLevel || 'A1'} Seviyesi</span>
+                          <span className="text-xs text-muted-foreground">{entry.level || 'A1'} Seviyesi</span>
                         </div>
                       </div>
 

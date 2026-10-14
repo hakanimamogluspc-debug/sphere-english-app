@@ -6,11 +6,11 @@ import { API } from "@/lib/api-url";
 const TOKEN_KEY = "sphere_token";
 
 // Base64 URL-safe → Uint8Array (VAPID public key için)
-function urlBase64ToUint8Array(base64String: string): Uint8Array {
+function urlBase64ToUint8Array(base64String: string): Uint8Array<ArrayBuffer> {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
   const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
   const rawData = atob(base64);
-  const output = new Uint8Array(rawData.length);
+  const output = new Uint8Array(new ArrayBuffer(rawData.length));
   for (let i = 0; i < rawData.length; ++i) output[i] = rawData.charCodeAt(i);
   return output;
 }

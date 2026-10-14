@@ -124,7 +124,7 @@ router.post("/webhooks/resend", async (req: Request, res: Response) => {
           campaignId: obCampaignId,
           leadId: obLeadId,
           stepId, templateId,
-          eventType: obEventType,
+          eventType: obEventType as typeof outboundEmailEventsTable.$inferInsert.eventType,
           providerMessageId: resendEmailId || null,
           userAgent: data.user_agent || null,
           ipAddress: data.ip || null,

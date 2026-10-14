@@ -34,13 +34,13 @@ router.get("/certificates", authMiddleware, async (req: AuthRequest, res) => {
 });
 
 router.get("/certificates/verify/:code", async (req, res) => {
-  const [cert] = await db.select().from(certificatesTable).where(eq(certificatesTable.verificationCode, req.params.code)).limit(1);
+  const [cert] = await db.select().from(certificatesTable).where(eq(certificatesTable.verificationCode, (req.params.code as string))).limit(1);
   if (!cert) { res.json({ valid: false }); return; }
   res.json({ valid: true, certificate: await enrichCert(cert) });
 });
 
 router.get("/certificates/:id", authMiddleware, async (req: AuthRequest, res) => {
-  const id = parseInt(req.params.id);
+  const id = parseInt((req.params.id as string));
   const [cert] = await db.select().from(certificatesTable).where(eq(certificatesTable.id, id)).limit(1);
   if (!cert) { res.status(404).json({ error: "Certificate not found" }); return; }
   res.json(await enrichCert(cert));

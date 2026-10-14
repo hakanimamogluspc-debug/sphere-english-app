@@ -95,7 +95,7 @@ router.get("/level-exams", authMiddleware, async (req: Request, res: Response) =
 router.get("/level-exams/:level", authMiddleware, async (req: Request, res: Response) => {
   try {
     const userId = (req as any).userId as number;
-    const level = String(req.params.level || "").toUpperCase();
+    const level = String((req.params.level as string) || "").toUpperCase();
     if (!isCefr(level)) return res.status(400).json({ error: "Geçersiz seviye." });
 
     const [me] = await db.select().from(usersTable).where(eq(usersTable.id, userId)).limit(1);
@@ -133,7 +133,7 @@ router.get("/level-exams/:level", authMiddleware, async (req: Request, res: Resp
 router.post("/level-exams/:level/submit", authMiddleware, async (req: Request, res: Response) => {
   try {
     const userId = (req as any).userId as number;
-    const level = String(req.params.level || "").toUpperCase();
+    const level = String((req.params.level as string) || "").toUpperCase();
     if (!isCefr(level)) return res.status(400).json({ error: "Geçersiz seviye." });
 
     const [me] = await db.select().from(usersTable).where(eq(usersTable.id, userId)).limit(1);

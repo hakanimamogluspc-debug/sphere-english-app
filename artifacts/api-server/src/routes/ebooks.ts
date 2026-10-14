@@ -46,7 +46,7 @@ router.get("/ebooks", async (_req: Request, res: Response) => {
 const RESERVED_EBOOK_PATHS = new Set(["download", "asset", "yeni", "new"]);
 
 router.get("/ebooks/:slug", async (req: Request, res: Response, next) => {
-  const slug = String(req.params.slug || "").trim();
+  const slug = String((req.params.slug as string) || "").trim();
   if (!slug) return res.status(400).json({ error: "Geçersiz slug" });
   // Reserved keyword ise sonraki route'a devret (Express next())
   if (RESERVED_EBOOK_PATHS.has(slug.toLowerCase())) {

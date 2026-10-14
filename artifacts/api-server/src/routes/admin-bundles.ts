@@ -82,8 +82,8 @@ router.get(
   authMiddleware,
   requireRole("admin"),
   async (req: AuthRequest, res: Response, next: any) => {
-    if (!/^\d+$/.test(String(req.params.id ?? ""))) return next();
-    const id = parseInt(req.params.id, 10);
+    if (!/^\d+$/.test(String((req.params.id as string) ?? ""))) return next();
+    const id = parseInt((req.params.id as string), 10);
     try {
       const bundleRows = await db.execute(sql`SELECT * FROM ebook_bundles WHERE id = ${id} LIMIT 1`);
       const bundle = (bundleRows.rows ?? bundleRows)[0];
@@ -173,8 +173,8 @@ router.patch(
   authMiddleware,
   requireRole("admin"),
   async (req: AuthRequest, res: Response, next: any) => {
-    if (!/^\d+$/.test(String(req.params.id ?? ""))) return next();
-    const id = parseInt(req.params.id, 10);
+    if (!/^\d+$/.test(String((req.params.id as string) ?? ""))) return next();
+    const id = parseInt((req.params.id as string), 10);
     const b = (req.body ?? {}) as any;
 
     // Dinamik update — sadece gönderilen alanlar
@@ -221,8 +221,8 @@ router.post(
   authMiddleware,
   requireRole("admin"),
   async (req: AuthRequest, res: Response, next: any) => {
-    if (!/^\d+$/.test(String(req.params.id ?? ""))) return next();
-    const id = parseInt(req.params.id, 10);
+    if (!/^\d+$/.test(String((req.params.id as string) ?? ""))) return next();
+    const id = parseInt((req.params.id as string), 10);
     const ebookIds = Array.isArray(req.body?.ebookIds) ? req.body.ebookIds : null;
     if (!ebookIds) {
       return res.status(400).json({ error: "ebookIds array gerekli" });
@@ -260,8 +260,8 @@ router.post(
   authMiddleware,
   requireRole("admin"),
   async (req: AuthRequest, res: Response, next: any) => {
-    if (!/^\d+$/.test(String(req.params.id ?? ""))) return next();
-    const id = parseInt(req.params.id, 10);
+    if (!/^\d+$/.test(String((req.params.id as string) ?? ""))) return next();
+    const id = parseInt((req.params.id as string), 10);
     try {
       await db.execute(sql`
         UPDATE ebook_bundles SET is_active = NOT is_active, updated_at = NOW()
@@ -281,8 +281,8 @@ router.post(
   requireRole("admin"),
   coverUpload.single("file"),
   async (req: AuthRequest, res: Response, next: any) => {
-    if (!/^\d+$/.test(String(req.params.id ?? ""))) return next();
-    const id = parseInt(req.params.id, 10);
+    if (!/^\d+$/.test(String((req.params.id as string) ?? ""))) return next();
+    const id = parseInt((req.params.id as string), 10);
 
     const file = (req as any).file as Express.Multer.File | undefined;
     if (!file) return res.status(400).json({ error: "Dosya yüklenmedi" });
@@ -327,8 +327,8 @@ router.delete(
   authMiddleware,
   requireRole("admin"),
   async (req: AuthRequest, res: Response, next: any) => {
-    if (!/^\d+$/.test(String(req.params.id ?? ""))) return next();
-    const id = parseInt(req.params.id, 10);
+    if (!/^\d+$/.test(String((req.params.id as string) ?? ""))) return next();
+    const id = parseInt((req.params.id as string), 10);
     try {
       await db.execute(sql`
         UPDATE ebook_bundles SET
@@ -352,8 +352,8 @@ router.delete(
   authMiddleware,
   requireRole("admin"),
   async (req: AuthRequest, res: Response, next: any) => {
-    if (!/^\d+$/.test(String(req.params.id ?? ""))) return next();
-    const id = parseInt(req.params.id, 10);
+    if (!/^\d+$/.test(String((req.params.id as string) ?? ""))) return next();
+    const id = parseInt((req.params.id as string), 10);
     try {
       // Satış varsa sadece pasif yap, silme
       const salesRows = await db.execute(sql`

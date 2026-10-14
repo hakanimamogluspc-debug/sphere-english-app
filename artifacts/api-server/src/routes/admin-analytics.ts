@@ -190,7 +190,7 @@ router.get(
   authMiddleware,
   requireRole("admin"),
   async (req: AuthRequest, res: Response) => {
-    const userId = parseInt(req.params.userId, 10);
+    const userId = parseInt((req.params.userId as string), 10);
     if (!Number.isFinite(userId) || userId <= 0) {
       return res.status(400).json({ error: "Geçersiz userId." });
     }
@@ -266,7 +266,7 @@ router.get(
       });
     } catch (err: any) {
       console.error("[analytics/user-detail] error:", err?.message);
-      res.status(500).json({ error: err?.message ?? "Veri alınamadı." });
+      return res.status(500).json({ error: err?.message ?? "Veri alınamadı." });
     }
   },
 );

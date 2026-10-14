@@ -1,6 +1,6 @@
 import { Router } from "express";
 import bcrypt from "bcryptjs";
-import { db, usersTable, enrollmentsTable, coursesTable, lessonsTable, lessonProgressTable } from "@workspace/db";
+import { db, usersTable, enrollmentsTable, coursesTable, modulesTable, lessonsTable, lessonProgressTable } from "@workspace/db";
 import { eq, ilike, and, or, count, sql } from "drizzle-orm";
 import { authMiddleware, requireRole, type AuthRequest } from "../middlewares/auth.js";
 import { sendEmail, loadEmailTemplate, applyTemplateVars } from "../lib/email.js";
@@ -13,7 +13,7 @@ router.get("/users", authMiddleware, requireRole("admin"), async (req: AuthReque
   const offset = (Number(page) - 1) * Number(limit);
 
   let conditions: any[] = [];
-  if (role && role !== "null") conditions.push(eq(usersTable.role, role as string));
+  if (role && role !== "null") conditions.push(eq(usersTable.role, role as typeof usersTable.$inferSelect.role));
   if (search) {
     const s = `%${search}%`;
     conditions.push(or(
@@ -49,7 +49,7 @@ router.get("/users", authMiddleware, requireRole("admin"), async (req: AuthReque
 
 // Admin: get student enrollments with progress
 router.get("/admin/students/:id/enrollments", authMiddleware, requireRole("admin"), async (req: AuthRequest, res) => {
-  const studentId = parseInt(req.params.id);
+  const studentId = parseInt((req.params.id as string));
   const enrollments = await db
     .select({
       enrollmentId: enrollmentsTable.id,
@@ -63,14 +63,23 @@ router.get("/admin/students/:id/enrollments", authMiddleware, requireRole("admin
 
   const result = await Promise.all(
     enrollments.map(async (e) => {
+      // lessons → modules → courses (lessons tablosunda course_id yok)
       const [{ total }] = await db
         .select({ total: count() })
         .from(lessonsTable)
-        .where(eq(lessonsTable.courseId, e.courseId));
+        .innerJoin(modulesTable, eq(lessonsTable.moduleId, modulesTable.id))
+        .where(eq(modulesTable.courseId, e.courseId));
+      // Tamamlanan dersler — sadece BU kursun dersleri
       const [{ completed }] = await db
         .select({ completed: count() })
         .from(lessonProgressTable)
-        .where(and(eq(lessonProgressTable.userId, studentId), eq(lessonProgressTable.completed, true)));
+        .innerJoin(lessonsTable, eq(lessonProgressTable.lessonId, lessonsTable.id))
+        .innerJoin(modulesTable, eq(lessonsTable.moduleId, modulesTable.id))
+        .where(and(
+          eq(lessonProgressTable.userId, studentId),
+          eq(lessonProgressTable.completed, true),
+          eq(modulesTable.courseId, e.courseId),
+        ));
       return {
         id: e.enrollmentId,
         courseTitle: e.courseTitle,
@@ -86,7 +95,7 @@ router.get("/admin/students/:id/enrollments", authMiddleware, requireRole("admin
 
 // Get user by ID
 router.get("/users/:id", authMiddleware, async (req: AuthRequest, res) => {
-  const id = parseInt(req.params.id);
+  const id = parseInt((req.params.id as string));
   const [user] = await db.select({
     id: usersTable.id,
     email: usersTable.email,
@@ -173,7 +182,7 @@ router.post("/users", authMiddleware, requireRole("admin"), async (req: AuthRequ
 
 // Update user
 router.patch("/users/:id", authMiddleware, async (req: AuthRequest, res) => {
-  const id = parseInt(req.params.id);
+  const id = parseInt((req.params.id as string));
   if (req.userRole !== "admin" && req.userId !== id) {
     res.status(403).json({ error: "Forbidden" });
     return;
@@ -198,7 +207,7 @@ router.patch("/users/:id", authMiddleware, async (req: AuthRequest, res) => {
 
 // Change user password (admin only)
 router.post("/users/:id/change-password", authMiddleware, requireRole("admin"), async (req: AuthRequest, res) => {
-  const id = parseInt(req.params.id);
+  const id = parseInt((req.params.id as string));
   const { newPassword } = req.body;
   if (!newPassword || newPassword.length < 6) {
     res.status(400).json({ error: "Şifre en az 6 karakter olmalıdır" });
@@ -215,7 +224,7 @@ router.post("/users/:id/change-password", authMiddleware, requireRole("admin"), 
 
 // Delete user (admin only)
 router.delete("/users/:id", authMiddleware, requireRole("admin"), async (req: AuthRequest, res) => {
-  const id = parseInt(req.params.id);
+  const id = parseInt((req.params.id as string));
   await db.delete(usersTable).where(eq(usersTable.id, id));
   res.json({ success: true, message: "User deleted" });
 });

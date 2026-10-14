@@ -118,7 +118,7 @@ router.get("/content/recommended", authMiddleware, async (req: AuthRequest, res:
 router.get("/content/:id", authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.userId!;
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt((req.params.id as string), 10);
     if (!Number.isFinite(id)) return res.status(400).json({ error: "id" });
 
     const r: any = await pool.query(
@@ -153,7 +153,7 @@ router.get("/content/:id", authMiddleware, async (req: AuthRequest, res: Respons
 router.post("/content/:id/save", authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.userId!;
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt((req.params.id as string), 10);
     const note = (req.body?.note ?? "").toString().slice(0, 2000) || null;
     await pool.query(
       `INSERT INTO user_saved_articles (user_id, article_id, note)
@@ -176,7 +176,7 @@ router.post("/content/:id/save", authMiddleware, async (req: AuthRequest, res: R
 router.delete("/content/:id/save", authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.userId!;
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt((req.params.id as string), 10);
     await pool.query(`DELETE FROM user_saved_articles WHERE user_id = $1 AND article_id = $2`, [userId, id]);
     return res.json({ ok: true });
   } catch (e: any) {
@@ -188,7 +188,7 @@ router.delete("/content/:id/save", authMiddleware, async (req: AuthRequest, res:
 router.post("/content/:id/interact", authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.userId!;
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt((req.params.id as string), 10);
     const action = String(req.body?.action ?? "").toLowerCase();
     const allowed = ["view", "like", "complete_read", "dismiss"];
     if (!allowed.includes(action)) return res.status(400).json({ error: "geçersiz action" });

@@ -741,7 +741,7 @@ function LivePanel({
   processing: boolean;
   aiSpeaking: boolean;
   ending: boolean;
-  transcriptScrollRef: React.RefObject<HTMLDivElement>;
+  transcriptScrollRef: React.RefObject<HTMLDivElement | null>;
   onStartRecording: () => void;
   onStopRecording: () => void;
   onEnd: () => void;

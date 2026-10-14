@@ -113,7 +113,7 @@ export async function linkReferral(newUserId: number, code: string | undefined |
 
 router.get("/public/referral/:code", async (req, res: Response) => {
   try {
-    const code = String(req.params.code ?? "").trim().toUpperCase();
+    const code = String((req.params.code as string) ?? "").trim().toUpperCase();
     if (!/^[A-Z0-9]{4,16}$/.test(code)) {
       return res.status(400).json({ ok: false, error: "Geçersiz kod formatı" });
     }

@@ -3,7 +3,18 @@
   "compilerOptions": {
     "outDir": "dist",
     "rootDir": "src",
-    "types": ["node"]
+    "types": ["node"],
+    // Express handler'larında `return res.json()` / `res.send()` karışık
+    // kullanımı yaygın; bu kural güvenlik değil stil — api-server'da kapalı.
+    "noImplicitReturns": false,
+    "baseUrl": ".",
+    "paths": {
+      // pnpm, peer çözümlemesi farkından drizzle-orm'u 3 kopya kuruyor; tsc
+      // lib/db'nin kopyasını kullansın ki tablo tipleri ile eq/sql/asc aynı
+      // modülden gelsin. Sadece tip çözümlemesini etkiler, runtime'ı değil.
+      "drizzle-orm": ["../../lib/db/node_modules/drizzle-orm"],
+      "drizzle-orm/*": ["../../lib/db/node_modules/drizzle-orm/*"]
+    }
   },
   "include": ["src"],
   "references": [

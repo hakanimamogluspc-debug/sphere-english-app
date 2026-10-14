@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, useRef, ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useLogin, useRegister, useGetCurrentUser, setAuthTokenGetter } from "@workspace/api-client-react";
+import { useLogin, useRegister, useGetCurrentUser, getGetCurrentUserQueryKey, setAuthTokenGetter } from "@workspace/api-client-react";
 import type { LoginRequest, RegisterRequest, UserProfile } from "@workspace/api-client-react";
 import { useLocation } from "wouter";
 import { setInterceptorToken, getInterceptorToken } from "@/lib/fetch-interceptor";
@@ -37,6 +37,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const { data: user, isLoading: isUserLoading, error: authError } = useGetCurrentUser({
     query: {
+      queryKey: getGetCurrentUserQueryKey(),
       enabled: !!token,
       // 401/403 hariç hatalarda 2 defa tekrar dene (network hiccup vs)
       retry: (failureCount, error: any) => {

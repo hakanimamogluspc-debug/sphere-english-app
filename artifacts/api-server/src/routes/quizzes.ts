@@ -40,7 +40,7 @@ router.get("/quizzes", authMiddleware, async (req: AuthRequest, res) => {
 });
 
 router.get("/quizzes/:id", authMiddleware, async (req: AuthRequest, res) => {
-  const id = parseInt(req.params.id);
+  const id = parseInt((req.params.id as string));
   const [quiz] = await db.select().from(quizzesTable).where(eq(quizzesTable.id, id)).limit(1);
   if (!quiz) { res.status(404).json({ error: "Quiz not found" }); return; }
   const questions = await db.select().from(questionsTable).where(eq(questionsTable.quizId, id)).orderBy(questionsTable.order);
@@ -72,7 +72,7 @@ router.post("/quizzes", authMiddleware, requireRole("admin", "teacher"), async (
 });
 
 router.patch("/quizzes/:id", authMiddleware, requireRole("admin", "teacher"), async (req: AuthRequest, res) => {
-  const id = parseInt(req.params.id);
+  const id = parseInt((req.params.id as string));
   const { title, timeLimit, passingScore } = req.body;
   const updates: any = {};
   if (title !== undefined) updates.title = title;
@@ -86,13 +86,13 @@ router.patch("/quizzes/:id", authMiddleware, requireRole("admin", "teacher"), as
 });
 
 router.delete("/quizzes/:id", authMiddleware, requireRole("admin", "teacher"), async (req: AuthRequest, res) => {
-  const id = parseInt(req.params.id);
+  const id = parseInt((req.params.id as string));
   await db.delete(quizzesTable).where(eq(quizzesTable.id, id));
   res.json({ success: true, message: "Quiz deleted" });
 });
 
 router.post("/quizzes/:id/submit", authMiddleware, async (req: AuthRequest, res) => {
-  const quizId = parseInt(req.params.id);
+  const quizId = parseInt((req.params.id as string));
   const userId = req.userId!;
   const { answers, timeTaken } = req.body;
 
@@ -133,7 +133,7 @@ router.post("/quizzes/:id/submit", authMiddleware, async (req: AuthRequest, res)
 });
 
 router.get("/quizzes/:id/results", authMiddleware, async (req: AuthRequest, res) => {
-  const quizId = parseInt(req.params.id);
+  const quizId = parseInt((req.params.id as string));
   const [quiz] = await db.select().from(quizzesTable).where(eq(quizzesTable.id, quizId)).limit(1);
 
   let attempts;

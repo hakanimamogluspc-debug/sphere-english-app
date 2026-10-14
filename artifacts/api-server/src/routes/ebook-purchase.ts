@@ -226,7 +226,7 @@ router.post("/internal/ebook-purchase/pre-create", async (req: Request, res: Res
     const userRows = await db.execute(sql`
       SELECT id FROM users WHERE LOWER(email) = LOWER(${buyerEmail}) LIMIT 1
     `);
-    const userId = (userRows.rows ?? userRows)[0]?.id ?? null;
+    const userId = (((userRows.rows ?? userRows)[0] as any)?.id ?? null) as number | null;
 
     if (existingRow) {
       await db.execute(sql`
@@ -489,7 +489,7 @@ router.post("/internal/ebook-purchase/activate", async (req: Request, res: Respo
     const userRows = await db.execute(sql`
       SELECT id FROM users WHERE LOWER(email) = LOWER(${buyerEmail}) LIMIT 1
     `);
-    const userId = (userRows.rows ?? userRows)[0]?.id ?? null;
+    const userId = (((userRows.rows ?? userRows)[0] as any)?.id ?? null) as number | null;
 
     const inserted = await db.execute(sql`
       INSERT INTO ebook_purchases (

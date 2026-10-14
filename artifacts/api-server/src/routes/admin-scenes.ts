@@ -69,7 +69,7 @@ router.get("/admin/scenes/stats", authMiddleware, requireRole("admin"), async (_
 
 router.get("/admin/scenes/:id", authMiddleware, requireRole("admin"), async (req: AuthRequest, res: Response) => {
   try {
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt((req.params.id as string), 10);
     const s: any = await pool.query(`SELECT * FROM speaking_scenes WHERE id = $1`, [id]);
     if (!s.rows[0]) return res.status(404).json({ error: "not found" });
     const t: any = await pool.query(
@@ -85,7 +85,7 @@ router.get("/admin/scenes/:id", authMiddleware, requireRole("admin"), async (req
 
 router.patch("/admin/scenes/:id", authMiddleware, requireRole("admin"), async (req: AuthRequest, res: Response) => {
   try {
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt((req.params.id as string), 10);
     const allowed = ["title_en", "title_tr", "description_tr", "user_role_tr", "counterpart_role_tr",
                      "difficulty", "min_plan", "avg_duration_min", "voice", "is_active", "sort_order", "category"];
     const sets: string[] = [];
@@ -110,7 +110,7 @@ router.patch("/admin/scenes/:id", authMiddleware, requireRole("admin"), async (r
 
 router.delete("/admin/scenes/:id", authMiddleware, requireRole("admin"), async (req: AuthRequest, res: Response) => {
   try {
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt((req.params.id as string), 10);
     await pool.query(`DELETE FROM speaking_scenes WHERE id = $1`, [id]);
     return res.json({ ok: true });
   } catch (e: any) {
@@ -121,7 +121,7 @@ router.delete("/admin/scenes/:id", authMiddleware, requireRole("admin"), async (
 // ─── Turn CRUD ─────────────────────────────────────────────────
 router.patch("/admin/scenes/turns/:id", authMiddleware, requireRole("admin"), async (req: AuthRequest, res: Response) => {
   try {
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt((req.params.id as string), 10);
     const allowed = ["speaker", "text_en", "text_tr", "notes_tr", "phonetic_hint", "turn_order"];
     const sets: string[] = [];
     const params: any[] = [];
@@ -137,7 +137,7 @@ router.patch("/admin/scenes/turns/:id", authMiddleware, requireRole("admin"), as
 
 router.delete("/admin/scenes/turns/:id", authMiddleware, requireRole("admin"), async (req: AuthRequest, res: Response) => {
   try {
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt((req.params.id as string), 10);
     await pool.query(`DELETE FROM speaking_scene_turns WHERE id = $1`, [id]);
     return res.json({ ok: true });
   } catch (e: any) { return res.status(500).json({ error: e?.message }); }
@@ -145,7 +145,7 @@ router.delete("/admin/scenes/turns/:id", authMiddleware, requireRole("admin"), a
 
 router.post("/admin/scenes/:id/turns", authMiddleware, requireRole("admin"), async (req: AuthRequest, res: Response) => {
   try {
-    const sceneId = parseInt(req.params.id, 10);
+    const sceneId = parseInt((req.params.id as string), 10);
     const { speaker, text_en, text_tr, notes_tr, phonetic_hint } = req.body ?? {};
     if (!speaker || !text_en) return res.status(400).json({ error: "speaker + text_en gerekli" });
     const orderRes: any = await pool.query(

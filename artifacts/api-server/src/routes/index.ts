@@ -104,7 +104,6 @@ import courseOrdersRouter from "./course-orders";
 import supportRouter from "./support";
 import vocabRouter from "./vocab";
 import journeyRouter from "./journey";
-import coursesRouter from "./courses";
 import { requireSubscription } from "../middlewares/require-subscription";
 import { authMiddleware } from "../middlewares/auth";
 
@@ -189,7 +188,6 @@ router.use(adminScenesRouter);
 router.use(adminCareerRouter);
 router.use(dailyWordRouter);
 router.use(courseOrdersRouter);
-router.use(coursesRouter);
 router.use(adminEbooksRouter);
 router.use(adminEbookPurchasesRouter);
 router.use(webAnalyticsRouter);

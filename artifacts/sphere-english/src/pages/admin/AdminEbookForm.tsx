@@ -532,7 +532,7 @@ function AssetSlot({
 }: {
   label: string; icon: React.ReactNode; accept: string; asset?: Asset;
   uploading: boolean; disabled: boolean;
-  inputRef: React.RefObject<HTMLInputElement>;
+  inputRef: React.RefObject<HTMLInputElement | null>;
   onUpload: (f: File) => void; onDelete: () => void;
 }) {
   return (

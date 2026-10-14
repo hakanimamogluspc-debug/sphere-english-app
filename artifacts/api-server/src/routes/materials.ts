@@ -90,7 +90,7 @@ router.get("/materials/folders", authMiddleware, async (req: AuthRequest, res) =
 
 // GET /materials/folders/:id — folder detail with materials
 router.get("/materials/folders/:id", authMiddleware, async (req: AuthRequest, res) => {
-  const id = parseInt(req.params.id);
+  const id = parseInt((req.params.id as string));
   const [folder] = await db.select().from(materialFoldersTable).where(eq(materialFoldersTable.id, id)).limit(1);
   if (!folder) { res.status(404).json({ error: "Klasör bulunamadı" }); return; }
 
@@ -128,7 +128,7 @@ router.post("/materials/folders", authMiddleware, requireRole("admin", "teacher"
 
 // PATCH /materials/folders/:id — update folder
 router.patch("/materials/folders/:id", authMiddleware, requireRole("admin", "teacher"), async (req: AuthRequest, res) => {
-  const id = parseInt(req.params.id);
+  const id = parseInt((req.params.id as string));
   const { name, description, isActive, order } = req.body;
   const updates: any = {};
   if (name !== undefined) updates.name = name;
@@ -143,7 +143,7 @@ router.patch("/materials/folders/:id", authMiddleware, requireRole("admin", "tea
 
 // DELETE /materials/folders/:id — delete folder and all its files
 router.delete("/materials/folders/:id", authMiddleware, requireRole("admin"), async (req: AuthRequest, res) => {
-  const id = parseInt(req.params.id);
+  const id = parseInt((req.params.id as string));
   const mats = await db.select().from(materialsTable).where(eq(materialsTable.folderId, id));
   for (const m of mats) {
     const filePath = path.join(uploadDir, path.basename(m.fileUrl));
@@ -162,7 +162,7 @@ router.post(
   requireRole("admin", "teacher"),
   upload.single("file"),
   async (req: AuthRequest, res) => {
-    const folderId = parseInt(req.params.id);
+    const folderId = parseInt((req.params.id as string));
     const { title } = req.body;
     const file = req.file;
 
@@ -190,7 +190,7 @@ router.post(
 
 // PATCH /materials/:id — update material (title, isActive)
 router.patch("/materials/:id", authMiddleware, requireRole("admin", "teacher"), async (req: AuthRequest, res) => {
-  const id = parseInt(req.params.id);
+  const id = parseInt((req.params.id as string));
   const { title, isActive } = req.body;
   const updates: any = {};
   if (title !== undefined) updates.title = title;
@@ -203,7 +203,7 @@ router.patch("/materials/:id", authMiddleware, requireRole("admin", "teacher"), 
 
 // DELETE /materials/:id — delete a material
 router.delete("/materials/:id", authMiddleware, requireRole("admin", "teacher"), async (req: AuthRequest, res) => {
-  const id = parseInt(req.params.id);
+  const id = parseInt((req.params.id as string));
   const [mat] = await db.select().from(materialsTable).where(eq(materialsTable.id, id)).limit(1);
   if (!mat) { res.status(404).json({ error: "Materyal bulunamadı" }); return; }
 
@@ -218,7 +218,7 @@ router.delete("/materials/:id", authMiddleware, requireRole("admin", "teacher"),
 
 // GET /admin/materials/folders/:id/access — get student access list for a folder
 router.get("/admin/materials/folders/:id/access", authMiddleware, requireRole("admin"), async (req: AuthRequest, res) => {
-  const folderId = parseInt(req.params.id);
+  const folderId = parseInt((req.params.id as string));
   const students = await db.select({
     id: usersTable.id, firstName: usersTable.firstName, lastName: usersTable.lastName, email: usersTable.email,
   }).from(usersTable).where(eq(usersTable.role, "student"));
@@ -233,7 +233,7 @@ router.get("/admin/materials/folders/:id/access", authMiddleware, requireRole("a
 
 // POST /admin/materials/folders/:id/access — toggle student access
 router.post("/admin/materials/folders/:id/access", authMiddleware, requireRole("admin"), async (req: AuthRequest, res) => {
-  const folderId = parseInt(req.params.id);
+  const folderId = parseInt((req.params.id as string));
   const { studentId, hasAccess } = req.body;
   if (!studentId) { res.status(400).json({ error: "studentId gereklidir" }); return; }
 

@@ -102,7 +102,7 @@ router.post("/admin/companies", authMiddleware, requireRole("admin"), async (_re
 
 // PATCH /admin/companies/:id — Kurum güncelle
 router.patch("/admin/companies/:id", authMiddleware, requireRole("admin"), async (req: AuthRequest, res) => {
-  const id = parseInt(req.params.id);
+  const id = parseInt((req.params.id as string));
   const {
     name,
     code: rawCode,
@@ -184,7 +184,7 @@ router.patch("/admin/companies/:id", authMiddleware, requireRole("admin"), async
 
 // DELETE /admin/companies/:id — Kurum sil
 router.delete("/admin/companies/:id", authMiddleware, requireRole("admin"), async (req: AuthRequest, res) => {
-  const id = parseInt(req.params.id);
+  const id = parseInt((req.params.id as string));
 
   const [{ count: userCount }] = await db
     .select({ count: count() })

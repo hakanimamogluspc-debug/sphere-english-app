@@ -61,3 +61,4 @@ test-results/
 playwright-report/
 .turbo/
 *.log
+tsc-errors.txt

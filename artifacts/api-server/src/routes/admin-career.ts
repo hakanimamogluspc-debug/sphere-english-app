@@ -56,7 +56,7 @@ router.get("/admin/career-content", authMiddleware, requireRole("admin"), async 
 
 router.patch("/admin/career-content/:id", authMiddleware, requireRole("admin"), async (req: AuthRequest, res: Response) => {
   try {
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt((req.params.id as string), 10);
     const allowed = ["title", "description", "tr_summary", "category", "tags", "language", "admin_notes", "thumbnail_url"];
     const sets: string[] = []; const params: any[] = [];
     for (const k of allowed) {
@@ -71,7 +71,7 @@ router.patch("/admin/career-content/:id", authMiddleware, requireRole("admin"), 
 
 router.delete("/admin/career-content/:id", authMiddleware, requireRole("admin"), async (req: AuthRequest, res: Response) => {
   try {
-    await pool.query(`DELETE FROM career_content WHERE id = $1`, [parseInt(req.params.id, 10)]);
+    await pool.query(`DELETE FROM career_content WHERE id = $1`, [parseInt((req.params.id as string), 10)]);
     return res.json({ ok: true });
   } catch (e: any) { return res.status(500).json({ error: e?.message }); }
 });
@@ -80,7 +80,7 @@ router.post("/admin/career-content/:id/publish", authMiddleware, requireRole("ad
   try {
     await pool.query(
       `UPDATE career_content SET status='published', published_admin_at = NOW(), updated_at = NOW() WHERE id = $1`,
-      [parseInt(req.params.id, 10)],
+      [parseInt((req.params.id as string), 10)],
     );
     return res.json({ ok: true });
   } catch (e: any) { return res.status(500).json({ error: e?.message }); }
@@ -88,14 +88,14 @@ router.post("/admin/career-content/:id/publish", authMiddleware, requireRole("ad
 
 router.post("/admin/career-content/:id/archive", authMiddleware, requireRole("admin"), async (req: AuthRequest, res: Response) => {
   try {
-    await pool.query(`UPDATE career_content SET status='archived', updated_at = NOW() WHERE id = $1`, [parseInt(req.params.id, 10)]);
+    await pool.query(`UPDATE career_content SET status='archived', updated_at = NOW() WHERE id = $1`, [parseInt((req.params.id as string), 10)]);
     return res.json({ ok: true });
   } catch (e: any) { return res.status(500).json({ error: e?.message }); }
 });
 
 router.post("/admin/career-content/:id/reenrich", authMiddleware, requireRole("admin"), async (req: AuthRequest, res: Response) => {
   try {
-    const r = await enrichCareerItem(parseInt(req.params.id, 10));
+    const r = await enrichCareerItem(parseInt((req.params.id as string), 10));
     return res.json(r);
   } catch (e: any) { return res.status(500).json({ error: e?.message }); }
 });
@@ -165,7 +165,7 @@ router.post("/admin/career-sources", authMiddleware, requireRole("admin"), async
 
 router.patch("/admin/career-sources/:id", authMiddleware, requireRole("admin"), async (req: AuthRequest, res: Response) => {
   try {
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt((req.params.id as string), 10);
     const allowed = ["name", "source_type", "language", "feed_url", "site_url", "is_active"];
     const sets: string[] = []; const params: any[] = [];
     for (const k of allowed) {
@@ -180,7 +180,7 @@ router.patch("/admin/career-sources/:id", authMiddleware, requireRole("admin"), 
 
 router.delete("/admin/career-sources/:id", authMiddleware, requireRole("admin"), async (req: AuthRequest, res: Response) => {
   try {
-    await pool.query(`DELETE FROM career_sources WHERE id = $1`, [parseInt(req.params.id, 10)]);
+    await pool.query(`DELETE FROM career_sources WHERE id = $1`, [parseInt((req.params.id as string), 10)]);
     return res.json({ ok: true });
   } catch (e: any) { return res.status(500).json({ error: e?.message }); }
 });

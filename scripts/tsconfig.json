@@ -3,7 +3,14 @@
   "compilerOptions": {
     "outDir": "dist",
     "rootDir": "src",
-    "types": ["node"]
+    "types": ["node"],
+    "baseUrl": ".",
+    "paths": {
+      // api-server/tsconfig.json ile aynı sebep: drizzle-orm tek kopyadan çözümlensin
+      "drizzle-orm": ["../lib/db/node_modules/drizzle-orm"],
+      "drizzle-orm/*": ["../lib/db/node_modules/drizzle-orm/*"]
+    }
   },
-  "include": ["src"]
+  "include": ["src"],
+  "references": [{ "path": "../lib/db" }]
 }

@@ -193,7 +193,7 @@ router.post("/student/rewards/:id/redeem", authMiddleware, async (req: AuthReque
   const client = await pool.connect();
   try {
     if (!req.userId) return res.status(401).json({ error: "Yetkisiz" });
-    const rewardId = parseInt(req.params.id, 10);
+    const rewardId = parseInt((req.params.id as string), 10);
     if (!rewardId) return res.status(400).json({ error: "Geçersiz ödül id" });
 
     await client.query("BEGIN");

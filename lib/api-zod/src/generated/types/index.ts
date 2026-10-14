@@ -86,5 +86,6 @@ export * from "./updateUserRequestCurrentLevel";
 export * from "./updateUserRequestRole";
 export * from "./userListResponse";
 export * from "./userProfile";
+export * from "./userProfileCompany";
 export * from "./userProfileCurrentLevel";
 export * from "./userProfileRole";

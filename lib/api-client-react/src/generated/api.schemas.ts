@@ -21,7 +21,6 @@ export interface SuccessResponse {
 export interface LoginRequest {
   email: string;
   password: string;
-  rememberMe?: boolean;
 }
 
 export type RegisterRequestRole =
@@ -41,9 +40,6 @@ export interface RegisterRequest {
   role: RegisterRequestRole;
   /** @nullable */
   phone?: string | null;
-  accountType?: "bireysel" | "kurumsal";
-  companyCode?: string;
-  referralCode?: string;
 }
 
 export type UserProfileRole =
@@ -53,6 +49,8 @@ export const UserProfileRole = {
   admin: "admin",
   teacher: "teacher",
   student: "student",
+  corporate: "corporate",
+  partner: "partner",
 } as const;
 
 /**
@@ -71,6 +69,15 @@ export const UserProfileCurrentLevel = {
   C2: "C2",
 } as const;
 
+/**
+ * @nullable
+ */
+export type UserProfileCompany = {
+  id?: number;
+  name?: string;
+  code?: string;
+} | null;
+
 export interface UserProfile {
   id: number;
   email: string;
@@ -81,6 +88,17 @@ export interface UserProfile {
   avatar?: string | null;
   /** @nullable */
   phone?: string | null;
+  /** @nullable */
+  bio?: string | null;
+  /**
+   * bireysel | kurumsal
+   * @nullable
+   */
+  accountType?: string | null;
+  /** @nullable */
+  companyId?: number | null;
+  /** @nullable */
+  company?: UserProfileCompany;
   createdAt: string;
   /** @nullable */
   currentLevel?: UserProfileCurrentLevel;
@@ -91,16 +109,13 @@ export interface UserProfile {
   /** @nullable */
   badges?: string[] | null;
   placementTestCompleted?: boolean;
-  /** Onboarding wizard tamamlandı mı? — kayıt sonrası ilk 5 adım (R0.5) */
   onboardingCompleted?: boolean;
-  /** Kullanıcının arayüz dili tercihi — 'tr' veya 'en' */
+  /** @nullable */
   preferredLanguage?: string | null;
-  /** Kullanıcının sektörü — onboarding wizard'da seçilir */
+  /** @nullable */
   sector?: string | null;
-  /** Kullanıcının öğrenme hedefi — onboarding wizard'da seçilir */
+  /** @nullable */
   learningGoal?: string | null;
-  /** @nullable — kurumsal kayıtlı öğrencilerde dolu, bireysel kayıtlılarda null */
-  company?: { id: number; name: string; code: string } | null;
 }
 
 export interface AuthResponse {

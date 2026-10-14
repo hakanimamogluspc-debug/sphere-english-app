@@ -158,19 +158,8 @@ interface WhisperWord {
 //
 // Free tier: 5 saat/ay bedava, sonrası $1/saat.
 
-interface AzurePronunciationResult {
-  accuracyScore: number; // 0-100 phoneme-level ortalama
-  fluencyScore: number; // 0-100 doğal akıcılık
-  completenessScore: number; // 0-100 söylenen/hedef
-  pronScore: number; // 0-100 overall (weighted)
-  words: Array<{
-    word: string;
-    accuracyScore: number;
-    errorType: "None" | "Mispronunciation" | "Omission" | "Insertion" | "UnexpectedBreak" | "MissingBreak" | "Monotone";
-    phonemes: Array<{ phoneme: string; accuracyScore: number }>;
-  }>;
-  recognizedText: string;
-}
+/** Sahne akışında kullanılan daraltılmış sonuç (prosody/duration alanları gerekmez). */
+type ScenePronResult = Omit<AzurePronunciationResult, "prosodyScore" | "audioDurationSec">;
 
 /**
  * Ses buffer'ı WAV 16kHz mono PCM'e dönüştür.
@@ -199,7 +188,7 @@ async function convertToWav16k(inputBuffer: Buffer): Promise<Buffer> {
 async function analyzePronunciationAzureLegacy(
   audioBuffer: Buffer,
   targetText: string,
-): Promise<AzurePronunciationResult | null> {
+): Promise<ScenePronResult | null> {
   // Yeni helper'ı çağır — reference mode
   const r = await azureAnalyze(audioBuffer, {
     referenceText: targetText,
@@ -220,7 +209,7 @@ async function analyzePronunciationAzureLegacy(
 async function _unusedAzureAnalyze(
   audioBuffer: Buffer,
   targetText: string,
-): Promise<AzurePronunciationResult | null> {
+): Promise<ScenePronResult | null> {
   const azureKey = process.env.AZURE_SPEECH_KEY;
   const azureRegion = process.env.AZURE_SPEECH_REGION || "westeurope";
   if (!azureKey) {
@@ -421,7 +410,7 @@ async function transcribeAudio(
       mime = "audio/webm";
     }
 
-    const file = new File([finalBuffer], `audio.${ext}`, { type: mime });
+    const file = new File([new Uint8Array(finalBuffer)], `audio.${ext}`, { type: mime });
     const t0 = Date.now();
     const res: any = await getOpenAI().audio.transcriptions.create({
       model: "whisper-1",
@@ -689,7 +678,7 @@ router.get("/scenes", authMiddleware, async (req: Request, res: Response) => {
 // GET /api/scenes/:slug — Sahne detay + turlar
 router.get("/scenes/:slug", authMiddleware, async (req: Request, res: Response) => {
   try {
-    const slug = String(req.params.slug ?? "").trim();
+    const slug = String((req.params.slug as string) ?? "").trim();
     if (!slug) return res.status(400).json({ error: "slug gerekli" });
 
     const rows = await db.execute(sql`
@@ -726,7 +715,7 @@ router.post(
   async (req: Request, res: Response) => {
     try {
       const userId = (req as any).userId as number;
-      const slug = String(req.params.slug ?? "").trim();
+      const slug = String((req.params.slug as string) ?? "").trim();
 
       const sceneRows = await db.execute(sql`
         SELECT id, category, min_plan, voice FROM speaking_scenes
@@ -819,7 +808,7 @@ router.post(
     try {
       const userId = (req as any).userId as number;
       awardPoints(userId, "scene_turn", { dailyCap: 30, silent: true }).catch(() => {});
-      const attemptId = parseInt(String(req.params.attemptId ?? ""), 10);
+      const attemptId = parseInt(String((req.params.attemptId as string) ?? ""), 10);
       const turnId = req.body?.turnId ? parseInt(String(req.body.turnId), 10) : null;
 
       if (!Number.isFinite(attemptId))
@@ -1113,7 +1102,7 @@ router.post(
   async (req: Request, res: Response) => {
     try {
       const userId = (req as any).userId as number;
-      const attemptId = parseInt(String(req.params.attemptId ?? ""), 10);
+      const attemptId = parseInt(String((req.params.attemptId as string) ?? ""), 10);
       awardPoints(userId, "scene_complete", { onceEverForRef: true, refId: `attempt:${attemptId}`, silent: true }).catch(() => {});
 
       const attRows = await db.execute(sql`
@@ -1232,7 +1221,7 @@ router.get("/scenes/attempts/history", authMiddleware, async (req: Request, res:
 router.get("/scenes/attempts/:id", authMiddleware, async (req: Request, res: Response) => {
   try {
     const userId = (req as any).userId as number;
-    const id = parseInt(String(req.params.id ?? ""), 10);
+    const id = parseInt(String((req.params.id as string) ?? ""), 10);
 
     const attRows = await db.execute(sql`
       SELECT a.*, s.slug, s.title_en, s.title_tr, s.category, s.difficulty

@@ -121,7 +121,7 @@ router.get("/bundles", async (_req: Request, res: Response) => {
 
 // ─── Tek paket detay (slug ile) ─────────────────────────────────────────
 router.get("/bundles/:slug", async (req: Request, res: Response, next) => {
-  const slug = String(req.params.slug || "").trim();
+  const slug = String((req.params.slug as string) || "").trim();
   if (!slug) return res.status(400).json({ error: "Slug gerekli" });
 
   // Reserved keyword ise sonraki route'a devret
@@ -182,7 +182,7 @@ router.get("/bundles/:slug", async (req: Request, res: Response, next) => {
 // GET /api/bundle-cover/:id → binary görsel stream
 // CORS açık — pazarlama sitesinden <img src> ile çağrılabilir
 router.get("/bundle-cover/:id", async (req: Request, res: Response) => {
-  const id = parseInt(String(req.params.id ?? ""), 10);
+  const id = parseInt(String((req.params.id as string) ?? ""), 10);
   if (!Number.isFinite(id)) return res.status(400).send("Invalid id");
 
   try {

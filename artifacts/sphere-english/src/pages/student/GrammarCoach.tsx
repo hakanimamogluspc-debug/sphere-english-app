@@ -58,7 +58,7 @@ function GrammarCoach() {
 
   const scoreRef = useRef(0);
 
-  const authHeaders = () => {
+  const authHeaders = (): Record<string, string> => {
     const token = localStorage.getItem("sphere_token");
     return token ? { Authorization: `Bearer ${token}` } : {};
   };

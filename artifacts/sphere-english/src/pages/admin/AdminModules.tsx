@@ -7,7 +7,7 @@ import { Settings2, Users, BookOpen, Video, FileQuestion, Mic, PenLine, MessageC
 
 const API = import.meta.env.BASE_URL.replace(/\/$/, "") + "/api";
 
-function authOnly() {
+function authOnly(): Record<string, string> {
   const token = localStorage.getItem("sphere_token");
   return token ? { Authorization: `Bearer ${token}` } : {};
 }

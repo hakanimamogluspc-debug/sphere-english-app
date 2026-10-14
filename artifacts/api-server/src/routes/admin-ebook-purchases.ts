@@ -400,7 +400,7 @@ router.get(
   authMiddleware,
   requireRole("admin"),
   async (req: AuthRequest, res: Response) => {
-    const id = parseInt(req.params.id ?? "", 10);
+    const id = parseInt((req.params.id as string) ?? "", 10);
     if (!id) return res.status(400).json({ error: "id geçersiz" });
 
     try {
@@ -430,7 +430,7 @@ router.patch(
   authMiddleware,
   requireRole("admin"),
   async (req: AuthRequest, res: Response) => {
-    const id = parseInt(req.params.id ?? "", 10);
+    const id = parseInt((req.params.id as string) ?? "", 10);
     if (!id) return res.status(400).json({ error: "id geçersiz" });
 
     const {
@@ -491,9 +491,7 @@ router.post(
   authMiddleware,
   requireRole("admin"),
   async (req: AuthRequest, res: Response) => {
-    const toEmail = String((req.body as any)?.email ?? "").trim().toLowerCase()
-      || (req.user as any)?.email
-      || "";
+    const toEmail = String((req.body as any)?.email ?? "").trim().toLowerCase();
     if (!toEmail || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(toEmail)) {
       return res.status(400).json({ error: "Geçerli alıcı e-postası gerekli" });
     }
@@ -547,7 +545,7 @@ router.post(
   authMiddleware,
   requireRole("admin"),
   async (req: AuthRequest, res: Response) => {
-    const id = parseInt(req.params.id ?? "", 10);
+    const id = parseInt((req.params.id as string) ?? "", 10);
     if (!id) return res.status(400).json({ error: "id geçersiz" });
 
     try {
@@ -632,7 +630,7 @@ router.post(
   authMiddleware,
   requireRole("admin"),
   async (req: AuthRequest, res: Response) => {
-    const id = parseInt(req.params.id ?? "", 10);
+    const id = parseInt((req.params.id as string) ?? "", 10);
     if (!id) return res.status(400).json({ error: "id geçersiz" });
 
     try {

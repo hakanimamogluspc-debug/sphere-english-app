@@ -107,7 +107,7 @@ router.get("/vocab/words", authMiddleware, async (req: AuthRequest, res) => {
  * GET /vocab/words/:id — tek kelime detayı + user'ın progress'i (varsa)
  */
 router.get("/vocab/words/:id", authMiddleware, async (req: AuthRequest, res) => {
-  const id = parseInt(req.params.id);
+  const id = parseInt((req.params.id as string));
   if (isNaN(id)) { res.status(400).json({ error: "Geçersiz id" }); return; }
 
   const [word] = await db.select(WORD_COLS).from(vocabWordsTable)
@@ -148,7 +148,7 @@ router.get("/vocab/favorites", authMiddleware, async (req: AuthRequest, res) => 
  * DELETE /vocab/favorites/:wordId — favorilerden çıkar
  */
 router.post("/vocab/favorites/:wordId", authMiddleware, async (req: AuthRequest, res) => {
-  const wordId = parseInt(req.params.wordId);
+  const wordId = parseInt((req.params.wordId as string));
   if (isNaN(wordId)) { res.status(400).json({ error: "Geçersiz id" }); return; }
 
   // Kelime var mı?
@@ -183,7 +183,7 @@ router.post("/vocab/favorites/:wordId", authMiddleware, async (req: AuthRequest,
 });
 
 router.delete("/vocab/favorites/:wordId", authMiddleware, async (req: AuthRequest, res) => {
-  const wordId = parseInt(req.params.wordId);
+  const wordId = parseInt((req.params.wordId as string));
   if (isNaN(wordId)) { res.status(400).json({ error: "Geçersiz id" }); return; }
 
   await db.update(userVocabProgressTable)
@@ -235,7 +235,7 @@ router.get("/vocab/review", authMiddleware, async (req: AuthRequest, res) => {
  *   2 = kolay doğru
  */
 router.post("/vocab/review/:wordId", authMiddleware, async (req: AuthRequest, res) => {
-  const wordId = parseInt(req.params.wordId);
+  const wordId = parseInt((req.params.wordId as string));
   const quality = parseInt(String(req.body?.quality));
   if (isNaN(wordId) || isNaN(quality) || quality < 0 || quality > 2) {
     res.status(400).json({ error: "Geçersiz quality (0-2 olmalı)" });
@@ -400,7 +400,7 @@ router.post("/admin/vocab/words", authMiddleware, requireRole("admin"), async (r
  * PATCH /admin/vocab/words/:id — kelimeyi güncelle
  */
 router.patch("/admin/vocab/words/:id", authMiddleware, requireRole("admin"), async (req: AuthRequest, res) => {
-  const id = parseInt(req.params.id);
+  const id = parseInt((req.params.id as string));
   if (isNaN(id)) { res.status(400).json({ error: "Geçersiz id" }); return; }
   const b = req.body ?? {};
   const patch: any = { updatedAt: new Date() };
@@ -422,7 +422,7 @@ router.patch("/admin/vocab/words/:id", authMiddleware, requireRole("admin"), asy
  * DELETE /admin/vocab/words/:id — kelimeyi sil
  */
 router.delete("/admin/vocab/words/:id", authMiddleware, requireRole("admin"), async (req: AuthRequest, res) => {
-  const id = parseInt(req.params.id);
+  const id = parseInt((req.params.id as string));
   if (isNaN(id)) { res.status(400).json({ error: "Geçersiz id" }); return; }
   const result = await db.delete(vocabWordsTable).where(eq(vocabWordsTable.id, id)).returning({ id: vocabWordsTable.id });
   if (result.length === 0) { res.status(404).json({ error: "Kelime bulunamadı" }); return; }

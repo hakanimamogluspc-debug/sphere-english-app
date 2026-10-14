@@ -40,14 +40,14 @@ interface Stats {
 }
 
 const TOKEN_KEY = "sphere_token";
-function authHeaders() {
+function authHeaders(): Record<string, string> {
   const t = localStorage.getItem(TOKEN_KEY);
   return t ? { Authorization: `Bearer ${t}` } : {};
 }
 async function apiJson(path: string, init?: RequestInit) {
   const res = await fetch(path, {
     ...init,
-    headers: { "Content-Type": "application/json", ...authHeaders(), ...(init?.headers || {}) },
+    headers: { "Content-Type": "application/json", ...authHeaders(), ...((init?.headers as Record<string, string>) || {}) },
   });
   if (!res.ok) throw new Error("Hata");
   return res.json();
@@ -218,7 +218,7 @@ function ReviewTab({ onDone }: { onDone: () => void }) {
   };
 
   if (error) return <ErrorState message={error} />;
-  if (!words) return <LoadingState message="Yükleniyor..." />;
+  if (!words) return <LoadingState messages={["Yükleniyor…"]} />;
 
   if (sessionDone || words.length === 0) {
     return (
@@ -428,7 +428,7 @@ function FavoritesTab({ onOpenWord }: { onOpenWord: (id: number) => void }) {
   }, []);
 
   if (error) return <ErrorState message={error} />;
-  if (!words) return <LoadingState message="Yükleniyor..." />;
+  if (!words) return <LoadingState messages={["Yükleniyor…"]} />;
 
   if (words.length === 0) {
     return (
@@ -644,7 +644,7 @@ function ExploreTab({ onOpenWord }: { onOpenWord: (id: number) => void }) {
       </div>
 
       {loading ? (
-        <LoadingState message="Yükleniyor..." />
+        <LoadingState messages={["Yükleniyor…"]} />
       ) : words.length === 0 ? (
         <div style={{
           padding: 32, textAlign: "center",

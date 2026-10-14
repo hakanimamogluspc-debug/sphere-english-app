@@ -14,7 +14,7 @@
  *   GET  /api/mail-assets/:id       → binary stream (public, mail client için)
  */
 
-import { Router, Request, Response } from "express";
+import { Router, Request, Response, NextFunction } from "express";
 import multer from "multer";
 import { sql, eq } from "drizzle-orm";
 import { db } from "@workspace/db";
@@ -39,7 +39,7 @@ const assetUpload = multer({
 async function requireAdmin(req: Request, res: Response, next: () => void) {
   const userId = (req as any).userId as number;
   const [me] = await db.select({ role: usersTable.role }).from(usersTable).where(eq(usersTable.id, userId)).limit(1);
-  if (!me || me.role !== "admin") return res.status(403).json({ error: "Admin yetkisi gerekli" });
+  if (!me || me.role !== "admin") { res.status(403).json({ error: "Admin yetkisi gerekli" }); return; }
   next();
 }
 
@@ -54,8 +54,8 @@ router.post(
   "/admin/mail-assets/upload",
   authMiddleware,
   requireAdmin,
-  (req, res, next) => {
-    assetUpload.single("image")(req, res, (err) => {
+  (req: Request, res: Response, next: NextFunction) => {
+    assetUpload.single("image")(req, res, (err: unknown) => {
       if (err) {
         if (err instanceof multer.MulterError) {
           if (err.code === "LIMIT_FILE_SIZE") {
@@ -63,7 +63,7 @@ router.post(
           }
           return res.status(400).json({ error: `Multer: ${err.message}` });
         }
-        return res.status(400).json({ error: err.message ?? "Upload hata" });
+        return res.status(400).json({ error: (err as Error)?.message ?? "Upload hata" });
       }
       next();
     });
@@ -135,7 +135,7 @@ router.delete(
   requireAdmin,
   async (req: Request, res: Response) => {
     try {
-      const id = parseInt(String(req.params.id ?? ""), 10);
+      const id = parseInt(String((req.params.id as string) ?? ""), 10);
       if (!Number.isFinite(id)) return res.status(400).json({ error: "Geçersiz id" });
       await db.execute(sql`DELETE FROM mail_assets WHERE id = ${id}`);
       return res.json({ ok: true });
@@ -149,7 +149,7 @@ router.delete(
 // Public binary stream — mail client'ları erişebilmeli, auth YOK
 router.get("/mail-assets/:id", async (req: Request, res: Response) => {
   try {
-    const id = parseInt(String(req.params.id ?? ""), 10);
+    const id = parseInt(String((req.params.id as string) ?? ""), 10);
     if (!Number.isFinite(id)) return res.status(400).send("Geçersiz id");
 
     const rows = await db.execute(sql`

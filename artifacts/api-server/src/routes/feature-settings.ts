@@ -42,7 +42,7 @@ router.get("/admin/feature-settings", authMiddleware, requireRole("admin"), asyn
 
 // PATCH /admin/feature-settings/:key — bir modülü güncelle
 router.patch("/admin/feature-settings/:key", authMiddleware, requireRole("admin"), async (req: AuthRequest, res) => {
-  const { key } = req.params;
+  const key = req.params.key as string;
   const { isEnabled, visibleTo } = req.body as { isEnabled?: boolean; visibleTo?: string[] };
 
   const updates: Partial<{ isEnabled: boolean; visibleTo: string[]; updatedAt: Date }> = {

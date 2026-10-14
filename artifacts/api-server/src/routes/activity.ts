@@ -7,7 +7,7 @@ const router = Router();
 
 // Ders başladığında session aç
 router.post("/lessons/:lessonId/start", authMiddleware, async (req: AuthRequest, res) => {
-  const lessonId = parseInt(req.params.lessonId);
+  const lessonId = parseInt((req.params.lessonId as string));
   const { courseId, sessionId, deviceInfo } = req.body;
   const userId = req.userId!;
 
@@ -27,7 +27,7 @@ router.post("/lessons/:lessonId/start", authMiddleware, async (req: AuthRequest,
 
 // Heartbeat — her 30 saniyede bir çağrılır
 router.post("/lessons/:lessonId/heartbeat", authMiddleware, async (req: AuthRequest, res) => {
-  const lessonId = parseInt(req.params.lessonId);
+  const lessonId = parseInt((req.params.lessonId as string));
   const { logId, durationSeconds, watchedPercent } = req.body;
   const userId = req.userId!;
 
@@ -49,7 +49,7 @@ router.post("/lessons/:lessonId/heartbeat", authMiddleware, async (req: AuthRequ
 
 // Ders bitişi — final kayıt
 router.post("/lessons/:lessonId/end", authMiddleware, async (req: AuthRequest, res) => {
-  const lessonId = parseInt(req.params.lessonId);
+  const lessonId = parseInt((req.params.lessonId as string));
   const { logId, durationSeconds, watchedPercent } = req.body;
   const userId = req.userId!;
 

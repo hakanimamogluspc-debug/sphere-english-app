@@ -81,6 +81,7 @@ export default function AdminAffiliates() {
       const t = setTimeout(loadList, 350);
       return () => clearTimeout(t);
     }
+    return undefined;
   }, [search]);
 
   async function approve(id: number) {

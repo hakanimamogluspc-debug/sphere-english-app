@@ -66,7 +66,7 @@ router.get("/admin/content-articles", authMiddleware, requireRole("admin"), asyn
 // ─── DETAIL ─────────────────────────────────────────────────────────────
 router.get("/admin/content-articles/:id", authMiddleware, requireRole("admin"), async (req: AuthRequest, res: Response) => {
   try {
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt((req.params.id as string), 10);
     const r: any = await pool.query(`SELECT * FROM content_articles WHERE id = $1`, [id]);
     if (!r.rows[0]) return res.status(404).json({ error: "not found" });
     return res.json({ article: r.rows[0] });
@@ -102,7 +102,7 @@ router.post("/admin/content-articles", authMiddleware, requireRole("admin"), asy
 // ─── UPDATE ─────────────────────────────────────────────────────────────
 router.patch("/admin/content-articles/:id", authMiddleware, requireRole("admin"), async (req: AuthRequest, res: Response) => {
   try {
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt((req.params.id as string), 10);
     const allowed = ["title", "subtitle", "snippet", "tr_summary", "cefr_level", "category", "tags", "admin_notes", "image_url"];
     const sets: string[] = [];
     const params: any[] = [];
@@ -126,7 +126,7 @@ router.patch("/admin/content-articles/:id", authMiddleware, requireRole("admin")
 
 router.delete("/admin/content-articles/:id", authMiddleware, requireRole("admin"), async (req: AuthRequest, res: Response) => {
   try {
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt((req.params.id as string), 10);
     await pool.query(`DELETE FROM content_articles WHERE id = $1`, [id]);
     return res.json({ ok: true });
   } catch (e: any) {
@@ -137,7 +137,7 @@ router.delete("/admin/content-articles/:id", authMiddleware, requireRole("admin"
 // ─── PUBLISH / ARCHIVE ──────────────────────────────────────────────────
 router.post("/admin/content-articles/:id/publish", authMiddleware, requireRole("admin"), async (req: AuthRequest, res: Response) => {
   try {
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt((req.params.id as string), 10);
     await pool.query(
       `UPDATE content_articles SET status='published', published_admin_at = NOW(), updated_at = NOW() WHERE id = $1`,
       [id],
@@ -150,7 +150,7 @@ router.post("/admin/content-articles/:id/publish", authMiddleware, requireRole("
 
 router.post("/admin/content-articles/:id/archive", authMiddleware, requireRole("admin"), async (req: AuthRequest, res: Response) => {
   try {
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt((req.params.id as string), 10);
     await pool.query(`UPDATE content_articles SET status='archived', updated_at = NOW() WHERE id = $1`, [id]);
     return res.json({ ok: true });
   } catch (e: any) {
@@ -161,7 +161,7 @@ router.post("/admin/content-articles/:id/archive", authMiddleware, requireRole("
 // ─── RE-ENRICH ──────────────────────────────────────────────────────────
 router.post("/admin/content-articles/:id/reenrich", authMiddleware, requireRole("admin"), async (req: AuthRequest, res: Response) => {
   try {
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt((req.params.id as string), 10);
     const r = await enrichArticle(id);
     return res.json(r);
   } catch (e: any) {

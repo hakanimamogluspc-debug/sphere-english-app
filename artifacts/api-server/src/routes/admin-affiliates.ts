@@ -95,7 +95,7 @@ router.get(
   requireRole("admin"),
   async (req: AuthRequest, res: Response) => {
     try {
-      const id = parseInt(req.params.id ?? "", 10);
+      const id = parseInt((req.params.id as string) ?? "", 10);
       if (!id) return res.status(400).json({ error: "id geçersiz" });
 
       const aRows = await db.execute(sql`SELECT * FROM affiliates WHERE id = ${id} LIMIT 1`);
@@ -145,7 +145,7 @@ router.post(
   requireRole("admin"),
   async (req: AuthRequest, res: Response) => {
     try {
-      const id = parseInt(req.params.id ?? "", 10);
+      const id = parseInt((req.params.id as string) ?? "", 10);
       const adminId = req.userId;
       if (!id) return res.status(400).json({ error: "id geçersiz" });
 
@@ -199,7 +199,7 @@ router.post(
   requireRole("admin"),
   async (req: AuthRequest, res: Response) => {
     try {
-      const id = parseInt(req.params.id ?? "", 10);
+      const id = parseInt((req.params.id as string) ?? "", 10);
       const reason = String((req.body as any)?.reason ?? "");
       if (!id) return res.status(400).json({ error: "id geçersiz" });
 
@@ -225,7 +225,7 @@ router.patch(
   requireRole("admin"),
   async (req: AuthRequest, res: Response) => {
     try {
-      const id = parseInt(req.params.id ?? "", 10);
+      const id = parseInt((req.params.id as string) ?? "", 10);
       const { status, code, notes } = (req.body ?? {}) as any;
       if (!id) return res.status(400).json({ error: "id geçersiz" });
 
@@ -298,7 +298,7 @@ router.post(
   requireRole("admin"),
   async (req: AuthRequest, res: Response) => {
     try {
-      const id = parseInt(req.params.id ?? "", 10);
+      const id = parseInt((req.params.id as string) ?? "", 10);
       if (!id) return res.status(400).json({ error: "id geçersiz" });
 
       const aRows = await db.execute(sql`
@@ -357,7 +357,7 @@ router.post(
   requireRole("admin"),
   async (req: AuthRequest, res: Response) => {
     try {
-      const payoutId = parseInt(req.params.payoutId ?? "", 10);
+      const payoutId = parseInt((req.params.payoutId as string) ?? "", 10);
       const { paymentReference, notes } = (req.body ?? {}) as any;
       const adminId = req.userId;
       if (!payoutId) return res.status(400).json({ error: "payoutId geçersiz" });
@@ -406,7 +406,7 @@ router.post(
   requireRole("admin"),
   async (req: AuthRequest, res: Response) => {
     try {
-      const id = parseInt(req.params.id ?? "", 10);
+      const id = parseInt((req.params.id as string) ?? "", 10);
       const { userId, userEmail } = (req.body ?? {}) as any;
       if (!id) return res.status(400).json({ error: "id geçersiz" });
 

@@ -1,4 +1,4 @@
-import { Router, type Request, type Response } from "express";
+import { Router, type Request, type Response, type NextFunction } from "express";
 import { db } from "@workspace/db";
 import { subscriptionsTable, usersTable } from "@workspace/db/schema";
 import { desc, eq, sql } from "drizzle-orm";
@@ -11,7 +11,7 @@ const router = Router();
 async function requireAdmin(req: Request, res: Response, next: () => void) {
   const userId = (req as any).userId as number;
   const [me] = await db.select({ role: usersTable.role }).from(usersTable).where(eq(usersTable.id, userId)).limit(1);
-  if (!me || me.role !== "admin") return res.status(403).json({ error: "Bu işlem için admin yetkisi gerekli." });
+  if (!me || me.role !== "admin") { res.status(403).json({ error: "Bu işlem için admin yetkisi gerekli." }); return; }
   next();
 }
 
@@ -26,7 +26,7 @@ async function resolveStudent(rawId: string): Promise<{ ok: true; userId: number
   return { ok: true, userId };
 }
 
-router.get("/admin/subscriptions", authMiddleware, async (req, res, next) => requireAdmin(req, res, () => next()),
+router.get("/admin/subscriptions", authMiddleware, async (req: Request, res: Response, next: NextFunction) => requireAdmin(req, res, () => next()),
   async (_req, res: Response) => {
     try {
       const rows = await db
@@ -69,11 +69,11 @@ router.get("/admin/subscriptions", authMiddleware, async (req, res, next) => req
 router.post(
   "/admin/subscriptions/:userId/grant",
   authMiddleware,
-  async (req, res, next) => requireAdmin(req, res, () => next()),
+  async (req: Request, res: Response, next: NextFunction) => requireAdmin(req, res, () => next()),
   async (req: Request, res: Response) => {
     try {
       const adminId = (req as any).userId as number;
-      const resolved = await resolveStudent(req.params.userId);
+      const resolved = await resolveStudent((req.params.userId as string));
       if (!resolved.ok) return res.status(resolved.status).json({ error: resolved.error });
       const userId = resolved.userId;
 
@@ -184,7 +184,7 @@ router.post(
 router.get(
   "/admin/subscriptions/plans",
   authMiddleware,
-  async (req, res, next) => requireAdmin(req, res, () => next()),
+  async (req: Request, res: Response, next: NextFunction) => requireAdmin(req, res, () => next()),
   async (_req: Request, res: Response) => {
     res.json({ plans: PLAN_CATALOG });
   },
@@ -193,10 +193,10 @@ router.get(
 router.post(
   "/admin/subscriptions/:userId/revoke",
   authMiddleware,
-  async (req, res, next) => requireAdmin(req, res, () => next()),
+  async (req: Request, res: Response, next: NextFunction) => requireAdmin(req, res, () => next()),
   async (req: Request, res: Response) => {
     try {
-      const resolved = await resolveStudent(req.params.userId);
+      const resolved = await resolveStudent((req.params.userId as string));
       if (!resolved.ok) return res.status(resolved.status).json({ error: resolved.error });
       const userId = resolved.userId;
       const [existing] = await db
@@ -223,7 +223,7 @@ router.post(
 router.get(
   "/admin/subscriptions/stats",
   authMiddleware,
-  async (req, res, next) => requireAdmin(req, res, () => next()),
+  async (req: Request, res: Response, next: NextFunction) => requireAdmin(req, res, () => next()),
   async (_req, res: Response) => {
     try {
       const rows = await db.execute(sql`

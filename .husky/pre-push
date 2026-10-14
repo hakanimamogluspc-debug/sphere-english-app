@@ -1,0 +1,4 @@
+# Push öncesi: typecheck + lint. Atlamak için: git push --no-verify
+echo "[pre-push] typecheck + lint..."
+pnpm run typecheck || exit 1
+pnpm --filter sphere-english run lint || exit 1

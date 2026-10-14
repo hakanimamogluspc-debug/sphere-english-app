@@ -1,4 +1,4 @@
-import { Router, Request, Response } from "express";
+import { Router, Request, Response, NextFunction } from "express";
 import { db, pool, usersTable, contactLeadsTable, emailCampaignsTable, emailEventsTable, pageViewsTable, emailTemplatesTable } from "@workspace/db";
 import { eq, desc, gte, count, and, or, inArray, sql } from "drizzle-orm";
 import { authMiddleware, requireRole, type AuthRequest } from "../middlewares/auth.js";
@@ -327,7 +327,7 @@ router.patch(
   requireRole("admin"),
   async (req: AuthRequest, res: Response) => {
     try {
-      const id = Number(req.params.id);
+      const id = Number((req.params.id as string));
       const { status, notes } = req.body;
       await db.update(contactLeadsTable).set({ status, notes, updatedAt: new Date() }).where(eq(contactLeadsTable.id, id));
       return res.json({ ok: true });
@@ -617,7 +617,7 @@ router.post(
   "/admin/marketing/templates",
   authMiddleware,
   requireRole("admin"),
-  (req: AuthRequest, res: Response, next) => {
+  (req: AuthRequest, res: Response, next: NextFunction) => {
     upload.single("file")(req as any, res as any, next);
   },
   async (req: AuthRequest, res: Response) => {
@@ -681,7 +681,7 @@ router.delete(
   requireRole("admin"),
   async (req: AuthRequest, res: Response) => {
     try {
-      const id = Number(req.params.id);
+      const id = Number((req.params.id as string));
       const [tpl] = await db.select().from(emailTemplatesTable).where(eq(emailTemplatesTable.id, id));
       if (tpl?.filePath) {
         const fp = path.join(TEMPLATES_DIR, tpl.filePath);
@@ -702,7 +702,7 @@ router.get(
   requireRole("admin"),
   async (req: AuthRequest, res: Response) => {
     try {
-      const id = Number(req.params.id);
+      const id = Number((req.params.id as string));
       const [tpl] = await db.select().from(emailTemplatesTable).where(eq(emailTemplatesTable.id, id));
       if (!tpl?.filePath) return res.status(404).json({ error: "Şablon bulunamadı." });
       const fp = path.resolve(TEMPLATES_DIR, path.basename(tpl.filePath));

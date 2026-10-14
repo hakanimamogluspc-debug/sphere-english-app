@@ -1,3 +1,4 @@
+import type { ReactElement } from "react";
 import { useEffect, useState, useMemo } from "react";
 import {
   ShoppingBag,
@@ -146,7 +147,7 @@ function formatDateTime(d: string | null) {
 }
 
 function StatusBadge({ status }: { status: Purchase["payment_status"] }) {
-  const map: Record<string, { label: string; cls: string; icon: JSX.Element }> = {
+  const map: Record<string, { label: string; cls: string; icon: ReactElement }> = {
     success: {
       label: "Başarılı",
       cls: "bg-emerald-100 text-emerald-800",
@@ -714,7 +715,7 @@ function StatCard({
   label: string;
   value: string;
   sub: string;
-  icon: JSX.Element;
+  icon: ReactElement;
   color: "emerald" | "sky" | "violet" | "amber" | "slate";
 }) {
   const colorMap: Record<string, string> = {

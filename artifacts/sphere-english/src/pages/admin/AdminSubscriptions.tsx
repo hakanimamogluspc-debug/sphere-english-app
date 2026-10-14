@@ -40,7 +40,7 @@ const STATUS_COLORS: Record<string, { bg: string; color: string; label: string }
   none: { bg: "#f9fafb", color: "#9ca3af", label: "Yok" },
 };
 
-function formatDate(d: string | null) {
+function formatDate(d: string | null | undefined) {
   if (!d) return "—";
   return new Date(d).toLocaleDateString("tr-TR", { day: "2-digit", month: "2-digit", year: "numeric" });
 }

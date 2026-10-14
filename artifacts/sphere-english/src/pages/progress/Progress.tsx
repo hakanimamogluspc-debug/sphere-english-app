@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle, Badge } from "@/components/ui
 import { useAuth } from "@/hooks/use-auth";
 import { TrendingUp, BookOpen, CheckCircle, Star, Flame, Zap } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
-import { RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
 import WeeklyHeatmap from "@/components/WeeklyHeatmap";
 
 export default function ProgressPage() {
@@ -14,14 +14,13 @@ export default function ProgressPage() {
     return <div className="text-center p-8 animate-pulse text-muted-foreground">İlerleme yükleniyor...</div>;
   }
 
-  const skillData = [
-    { subject: "Okuma", A: progress?.skillLevels?.reading || 0, fullMark: 100 },
-    { subject: "Yazma", A: progress?.skillLevels?.writing || 0, fullMark: 100 },
-    { subject: "Dinleme", A: progress?.skillLevels?.listening || 0, fullMark: 100 },
-    { subject: "Konuşma", A: progress?.skillLevels?.speaking || 0, fullMark: 100 },
-    { subject: "Gramer", A: progress?.skillLevels?.grammar || 0, fullMark: 100 },
-    { subject: "Kelime", A: progress?.skillLevels?.vocabulary || 0, fullMark: 100 },
-  ];
+  // API toplam ders sayısını ayrıca vermiyor — kurs ilerlemelerinden türet
+  const totalLessonsCompleted = (progress?.courseProgress ?? []).reduce(
+    (sum, c) => sum + (c.completedLessons ?? 0), 0,
+  );
+  const weeklyPoints = (progress?.weeklyActivity ?? []).reduce(
+    (sum, d) => sum + (d.pointsEarned ?? 0), 0,
+  );
 
   const badges = progress?.badges || [];
   const levelXP = user?.totalPoints || 0;
@@ -55,14 +54,14 @@ export default function ProgressPage() {
           <CardContent className="p-6">
             <CheckCircle className="h-6 w-6 text-green-500 mb-2" />
             <p className="text-muted-foreground text-sm font-medium">Tamamlanan Dersler</p>
-            <h3 className="text-3xl font-bold font-display">{progress?.totalLessonsCompleted || 0}</h3>
+            <h3 className="text-3xl font-bold font-display">{totalLessonsCompleted}</h3>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-6">
             <BookOpen className="h-6 w-6 text-accent mb-2" />
-            <p className="text-muted-foreground text-sm font-medium">Sınav Ortalaması</p>
-            <h3 className="text-3xl font-bold font-display">%{progress?.quizStats?.averageScore?.toFixed(0) || 0}</h3>
+            <p className="text-muted-foreground text-sm font-medium">Bu Hafta Kazanılan Puan</p>
+            <h3 className="text-3xl font-bold font-display">{weeklyPoints}</h3>
           </CardContent>
         </Card>
       </div>
@@ -90,7 +89,7 @@ export default function ProgressPage() {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 gap-8">
         {/* Haftalık Aktivite Isı Haritası */}
         <Card>
           <CardHeader>
@@ -101,23 +100,6 @@ export default function ProgressPage() {
           </CardContent>
         </Card>
 
-        {/* Beceri Radarı */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Beceri Dağılımı</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[250px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <RadarChart data={skillData}>
-                  <PolarGrid stroke="hsl(var(--border))" />
-                  <PolarAngleAxis dataKey="subject" tick={{ fontSize: 12, fontWeight: 500 }} />
-                  <Radar name="Beceriler" dataKey="A" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.2} strokeWidth={2} />
-                </RadarChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
       </div>
 
       {/* Kurs İlerlemesi */}

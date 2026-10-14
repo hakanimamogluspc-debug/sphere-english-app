@@ -135,7 +135,7 @@ async function transcribe(audioBuffer: Buffer): Promise<string> {
     finalExt = "webm";
     finalMime = "audio/webm";
   }
-  const audioFile = new File([finalBuffer], `audio.${finalExt}`, { type: finalMime });
+  const audioFile = new File([new Uint8Array(finalBuffer)], `audio.${finalExt}`, { type: finalMime });
   const res = await getOpenAI().audio.transcriptions.create({
     model: "whisper-1",
     file: audioFile,
@@ -280,7 +280,7 @@ router.post(
     try {
       const userId = (req as any).userId as number;
       awardPoints(userId, "interview_turn", { dailyCap: 30, silent: true }).catch(() => {});
-      const sessionId = parseInt(req.params.id, 10);
+      const sessionId = parseInt((req.params.id as string), 10);
       if (!Number.isFinite(sessionId)) return res.status(400).json({ error: "Geçersiz id." });
 
       const [session] = await db
@@ -296,11 +296,12 @@ router.post(
       }
 
       // Whisper transcript + Azure phoneme analysis (paralel)
+      const audioBuf = req.file!.buffer;
       const [userText, azurePron] = await Promise.all([
-        transcribe(req.file.buffer),
+        transcribe(audioBuf),
         (async () => {
           const { analyzePronunciation } = await import("../lib/azure-pronunciation.js");
-          return analyzePronunciation(req.file.buffer, {
+          return analyzePronunciation(audioBuf, {
             referenceText: "",
             enableProsodyAssessment: true,
           });
@@ -414,7 +415,7 @@ router.post(
 router.post("/interview/:id/end", authMiddleware, async (req: Request, res: Response) => {
   try {
     const userId = (req as any).userId as number;
-    const sessionId = parseInt(req.params.id, 10);
+    const sessionId = parseInt((req.params.id as string), 10);
     if (!Number.isFinite(sessionId)) return res.status(400).json({ error: "Geçersiz id." });
 
     const [session] = await db
@@ -571,7 +572,7 @@ router.get("/interview/sessions", authMiddleware, async (req: Request, res: Resp
 router.get("/interview/sessions/:id", authMiddleware, async (req: Request, res: Response) => {
   try {
     const userId = (req as any).userId as number;
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt((req.params.id as string), 10);
     if (!Number.isFinite(id)) return res.status(400).json({ error: "Geçersiz id." });
     const [row] = await db
       .select()
@@ -612,7 +613,7 @@ router.get("/interview/active", authMiddleware, async (req: Request, res: Respon
 router.post("/interview/:id/abandon", authMiddleware, async (req: Request, res: Response) => {
   try {
     const userId = (req as any).userId as number;
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt((req.params.id as string), 10);
     if (!Number.isFinite(id)) return res.status(400).json({ error: "Geçersiz id." });
     const result = await db
       .update(interviewSessionsTable)

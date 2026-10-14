@@ -227,7 +227,7 @@ function StatTile({ label, count, color }: { label: string; count: number; color
   );
 }
 
-function Th({ children }: { children: React.ReactNode }) {
+function Th({ children }: { children?: React.ReactNode }) {
   return <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500">{children}</th>;
 }
 

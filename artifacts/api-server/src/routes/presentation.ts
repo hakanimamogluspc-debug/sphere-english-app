@@ -132,7 +132,7 @@ async function transcribe(audioBuffer: Buffer, prompt = "Professional English pr
     finalExt = "webm";
     finalMime = "audio/webm";
   }
-  const audioFile = new File([finalBuffer], `audio.${finalExt}`, { type: finalMime });
+  const audioFile = new File([new Uint8Array(finalBuffer)], `audio.${finalExt}`, { type: finalMime });
   const res = await getOpenAI().audio.transcriptions.create({
     model: "whisper-1",
     file: audioFile,
@@ -237,7 +237,7 @@ router.post(
     try {
       const userId = (req as any).userId as number;
       awardPoints(userId, "presentation_turn", { dailyCap: 30, silent: true }).catch(() => {});
-      const sessionId = parseInt(req.params.id, 10);
+      const sessionId = parseInt((req.params.id as string), 10);
       if (!Number.isFinite(sessionId)) return res.status(400).json({ error: "Geçersiz id." });
 
       const [session] = await db
@@ -351,7 +351,7 @@ router.post(
   async (req: Request, res: Response) => {
     try {
       const userId = (req as any).userId as number;
-      const sessionId = parseInt(req.params.id, 10);
+      const sessionId = parseInt((req.params.id as string), 10);
       if (!Number.isFinite(sessionId)) return res.status(400).json({ error: "Geçersiz id." });
 
       const [session] = await db
@@ -466,7 +466,7 @@ Ask ONE follow-up question (max 2 sentences) that drills deeper, challenges, or 
 router.post("/presentation/:id/end", authMiddleware, async (req: Request, res: Response) => {
   try {
     const userId = (req as any).userId as number;
-    const sessionId = parseInt(req.params.id, 10);
+    const sessionId = parseInt((req.params.id as string), 10);
     if (!Number.isFinite(sessionId)) return res.status(400).json({ error: "Geçersiz id." });
 
     const [session] = await db
@@ -645,7 +645,7 @@ router.get("/presentation/sessions", authMiddleware, async (req: Request, res: R
 router.get("/presentation/sessions/:id", authMiddleware, async (req: Request, res: Response) => {
   try {
     const userId = (req as any).userId as number;
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt((req.params.id as string), 10);
     if (!Number.isFinite(id)) return res.status(400).json({ error: "Geçersiz id." });
     const [row] = await db
       .select()
@@ -701,7 +701,7 @@ router.get("/presentation/active", authMiddleware, async (req: Request, res: Res
 router.post("/presentation/:id/abandon", authMiddleware, async (req: Request, res: Response) => {
   try {
     const userId = (req as any).userId as number;
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt((req.params.id as string), 10);
     if (!Number.isFinite(id)) return res.status(400).json({ error: "Geçersiz id." });
     const result = await db
       .update(presentationSessionsTable)

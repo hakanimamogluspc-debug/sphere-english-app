@@ -112,7 +112,7 @@ router.get("/teacher/students", authMiddleware, requireRole("teacher", "admin"),
 // GET /teacher/groups/:groupId/members — bir gruptaki üyeler
 router.get("/teacher/groups/:groupId/members", authMiddleware, requireRole("teacher", "admin"), async (req: AuthRequest, res) => {
   const teacherId = req.userId!;
-  const groupId = parseInt(req.params.groupId);
+  const groupId = parseInt((req.params.groupId as string));
   const [group] = await db.select().from(groupsTable).where(
     and(eq(groupsTable.id, groupId), eq(groupsTable.teacherId, teacherId))
   ).limit(1);
@@ -139,7 +139,7 @@ router.get("/teacher/groups/:groupId/members", authMiddleware, requireRole("teac
 // POST /teacher/groups/:groupId/members — gruba öğrenci ekle
 router.post("/teacher/groups/:groupId/members", authMiddleware, requireRole("teacher", "admin"), async (req: AuthRequest, res) => {
   const teacherId = req.userId!;
-  const groupId = parseInt(req.params.groupId);
+  const groupId = parseInt((req.params.groupId as string));
   const { studentId } = req.body;
   if (!studentId) { res.status(400).json({ error: "studentId gerekli" }); return; }
 
@@ -159,8 +159,8 @@ router.post("/teacher/groups/:groupId/members", authMiddleware, requireRole("tea
 // DELETE /teacher/groups/:groupId/members/:studentId — gruptan öğrenci çıkar
 router.delete("/teacher/groups/:groupId/members/:studentId", authMiddleware, requireRole("teacher", "admin"), async (req: AuthRequest, res) => {
   const teacherId = req.userId!;
-  const groupId = parseInt(req.params.groupId);
-  const studentId = parseInt(req.params.studentId);
+  const groupId = parseInt((req.params.groupId as string));
+  const studentId = parseInt((req.params.studentId as string));
 
   const [group] = await db.select().from(groupsTable).where(
     and(eq(groupsTable.id, groupId), eq(groupsTable.teacherId, teacherId))
@@ -242,7 +242,7 @@ router.get("/teacher/quizzes", authMiddleware, requireRole("teacher", "admin"), 
 // GET /teacher/quizzes/:id — quiz detayı (sorular dahil)
 router.get("/teacher/quizzes/:id", authMiddleware, requireRole("teacher", "admin"), async (req: AuthRequest, res) => {
   const teacherId = req.userId!;
-  const id = parseInt(req.params.id);
+  const id = parseInt((req.params.id as string));
   const [quiz] = await db.select().from(quizzesTable)
     .where(and(eq(quizzesTable.id, id), eq(quizzesTable.teacherId, teacherId))).limit(1);
   if (!quiz) { res.status(404).json({ error: "Quiz bulunamadı" }); return; }
@@ -279,7 +279,7 @@ router.post("/teacher/quizzes", authMiddleware, requireRole("teacher", "admin"),
 // PATCH /teacher/quizzes/:id — quiz güncelle
 router.patch("/teacher/quizzes/:id", authMiddleware, requireRole("teacher", "admin"), async (req: AuthRequest, res) => {
   const teacherId = req.userId!;
-  const id = parseInt(req.params.id);
+  const id = parseInt((req.params.id as string));
   const [quiz] = await db.select().from(quizzesTable)
     .where(and(eq(quizzesTable.id, id), eq(quizzesTable.teacherId, teacherId))).limit(1);
   if (!quiz) { res.status(404).json({ error: "Quiz bulunamadı" }); return; }
@@ -297,7 +297,7 @@ router.patch("/teacher/quizzes/:id", authMiddleware, requireRole("teacher", "adm
 // DELETE /teacher/quizzes/:id — quiz sil
 router.delete("/teacher/quizzes/:id", authMiddleware, requireRole("teacher", "admin"), async (req: AuthRequest, res) => {
   const teacherId = req.userId!;
-  const id = parseInt(req.params.id);
+  const id = parseInt((req.params.id as string));
   const [quiz] = await db.select().from(quizzesTable)
     .where(and(eq(quizzesTable.id, id), eq(quizzesTable.teacherId, teacherId))).limit(1);
   if (!quiz) { res.status(404).json({ error: "Quiz bulunamadı" }); return; }
@@ -308,7 +308,7 @@ router.delete("/teacher/quizzes/:id", authMiddleware, requireRole("teacher", "ad
 // GET /teacher/quizzes/:id/attempts — quiz denemeleri
 router.get("/teacher/quizzes/:id/attempts", authMiddleware, requireRole("teacher", "admin"), async (req: AuthRequest, res) => {
   const teacherId = req.userId!;
-  const id = parseInt(req.params.id);
+  const id = parseInt((req.params.id as string));
   const [quiz] = await db.select().from(quizzesTable)
     .where(and(eq(quizzesTable.id, id), eq(quizzesTable.teacherId, teacherId))).limit(1);
   if (!quiz) { res.status(404).json({ error: "Quiz bulunamadı" }); return; }
@@ -376,7 +376,7 @@ router.get("/speaking-clubs", authMiddleware, async (req: AuthRequest, res) => {
 // POST /speaking-clubs/:id/join — etkinliğe katıl
 router.post("/speaking-clubs/:id/join", authMiddleware, async (req: AuthRequest, res) => {
   const userId = req.userId!;
-  const clubId = parseInt(req.params.id);
+  const clubId = parseInt((req.params.id as string));
   const [club] = await db.select().from(speakingClubsTable).where(eq(speakingClubsTable.id, clubId)).limit(1);
   if (!club) { res.status(404).json({ error: "Etkinlik bulunamadı" }); return; }
 
@@ -393,7 +393,7 @@ router.post("/speaking-clubs/:id/join", authMiddleware, async (req: AuthRequest,
 // DELETE /speaking-clubs/:id/leave — etkinlikten ayrıl
 router.delete("/speaking-clubs/:id/leave", authMiddleware, async (req: AuthRequest, res) => {
   const userId = req.userId!;
-  const clubId = parseInt(req.params.id);
+  const clubId = parseInt((req.params.id as string));
   await db.delete(speakingClubParticipantsTable).where(
     and(eq(speakingClubParticipantsTable.clubId, clubId), eq(speakingClubParticipantsTable.studentId, userId))
   );
@@ -405,7 +405,7 @@ router.delete("/speaking-clubs/:id/leave", authMiddleware, async (req: AuthReque
 // POST /teacher/groups/:groupId/announce — gruptaki tüm öğrencilere mesaj gönder
 router.post("/teacher/groups/:groupId/announce", authMiddleware, requireRole("teacher", "admin"), async (req: AuthRequest, res) => {
   const teacherId = req.userId!;
-  const groupId = parseInt(req.params.groupId);
+  const groupId = parseInt((req.params.groupId as string));
   const { content } = req.body;
   if (!content) { res.status(400).json({ error: "Mesaj içeriği zorunludur" }); return; }
 
@@ -477,7 +477,7 @@ router.get("/teacher/messages", authMiddleware, requireRole("teacher", "admin"),
 // GET /teacher/messages/:studentId — belirli bir öğrenciyle mesaj geçmişi
 router.get("/teacher/messages/:studentId", authMiddleware, requireRole("teacher", "admin"), async (req: AuthRequest, res) => {
   const teacherId = req.userId!;
-  const studentId = parseInt(req.params.studentId);
+  const studentId = parseInt((req.params.studentId as string));
 
   const groupIds = await teacherGroupIds(teacherId);
   if (groupIds.length === 0) { res.status(403).json({ error: "Bu öğrenciye mesaj gönderme yetkiniz yok" }); return; }
@@ -553,7 +553,7 @@ router.get("/teacher/live-classes/mine", authMiddleware, requireRole("teacher", 
 // GET /teacher/live-classes/:id/my-students — bu derse eklenebilecek öğretmenin öğrencileri
 router.get("/teacher/live-classes/:id/my-students", authMiddleware, requireRole("teacher", "admin"), async (req: AuthRequest, res) => {
   const teacherId = req.userId!;
-  const liveClassId = parseInt(req.params.id);
+  const liveClassId = parseInt((req.params.id as string));
 
   // Verify class belongs to teacher
   const [lc] = await db.select().from(liveClassesTable)
@@ -586,7 +586,7 @@ router.get("/teacher/live-classes/:id/my-students", authMiddleware, requireRole(
 // POST /teacher/live-classes/:id/students — oturuma kendi öğrencilerini ekle
 router.post("/teacher/live-classes/:id/students", authMiddleware, requireRole("teacher", "admin"), async (req: AuthRequest, res) => {
   const teacherId = req.userId!;
-  const liveClassId = parseInt(req.params.id);
+  const liveClassId = parseInt((req.params.id as string));
   const { studentIds } = req.body;
 
   if (!Array.isArray(studentIds) || studentIds.length === 0) {
@@ -621,8 +621,8 @@ router.post("/teacher/live-classes/:id/students", authMiddleware, requireRole("t
 // DELETE /teacher/live-classes/:id/students/:studentId — dersten öğrenci çıkar
 router.delete("/teacher/live-classes/:id/students/:studentId", authMiddleware, requireRole("teacher", "admin"), async (req: AuthRequest, res) => {
   const teacherId = req.userId!;
-  const liveClassId = parseInt(req.params.id);
-  const studentId = parseInt(req.params.studentId);
+  const liveClassId = parseInt((req.params.id as string));
+  const studentId = parseInt((req.params.studentId as string));
 
   const [lc] = await db.select().from(liveClassesTable)
     .where(and(eq(liveClassesTable.id, liveClassId), eq(liveClassesTable.teacherId, teacherId))).limit(1);
@@ -637,7 +637,7 @@ router.delete("/teacher/live-classes/:id/students/:studentId", authMiddleware, r
 // POST /teacher/messages/:studentId — tek öğrenciye mesaj gönder
 router.post("/teacher/messages/:studentId", authMiddleware, requireRole("teacher", "admin"), async (req: AuthRequest, res) => {
   const teacherId = req.userId!;
-  const studentId = parseInt(req.params.studentId);
+  const studentId = parseInt((req.params.studentId as string));
   const { content } = req.body;
 
   if (!content?.trim()) { res.status(400).json({ error: "Mesaj içeriği boş olamaz" }); return; }
@@ -679,7 +679,7 @@ router.get("/teacher/quiz-assignments", authMiddleware, requireRole("teacher", "
 // GET /teacher/quizzes/:quizId/assignments — belirli quiz'e ait atamalar
 router.get("/teacher/quizzes/:quizId/assignments", authMiddleware, requireRole("teacher", "admin"), async (req: AuthRequest, res) => {
   const teacherId = req.userId!;
-  const quizId = parseInt(req.params.quizId);
+  const quizId = parseInt((req.params.quizId as string));
   const rows = await db
     .select({
       id: quizAssignmentsTable.id,
@@ -730,7 +730,7 @@ router.post("/teacher/quiz-assignments", authMiddleware, requireRole("teacher", 
 // DELETE /teacher/quiz-assignments/:id — atamayı kaldır
 router.delete("/teacher/quiz-assignments/:id", authMiddleware, requireRole("teacher", "admin"), async (req: AuthRequest, res) => {
   const teacherId = req.userId!;
-  const id = parseInt(req.params.id);
+  const id = parseInt((req.params.id as string));
 
   const [assignment] = await db.select().from(quizAssignmentsTable).where(
     and(eq(quizAssignmentsTable.id, id), eq(quizAssignmentsTable.teacherId, teacherId))

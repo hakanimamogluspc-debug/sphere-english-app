@@ -53,7 +53,7 @@ export default function Certificates() {
                   <p className="text-white/80 text-sm mb-1">Bu sertifika şuna aittir:</p>
                   <h2 className="text-2xl font-bold font-display mb-3">{user?.firstName} {user?.lastName}</h2>
                   <p className="text-white/80 text-sm mb-1">Kursu başarıyla tamamladığı için:</p>
-                  <h3 className="text-xl font-semibold mb-3">{cert.courseName}</h3>
+                  <h3 className="text-xl font-semibold mb-3">{cert.courseTitle}</h3>
                   {cert.level && (
                     <Badge className="bg-white/20 text-white border-white/30">
                       {levelLabel[cert.level] || cert.level}
@@ -68,10 +68,10 @@ export default function Certificates() {
                     <Calendar size={16} />
                     <span>Verilme Tarihi: {new Date(cert.issuedAt).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
                   </div>
-                  {cert.qrCode && (
+                  {cert.verificationCode && (
                     <div className="flex items-center gap-1 text-xs text-muted-foreground">
                       <QrCode size={14} />
-                      <span className="font-mono">{cert.qrCode.slice(0, 10)}...</span>
+                      <span className="font-mono">{cert.verificationCode.slice(0, 10)}...</span>
                     </div>
                   )}
                 </div>
@@ -80,8 +80,8 @@ export default function Certificates() {
                   <Button variant="outline" size="sm" className="flex-1 gap-2">
                     <Download size={16} /> İndir
                   </Button>
-                  {cert.qrCode && (
-                    <a href={`${import.meta.env.BASE_URL}certificates/verify/${cert.qrCode}`} target="_blank" rel="noreferrer" className="flex-1">
+                  {cert.verificationCode && (
+                    <a href={`${import.meta.env.BASE_URL}certificates/verify/${cert.verificationCode}`} target="_blank" rel="noreferrer" className="flex-1">
                       <Button variant="outline" size="sm" className="w-full gap-2">
                         <ExternalLink size={16} /> Doğrula
                       </Button>

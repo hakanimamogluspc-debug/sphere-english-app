@@ -683,7 +683,7 @@ router.post("/internal/cart/activate", async (req: Request, res: Response) => {
 // ─── PUBLIC: GET /api/order/:orderId ─────────────────────────────────────
 router.get("/order/:orderId", async (req: Request, res: Response) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
-  const orderId = String(req.params.orderId ?? "").trim();
+  const orderId = String((req.params.orderId as string) ?? "").trim();
   if (!orderId) return res.status(400).json({ error: "orderId gerekli" });
 
   try {

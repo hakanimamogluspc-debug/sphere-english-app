@@ -45,6 +45,7 @@ type Item = {
   category: string | null;
   tags: string[] | null;
   status: string;
+  enriched_at?: string | null;
   admin_notes: string | null;
 };
 
@@ -301,7 +302,7 @@ function ItemDrawer({ id, onClose, onChanged }: { id: number; onClose: () => voi
   );
 }
 
-function Field({ label, value, onChange, textarea, rows }: any) {
+function Field({ label, value, onChange, textarea, rows }: { label: string; value: string; onChange: (v: string) => void; textarea?: boolean; rows?: number }) {
   return (
     <div>
       <label className="text-xs font-semibold text-gray-500 mb-1 block">{label}</label>
@@ -311,7 +312,7 @@ function Field({ label, value, onChange, textarea, rows }: any) {
     </div>
   );
 }
-function Select({ label, value, options, onChange }: any) {
+function Select({ label, value, options, onChange }: { label: string; value: string; options: Array<[string, string]>; onChange: (v: string) => void }) {
   return (
     <div>
       <label className="text-xs font-semibold text-gray-500 mb-1 block">{label}</label>

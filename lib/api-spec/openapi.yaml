@@ -1240,7 +1240,7 @@ components:
           type: string
         role:
           type: string
-          enum: [admin, teacher, student]
+          enum: [admin, teacher, student, corporate, partner]
         firstName:
           type: string
         lastName:
@@ -1249,6 +1249,22 @@ components:
           type: ["string", "null"]
         phone:
           type: ["string", "null"]
+        bio:
+          type: ["string", "null"]
+        accountType:
+          type: ["string", "null"]
+          description: "bireysel | kurumsal"
+        companyId:
+          type: ["integer", "null"]
+        company:
+          type: ["object", "null"]
+          properties:
+            id:
+              type: integer
+            name:
+              type: string
+            code:
+              type: string
         createdAt:
           type: string
         currentLevel:
@@ -1262,6 +1278,16 @@ components:
           type: ["array", "null"]
           items:
             type: string
+        placementTestCompleted:
+          type: boolean
+        onboardingCompleted:
+          type: boolean
+        preferredLanguage:
+          type: ["string", "null"]
+        sector:
+          type: ["string", "null"]
+        learningGoal:
+          type: ["string", "null"]
       required:
         - id
         - email

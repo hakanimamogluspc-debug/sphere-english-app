@@ -25,7 +25,7 @@ const router = Router();
 async function requireAdmin(req: Request, res: Response, next: () => void) {
   const userId = (req as any).userId as number;
   const [me] = await db.select({ role: usersTable.role }).from(usersTable).where(eq(usersTable.id, userId)).limit(1);
-  if (!me || me.role !== "admin") return res.status(403).json({ error: "Admin yetkisi gerekli" });
+  if (!me || me.role !== "admin") { res.status(403).json({ error: "Admin yetkisi gerekli" }); return; }
   next();
 }
 

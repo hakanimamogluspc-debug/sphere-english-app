@@ -104,7 +104,7 @@ router.get("/support/tickets/mine", authMiddleware, async (req: AuthRequest, res
  * Sadece sahibi veya admin erişebilir.
  */
 router.get("/support/tickets/:id", authMiddleware, async (req: AuthRequest, res) => {
-  const id = parseInt(req.params.id);
+  const id = parseInt((req.params.id as string));
   if (isNaN(id)) { res.status(400).json({ error: "Geçersiz id" }); return; }
 
   const [ticket] = await db.select().from(supportTicketsTable).where(eq(supportTicketsTable.id, id)).limit(1);
@@ -148,7 +148,7 @@ router.get("/support/tickets/:id", authMiddleware, async (req: AuthRequest, res)
  * Sahibi veya admin.
  */
 router.post("/support/tickets/:id/messages", authMiddleware, async (req: AuthRequest, res) => {
-  const id = parseInt(req.params.id);
+  const id = parseInt((req.params.id as string));
   const { body, isInternal } = req.body ?? {};
   const safeBody = clampStr(body, 5000);
   if (!safeBody) { res.status(400).json({ error: "Mesaj boş olamaz" }); return; }
@@ -255,7 +255,7 @@ router.get("/admin/support/tickets", authMiddleware, requireRole("admin"), async
  * PATCH /admin/support/tickets/:id — status/severity/assignee güncelle.
  */
 router.patch("/admin/support/tickets/:id", authMiddleware, requireRole("admin"), async (req: AuthRequest, res) => {
-  const id = parseInt(req.params.id);
+  const id = parseInt((req.params.id as string));
   if (isNaN(id)) { res.status(400).json({ error: "Geçersiz id" }); return; }
 
   const patch: any = { updatedAt: new Date() };

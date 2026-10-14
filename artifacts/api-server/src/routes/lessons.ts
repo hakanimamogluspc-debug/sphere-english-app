@@ -15,7 +15,7 @@ router.post("/lessons", authMiddleware, requireRole("admin", "teacher"), async (
 });
 
 router.get("/lessons/:id", authMiddleware, async (req: AuthRequest, res) => {
-  const id = parseInt(req.params.id);
+  const id = parseInt((req.params.id as string));
   const [lesson] = await db.select().from(lessonsTable).where(eq(lessonsTable.id, id)).limit(1);
   if (!lesson) { res.status(404).json({ error: "Lesson not found" }); return; }
 
@@ -29,7 +29,7 @@ router.get("/lessons/:id", authMiddleware, async (req: AuthRequest, res) => {
 });
 
 router.patch("/lessons/:id", authMiddleware, requireRole("admin", "teacher"), async (req: AuthRequest, res) => {
-  const id = parseInt(req.params.id);
+  const id = parseInt((req.params.id as string));
   const { title, type, content, duration, order } = req.body;
   const updates: any = {};
   if (title !== undefined) updates.title = title;
@@ -44,13 +44,13 @@ router.patch("/lessons/:id", authMiddleware, requireRole("admin", "teacher"), as
 });
 
 router.delete("/lessons/:id", authMiddleware, requireRole("admin", "teacher"), async (req: AuthRequest, res) => {
-  const id = parseInt(req.params.id);
+  const id = parseInt((req.params.id as string));
   await db.delete(lessonsTable).where(eq(lessonsTable.id, id));
   res.json({ success: true, message: "Lesson deleted" });
 });
 
 router.post("/lessons/:id/complete", authMiddleware, async (req: AuthRequest, res) => {
-  const lessonId = parseInt(req.params.id);
+  const lessonId = parseInt((req.params.id as string));
   const userId = req.userId!;
   const LESSON_POINTS = 10;
 

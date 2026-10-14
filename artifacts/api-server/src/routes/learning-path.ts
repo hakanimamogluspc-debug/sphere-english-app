@@ -336,8 +336,8 @@ router.get("/learning-path/current", authMiddleware, async (req: Request, res: R
 router.post("/learning-path/:id/step/:stepId/toggle", authMiddleware, async (req: Request, res: Response) => {
   try {
     const userId = (req as any).userId as number;
-    const id = parseInt(req.params.id, 10);
-    const stepId = String(req.params.stepId);
+    const id = parseInt((req.params.id as string), 10);
+    const stepId = String((req.params.stepId as string));
     // Adım tamamlama sadece "checked" iken puan (bir kereye mahsus)
     if (req.body?.checked === true) {
       awardPoints(userId, "learning_path_step", { onceEverForRef: true, refId: `${id}:${stepId}`, silent: true }).catch(() => {});

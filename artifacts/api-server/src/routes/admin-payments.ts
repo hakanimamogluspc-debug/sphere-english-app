@@ -62,7 +62,7 @@ router.get("/admin/payments", authMiddleware, requireRole("admin"),
 router.get("/admin/payments/:id", authMiddleware, requireRole("admin"),
   async (req: AuthRequest, res: Response) => {
     try {
-      const id = Number(req.params.id);
+      const id = Number((req.params.id as string));
       const [p] = await db.select().from(paymentsTable).where(eq(paymentsTable.id, id));
       if (!p) return res.status(404).json({ error: "Ödeme bulunamadı" });
 
@@ -86,7 +86,7 @@ router.get("/admin/payments/:id", authMiddleware, requireRole("admin"),
 router.post("/admin/payments/:id/refund", authMiddleware, requireRole("admin"),
   async (req: AuthRequest, res: Response) => {
     try {
-      const paymentId = Number(req.params.id);
+      const paymentId = Number((req.params.id as string));
       const { amount, reason, notes } = req.body as {
         amount?: number | null;
         reason: RefundReason;

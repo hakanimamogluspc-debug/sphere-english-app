@@ -171,7 +171,7 @@ router.post("/tutor/conversations", authMiddleware, async (req: Request, res: Re
 router.get("/tutor/conversations/:id", authMiddleware, async (req: Request, res: Response) => {
   try {
     const userId = (req as any).userId as number;
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt((req.params.id as string), 10);
     if (!Number.isFinite(id)) return res.status(400).json({ error: "Geçersiz id." });
     const [convo] = await db
       .select()
@@ -195,7 +195,7 @@ router.get("/tutor/conversations/:id", authMiddleware, async (req: Request, res:
 router.delete("/tutor/conversations/:id", authMiddleware, async (req: Request, res: Response) => {
   try {
     const userId = (req as any).userId as number;
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt((req.params.id as string), 10);
     if (!Number.isFinite(id)) return res.status(400).json({ error: "Geçersiz id." });
     await db
       .delete(aiTutorConversationsTable)
@@ -211,7 +211,7 @@ router.delete("/tutor/conversations/:id", authMiddleware, async (req: Request, r
 router.post("/tutor/conversations/:id/message", authMiddleware, async (req: Request, res: Response) => {
   try {
     const userId = (req as any).userId as number;
-    const convoId = parseInt(req.params.id, 10);
+    const convoId = parseInt((req.params.id as string), 10);
     if (!Number.isFinite(convoId)) return res.status(400).json({ error: "Geçersiz id." });
     const userMessage = String(req.body?.message || "").slice(0, 4000).trim();
     if (!userMessage) return res.status(400).json({ error: "Mesaj boş olamaz." });
@@ -301,7 +301,7 @@ router.post("/tutor/conversations/:id/message", authMiddleware, async (req: Requ
 router.post("/tutor/conversations/:id/message-stream", authMiddleware, async (req: Request, res: Response) => {
   try {
     const userId = (req as any).userId as number;
-    const convoId = parseInt(req.params.id, 10);
+    const convoId = parseInt((req.params.id as string), 10);
     if (!Number.isFinite(convoId)) return res.status(400).json({ error: "Gecersiz id." });
     const userMessage = String(req.body?.message || "").slice(0, 4000).trim();
     if (!userMessage) return res.status(400).json({ error: "Mesaj bos olamaz." });
@@ -432,7 +432,7 @@ router.get("/tutor/memory", authMiddleware, async (req: Request, res: Response) 
 router.delete("/tutor/memory/:factId", authMiddleware, async (req: Request, res: Response) => {
   try {
     const userId = (req as any).userId as number;
-    const factId = String(req.params.factId);
+    const factId = String((req.params.factId as string));
     const memory = await getOrCreateMemory(userId);
     const newFacts = memory.facts.filter((f) => f.id !== factId);
     const [updated] = await db

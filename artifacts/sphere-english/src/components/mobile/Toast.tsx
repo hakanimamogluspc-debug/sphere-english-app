@@ -37,6 +37,7 @@ export function Toast({ message, type = "success", visible, onClose, duration = 
       const t = setTimeout(onClose, duration);
       return () => clearTimeout(t);
     }
+    return undefined;
   }, [visible, duration, onClose]);
 
   if (!visible) return null;

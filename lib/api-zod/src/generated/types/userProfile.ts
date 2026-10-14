@@ -5,6 +5,7 @@
  * Sphere English LMS API
  * OpenAPI spec version: 0.1.0
  */
+import type { UserProfileCompany } from "./userProfileCompany";
 import type { UserProfileCurrentLevel } from "./userProfileCurrentLevel";
 import type { UserProfileRole } from "./userProfileRole";
 
@@ -18,6 +19,17 @@ export interface UserProfile {
   avatar?: string | null;
   /** @nullable */
   phone?: string | null;
+  /** @nullable */
+  bio?: string | null;
+  /**
+   * bireysel | kurumsal
+   * @nullable
+   */
+  accountType?: string | null;
+  /** @nullable */
+  companyId?: number | null;
+  /** @nullable */
+  company?: UserProfileCompany;
   createdAt: string;
   /** @nullable */
   currentLevel?: UserProfileCurrentLevel;
@@ -27,4 +39,12 @@ export interface UserProfile {
   streak?: number | null;
   /** @nullable */
   badges?: string[] | null;
+  placementTestCompleted?: boolean;
+  onboardingCompleted?: boolean;
+  /** @nullable */
+  preferredLanguage?: string | null;
+  /** @nullable */
+  sector?: string | null;
+  /** @nullable */
+  learningGoal?: string | null;
 }

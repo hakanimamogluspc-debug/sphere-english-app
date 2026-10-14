@@ -269,7 +269,7 @@ export default function MobileLevelExamTaking() {
               {r.options.map((opt, oi) => {
                 const isCorrect = oi === r.correctIndex;
                 const isSelected = oi === r.selectedIndex;
-                let bg = "transparent"; let color = colors.neutral; let fw = 400;
+                let bg = "transparent"; let color: string = colors.neutral; let fw = 400;
                 if (isCorrect) { bg = colors.successBg; color = colors.successText; fw = 700; }
                 else if (isSelected) { bg = colors.errorBg; color = colors.errorText; }
                 return (

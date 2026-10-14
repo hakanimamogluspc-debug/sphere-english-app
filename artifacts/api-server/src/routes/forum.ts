@@ -10,7 +10,7 @@ router.get("/forum", authMiddleware, async (req: AuthRequest, res) => {
   const { category } = req.query;
 
   const topics = await db.select().from(forumTopicsTable)
-    .where(category && category !== "tumu" ? eq(forumTopicsTable.category, category as string) : undefined)
+    .where(category && category !== "tumu" ? eq(forumTopicsTable.category, category as typeof forumTopicsTable.$inferSelect.category) : undefined)
     .orderBy(desc(forumTopicsTable.isPinned), desc(forumTopicsTable.createdAt));
 
   const enriched = await Promise.all(topics.map(async (t) => {
@@ -66,7 +66,7 @@ router.post("/forum", authMiddleware, async (req: AuthRequest, res) => {
 
 // ─── Konu detayı + yanıtlar ───────────────────────────────────────────────────
 router.get("/forum/:id", authMiddleware, async (req: AuthRequest, res) => {
-  const topicId = parseInt(req.params.id);
+  const topicId = parseInt((req.params.id as string));
   const [topic] = await db.select().from(forumTopicsTable).where(eq(forumTopicsTable.id, topicId)).limit(1);
   if (!topic) { res.status(404).json({ error: "Konu bulunamadı" }); return; }
 
@@ -99,7 +99,7 @@ router.get("/forum/:id", authMiddleware, async (req: AuthRequest, res) => {
 
 // ─── Yanıt ekle ──────────────────────────────────────────────────────────────
 router.post("/forum/:id/replies", authMiddleware, async (req: AuthRequest, res) => {
-  const topicId = parseInt(req.params.id);
+  const topicId = parseInt((req.params.id as string));
   const { content } = req.body;
   if (!content?.trim()) { res.status(400).json({ error: "Yanıt içeriği zorunludur" }); return; }
 
@@ -128,7 +128,7 @@ router.post("/forum/:id/replies", authMiddleware, async (req: AuthRequest, res) 
 
 // ─── Konu sil (sadece yazar veya admin) ──────────────────────────────────────
 router.delete("/forum/:id", authMiddleware, async (req: AuthRequest, res) => {
-  const topicId = parseInt(req.params.id);
+  const topicId = parseInt((req.params.id as string));
   const [topic] = await db.select().from(forumTopicsTable).where(eq(forumTopicsTable.id, topicId)).limit(1);
   if (!topic) { res.status(404).json({ error: "Konu bulunamadı" }); return; }
   if (topic.authorId !== req.userId && req.userRole !== "admin") {

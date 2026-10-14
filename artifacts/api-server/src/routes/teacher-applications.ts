@@ -118,7 +118,7 @@ router.post(
       // Admin'lere mail bildirimi (non-blocking, hata ignore edilir)
       void import("../lib/admin-notifications.js").then((m) =>
         m.notifyNewTeacherApplication({
-          applicationId: newId,
+          applicationId: Number(newId),
           fullName: body.fullName,
           email: body.email,
           experience: body.experience,
@@ -198,7 +198,7 @@ router.get(
   authMiddleware,
   requireRole("admin"),
   async (req: AuthRequest, res: Response) => {
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt((req.params.id as string), 10);
     if (!Number.isFinite(id)) return res.status(400).json({ error: "Geçersiz id" });
     try {
       const rows = await db.execute(sql`
@@ -225,7 +225,7 @@ router.patch(
   authMiddleware,
   requireRole("admin"),
   async (req: AuthRequest, res: Response) => {
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt((req.params.id as string), 10);
     if (!Number.isFinite(id)) return res.status(400).json({ error: "Geçersiz id" });
 
     const { status, adminNotes } = req.body as { status?: string; adminNotes?: string };
@@ -268,7 +268,7 @@ router.get(
   authMiddleware,
   requireRole("admin"),
   async (req: AuthRequest, res: Response) => {
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt((req.params.id as string), 10);
     if (!Number.isFinite(id)) return res.status(400).json({ error: "Geçersiz id" });
     try {
       const rows = await db.execute(sql`

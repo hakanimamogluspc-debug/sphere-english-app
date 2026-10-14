@@ -135,7 +135,7 @@ router.get("/admin/ebook-waitlist", authMiddleware, adminOnly, async (req: AuthR
 });
 
 router.delete("/admin/ebook-waitlist/:id", authMiddleware, adminOnly, async (req: AuthRequest, res: Response) => {
-  const id = numId(req.params.id);
+  const id = numId((req.params.id as string));
   if (!id) return res.status(400).json({ error: "Geçersiz id" });
   try {
     await pool.query(`DELETE FROM ebook_waitlist WHERE id = $1`, [id]);
@@ -215,7 +215,7 @@ router.put("/admin/ebook-faq/reorder", authMiddleware, adminOnly, async (req: Au
 });
 
 router.patch("/admin/ebook-faq/:id", authMiddleware, adminOnly, async (req: AuthRequest, res: Response) => {
-  const id = numId(req.params.id);
+  const id = numId((req.params.id as string));
   if (!id) return res.status(400).json({ error: "Geçersiz id" });
   const sets: string[] = ["updated_at = NOW()"];
   const params: unknown[] = [];
@@ -241,7 +241,7 @@ router.patch("/admin/ebook-faq/:id", authMiddleware, adminOnly, async (req: Auth
 });
 
 router.delete("/admin/ebook-faq/:id", authMiddleware, adminOnly, async (req: AuthRequest, res: Response) => {
-  const id = numId(req.params.id);
+  const id = numId((req.params.id as string));
   if (!id) return res.status(400).json({ error: "Geçersiz id" });
   try {
     await pool.query(`DELETE FROM ebook_faq WHERE id = $1`, [id]);
@@ -301,7 +301,7 @@ router.put("/admin/ebook-guide/reorder", authMiddleware, adminOnly, async (req: 
 });
 
 router.patch("/admin/ebook-guide/:id", authMiddleware, adminOnly, async (req: AuthRequest, res: Response) => {
-  const id = numId(req.params.id);
+  const id = numId((req.params.id as string));
   if (!id) return res.status(400).json({ error: "Geçersiz id" });
   const body = (req.body ?? {}) as Record<string, unknown>;
   const sets: string[] = ["updated_at = NOW()"];
@@ -331,7 +331,7 @@ router.patch("/admin/ebook-guide/:id", authMiddleware, adminOnly, async (req: Au
 });
 
 router.delete("/admin/ebook-guide/:id", authMiddleware, adminOnly, async (req: AuthRequest, res: Response) => {
-  const id = numId(req.params.id);
+  const id = numId((req.params.id as string));
   if (!id) return res.status(400).json({ error: "Geçersiz id" });
   try {
     await pool.query(`DELETE FROM ebook_guide WHERE id = $1`, [id]);

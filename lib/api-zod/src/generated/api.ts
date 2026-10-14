@@ -27,11 +27,21 @@ export const LoginResponse = zod.object({
   user: zod.object({
     id: zod.number(),
     email: zod.string(),
-    role: zod.enum(["admin", "teacher", "student"]),
+    role: zod.enum(["admin", "teacher", "student", "corporate", "partner"]),
     firstName: zod.string(),
     lastName: zod.string(),
     avatar: zod.string().nullish(),
     phone: zod.string().nullish(),
+    bio: zod.string().nullish(),
+    accountType: zod.string().nullish().describe("bireysel | kurumsal"),
+    companyId: zod.number().nullish(),
+    company: zod
+      .object({
+        id: zod.number().optional(),
+        name: zod.string().optional(),
+        code: zod.string().optional(),
+      })
+      .nullish(),
     createdAt: zod.string(),
     currentLevel: zod
       .union([
@@ -47,6 +57,11 @@ export const LoginResponse = zod.object({
     totalPoints: zod.number().nullish(),
     streak: zod.number().nullish(),
     badges: zod.array(zod.string()).nullish(),
+    placementTestCompleted: zod.boolean().optional(),
+    onboardingCompleted: zod.boolean().optional(),
+    preferredLanguage: zod.string().nullish(),
+    sector: zod.string().nullish(),
+    learningGoal: zod.string().nullish(),
   }),
   token: zod.string(),
 });
@@ -69,11 +84,21 @@ export const RegisterBody = zod.object({
 export const GetCurrentUserResponse = zod.object({
   id: zod.number(),
   email: zod.string(),
-  role: zod.enum(["admin", "teacher", "student"]),
+  role: zod.enum(["admin", "teacher", "student", "corporate", "partner"]),
   firstName: zod.string(),
   lastName: zod.string(),
   avatar: zod.string().nullish(),
   phone: zod.string().nullish(),
+  bio: zod.string().nullish(),
+  accountType: zod.string().nullish().describe("bireysel | kurumsal"),
+  companyId: zod.number().nullish(),
+  company: zod
+    .object({
+      id: zod.number().optional(),
+      name: zod.string().optional(),
+      code: zod.string().optional(),
+    })
+    .nullish(),
   createdAt: zod.string(),
   currentLevel: zod
     .union([
@@ -89,6 +114,11 @@ export const GetCurrentUserResponse = zod.object({
   totalPoints: zod.number().nullish(),
   streak: zod.number().nullish(),
   badges: zod.array(zod.string()).nullish(),
+  placementTestCompleted: zod.boolean().optional(),
+  onboardingCompleted: zod.boolean().optional(),
+  preferredLanguage: zod.string().nullish(),
+  sector: zod.string().nullish(),
+  learningGoal: zod.string().nullish(),
 });
 
 /**
@@ -121,11 +151,21 @@ export const GetUsersResponse = zod.object({
     zod.object({
       id: zod.number(),
       email: zod.string(),
-      role: zod.enum(["admin", "teacher", "student"]),
+      role: zod.enum(["admin", "teacher", "student", "corporate", "partner"]),
       firstName: zod.string(),
       lastName: zod.string(),
       avatar: zod.string().nullish(),
       phone: zod.string().nullish(),
+      bio: zod.string().nullish(),
+      accountType: zod.string().nullish().describe("bireysel | kurumsal"),
+      companyId: zod.number().nullish(),
+      company: zod
+        .object({
+          id: zod.number().optional(),
+          name: zod.string().optional(),
+          code: zod.string().optional(),
+        })
+        .nullish(),
       createdAt: zod.string(),
       currentLevel: zod
         .union([
@@ -141,6 +181,11 @@ export const GetUsersResponse = zod.object({
       totalPoints: zod.number().nullish(),
       streak: zod.number().nullish(),
       badges: zod.array(zod.string()).nullish(),
+      placementTestCompleted: zod.boolean().optional(),
+      onboardingCompleted: zod.boolean().optional(),
+      preferredLanguage: zod.string().nullish(),
+      sector: zod.string().nullish(),
+      learningGoal: zod.string().nullish(),
     }),
   ),
   total: zod.number(),
@@ -181,11 +226,21 @@ export const GetUserParams = zod.object({
 export const GetUserResponse = zod.object({
   id: zod.number(),
   email: zod.string(),
-  role: zod.enum(["admin", "teacher", "student"]),
+  role: zod.enum(["admin", "teacher", "student", "corporate", "partner"]),
   firstName: zod.string(),
   lastName: zod.string(),
   avatar: zod.string().nullish(),
   phone: zod.string().nullish(),
+  bio: zod.string().nullish(),
+  accountType: zod.string().nullish().describe("bireysel | kurumsal"),
+  companyId: zod.number().nullish(),
+  company: zod
+    .object({
+      id: zod.number().optional(),
+      name: zod.string().optional(),
+      code: zod.string().optional(),
+    })
+    .nullish(),
   createdAt: zod.string(),
   currentLevel: zod
     .union([
@@ -201,6 +256,11 @@ export const GetUserResponse = zod.object({
   totalPoints: zod.number().nullish(),
   streak: zod.number().nullish(),
   badges: zod.array(zod.string()).nullish(),
+  placementTestCompleted: zod.boolean().optional(),
+  onboardingCompleted: zod.boolean().optional(),
+  preferredLanguage: zod.string().nullish(),
+  sector: zod.string().nullish(),
+  learningGoal: zod.string().nullish(),
 });
 
 /**
@@ -239,11 +299,21 @@ export const UpdateUserBody = zod.object({
 export const UpdateUserResponse = zod.object({
   id: zod.number(),
   email: zod.string(),
-  role: zod.enum(["admin", "teacher", "student"]),
+  role: zod.enum(["admin", "teacher", "student", "corporate", "partner"]),
   firstName: zod.string(),
   lastName: zod.string(),
   avatar: zod.string().nullish(),
   phone: zod.string().nullish(),
+  bio: zod.string().nullish(),
+  accountType: zod.string().nullish().describe("bireysel | kurumsal"),
+  companyId: zod.number().nullish(),
+  company: zod
+    .object({
+      id: zod.number().optional(),
+      name: zod.string().optional(),
+      code: zod.string().optional(),
+    })
+    .nullish(),
   createdAt: zod.string(),
   currentLevel: zod
     .union([
@@ -259,6 +329,11 @@ export const UpdateUserResponse = zod.object({
   totalPoints: zod.number().nullish(),
   streak: zod.number().nullish(),
   badges: zod.array(zod.string()).nullish(),
+  placementTestCompleted: zod.boolean().optional(),
+  onboardingCompleted: zod.boolean().optional(),
+  preferredLanguage: zod.string().nullish(),
+  sector: zod.string().nullish(),
+  learningGoal: zod.string().nullish(),
 });
 
 /**
@@ -1326,11 +1401,21 @@ export const GetAdminDashboardResponse = zod.object({
     zod.object({
       id: zod.number(),
       email: zod.string(),
-      role: zod.enum(["admin", "teacher", "student"]),
+      role: zod.enum(["admin", "teacher", "student", "corporate", "partner"]),
       firstName: zod.string(),
       lastName: zod.string(),
       avatar: zod.string().nullish(),
       phone: zod.string().nullish(),
+      bio: zod.string().nullish(),
+      accountType: zod.string().nullish().describe("bireysel | kurumsal"),
+      companyId: zod.number().nullish(),
+      company: zod
+        .object({
+          id: zod.number().optional(),
+          name: zod.string().optional(),
+          code: zod.string().optional(),
+        })
+        .nullish(),
       createdAt: zod.string(),
       currentLevel: zod
         .union([
@@ -1346,6 +1431,11 @@ export const GetAdminDashboardResponse = zod.object({
       totalPoints: zod.number().nullish(),
       streak: zod.number().nullish(),
       badges: zod.array(zod.string()).nullish(),
+      placementTestCompleted: zod.boolean().optional(),
+      onboardingCompleted: zod.boolean().optional(),
+      preferredLanguage: zod.string().nullish(),
+      sector: zod.string().nullish(),
+      learningGoal: zod.string().nullish(),
     }),
   ),
 });

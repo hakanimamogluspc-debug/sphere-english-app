@@ -94,7 +94,7 @@ router.post("/admin/outbound/templates", authMiddleware, requireRole("admin"),
 router.patch("/admin/outbound/templates/:id", authMiddleware, requireRole("admin"),
   async (req: AuthRequest, res: Response) => {
     try {
-      const id = parseInt(req.params.id, 10);
+      const id = parseInt((req.params.id as string), 10);
       const patch: any = {};
       for (const k of ["name", "subject", "bodyHtml", "bodyText", "segment", "isActive"]) {
         if (req.body[k] !== undefined) patch[k] = req.body[k];
@@ -109,7 +109,7 @@ router.patch("/admin/outbound/templates/:id", authMiddleware, requireRole("admin
 router.delete("/admin/outbound/templates/:id", authMiddleware, requireRole("admin"),
   async (req: AuthRequest, res: Response) => {
     try {
-      const id = parseInt(req.params.id, 10);
+      const id = parseInt((req.params.id as string), 10);
       await db.update(outboundTemplatesTable).set({ isActive: false })
         .where(eq(outboundTemplatesTable.id, id));
       return res.json({ ok: true });
@@ -152,7 +152,7 @@ router.post("/admin/outbound/campaigns", authMiddleware, requireRole("admin"),
 router.get("/admin/outbound/campaigns/:id", authMiddleware, requireRole("admin"),
   async (req: AuthRequest, res: Response) => {
     try {
-      const id = parseInt(req.params.id, 10);
+      const id = parseInt((req.params.id as string), 10);
       const [campaign] = await db.select().from(outboundCampaignsTable)
         .where(eq(outboundCampaignsTable.id, id));
       if (!campaign) return res.status(404).json({ error: "Kampanya bulunamadı" });
@@ -166,7 +166,7 @@ router.get("/admin/outbound/campaigns/:id", authMiddleware, requireRole("admin")
 router.post("/admin/outbound/campaigns/:id/start", authMiddleware, requireRole("admin"),
   async (req: AuthRequest, res: Response) => {
     try {
-      const id = parseInt(req.params.id, 10);
+      const id = parseInt((req.params.id as string), 10);
       const [row] = await db.update(outboundCampaignsTable)
         .set({ status: "active", startedAt: new Date(), updatedAt: new Date() })
         .where(eq(outboundCampaignsTable.id, id)).returning();
@@ -177,7 +177,7 @@ router.post("/admin/outbound/campaigns/:id/start", authMiddleware, requireRole("
 router.post("/admin/outbound/campaigns/:id/pause", authMiddleware, requireRole("admin"),
   async (req: AuthRequest, res: Response) => {
     try {
-      const id = parseInt(req.params.id, 10);
+      const id = parseInt((req.params.id as string), 10);
       const [row] = await db.update(outboundCampaignsTable)
         .set({ status: "paused", updatedAt: new Date() })
         .where(eq(outboundCampaignsTable.id, id)).returning();
@@ -188,7 +188,7 @@ router.post("/admin/outbound/campaigns/:id/pause", authMiddleware, requireRole("
 router.post("/admin/outbound/campaigns/:id/add-leads", authMiddleware, requireRole("admin"),
   async (req: AuthRequest, res: Response) => {
     try {
-      const id = parseInt(req.params.id, 10);
+      const id = parseInt((req.params.id as string), 10);
       const { leadIds } = req.body as { leadIds: number[] };
       if (!Array.isArray(leadIds) || leadIds.length === 0) {
         return res.status(400).json({ error: "leadIds boş" });
@@ -220,7 +220,7 @@ router.post("/admin/outbound/campaigns/:id/add-leads", authMiddleware, requireRo
 router.post("/admin/outbound/campaigns/:id/steps", authMiddleware, requireRole("admin"),
   async (req: AuthRequest, res: Response) => {
     try {
-      const campaignId = parseInt(req.params.id, 10);
+      const campaignId = parseInt((req.params.id as string), 10);
       const { templateId, stepOrder, delayDays, condition } = req.body;
       if (!templateId) return res.status(400).json({ error: "templateId zorunlu" });
       const [row] = await db.insert(outboundSequenceStepsTable).values({
@@ -236,7 +236,7 @@ router.post("/admin/outbound/campaigns/:id/steps", authMiddleware, requireRole("
 router.delete("/admin/outbound/steps/:stepId", authMiddleware, requireRole("admin"),
   async (req: AuthRequest, res: Response) => {
     try {
-      const stepId = parseInt(req.params.stepId, 10);
+      const stepId = parseInt((req.params.stepId as string), 10);
       await db.delete(outboundSequenceStepsTable).where(eq(outboundSequenceStepsTable.id, stepId));
       return res.json({ ok: true });
     } catch (e: any) { return res.status(500).json({ error: e?.message }); }

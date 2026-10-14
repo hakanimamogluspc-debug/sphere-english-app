@@ -46,7 +46,7 @@ router.post("/notifications/mark-all-read", authMiddleware, async (req: Request,
 router.post("/notifications/:id/read", authMiddleware, async (req: Request, res: Response) => {
   try {
     const userId = (req as any).userId as number;
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt((req.params.id as string), 10);
     if (!Number.isFinite(id)) return res.status(400).json({ error: "Geçersiz id." });
     const ok = await markRead(userId, id);
     if (!ok) return res.status(404).json({ error: "Bildirim bulunamadı." });
@@ -60,7 +60,7 @@ router.post("/notifications/:id/read", authMiddleware, async (req: Request, res:
 router.delete("/notifications/:id", authMiddleware, async (req: Request, res: Response) => {
   try {
     const userId = (req as any).userId as number;
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt((req.params.id as string), 10);
     if (!Number.isFinite(id)) return res.status(400).json({ error: "Geçersiz id." });
     const ok = await deleteNotification(userId, id);
     if (!ok) return res.status(404).json({ error: "Bildirim bulunamadı." });

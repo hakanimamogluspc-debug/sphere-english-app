@@ -39,7 +39,7 @@ router.get("/openapi.yaml", (_req: Request, res: Response) => {
   res.setHeader("Cache-Control", "public, max-age=3600");
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
-  res.send(spec);
+  return res.send(spec);
 });
 
 router.get("/openapi.json", (_req: Request, res: Response) => {
@@ -55,7 +55,7 @@ router.get("/openapi.json", (_req: Request, res: Response) => {
   res.setHeader("Cache-Control", "public, max-age=3600");
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
-  res.send(spec);
+  return res.send(spec);
 });
 
 export default router;

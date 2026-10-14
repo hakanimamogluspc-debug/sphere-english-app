@@ -64,7 +64,7 @@ router.post("/affiliate/track", async (req: Request, res: Response) => {
 // ─── PUBLIC: Kod geçerli mi? ────────────────────────────────────────────
 router.get("/affiliate/code/:code", async (req: Request, res: Response) => {
   try {
-    const aff = await findActiveAffiliateByCode(req.params.code ?? "");
+    const aff = await findActiveAffiliateByCode((req.params.code as string) ?? "");
     if (!aff) return res.status(404).json({ valid: false });
     return res.json({ valid: true, code: aff.code, fullName: aff.full_name });
   } catch (e: any) {

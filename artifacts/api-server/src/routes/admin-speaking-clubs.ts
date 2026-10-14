@@ -36,7 +36,7 @@ router.get("/admin/speaking-clubs", authMiddleware, requireRole("admin"), async 
 
 // GET /admin/speaking-clubs/:id/participants
 router.get("/admin/speaking-clubs/:id/participants", authMiddleware, requireRole("admin"), async (req, res) => {
-  const id = parseInt(req.params.id);
+  const id = parseInt((req.params.id as string));
   const participants = await db
     .select({
       studentId: speakingClubParticipantsTable.studentId,
@@ -86,7 +86,7 @@ router.post("/admin/speaking-clubs", authMiddleware, requireRole("admin"), async
 
 // PATCH /admin/speaking-clubs/:id
 router.patch("/admin/speaking-clubs/:id", authMiddleware, requireRole("admin"), async (req: AuthRequest, res) => {
-  const id = parseInt(req.params.id);
+  const id = parseInt((req.params.id as string));
   const { title, description, topic, teacherId, scheduledAt, durationMinutes, maxParticipants, level, meetingLink, status } = req.body;
 
   const updates: any = {};
@@ -118,7 +118,7 @@ router.patch("/admin/speaking-clubs/:id", authMiddleware, requireRole("admin"), 
 
 // DELETE /admin/speaking-clubs/:id
 router.delete("/admin/speaking-clubs/:id", authMiddleware, requireRole("admin"), async (req: AuthRequest, res) => {
-  const id = parseInt(req.params.id);
+  const id = parseInt((req.params.id as string));
   await db.delete(speakingClubsTable).where(eq(speakingClubsTable.id, id));
   res.json({ success: true });
 });

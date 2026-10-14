@@ -1,3 +1,4 @@
+import type { ReactElement } from "react";
 import { useEffect, useMemo, useState } from "react";
 import {
   Activity,
@@ -546,7 +547,7 @@ function StatCard({
   label: string;
   value: string;
   sub?: string;
-  icon: JSX.Element;
+  icon: ReactElement;
   delta?: number | null;
   color: "sky" | "violet" | "emerald" | "amber";
 }) {
@@ -579,7 +580,7 @@ function Panel({
   children,
 }: {
   title: string;
-  icon?: JSX.Element;
+  icon?: ReactElement;
   subtitle?: string;
   empty?: boolean;
   children: React.ReactNode;

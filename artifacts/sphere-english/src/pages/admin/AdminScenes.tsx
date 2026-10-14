@@ -480,7 +480,7 @@ function SceneEditor({ sceneId, onClose, onChanged }: { sceneId: number; onClose
   );
 }
 
-function FormField({ label, value, onChange, textarea }: any) {
+function FormField({ label, value, onChange, textarea }: { label: string; value: string; onChange: (v: string) => void; textarea?: boolean }) {
   return (
     <div>
       <label className="text-xs font-semibold text-gray-500 mb-1 block">{label}</label>
@@ -494,7 +494,7 @@ function FormField({ label, value, onChange, textarea }: any) {
     </div>
   );
 }
-function FormSelect({ label, value, options, onChange }: any) {
+function FormSelect({ label, value, options, onChange }: { label: string; value: string; options: Array<{ v: string; l: string }>; onChange: (v: string) => void }) {
   return (
     <div>
       <label className="text-xs font-semibold text-gray-500 mb-1 block">{label}</label>

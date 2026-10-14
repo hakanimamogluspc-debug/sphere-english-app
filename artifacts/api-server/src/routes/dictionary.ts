@@ -114,7 +114,7 @@ async function fetchGptTranslation(word: string, context: string | null, enDefin
 
 router.get("/dictionary/:word", authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
-    const raw = String(req.params.word ?? "");
+    const raw = String((req.params.word as string) ?? "");
     const word = normalize(raw);
     if (word.length < 2 || word.length > 40) return res.status(400).json({ error: "geçersiz kelime" });
 

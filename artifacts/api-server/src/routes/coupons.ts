@@ -85,7 +85,7 @@ router.get(
   requireRole("admin"),
   async (req: AuthRequest, res: Response) => {
     try {
-      const id = parseInt(req.params.id ?? "", 10);
+      const id = parseInt((req.params.id as string) ?? "", 10);
       if (!id) return res.status(400).json({ error: "id geçersiz" });
       const cRows = await db.execute(sql`SELECT * FROM coupons WHERE id = ${id} LIMIT 1`);
       const coupon = (cRows.rows ?? cRows)[0];
@@ -166,7 +166,7 @@ router.patch(
   requireRole("admin"),
   async (req: AuthRequest, res: Response) => {
     try {
-      const id = parseInt(req.params.id ?? "", 10);
+      const id = parseInt((req.params.id as string) ?? "", 10);
       if (!id) return res.status(400).json({ error: "id geçersiz" });
       const body = (req.body ?? {}) as any;
       const sets: any[] = [];
@@ -204,7 +204,7 @@ router.post(
   requireRole("admin"),
   async (req: AuthRequest, res: Response) => {
     try {
-      const id = parseInt(req.params.id ?? "", 10);
+      const id = parseInt((req.params.id as string) ?? "", 10);
       if (!id) return res.status(400).json({ error: "id geçersiz" });
       await db.execute(sql`
         UPDATE coupons SET is_active = NOT is_active, updated_at = NOW() WHERE id = ${id}

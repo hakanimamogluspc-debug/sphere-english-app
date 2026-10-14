@@ -88,7 +88,8 @@ router.post("/webhooks/instagram", async (req: Request, res: Response) => {
 
   if (rawBody && !verifySignature(rawBody, signature)) {
     console.warn("[ig-webhook] HMAC fail");
-    return res.status(403).send("Forbidden");
+    res.status(403).send("Forbidden");
+    return;
   }
 
   // Hemen 200 dön — event'leri arka planda işle
@@ -280,6 +281,7 @@ async function triggerAiReply(threadId: number, senderId: string, text: string):
           WHERE id = ${threadId}
         `);
       }
+      return undefined;
     })
     .catch(() => {});
 

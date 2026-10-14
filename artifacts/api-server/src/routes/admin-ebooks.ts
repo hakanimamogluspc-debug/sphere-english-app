@@ -67,10 +67,10 @@ router.get(
   requireRole("admin"),
   async (req: AuthRequest, res: Response, next: any) => {
     // Non-numeric path geldiyse (örn. "health-check", "yeni") sonraki route'a bırak
-    if (!/^\d+$/.test(String(req.params.id ?? ""))) {
+    if (!/^\d+$/.test(String((req.params.id as string) ?? ""))) {
       return next();
     }
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt((req.params.id as string), 10);
     if (!Number.isFinite(id)) return res.status(400).json({ error: "Geçersiz id" });
     try {
       const ebookRows = await db.execute(sql`SELECT * FROM ebooks WHERE id = ${id}`);
@@ -144,10 +144,10 @@ router.patch(
   requireRole("admin"),
   async (req: AuthRequest, res: Response, next: any) => {
     // Non-numeric path geldiyse (örn. "health-check", "yeni") sonraki route'a bırak
-    if (!/^\d+$/.test(String(req.params.id ?? ""))) {
+    if (!/^\d+$/.test(String((req.params.id as string) ?? ""))) {
       return next();
     }
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt((req.params.id as string), 10);
     if (!Number.isFinite(id)) return res.status(400).json({ error: "Geçersiz id" });
     const b = req.body ?? {};
 
@@ -199,10 +199,10 @@ router.delete(
   requireRole("admin"),
   async (req: AuthRequest, res: Response, next: any) => {
     // Non-numeric path geldiyse (örn. "health-check", "yeni") sonraki route'a bırak
-    if (!/^\d+$/.test(String(req.params.id ?? ""))) {
+    if (!/^\d+$/.test(String((req.params.id as string) ?? ""))) {
       return next();
     }
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt((req.params.id as string), 10);
     if (!Number.isFinite(id)) return res.status(400).json({ error: "Geçersiz id" });
     try {
       // ON DELETE CASCADE ile assets de silinir
@@ -222,10 +222,10 @@ router.post(
   upload.single("file"),
   async (req: AuthRequest, res: Response, next: any) => {
     // Non-numeric path geldiyse (örn. "health-check", "yeni") sonraki route'a bırak
-    if (!/^\d+$/.test(String(req.params.id ?? ""))) {
+    if (!/^\d+$/.test(String((req.params.id as string) ?? ""))) {
       return next();
     }
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt((req.params.id as string), 10);
     if (!Number.isFinite(id)) return res.status(400).json({ error: "Geçersiz id" });
     const file = req.file;
     if (!file) return res.status(400).json({ error: "Dosya yok (form alanı: file)" });
@@ -344,7 +344,7 @@ router.delete(
   authMiddleware,
   requireRole("admin"),
   async (req: AuthRequest, res: Response, next: any) => {
-    const id = parseInt(req.params.assetId, 10);
+    const id = parseInt((req.params.assetId as string), 10);
     if (!Number.isFinite(id)) return res.status(400).json({ error: "Geçersiz id" });
     try {
       // Önce hangi ebook ve tipte olduğunu öğren
@@ -391,7 +391,7 @@ router.patch(
   authMiddleware,
   requireRole("admin"),
   async (req: AuthRequest, res: Response, next: any) => {
-    const id = parseInt(req.params.assetId, 10);
+    const id = parseInt((req.params.assetId as string), 10);
     if (!Number.isFinite(id)) return res.status(400).json({ error: "Geçersiz id" });
     const position = parseInt(req.body?.position ?? "0", 10) || 0;
     try {
@@ -407,7 +407,7 @@ router.patch(
 // /api/ebooks/asset/:assetId → binary stream (görsel veya PDF)
 // CORS açık tut — pazarlama sitesinden <img src> ile çağrılır
 router.get("/ebooks/asset/:assetId", async (req: Request, res: Response) => {
-  const id = parseInt(req.params.assetId, 10);
+  const id = parseInt((req.params.assetId as string), 10);
   if (!Number.isFinite(id)) return res.status(400).send("Invalid id");
   try {
     const rows = await db.execute(sql`

@@ -122,7 +122,7 @@ router.get("/my/mistakes", authMiddleware, async (req: AuthRequest, res: Respons
 router.post("/my/mistakes/:id/resolve", authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.userId!;
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt((req.params.id as string), 10);
     const r: any = await pool.query(
       `UPDATE user_mistakes SET resolved_at = NOW()
          WHERE id = $1 AND user_id = $2 AND resolved_at IS NULL

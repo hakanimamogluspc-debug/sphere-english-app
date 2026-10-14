@@ -96,7 +96,7 @@ router.get(
   authMiddleware,
   requireRole("admin"),
   async (req: AuthRequest, res: Response) => {
-    const id = parseInt(req.params.id ?? "", 10);
+    const id = parseInt((req.params.id as string) ?? "", 10);
     if (!id) return res.status(400).json({ error: "id geçersiz" });
 
     try {
@@ -135,7 +135,7 @@ router.post(
   authMiddleware,
   requireRole("admin"),
   async (req: AuthRequest, res: Response) => {
-    const id = parseInt(req.params.id ?? "", 10);
+    const id = parseInt((req.params.id as string) ?? "", 10);
     const text = String(req.body?.text ?? "").trim();
     if (!id) return res.status(400).json({ error: "id geçersiz" });
     if (!text) return res.status(400).json({ error: "Mesaj boş olamaz" });
@@ -200,7 +200,7 @@ router.patch(
   authMiddleware,
   requireRole("admin"),
   async (req: AuthRequest, res: Response) => {
-    const id = parseInt(req.params.id ?? "", 10);
+    const id = parseInt((req.params.id as string) ?? "", 10);
     if (!id) return res.status(400).json({ error: "id geçersiz" });
 
     const { botEnabled, clearEscalation, isBlocked } = (req.body ?? {}) as any;

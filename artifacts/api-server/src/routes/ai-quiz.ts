@@ -231,7 +231,7 @@ Rules:
 router.post("/ai-quiz/:id/submit", authMiddleware, async (req: Request, res: Response) => {
   try {
     const userId = (req as any).userId as number;
-    const sessionId = parseInt(req.params.id, 10);
+    const sessionId = parseInt((req.params.id as string), 10);
     if (!Number.isFinite(sessionId)) return res.status(400).json({ error: "Geçersiz id." });
 
     const [session] = await db
@@ -416,7 +416,7 @@ router.get("/ai-quiz/sessions", authMiddleware, async (req: Request, res: Respon
 router.get("/ai-quiz/sessions/:id", authMiddleware, async (req: Request, res: Response) => {
   try {
     const userId = (req as any).userId as number;
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt((req.params.id as string), 10);
     if (!Number.isFinite(id)) return res.status(400).json({ error: "Geçersiz id." });
     const [row] = await db
       .select()
@@ -478,7 +478,7 @@ router.get("/ai-quiz/active", authMiddleware, async (req: Request, res: Response
 router.post("/ai-quiz/:id/abandon", authMiddleware, async (req: Request, res: Response) => {
   try {
     const userId = (req as any).userId as number;
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt((req.params.id as string), 10);
     if (!Number.isFinite(id)) return res.status(400).json({ error: "Geçersiz id." });
     const result = await db
       .update(aiQuizSessionsTable)

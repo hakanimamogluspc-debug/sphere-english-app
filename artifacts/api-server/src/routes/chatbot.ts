@@ -338,7 +338,7 @@ router.patch(
   requireRole("admin"),
   async (req: AuthRequest, res: Response) => {
     try {
-      const id = Number(req.params.id);
+      const id = Number((req.params.id as string));
       const { category, question, answer, keywords, isActive, sortOrder } = req.body;
       const update: Record<string, any> = { updatedAt: new Date() };
       if (category !== undefined) update.category = category?.trim() || null;
@@ -361,7 +361,7 @@ router.delete(
   requireRole("admin"),
   async (req: AuthRequest, res: Response) => {
     try {
-      const id = Number(req.params.id);
+      const id = Number((req.params.id as string));
       await db.delete(chatbotFaqsTable).where(eq(chatbotFaqsTable.id, id));
       return res.json({ ok: true });
     } catch (e: any) {

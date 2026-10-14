@@ -70,7 +70,7 @@ async function transcribe(audioBuffer: Buffer): Promise<string> {
     finalExt = "webm";
     finalMime = "audio/webm";
   }
-  const audioFile = new File([finalBuffer], `audio.${finalExt}`, { type: finalMime });
+  const audioFile = new File([new Uint8Array(finalBuffer)], `audio.${finalExt}`, { type: finalMime });
   const res = await getOpenAI().audio.transcriptions.create({
     model: "whisper-1",
     file: audioFile,

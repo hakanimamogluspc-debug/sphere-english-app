@@ -64,7 +64,7 @@ function hoursFromNow(dateStr: string, timeStr: string): number {
 async function requireAdmin(req: Request, res: Response, next: () => void) {
   const userId = (req as any).userId as number;
   const [me] = await db.select({ role: usersTable.role }).from(usersTable).where(eq(usersTable.id, userId)).limit(1);
-  if (!me || me.role !== "admin") return res.status(403).json({ error: "Admin yetkisi gerekli" });
+  if (!me || me.role !== "admin") { res.status(403).json({ error: "Admin yetkisi gerekli" }); return; }
   next();
 }
 
@@ -374,7 +374,7 @@ router.get("/admin/demo/bookings", authMiddleware, requireAdmin, async (req: Req
 // ─── ADMIN — booking update ───────────────────────────────────────────
 router.patch("/admin/demo/bookings/:id", authMiddleware, requireAdmin, async (req: Request, res: Response) => {
   try {
-    const id = parseInt(String(req.params.id ?? ""), 10);
+    const id = parseInt(String((req.params.id as string) ?? ""), 10);
     if (!Number.isFinite(id)) return res.status(400).json({ error: "id" });
     const { status, admin_notes, meeting_link } = (req.body ?? {}) as any;
     const sets: any[] = [];
@@ -392,7 +392,7 @@ router.patch("/admin/demo/bookings/:id", authMiddleware, requireAdmin, async (re
 
 router.delete("/admin/demo/bookings/:id", authMiddleware, requireAdmin, async (req: Request, res: Response) => {
   try {
-    const id = parseInt(String(req.params.id ?? ""), 10);
+    const id = parseInt(String((req.params.id as string) ?? ""), 10);
     await db.execute(sql`UPDATE demo_bookings SET status = 'cancelled', updated_at = NOW() WHERE id = ${id}`);
     return res.json({ ok: true });
   } catch (e: any) {
@@ -403,7 +403,7 @@ router.delete("/admin/demo/bookings/:id", authMiddleware, requireAdmin, async (r
 // ─── ADMIN — görüşme linkini müşteriye maille gönder ──────────────────
 router.post("/admin/demo/bookings/:id/send-meeting-link", authMiddleware, requireAdmin, async (req: Request, res: Response) => {
   try {
-    const id = parseInt(String(req.params.id ?? ""), 10);
+    const id = parseInt(String((req.params.id as string) ?? ""), 10);
     if (!Number.isFinite(id)) return res.status(400).json({ error: "id" });
 
     // Body'de yeni link verilirse önce kaydet, yoksa DB'dekini kullan
@@ -554,7 +554,7 @@ router.post("/admin/demo/blocks", authMiddleware, requireAdmin, async (req: Requ
 
 router.delete("/admin/demo/blocks/:id", authMiddleware, requireAdmin, async (req: Request, res: Response) => {
   try {
-    const id = parseInt(String(req.params.id ?? ""), 10);
+    const id = parseInt(String((req.params.id as string) ?? ""), 10);
     await db.execute(sql`DELETE FROM demo_blocks WHERE id = ${id}`);
     return res.json({ ok: true });
   } catch (e: any) {

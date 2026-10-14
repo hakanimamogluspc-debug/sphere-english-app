@@ -1,4 +1,4 @@
-import { motion } from "framer-motion";
+import { motion, type Variants } from "framer-motion";
 import { Link } from "wouter";
 import { useState } from "react";
 import {
@@ -154,11 +154,11 @@ const STATS = [
   { value: "A1–C2", label: "CEFR Seviyeleri", icon: Trophy },
 ];
 
-const fadeUp = {
+const fadeUp: Variants = {
   hidden: { opacity: 0, y: 32 },
   show: { opacity: 1, y: 0, transition: { duration: 0.55, ease: "easeOut" } },
 };
-const stagger = { show: { transition: { staggerChildren: 0.1 } } };
+const stagger: Variants = { show: { transition: { staggerChildren: 0.1 } } };
 
 const NAV_ITEMS = [
   { label: "Anasayfa", href: "https://www.sphereenglish.com" },

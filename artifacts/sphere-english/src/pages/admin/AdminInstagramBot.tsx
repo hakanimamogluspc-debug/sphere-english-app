@@ -1,3 +1,4 @@
+import type { ReactElement } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   MessageCircle,
@@ -539,7 +540,7 @@ function StatCard({
 }: {
   label: string;
   value: string | number;
-  icon: JSX.Element;
+  icon: ReactElement;
   color: "pink" | "sky" | "violet" | "amber" | "emerald" | "slate";
 }) {
   const colorMap: Record<string, string> = {

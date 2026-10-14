@@ -31,7 +31,7 @@ type Question = { type: string; question: string; options: string[]; correct: nu
 type Progress = { topicId: number; correctAnswers: number; totalAnswered: number; completed: boolean; };
 type Screen = "hub" | "learn" | "practice" | "complete";
 
-function authHeaders() {
+function authHeaders(): Record<string, string> {
   const token = localStorage.getItem(TOKEN_KEY);
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
@@ -510,9 +510,9 @@ export default function MobileGrammarCoach() {
             const isChosen = selected === i;
             const isCorrectOpt = selected !== null && i === q.correct;
             const isWrongChosen = isChosen && !isCorrectOpt;
-            let bg = colors.white;
-            let border = colors.navy100;
-            let textColor = colors.navy;
+            let bg: string = colors.white;
+            let border: string = colors.navy100;
+            let textColor: string = colors.navy;
             if (selected !== null) {
               if (isCorrectOpt) {
                 bg = colors.successBg; border = colors.success; textColor = colors.successText;

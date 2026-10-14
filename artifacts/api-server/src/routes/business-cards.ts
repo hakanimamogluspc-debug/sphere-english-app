@@ -198,7 +198,7 @@ router.get("/student/business-cards/daily", authMiddleware, async (req: AuthRequ
 router.post("/student/business-cards/:id/seen", authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
     if (!req.userId) return res.status(401).json({ error: "Yetkisiz" });
-    const cardId = parseInt(req.params.id, 10);
+    const cardId = parseInt((req.params.id as string), 10);
     if (!cardId) return res.status(400).json({ error: "Geçersiz id" });
 
     await pool.query(
@@ -219,7 +219,7 @@ router.post("/student/business-cards/:id/seen", authMiddleware, async (req: Auth
 router.post("/student/business-cards/:id/favorite", authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
     if (!req.userId) return res.status(401).json({ error: "Yetkisiz" });
-    const cardId = parseInt(req.params.id, 10);
+    const cardId = parseInt((req.params.id as string), 10);
     if (!cardId) return res.status(400).json({ error: "Geçersiz id" });
 
     // Toggle

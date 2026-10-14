@@ -301,7 +301,7 @@ router.get("/grammar/topics", async (req, res) => {
 router.get("/grammar/topics/:id/learn", async (req, res) => {
   try {
     const [topic] = await db.select().from(grammarTopicsTable)
-      .where(eq(grammarTopicsTable.id, Number(req.params.id)));
+      .where(eq(grammarTopicsTable.id, Number((req.params.id as string))));
     if (!topic) return res.status(404).json({ detail: "Konu bulunamadı" });
 
     if (topic.cachedSummary && topic.cachedExamples && topic.cachedTable) {
@@ -368,7 +368,7 @@ router.post("/grammar/topics/:id/questions", authMiddleware, async (req: any, re
   try {
     awardPoints(req.userId, "grammar_topic_quiz", { dailyCap: 15, silent: true }).catch(() => {});
     const [topic] = await db.select().from(grammarTopicsTable)
-      .where(eq(grammarTopicsTable.id, Number(req.params.id)));
+      .where(eq(grammarTopicsTable.id, Number((req.params.id as string))));
     if (!topic) return res.status(404).json({ detail: "Konu bulunamadı" });
 
     const ai = getOpenAI();
@@ -563,7 +563,7 @@ router.delete("/grammar/cache/:id", async (req, res) => {
   try {
     await db.update(grammarTopicsTable)
       .set({ cachedSummary: null, cachedExamples: null, cachedTable: null })
-      .where(eq(grammarTopicsTable.id, Number(req.params.id)));
+      .where(eq(grammarTopicsTable.id, Number((req.params.id as string))));
     return res.json({ ok: true });
   } catch (e) {
     return res.status(500).json({ detail: "Sunucu hatası" });

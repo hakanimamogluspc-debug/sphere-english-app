@@ -275,7 +275,7 @@ export default function Outbound() {
           template={selectedTemplate}
           onClose={() => setSelectedTemplate(null)}
           onEdit={() => { setEditTemplate(selectedTemplate); setSelectedTemplate(null); }}
-          onSendTest={async (email) => {
+          onSendTest={async (email: string) => {
             try {
               await api("/admin/outbound/send-test", {
                 method: "POST",
@@ -763,7 +763,7 @@ function CampaignDetailModal({ campaign, templates, onClose, onUpdate, showToast
           <AddLeadsToCampaign
             campaign={campaign}
             onClose={() => setShowAddLeads(false)}
-            onAdded={(n) => {
+            onAdded={(n: number) => {
               setShowAddLeads(false);
               showToast(`${n} lead kampanyaya eklendi`);
               onUpdate();
