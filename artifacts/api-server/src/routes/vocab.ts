@@ -392,6 +392,11 @@ router.post("/admin/vocab/words", authMiddleware, requireRole("admin"), async (r
     }).returning();
     res.status(201).json({ word: created });
   } catch (e: any) {
+    // lower(word) unique index — büyük/küçük harf farkı duplicate sayılmaz
+    if (e?.code === "23505") {
+      res.status(409).json({ error: `"${String(b.word).trim()}" zaten kelime havuzunda var (büyük/küçük harf farkı ayrı kelime sayılmaz).` });
+      return;
+    }
     res.status(400).json({ error: e?.message || "Eklenemedi" });
   }
 });

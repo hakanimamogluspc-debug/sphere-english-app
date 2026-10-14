@@ -414,8 +414,9 @@ async function runImport(
         const imagePrompt = String(it.image_prompt ?? "");
         if (!word || !turkish || !level) { skipped.push({ reason: "eksik alan", item: it }); continue; }
         const exists = await pool.query(
-          "SELECT id FROM vocab_words WHERE LOWER(word) = LOWER($1) AND UPPER(level) = UPPER($2) LIMIT 1",
-          [word, level],
+          // Kelime havuzunda lower(word) unique — seviyeden bağımsız tek kayıt
+          "SELECT id FROM vocab_words WHERE LOWER(word) = LOWER($1) LIMIT 1",
+          [word],
         );
         if (exists.rows.length > 0) { skipped.push({ reason: "duplicate", item: it }); continue; }
         await pool.query(

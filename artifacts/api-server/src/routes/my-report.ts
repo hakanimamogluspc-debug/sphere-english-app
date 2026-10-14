@@ -7,9 +7,16 @@
  *   POST /my/mistakes/:id/resolve      → "anladım" işaretle
  *   POST /admin/weekly-report/run      → manuel trigger (admin)
  *   POST /admin/weekly-report/preview  → { userId } → tek kullanıcıya test raporu
+ *   POST /internal/weekly-report/run   → cron tetikleyici (x-internal-token)
+ *
+ * Cron (cron-job.org, Europe/Istanbul):
+ *   Pazartesi 08:00 → POST https://app.sphereenglish.com/api/internal/weekly-report/run
+ *                     -H "x-internal-token: $INTERNAL_TOKEN"
+ *   Not: src/jobs/weekly-report-cron.ts esbuild bundle'ına girmediği için
+ *   Easypanel içi cron çalışmaz; bu HTTP endpoint tek otomatik yol.
  */
 
-import { Router, type Response } from "express";
+import { Router, type Request, type Response } from "express";
 import { pool } from "@workspace/db";
 import { authMiddleware, requireRole, type AuthRequest } from "../middlewares/auth";
 import { generateWeeklyReport, sendWeeklyReportToUser, runWeeklyReportForAllUsers } from "../lib/weekly-report";
@@ -139,6 +146,31 @@ router.post("/my/mistakes/:id/resolve", authMiddleware, async (req: AuthRequest,
 });
 
 // ─── ADMIN ─────────────────────────────────────────────────────────
+// ─── Cron tetikleyici — cron-job.org Pazartesi 08:00 TR ───────────────────
+router.post("/internal/weekly-report/run", async (req: Request, res: Response) => {
+  const token = process.env.INTERNAL_TOKEN;
+  const provided = req.header("x-internal-token") ?? "";
+  if (!token || provided !== token) return res.status(401).json({ error: "Internal token gerekli" });
+
+  const startedAt = Date.now();
+  try {
+    // Önce bekleyen hata çıkarımlarını işle ki raporda görünsün (jobs/weekly-report-cron.ts ile aynı sıra)
+    let extracted: { processed: number; totalMistakes: number } | null = null;
+    try {
+      const ext = await extractPending(50);
+      extracted = { processed: ext.processed, totalMistakes: ext.totalMistakes };
+    } catch (e: any) {
+      console.warn("[weekly-report] extract skip:", e?.message);
+    }
+    const r = await runWeeklyReportForAllUsers();
+    console.info(`[weekly-report] cron: işlenen=${r.processed} gönderilen=${r.sent} atlanan=${r.skipped} (${Date.now() - startedAt}ms)`);
+    return res.json({ ok: true, ...r, extracted, durationMs: Date.now() - startedAt });
+  } catch (e: any) {
+    console.error("[weekly-report] cron HATA:", e?.message);
+    return res.status(500).json({ error: e?.message });
+  }
+});
+
 router.post("/admin/weekly-report/run", authMiddleware, requireRole("admin"), async (_req: AuthRequest, res: Response) => {
   try {
     const r = await runWeeklyReportForAllUsers();

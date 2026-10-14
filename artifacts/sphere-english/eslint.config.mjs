@@ -100,7 +100,9 @@ export default [
       "react-hooks/exhaustive-deps": "warn",
       "no-unused-vars": "off",
       "no-case-declarations": "warn",
-      "no-empty": "warn",
+      // `try { localStorage... } catch {}` kasıtlı yutma — kod tabanında 54 yerde,
+      // hepsi catch. Boş if/else/for bloklarını hâlâ uyarır.
+      "no-empty": ["warn", { allowEmptyCatch: true }],
       "no-prototype-builtins": "warn",
     },
   },

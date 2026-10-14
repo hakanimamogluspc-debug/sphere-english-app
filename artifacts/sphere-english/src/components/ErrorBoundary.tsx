@@ -27,7 +27,6 @@ export class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, info: any) {
     // Production'da sadece konsola log; istenirse Sentry'e gönderilebilir.
-    // eslint-disable-next-line no-console
     console.error("ErrorBoundary yakaladı:", error, info);
   }
 
