@@ -35,11 +35,22 @@ minimumReleaseAgeExclude:
   - '@replit/*'
   - stripe-replit-sync
 
+# Build script'i çalışmasına izin verilen paketler (pnpm 11 CI'da strict:
+# listede olmayanlar hata verir). bcrypt/sharp native modül, esbuild binary.
 onlyBuiltDependencies:
   - '@swc/core'
+  - bcrypt
   - esbuild
   - msw
+  - sharp
   - unrs-resolver
+allowBuilds:
+  '@swc/core': true
+  bcrypt: true
+  esbuild: true
+  msw: true
+  sharp: true
+  unrs-resolver: true
 
 overrides:
   # ── Güvenlik pin'leri (önceden package.json "pnpm.overrides" içindeydi;
