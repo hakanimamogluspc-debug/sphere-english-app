@@ -39,7 +39,12 @@ Servisin "Bağlantı" bölümünden **internal connection string**'i kopyala.
 - **Derleme:** Nixpacks (1.41.0) — canlıdakiyle aynı komutlar:
   - Yükleme: `npm install -g pnpm@9 --prefix=/usr/local && /usr/local/bin/pnpm install --no-frozen-lockfile`
   - Yapı: `/usr/local/bin/pnpm --filter @workspace/sphere-english build && mkdir -p public && cp -r artifacts/sphere-english/dist/public/. public/ && /usr/local/bin/pnpm --filter @workspace/api-server build`
+  - **Başlat:** `node --enable-source-maps artifacts/api-server/dist/index.mjs`
+    (boş bırakılırsa `nixpacks.toml`'daki eski uzun `node -e ...` komutu kullanılır ve
+    Easypanel bunu bozuk sarmalayıp container'ı sessizce exit 0 ile kapatır — log bile yazmaz.)
   - Nix paketleri: `ffmpeg`
+  - Derleme ayarı değişince **mutlaka yeni commit push et**; Easypanel "Dağıt" eski imajı
+    1 saniyede yeniden başlatır, rebuild almaz (`git commit --allow-empty` yeterli).
 - **Ortam:** canlı servisin Ortam sekmesindeki her şeyi kopyala, şunları değiştir/ekle:
   ```
   APP_ENV=staging
@@ -53,18 +58,31 @@ Servisin "Bağlantı" bölümünden **internal connection string**'i kopyala.
   ```
   **Sil / boş bırak:** `IG_PAGE_ACCESS_TOKEN`, `WA_ACCESS_TOKEN` (webhook'lar canlıya bağlı),
   `ADMIN_NOTIFICATION_EMAILS` (kendi mailin kalabilir).
-- **Alan Adları:** `staging.app.sphereenglish.com` → port 3000 (canlıyla aynı port), HTTPS açık.
+- **Alan Adları:** Sunucu alanına **sadece** `staging.app.sphereenglish.com` (başına `https://`
+  yazma — Traefik 404 verir, sertifika alınmaz). Hedef port = env'deki `PORT` (canlı env kopyasında **80**).
 
 ### 4. DNS
 `staging.app.sphereenglish.com` → A kaydı → sunucu IP'si (canlı `app` ile aynı).
 
 ### 5. İlk deploy → DB şeması
-İlk açılışta API `runStartupMigrations()` ile tabloları oluşturur. Sonra canlı verisini
-kopyalamak istersen (opsiyonel):
-canlı container shell → `pg_dump "$DATABASE_URL" --no-owner --no-acl | gzip > /tmp/prod.sql.gz`
-→ dosyayı staging container'a taşı → `gunzip -c /tmp/prod.sql.gz | psql "$DATABASE_URL"`
-→ anonimleştir: `UPDATE users SET email = 'user' || id || '@staging.invalid' WHERE role <> 'admin';`
-(`pg_dump` için container'da postgresql-client gerekir — backup işiyle birlikte eklenecek.)
+`runStartupMigrations()` yalnızca ek tabloları/kolonları oluşturur; **`users`, `quizzes`,
+`subscriptions` gibi çekirdek tablolar Drizzle şemasından gelir ve boş DB'de oluşmaz.**
+Bu yüzden ilk kurulumda canlı DB'yi kopyala (sunucuda SSH, Postgres container'larında
+`pg_dump`/`psql` hazır):
+
+```bash
+PROD=$(docker ps --format '{{.Names}}' | grep '^sphere-english_sphere-db\.1')
+STG=$(docker ps --format '{{.Names}}' | grep '^sphere-english_sphere-db-staging\.1')
+docker exec $PROD sh -c 'pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB" --no-owner --no-acl' \
+  | docker exec -i $STG sh -c 'psql -U "$POSTGRES_USER" "$POSTGRES_DB" -q'
+# anonimleştir (admin hariç)
+docker exec $STG sh -c 'psql -U "$POSTGRES_USER" "$POSTGRES_DB" -c "UPDATE users SET email = '\''user'\'' || id || '\''@staging.invalid'\'' WHERE role <> '\''admin'\'';"'
+```
+
+### 6. Sorun giderme
+- Servis ikonu sarı, log boş, `docker service ps` → `Complete`: start komutu bozuk (bkz. 3).
+- Traefik 404 sayfası: alan adı Sunucu alanında `https://` var ya da port yanlış.
+- İmajı elle test: `docker run --rm --env-file <env> --network easypanel easypanel/sphere-english/sphere-app-staging 'node --enable-source-maps artifacts/api-server/dist/index.mjs'`
 
 ## Günlük akış
 
