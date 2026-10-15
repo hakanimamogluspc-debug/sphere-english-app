@@ -18,52 +18,53 @@ Kaynak: `artifacts/api-server/src/lib/app-env.ts`
 
 ## Easypanel kurulumu (bir kez)
 
+Canlı: tek servis (`sphere-english-app`), **Nixpacks**, build sırasında frontend derlenip
+`public/` altına kopyalanıyor, API aynı container'dan hem `/api` hem statik dosyaları sunuyor.
+Staging da aynı şekilde tek servis.
+
 ### 1. Git branch
 ```powershell
-git checkout -b staging
-git push -u origin staging
+git checkout -b staging && git push -u origin staging && git checkout main
 ```
 
 ### 2. Postgres (staging)
-Easypanel → + Service → **Postgres** → ad: `sphere-db-staging`. Connection string'i not al.
+Easypanel → projen → **+ Servis → Postgres** → ad: `sphere-db-staging` → oluştur.
+Servisin "Bağlantı" bölümünden **internal connection string**'i kopyala.
 
-### 3. API (staging)
-Easypanel → + Service → **App** → ad: `sphere-api-staging`
-- Source: GitHub repo, **branch: `staging`**, Dockerfile: `Dockerfile.api`
-- Domain: `staging-api.sphereenglish.com` (ya da `api-staging.…`)
-- Environment: canlı `sphere-api`'nin env'ini kopyala, şunları değiştir:
+### 3. App (staging)
+**+ Servis → App** → ad: `sphere-app-staging`
+
+- **Kaynak:** GitHub · Sahip `hakanimamogluspc-debug` · Depo `sphere-english-app` ·
+  **Dalan: `staging`** · Yapı yolu `/`
+- **Derleme:** Nixpacks (1.41.0) — canlıdakiyle aynı komutlar:
+  - Yükleme: `npm install -g pnpm@9 --prefix=/usr/local && /usr/local/bin/pnpm install --no-frozen-lockfile`
+  - Yapı: `/usr/local/bin/pnpm --filter @workspace/sphere-english build && mkdir -p public && cp -r artifacts/sphere-english/dist/public/. public/ && /usr/local/bin/pnpm --filter @workspace/api-server build`
+  - Nix paketleri: `ffmpeg`
+- **Ortam:** canlı servisin Ortam sekmesindeki her şeyi kopyala, şunları değiştir/ekle:
   ```
   APP_ENV=staging
-  DATABASE_URL=<staging postgres>
+  VITE_APP_ENV=staging
+  DATABASE_URL=<sphere-db-staging internal connection string>
   STAGING_EMAIL_ALLOWLIST=hakanimamogluspc@gmail.com
   APP_URL=https://staging.app.sphereenglish.com
-  PUBLIC_ASSET_BASE_URL=https://staging-api.sphereenglish.com/api-server   (varsa)
-  IYZICO_BASE_URL=https://sandbox-api.iyzipay.com  + sandbox key/secret
+  PUBLIC_ASSET_BASE_URL=https://staging.app.sphereenglish.com/api-server
   SENTRY_ENVIRONMENT=staging
+  IYZICO_BASE_URL=https://sandbox-api.iyzipay.com   (+ sandbox API key/secret)
   ```
-  Instagram/WhatsApp token'larını **boş bırak** (webhook'lar zaten canlıya bağlı).
+  **Sil / boş bırak:** `IG_PAGE_ACCESS_TOKEN`, `WA_ACCESS_TOKEN` (webhook'lar canlıya bağlı),
+  `ADMIN_NOTIFICATION_EMAILS` (kendi mailin kalabilir).
+- **Alan Adları:** `staging.app.sphereenglish.com` → port 3000 (canlıyla aynı port), HTTPS açık.
 
-### 4. Frontend (staging)
-Easypanel → + Service → **App** → ad: `sphere-app-staging`
-- Source: aynı repo, **branch: `staging`**, Dockerfile: `Dockerfile.frontend`
-- Build args: `VITE_API_URL=https://staging-api.sphereenglish.com/api`, `VITE_APP_ENV=staging`
-- Domain: `staging.app.sphereenglish.com`
+### 4. DNS
+`staging.app.sphereenglish.com` → A kaydı → sunucu IP'si (canlı `app` ile aynı).
 
-### 5. DNS
-`staging.app` ve `staging-api` için A/CNAME kaydı → sunucu IP (canlıyla aynı).
-
-### 6. DB'yi canlıdan doldur (ilk sefer + istendiğinde)
-Canlı `sphere-api` container shell:
-```bash
-pg_dump "$DATABASE_URL" --no-owner --no-acl | gzip > /tmp/prod.sql.gz
-```
-Dosyayı staging container'a taşı (Easypanel file manager ya da `docker cp`), staging shell:
-```bash
-gunzip -c /tmp/prod.sql.gz | psql "$DATABASE_URL"
-# İsteğe bağlı anonimleştirme — gerçek e-postalar staging'de kalmasın:
-psql "$DATABASE_URL" -c "UPDATE users SET email = 'user' || id || '@staging.invalid' WHERE role <> 'admin';"
-```
-Not: `pg_dump` için container'da `postgresql-client` gerekir (Dockerfile.api'ye eklenecek — backup işiyle birlikte).
+### 5. İlk deploy → DB şeması
+İlk açılışta API `runStartupMigrations()` ile tabloları oluşturur. Sonra canlı verisini
+kopyalamak istersen (opsiyonel):
+canlı container shell → `pg_dump "$DATABASE_URL" --no-owner --no-acl | gzip > /tmp/prod.sql.gz`
+→ dosyayı staging container'a taşı → `gunzip -c /tmp/prod.sql.gz | psql "$DATABASE_URL"`
+→ anonimleştir: `UPDATE users SET email = 'user' || id || '@staging.invalid' WHERE role <> 'admin';`
+(`pg_dump` için container'da postgresql-client gerekir — backup işiyle birlikte eklenecek.)
 
 ## Günlük akış
 

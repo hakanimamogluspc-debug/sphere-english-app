@@ -1,5 +1,6 @@
 import { Router, Request, Response } from "express";
 import OpenAI from "openai";
+import { openaiTrackedFetch } from "../lib/ai-usage.js";
 import { authMiddleware } from "../middlewares/auth.js";
 import { awardPoints } from "../lib/points.js";
 import { getUserLevel, levelInstruction } from "../lib/user-level.js";
@@ -11,7 +12,7 @@ function getOpenAI(): OpenAI {
   if (!_openai) {
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) throw new Error("OPENAI_API_KEY ortam değişkeni ayarlanmamış");
-    _openai = new OpenAI({ apiKey });
+    _openai = new OpenAI({ fetch: openaiTrackedFetch,  apiKey });
   }
   return _openai;
 }

@@ -23,6 +23,7 @@ import {
 } from "@workspace/db";
 import { and, desc, eq, sql } from "drizzle-orm";
 import OpenAI from "openai";
+import { openaiTrackedFetch } from "../lib/ai-usage.js";
 import { authMiddleware, requireRole, type AuthRequest } from "../middlewares/auth.js";
 import { buildSystemPrompt } from "../lib/chatbot-knowledge.js";
 
@@ -109,7 +110,7 @@ router.post("/chat", async (req: Request, res: Response) => {
 
     // OpenAI'e gönder (sadece son N mesajı tut)
     const recentMessages = messages.slice(-MAX_HISTORY_MESSAGES);
-    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    const openai = new OpenAI({ fetch: openaiTrackedFetch,  apiKey: process.env.OPENAI_API_KEY });
 
     // Sadece user/assistant rollerini geçir (system prompt zaten yukarıda)
     const conversationMessages = recentMessages

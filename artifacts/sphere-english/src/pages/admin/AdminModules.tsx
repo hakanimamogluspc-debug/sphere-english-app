@@ -40,6 +40,7 @@ const MODULE_ICONS: Record<string, React.ElementType> = {
   "teacher-quizzes": FileQuestion,
   "teacher-speaking-club": Mic,
   "student-vocab-game": Gamepad2,
+  "student-speaking-scenes": Mic,
   "student-grammar-coach": Brain,
   "student-simulation-mode": Briefcase,
   "student-interview-sim": UserCheck,

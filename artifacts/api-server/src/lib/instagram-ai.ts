@@ -14,6 +14,7 @@
  */
 
 import OpenAI from "openai";
+import { openaiTrackedFetch } from "./ai-usage.js";
 import { sql } from "drizzle-orm";
 import { db } from "@workspace/db";
 
@@ -275,7 +276,7 @@ export async function generateDmReply(
     return null;
   }
 
-  const openai = new OpenAI({ apiKey });
+  const openai = new OpenAI({ fetch: openaiTrackedFetch,  apiKey });
   const start = Date.now();
   try {
     const completion = await openai.chat.completions.create({
@@ -312,7 +313,7 @@ export async function generateCommentReply(
     return null;
   }
 
-  const openai = new OpenAI({ apiKey });
+  const openai = new OpenAI({ fetch: openaiTrackedFetch,  apiKey });
   const start = Date.now();
   try {
     const completion = await openai.chat.completions.create({

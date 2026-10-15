@@ -10,6 +10,7 @@
  */
 
 import OpenAI from "openai";
+import { openaiTrackedFetch } from "./ai-usage.js";
 import { pool } from "@workspace/db";
 
 let _openai: OpenAI | null = null;
@@ -17,7 +18,7 @@ function getOpenAI(): OpenAI {
   if (!_openai) {
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) throw new Error("OPENAI_API_KEY yok");
-    _openai = new OpenAI({ apiKey });
+    _openai = new OpenAI({ fetch: openaiTrackedFetch,  apiKey });
   }
   return _openai;
 }

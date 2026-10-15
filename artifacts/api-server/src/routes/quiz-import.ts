@@ -2,6 +2,7 @@ import { Router } from "express";
 import multer from "multer";
 import mammoth from "mammoth";
 import OpenAI from "openai";
+import { openaiTrackedFetch } from "../lib/ai-usage.js";
 import { db, quizzesTable, questionsTable } from "@workspace/db";
 import { authMiddleware, requireRole, type AuthRequest } from "../middlewares/auth.js";
 
@@ -14,7 +15,7 @@ function getOpenAI(): OpenAI {
   if (!_openai) {
     const apiKey = process.env["OPENAI_API_KEY"];
     if (!apiKey) throw new Error("OPENAI_API_KEY eksik");
-    _openai = new OpenAI({ apiKey });
+    _openai = new OpenAI({ fetch: openaiTrackedFetch,  apiKey });
   }
   return _openai;
 }

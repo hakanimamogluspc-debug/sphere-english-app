@@ -1,5 +1,6 @@
 import { Router, type Request, type Response } from "express";
 import OpenAI from "openai";
+import { openaiTrackedFetch } from "../lib/ai-usage.js";
 import multer from "multer";
 import { execFile } from "child_process";
 import { promisify } from "util";
@@ -26,7 +27,7 @@ function getOpenAI(): OpenAI {
   if (!_openai) {
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) throw new Error("OPENAI_API_KEY ortam değişkeni ayarlanmamış");
-    _openai = new OpenAI({ apiKey });
+    _openai = new OpenAI({ fetch: openaiTrackedFetch,  apiKey });
   }
   return _openai;
 }

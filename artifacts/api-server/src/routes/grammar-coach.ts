@@ -3,6 +3,7 @@ import { db } from "@workspace/db";
 import { grammarBooksTable, grammarTopicsTable, grammarProgressTable } from "@workspace/db";
 import { eq, and, sql } from "drizzle-orm";
 import OpenAI from "openai";
+import { openaiTrackedFetch } from "../lib/ai-usage.js";
 import { authMiddleware } from "../middlewares/auth.js";
 import { awardPoints } from "../lib/points.js";
 
@@ -14,7 +15,7 @@ function getOpenAI(): OpenAI | null {
     if (!_openai) {
       const apiKey = process.env.OPENAI_API_KEY;
       if (!apiKey) return null;
-      _openai = new OpenAI({ apiKey });
+      _openai = new OpenAI({ fetch: openaiTrackedFetch,  apiKey });
     }
     return _openai;
   } catch { return null; }

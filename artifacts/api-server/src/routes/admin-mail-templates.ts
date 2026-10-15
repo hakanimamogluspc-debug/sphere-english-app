@@ -20,6 +20,7 @@ import { usersTable } from "@workspace/db/schema";
 import { authMiddleware } from "../middlewares/auth.js";
 import OpenAI from "openai";
 
+import { openaiTrackedFetch } from "../lib/ai-usage.js";
 const router = Router();
 
 async function requireAdmin(req: Request, res: Response, next: () => void) {
@@ -34,7 +35,7 @@ function getOpenAI(): OpenAI {
   if (!_openai) {
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) throw new Error("OPENAI_API_KEY missing");
-    _openai = new OpenAI({ apiKey });
+    _openai = new OpenAI({ fetch: openaiTrackedFetch,  apiKey });
   }
   return _openai;
 }

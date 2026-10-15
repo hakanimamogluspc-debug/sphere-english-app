@@ -171,6 +171,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
       // ─── Raporlar ───
       { name: 'Raporlar',            href: '',                                icon: LineChart,     isSectionHeader: true },
+      { name: 'Sistem Sağlığı',      href: '/admin/monitoring',               icon: Activity },
       { name: 'Sistem Raporları',    href: '/admin/reports',                  icon: LineChart },
       { name: 'Aktivite Analizi',    href: '/admin/analytics',                icon: Activity },
       { name: 'Web Analiz',          href: '/admin/web-analytics',            icon: Activity },

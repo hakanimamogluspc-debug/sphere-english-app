@@ -14,6 +14,7 @@ import { authMiddleware, type AuthRequest } from "../middlewares/auth";
 import { awardPoints } from "../lib/points";
 import OpenAI from "openai";
 
+import { openaiTrackedFetch } from "../lib/ai-usage.js";
 const router = Router();
 const FD_ENDPOINT = "https://api.dictionaryapi.dev/api/v2/entries/en";
 
@@ -22,7 +23,7 @@ function getOpenAI(): OpenAI {
   if (!_openai) {
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) throw new Error("OPENAI_API_KEY yok");
-    _openai = new OpenAI({ apiKey });
+    _openai = new OpenAI({ fetch: openaiTrackedFetch,  apiKey });
   }
   return _openai;
 }

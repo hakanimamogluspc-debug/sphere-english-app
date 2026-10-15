@@ -1,6 +1,7 @@
 import { initSentry } from "./lib/sentry.js";
 import { startBackupCron } from "./lib/db-backup.js";
 import { appEnv, backgroundJobsEnabled } from "./lib/app-env.js";
+import { startMetricsFlusher } from "./lib/metrics.js";
 import { startEbookRecoveryCron } from "./lib/ebook-recovery-cron.js";
 import { startCartAbandonedCron } from "./lib/cart-abandoned-cron.js";
 import { startFailedPaymentRetryCron } from "./jobs/failed-payment-retry-cron.js";
@@ -59,7 +60,8 @@ async function runStartupMigrations() {
       ('teacher-live-classes',        'Canlı Oturumlar',        true, ARRAY['teacher','admin']::TEXT[],     'teacher'),
       ('teacher-quizzes',             'Quiz Yönetimi',          true, ARRAY['teacher','admin']::TEXT[],     'teacher'),
       ('teacher-speaking-club',       'Speaking Club',          true, ARRAY['teacher','admin']::TEXT[],     'teacher'),
-      ('student-vocab-game',           'Kelime Oyunu',           true, ARRAY['student']::TEXT[],             'student')
+      ('student-vocab-game',           'Kelime Oyunu',           true, ARRAY['student']::TEXT[],             'student'),
+      ('student-speaking-scenes',      'Konuşma Sahneleri',      true, ARRAY['student']::TEXT[],             'ai-studio')
     ON CONFLICT (key) DO NOTHING`,
     // Ensure vocab-game and forum are always enabled (fix for production deployments)
     `UPDATE feature_settings SET is_enabled = true, visible_to = ARRAY['student']::TEXT[] WHERE key IN ('student-vocab-game', 'student-forum')`,
@@ -1942,6 +1944,7 @@ if (cluster.isPrimary) {
       process.exit(1);
     }
     logger.info({ port, pid: process.pid, worker: cluster.worker?.id }, "Worker hazır");
+    startMetricsFlusher();
     // B2B Outbound sequence scheduler — primary worker (id=1) veya cluster'sız çalışan tek süreç
     if ((!cluster.worker || cluster.worker.id === 1) && backgroundJobsEnabled()) {
       logger.info("outbound-scheduler başlatılıyor…");

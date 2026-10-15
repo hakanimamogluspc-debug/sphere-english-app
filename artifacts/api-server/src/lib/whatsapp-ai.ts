@@ -11,6 +11,7 @@
  */
 
 import OpenAI from "openai";
+import { openaiTrackedFetch } from "./ai-usage.js";
 import { sql } from "drizzle-orm";
 import { db } from "@workspace/db";
 
@@ -116,7 +117,7 @@ function getOpenAI(): OpenAI {
   if (!_client) {
     const key = process.env["OPENAI_API_KEY"] ?? "";
     if (!key) throw new Error("OPENAI_API_KEY tanımlı değil");
-    _client = new OpenAI({ apiKey: key });
+    _client = new OpenAI({ fetch: openaiTrackedFetch,  apiKey: key });
   }
   return _client;
 }

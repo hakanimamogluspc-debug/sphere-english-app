@@ -1,5 +1,6 @@
 import { Router, Request, Response } from "express";
 import OpenAI from "openai";
+import { openaiTrackedFetch } from "../lib/ai-usage.js";
 import multer from "multer";
 import { execFile } from "child_process";
 import { promisify } from "util";
@@ -19,7 +20,7 @@ function getOpenAI(): OpenAI {
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) throw new Error("OPENAI_API_KEY ortam değişkeni ayarlanmamış");
     // Default 45 saniye timeout — biri takılırsa sonsuza kadar beklemesin
-    _openai = new OpenAI({ apiKey, timeout: 45_000, maxRetries: 1 });
+    _openai = new OpenAI({ fetch: openaiTrackedFetch,  apiKey, timeout: 45_000, maxRetries: 1 });
   }
   return _openai;
 }

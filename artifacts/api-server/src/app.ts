@@ -1,4 +1,5 @@
 import express, { type Express } from "express";
+import { metricsMiddleware } from "./lib/metrics.js";
 import { appEnv, isStaging } from "./lib/app-env.js";
 import cors from "cors";
 import helmet from "helmet";
@@ -25,6 +26,7 @@ app.use((_req, res, next) => {
   next();
 });
 
+app.use(metricsMiddleware);
 app.use(
   pinoHttp({
     logger,
