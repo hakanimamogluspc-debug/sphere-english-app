@@ -272,6 +272,12 @@ input, textarea, select, button {
   -webkit-tap-highlight-color: transparent;
   -webkit-appearance: none;
 }
+/* checkbox/radio'nun native görünümü kalsın — yukarıdaki reset onları görünmez yapıyordu */
+input[type="checkbox"], input[type="radio"] {
+  -webkit-appearance: auto;
+  appearance: auto;
+  accent-color: hsl(var(--primary));
+}
 input:-webkit-autofill,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus,
