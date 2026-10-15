@@ -4,6 +4,7 @@ import { setBaseUrl } from "@workspace/api-client-react";
 import App from "./App";
 import "./index.css";
 import "./lib/i18n"; // i18n side-effect init — default lang: Türkçe
+import { registerServiceWorker } from "./lib/pwa";
 
 const apiUrl = import.meta.env.VITE_API_URL as string | undefined;
 if (apiUrl) {
@@ -15,3 +16,4 @@ if (apiUrl) {
 createRoot(document.getElementById("root")!).render(<App />);
 
 initSentry();
+registerServiceWorker();

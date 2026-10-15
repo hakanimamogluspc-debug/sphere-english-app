@@ -308,8 +308,10 @@ if (fs.existsSync(staticDir)) {
     etag: true,
     lastModified: true,
     setHeaders(res, filePath) {
-      if (filePath.endsWith("index.html")) {
+      // index.html + PWA dosyaları (sw.js, manifest, offline) her zaman taze olsun
+      if (/(?:index\.html|sw\.js|manifest\.webmanifest|offline\.html)$/.test(filePath)) {
         res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+        if (filePath.endsWith("sw.js")) res.setHeader("Service-Worker-Allowed", "/");
       } else {
         res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
       }

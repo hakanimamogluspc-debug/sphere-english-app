@@ -1,5 +1,6 @@
 import { Switch, Route, Router as WouterRouter, Redirect, useLocation } from "wouter";
 import StagingBanner from "./components/StagingBanner";
+import InstallPrompt from "./components/InstallPrompt";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -508,6 +509,7 @@ function App() {
               <SubscriptionProvider>
                 <HeartbeatProvider>
                   <Router />
+                  <InstallPrompt />
                 </HeartbeatProvider>
               </SubscriptionProvider>
             </AuthProvider>
