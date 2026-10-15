@@ -1,5 +1,6 @@
 import { initSentry } from "./lib/sentry.js";
 import { startBackupCron } from "./lib/db-backup.js";
+import { appEnv, backgroundJobsEnabled } from "./lib/app-env.js";
 import { startEbookRecoveryCron } from "./lib/ebook-recovery-cron.js";
 import { startCartAbandonedCron } from "./lib/cart-abandoned-cron.js";
 import { startFailedPaymentRetryCron } from "./jobs/failed-payment-retry-cron.js";
@@ -1904,15 +1905,19 @@ if (cluster.isPrimary) {
     .then(() => seedVocabWords())
     .then(() => promoteAdminFromEnv())
     .then(() => {
-      // Background cron'ları başlat (idempotent — birden fazla çağrı zararsız)
-      startBackupCron();
-      startEbookRecoveryCron();
-      startCartAbandonedCron();
-      startFailedPaymentRetryCron();
       // Speaking scenes seed (idempotent — sadece yoksa ekler)
       void seedSpeakingScenes();
-      // Learning cron'ları (content ingest + weekly report) — primary'de tek instance
-      void import("./lib/scheduler.js").then(m => m.startScheduler()).catch(e => logger.warn({ err: e?.message }, "scheduler import fail"));
+      // Background cron'ları başlat (idempotent) — STAGING'de KAPALI (bkz. lib/app-env.ts)
+      if (backgroundJobsEnabled()) {
+        startBackupCron();
+        startEbookRecoveryCron();
+        startCartAbandonedCron();
+        startFailedPaymentRetryCron();
+        // Learning cron'ları (content ingest + weekly report) — primary'de tek instance
+        void import("./lib/scheduler.js").then(m => m.startScheduler()).catch(e => logger.warn({ err: e?.message }, "scheduler import fail"));
+      } else {
+        logger.warn({ appEnv: appEnv() }, "Arka plan cron'ları KAPALI (staging / DISABLE_BACKGROUND_JOBS)");
+      }
     })
     .then(() => {
       const numWorkers = Math.max(1, Math.min(os.cpus().length, 8));
@@ -1938,7 +1943,7 @@ if (cluster.isPrimary) {
     }
     logger.info({ port, pid: process.pid, worker: cluster.worker?.id }, "Worker hazır");
     // B2B Outbound sequence scheduler — primary worker (id=1) veya cluster'sız çalışan tek süreç
-    if (!cluster.worker || cluster.worker.id === 1) {
+    if ((!cluster.worker || cluster.worker.id === 1) && backgroundJobsEnabled()) {
       logger.info("outbound-scheduler başlatılıyor…");
       import("./services/outbound-scheduler.js")
         .then(({ startOutboundScheduler }) => startOutboundScheduler())
@@ -1969,4 +1974,4 @@ if (cluster.isPrimary) {
 
 // ── Background services ──
 initSentry().catch(() => {});
-startBackupCron();
+if (backgroundJobsEnabled()) startBackupCron();

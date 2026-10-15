@@ -1,4 +1,5 @@
 import express, { type Express } from "express";
+import { appEnv, isStaging } from "./lib/app-env.js";
 import cors from "cors";
 import helmet from "helmet";
 import compression from "compression";
@@ -16,6 +17,13 @@ const app: Express = express();
 
 // ─── gzip sıkıştırma — yanıt boyutunu %70-80 azaltır ─────────────────────────
 app.use(compression());
+
+// ─── Staging: arama motorlarına kapalı + hangi ortam olduğu header'da ────────
+app.use((_req, res, next) => {
+  res.setHeader("X-App-Env", appEnv());
+  if (isStaging()) res.setHeader("X-Robots-Tag", "noindex, nofollow");
+  next();
+});
 
 app.use(
   pinoHttp({

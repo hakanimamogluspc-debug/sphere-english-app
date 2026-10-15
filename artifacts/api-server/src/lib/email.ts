@@ -1,4 +1,5 @@
 import nodemailer from "nodemailer";
+import { isStaging, stagingEmailAllowlist } from "./app-env.js";
 import { Resend } from "resend";
 import fs from "fs";
 import path from "path";
@@ -43,6 +44,17 @@ export function applyTemplateVars(html: string, vars: Record<string, string>): s
 }
 
 export async function sendEmail(to: string, subject: string, html: string): Promise<{ ok: boolean; error?: string }> {
+  // Staging: yalnızca izin listesindeki adreslere gönder; gerisini logla.
+  // Canlıdan kopyalanan DB'deki gerçek müşterilere test maili gitmesin.
+  if (isStaging()) {
+    const allow = stagingEmailAllowlist();
+    const toList = (Array.isArray(to) ? to : [to]).map((t) => String(t).toLowerCase());
+    if (!toList.every((t) => allow.has(t))) {
+      console.info(`[email][staging] GÖNDERİLMEDİ → ${toList.join(", ")} | "${subject}" (allowlist dışı)`);
+      return { ok: true };
+    }
+    subject = `[STAGING] ${subject}`;
+  }
   const fromAddress = process.env.SMTP_FROM || "info@sphereenglish.com";
   const from = `Sphere English <${fromAddress}>`;
 

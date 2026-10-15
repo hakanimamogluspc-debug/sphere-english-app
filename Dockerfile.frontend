@@ -14,6 +14,9 @@ COPY artifacts/sphere-english/ ./artifacts/sphere-english/
 
 ARG VITE_API_URL
 ENV VITE_API_URL=$VITE_API_URL
+# staging servisinde build arg olarak "staging" ver → sarı uyarı şeridi
+ARG VITE_APP_ENV=production
+ENV VITE_APP_ENV=$VITE_APP_ENV
 ENV NODE_ENV=production
 ENV BASE_PATH=/
 ENV PORT=3000

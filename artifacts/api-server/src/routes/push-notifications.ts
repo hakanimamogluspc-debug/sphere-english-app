@@ -23,6 +23,7 @@
  */
 
 import { Router, type Request, type Response } from "express";
+import { isStaging } from "../lib/app-env.js";
 import { pool } from "@workspace/db";
 import { authMiddleware, type AuthRequest } from "../middlewares/auth";
 // web-push named import edilir — package hem CJS hem ESM.
@@ -96,6 +97,7 @@ export async function sendPushToUser(
   let removed = 0;
 
   for (const sub of subs.rows) {
+    if (isStaging()) { console.info("[push][staging] gönderilmedi (staging)"); break; }
     try {
       await webpush.sendNotification(
         {
