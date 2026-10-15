@@ -15,6 +15,9 @@ const bireyselSchema = z.object({
   email: z.string().email("Geçerli bir e-posta adresi giriniz"),
   password: z.string().min(6, "Şifre en az 6 karakter olmalıdır"),
   phone: z.string().optional(),
+  termsAccepted: z.literal(true, {
+    errorMap: () => ({ message: "Devam etmek için Kullanım Koşulları ve Gizlilik Politikası'nı kabul etmelisiniz." }),
+  }),
 });
 
 // ── Kurumsal şema (kurum kodu zorunlu) ────────────────────────────────────────
@@ -25,7 +28,41 @@ const kurumsalSchema = z.object({
   password: z.string().min(6, "Şifre en az 6 karakter olmalıdır"),
   phone: z.string().optional(),
   companyCode: z.string().min(3, "Kurum kodu zorunludur"),
+  termsAccepted: z.literal(true, {
+    errorMap: () => ({ message: "Devam etmek için Kullanım Koşulları ve Gizlilik Politikası'nı kabul etmelisiniz." }),
+  }),
 });
+
+const WWW = "https://www.sphereenglish.com";
+
+/** KVKK: Kullanım Koşulları + Gizlilik Politikası onay kutusu (tüm formlarda ortak) */
+function TermsField({ id, error, inputProps }: {
+  id: string;
+  error?: string;
+  inputProps: React.InputHTMLAttributes<HTMLInputElement>;
+}) {
+  return (
+    <div>
+      <label htmlFor={id} className="flex items-start gap-2.5 cursor-pointer select-none">
+        <input
+          id={id}
+          type="checkbox"
+          className="mt-0.5 h-4 w-4 shrink-0 rounded border-gray-300 text-primary focus:ring-primary"
+          {...inputProps}
+        />
+        <span className="text-xs leading-relaxed text-muted-foreground">
+          <a href={`${WWW}/kullanim-kosullari`} target="_blank" rel="noreferrer" className="font-semibold text-primary hover:underline">Kullanım Koşulları</a>
+          {" ve "}
+          <a href={`${WWW}/gizlilik-politikasi`} target="_blank" rel="noreferrer" className="font-semibold text-primary hover:underline">Gizlilik Politikası</a>
+          {"'nı okudum, kabul ediyorum. Kişisel verilerimin "}
+          <a href={`${WWW}/kvkk`} target="_blank" rel="noreferrer" className="font-semibold text-primary hover:underline">KVKK Aydınlatma Metni</a>
+          {" kapsamında işlenmesini onaylıyorum."}
+        </span>
+      </label>
+      {error && <p className="mt-1 text-xs text-destructive flex items-center gap-1"><AlertCircle size={12} /> {error}</p>}
+    </div>
+  );
+}
 
 type BireyselForm = z.infer<typeof bireyselSchema>;
 type KurumsalForm = z.infer<typeof kurumsalSchema>;
@@ -225,6 +262,8 @@ export default function Register() {
                   <Label htmlFor="p-password">Şifre</Label>
                   <Input id="p-password" type="password" icon={<Lock size={18} />} placeholder="••••••••" error={partnerForm.formState.errors.password?.message} {...partnerForm.register("password")} />
                 </div>
+                <TermsField id="p-terms" error={partnerForm.formState.errors.termsAccepted?.message as string | undefined} inputProps={partnerForm.register("termsAccepted")} />
+
                 <Button type="submit" className="w-full text-lg h-12 mt-2" isLoading={isSubmitting}>
                   Partner Hesabı Oluştur
                 </Button>
@@ -296,6 +335,8 @@ export default function Register() {
                     </p>
                   )}
                 </div>
+
+                <TermsField id="b-terms" error={bireyselForm.formState.errors.termsAccepted?.message as string | undefined} inputProps={bireyselForm.register("termsAccepted")} />
 
                 <Button type="submit" className="w-full text-lg h-12 mt-2" isLoading={isSubmitting}>
                   Hesap oluştur
@@ -380,6 +421,8 @@ export default function Register() {
                   <Label htmlFor="k-password">Şifre</Label>
                   <Input id="k-password" type="password" icon={<Lock size={18} />} placeholder="••••••••" error={kurumsalForm.formState.errors.password?.message} {...kurumsalForm.register("password")} />
                 </div>
+
+                <TermsField id="k-terms" error={kurumsalForm.formState.errors.termsAccepted?.message as string | undefined} inputProps={kurumsalForm.register("termsAccepted")} />
 
                 <Button type="submit" className="w-full text-lg h-12 mt-2" isLoading={isSubmitting}>
                   Hesap oluştur

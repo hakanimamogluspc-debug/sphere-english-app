@@ -26,6 +26,9 @@ export const usersTable = pgTable("users", {
   onboardingCompleted: boolean("onboarding_completed").notNull().default(false),
   preferredLanguage: varchar("preferred_language", { length: 5 }).default("tr"),
   learningGoal: varchar("learning_goal", { length: 60 }),
+  // KVKK / sözleşme onayı — kayıt formundaki zorunlu kutu (SQL: 202610_terms_acceptance.sql)
+  termsAcceptedAt: timestamp("terms_accepted_at", { withTimezone: true }),
+  termsVersion: varchar("terms_version", { length: 20 }),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });

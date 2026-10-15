@@ -31,7 +31,14 @@ const registerSchema = z.object({
   companyCode: z.string().trim().max(50).optional().or(z.literal("")),
   accountType: z.enum(["bireysel", "kurumsal"]).optional(),
   referralCode: z.string().trim().max(16).optional().or(z.literal("")),
+  /** KVKK: Kullanım Koşulları + Gizlilik Politikası onayı — zorunlu */
+  termsAccepted: z.literal(true, {
+    errorMap: () => ({ message: "Devam etmek için Kullanım Koşulları ve Gizlilik Politikası'nı kabul etmelisiniz." }),
+  }),
 });
+
+/** Sözleşme metni değişince artır — kabul kaydında hangi sürümün onaylandığı tutulur */
+const TERMS_VERSION = "2026-10";
 
 router.post("/auth/login", validateBody(loginSchema), async (req, res) => {
   const { email, password, rememberMe } = req.body;
@@ -105,6 +112,8 @@ router.post("/auth/register", validateBody(registerSchema), async (req, res) => 
       phone: phone || null,
       companyId: null,
       accountType: "bireysel",
+      termsAcceptedAt: new Date(),
+      termsVersion: TERMS_VERSION,
     } as any).returning();
 
     const year = new Date(user.createdAt).getFullYear();
@@ -220,6 +229,8 @@ router.post("/auth/register", validateBody(registerSchema), async (req, res) => 
     phone: phone || null,
     companyId: company.id,
     accountType: "kurumsal",
+    termsAcceptedAt: new Date(),
+    termsVersion: TERMS_VERSION,
   } as any).returning();
 
   // Öğrenci numarası ata: SE-YYYY-NNNN formatı
