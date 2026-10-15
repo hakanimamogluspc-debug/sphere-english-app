@@ -1,4 +1,5 @@
 import { Router, Request, Response } from "express";
+import { rebindRequestContext } from "../lib/metrics.js";
 import OpenAI from "openai";
 import { openaiTrackedFetch } from "../lib/ai-usage.js";
 import multer from "multer";
@@ -137,6 +138,7 @@ router.post(
   "/simulation/chat",
   authMiddleware,
   upload.single("audio"),
+  rebindRequestContext,
   async (req: Request, res: Response) => {
     try {
       awardPoints((req as any).userId, "simulation_turn", { dailyCap: 30, silent: true }).catch(() => {});

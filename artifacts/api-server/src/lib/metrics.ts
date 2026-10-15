@@ -43,6 +43,7 @@ export function metricsMiddleware(req: Request, res: Response, next: NextFunctio
 
   const start = process.hrtime.bigint();
   const ctx = { route: normalizePath(`${req.baseUrl ?? ""}${req.path}`), method: req.method };
+  (req as any).__metricsCtx = ctx;
 
   res.on("finish", () => {
     const ms = Number(process.hrtime.bigint() - start) / 1e6;
@@ -56,6 +57,17 @@ export function metricsMiddleware(req: Request, res: Response, next: NextFunctio
     buffer.set(key, a);
   });
 
+  requestContext.run(ctx, () => next());
+}
+
+/**
+ * multer gibi stream tabanlı middleware'ler AsyncLocalStorage bağlamını düşürüyor;
+ * upload.single(...) sonrasına eklenince route bilgisi OpenAI çağrılarına geri gelir.
+ *   router.post("/x", authMiddleware, upload.single("audio"), rebindRequestContext, handler)
+ */
+export function rebindRequestContext(req: Request, _res: Response, next: NextFunction): void {
+  const ctx = (req as any).__metricsCtx;
+  if (!ctx) return next();
   requestContext.run(ctx, () => next());
 }
 

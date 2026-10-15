@@ -1,4 +1,5 @@
 import { Router, Request, Response } from "express";
+import { rebindRequestContext } from "../lib/metrics.js";
 import OpenAI from "openai";
 import { openaiTrackedFetch } from "../lib/ai-usage.js";
 import multer from "multer";
@@ -196,6 +197,7 @@ router.post(
   "/pronunciation/chat",
   authMiddleware,
   upload.single("audio"),
+  rebindRequestContext,
   async (req: Request, res: Response) => {
     try {
       awardPoints((req as any).userId, "pronunciation_practice", { dailyCap: 20, silent: true }).catch(() => {});
@@ -343,6 +345,7 @@ router.post(
   "/pronunciation/analyze",
   authMiddleware,
   upload.single("audio"),
+  rebindRequestContext,
   async (req: Request, res: Response) => {
     try {
       const voice = req.body.voice as Voice;

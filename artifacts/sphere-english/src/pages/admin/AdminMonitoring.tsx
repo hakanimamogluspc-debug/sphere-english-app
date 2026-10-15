@@ -68,12 +68,12 @@ function Bars({ data, valueKey, labelKey, fmt, color = "bg-blue-500" }: { data: 
   const max = Math.max(1, ...data.map((d) => Number(d[valueKey] ?? 0)));
   return (
     <div className="bg-white border border-slate-200 rounded-lg p-3">
-      <div className="flex items-end gap-[2px] h-28">
+      <div className="flex items-end gap-[2px]" style={{ height: 112 }}>
         {data.map((d, i) => {
           const v = Number(d[valueKey] ?? 0);
           return (
-            <div key={i} className="flex-1 flex flex-col justify-end group relative" title={`${new Date(d[labelKey]).toLocaleString("tr-TR")}: ${fmt(v)}`}>
-              <div className={`${color} rounded-t-sm opacity-80 group-hover:opacity-100`} style={{ height: `${Math.max(2, (v / max) * 100)}%` }} />
+            <div key={i} className="flex-1 h-full flex flex-col justify-end group relative min-w-[3px] max-w-[40px]" title={`${new Date(d[labelKey]).toLocaleString("tr-TR")}: ${fmt(v)}`}>
+              <div className={`${color} rounded-t-sm opacity-80 group-hover:opacity-100`} style={{ height: `${Math.max(3, Math.round((v / max) * 112))}px` }} />
             </div>
           );
         })}

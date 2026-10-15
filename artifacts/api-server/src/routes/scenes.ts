@@ -21,6 +21,7 @@
  */
 
 import { Router, Request, Response } from "express";
+import { rebindRequestContext } from "../lib/metrics.js";
 import multer from "multer";
 import OpenAI from "openai";
 import { openaiTrackedFetch } from "../lib/ai-usage.js";
@@ -805,6 +806,7 @@ router.post(
   "/scenes/attempts/:attemptId/speak",
   authMiddleware,
   upload.single("audio"),
+  rebindRequestContext,
   async (req: Request, res: Response) => {
     try {
       const userId = (req as any).userId as number;

@@ -1,4 +1,5 @@
 import { Router, type Request, type Response } from "express";
+import { rebindRequestContext } from "../lib/metrics.js";
 import OpenAI from "openai";
 import { openaiTrackedFetch } from "../lib/ai-usage.js";
 import multer from "multer";
@@ -234,6 +235,7 @@ router.post(
   "/presentation/:id/submit",
   authMiddleware,
   upload.single("audio"),
+  rebindRequestContext,
   async (req: Request, res: Response) => {
     try {
       const userId = (req as any).userId as number;
@@ -349,6 +351,7 @@ router.post(
   "/presentation/:id/qa-turn",
   authMiddleware,
   upload.single("audio"),
+  rebindRequestContext,
   async (req: Request, res: Response) => {
     try {
       const userId = (req as any).userId as number;
