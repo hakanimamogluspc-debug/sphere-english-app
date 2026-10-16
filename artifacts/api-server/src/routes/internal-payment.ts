@@ -202,7 +202,7 @@ router.post("/internal/payment/activate", async (req: Request, res: Response) =>
   try {
     // 1) Kullanıcıyı bul ya da oluştur
     const userRows = await db.execute(sql`
-      SELECT id, email, name FROM users WHERE LOWER(email) = LOWER(${email}) LIMIT 1
+      SELECT id, email, first_name, last_name FROM users WHERE LOWER(email) = LOWER(${email}) LIMIT 1
     `);
     let user = (userRows.rows ?? userRows)[0] as any;
     let magicLinkSent = false;

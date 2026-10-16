@@ -8,7 +8,7 @@ import pinoHttp from "pino-http";
 import cookieParser from "cookie-parser";
 import path from "path";
 import fs from "fs";
-import rateLimit from "express-rate-limit";
+import rateLimit, { ipKeyGenerator } from "express-rate-limit";
 import router from "./routes";
 import webhooksRouter from "./routes/webhooks";
 import { logger } from "./lib/logger";
@@ -152,6 +152,11 @@ app.get("/health", (_req, res) => {
 });
 
 // ─── Rate Limiting ────────────────────────────────────────────────────────────
+/**
+ * Testlerde (ve gerekirse yük testinde) limiter'ları kapatmak için: RATE_LIMIT_DISABLED=1.
+ * İstek anında okunur; rate-limit testi kendi dosyasında "0" yapıp limiter'ı geri açar.
+ */
+const limitersDisabled = () => process.env.RATE_LIMIT_DISABLED === "1";
 
 // Giriş endpoint'i: 15 dakikada en fazla 10 deneme
 const loginLimiter = rateLimit({
@@ -161,6 +166,7 @@ const loginLimiter = rateLimit({
   legacyHeaders: false,
   message: { error: "Çok fazla giriş denemesi. Lütfen 15 dakika sonra tekrar deneyin." },
   skipSuccessfulRequests: true,
+  skip: limitersDisabled,
 });
 
 // Kayıt endpoint'i: 1 saatte en fazla 5 kayıt
@@ -170,6 +176,7 @@ const registerLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: "Çok fazla kayıt denemesi. Lütfen 1 saat sonra tekrar deneyin." },
+  skip: limitersDisabled,
 });
 
 // Genel API: Dakikada en fazla 200 istek
@@ -179,7 +186,7 @@ const apiLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: "İstek limiti aşıldı. Lütfen bir dakika bekleyin." },
-  skip: (req) => req.path.startsWith("/uploads"),
+  skip: (req) => limitersDisabled() || req.path.startsWith("/uploads"),
 });
 
 /**
@@ -188,7 +195,8 @@ const apiLimiter = rateLimit({
  * + wifi) aynı limiti paylaşmasını sağlar.
  */
 function userOrIp(req: any): string {
-  return req.userId ? `u:${req.userId}` : `ip:${req.ip || req.connection?.remoteAddress || "unknown"}`;
+  // ipKeyGenerator: IPv6 adreslerini /56 alt ağına indirger (express-rate-limit ERR_ERL_KEY_GEN_IPV6)
+  return req.userId ? `u:${req.userId}` : `ip:${ipKeyGenerator(req.ip || req.connection?.remoteAddress || "unknown")}`;
 }
 
 // Forgot password: 15 dakikada en fazla 3 deneme (email flooding önleme)
@@ -198,6 +206,7 @@ const forgotPasswordLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: "Çok fazla şifre sıfırlama talebi. Lütfen 15 dakika sonra tekrar deneyin." },
+  skip: limitersDisabled,
 });
 
 // AI endpoint'leri: dakikada en fazla 20 istek (OpenAI maliyet kontrolü)
@@ -208,6 +217,7 @@ const aiLimiter = rateLimit({
   legacyHeaders: false,
   keyGenerator: userOrIp,
   message: { error: "AI isteği limiti aşıldı. Lütfen bir dakika bekleyin." },
+  skip: limitersDisabled,
 });
 
 // Chatbot (anon public): dakikada en fazla 30 istek per IP
@@ -217,6 +227,7 @@ const chatbotLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: "Çok hızlı yazıyorsunuz. Lütfen biraz yavaşlayın." },
+  skip: limitersDisabled,
 });
 
 // E-kitap "Haberdar ol" formu (anon public): saatte en fazla 5 kayıt per IP
@@ -226,6 +237,7 @@ const waitlistLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: "Çok fazla kayıt denemesi. Lütfen daha sonra tekrar deneyin." },
+  skip: limitersDisabled,
 });
 
 // Payment: 10 dakikada en fazla 10 işlem (ödeme deneme spamı önleme)
@@ -237,7 +249,7 @@ const paymentLimiter = rateLimit({
   keyGenerator: userOrIp,
   message: { error: "Çok fazla ödeme denemesi. Lütfen 10 dakika sonra tekrar deneyin." },
   // Provider webhook'u korunmasın — provider sunucusundan geliyor
-  skip: (req) => req.path.includes("/webhook"),
+  skip: (req) => limitersDisabled() || req.path.includes("/webhook"),
 });
 
 app.use("/api/auth/login", loginLimiter);

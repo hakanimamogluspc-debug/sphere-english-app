@@ -9,7 +9,8 @@
     "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck",
     "prepare": "husky || exit 0",
     "lint": "pnpm --filter sphere-english run lint",
-    "verify": "pnpm run typecheck && pnpm run lint"
+    "verify": "pnpm run typecheck && pnpm run lint && pnpm run test",
+    "test": "pnpm --filter @workspace/api-server run test"
   },
   "private": true,
   "devDependencies": {
