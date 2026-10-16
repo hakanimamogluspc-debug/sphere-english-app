@@ -79,7 +79,16 @@ docker exec $PROD sh -c 'pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB" --no-owner -
 docker exec $STG sh -c 'psql -U "$POSTGRES_USER" "$POSTGRES_DB" -c "UPDATE users SET email = '\''user'\'' || id || '\''@staging.invalid'\'' WHERE role <> '\''admin'\'';"'
 ```
 
-### 6. Sorun giderme
+### 6. RAM notu (sunucu 3.7 GB)
+Staging app ~650 MB yer; **kullanmadığın zaman kapat**:
+```bash
+docker service scale sphere-english_sphere-app-staging=0   # kapat (Easypanel: Durdur)
+docker service scale sphere-english_sphere-app-staging=1   # aç   (Easypanel: Başlat)
+```
+Elle `docker run` ile test ettiysen Ctrl+C ile kapat; SSH kapanınca container arkada kalıyor
+(`docker ps` ile rastgele isimli container görürsen `docker rm -f <ad>`).
+
+### 7. Sorun giderme
 - Servis ikonu sarı, log boş, `docker service ps` → `Complete`: start komutu bozuk (bkz. 3).
 - Traefik 404 sayfası: alan adı Sunucu alanında `https://` var ya da port yanlış.
 - İmajı elle test: `docker run --rm --env-file <env> --network easypanel easypanel/sphere-english/sphere-app-staging 'node --enable-source-maps artifacts/api-server/dist/index.mjs'`
