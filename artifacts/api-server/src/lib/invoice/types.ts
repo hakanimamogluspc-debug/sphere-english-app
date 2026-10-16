@@ -132,8 +132,9 @@ export interface InvoiceProvider {
  * Provider seçim/karar mantığı için yardımcı.
  */
 export function decideInvoiceType(buyer: InvoiceBuyer): InvoiceType {
-  // Kurumsal + e-Fatura mükellefi ise → e-Fatura
-  if (buyer.type === "corporate" && buyer.receiverInboxTag) {
+  // GİB'de e-Fatura mükellefi (postbox tag'i var) → e-Fatura. Şahıs şirketleri
+  // bireysel tipte + TCKN ile de mükellef olabilir; bu yüzden tipe bakılmaz.
+  if (buyer.receiverInboxTag) {
     return "einvoice";
   }
   // Aksi durumda hep e-Arşiv (bireysel, foreign, kayıtsız kurumsal)

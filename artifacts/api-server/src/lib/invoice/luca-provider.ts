@@ -42,6 +42,14 @@ import type {
 } from "./types.js";
 import { decideInvoiceType } from "./types.js";
 
+/** Luca: "...E-Fatura etiketi açıktır, E-Arşiv kesilemez, E-Fatura kesmeniz gerekmektedir" */
+function isEInvoiceRequiredError(err?: string): boolean {
+  if (!err) return false;
+  const t = err.toLocaleLowerCase("tr-TR");
+  return (t.includes("e-arşiv kesilemez") || t.includes("e-arsiv kesilemez")) ||
+    t.includes("e-fatura kesmeniz") || t.includes("e-fatura etiketi açık");
+}
+
 // XSLT template'lerini bir kere okuyup cache'leyelim
 const __dirname = path.dirname(new URL(import.meta.url).pathname);
 let _arsivXslt: string | null = null;
@@ -254,29 +262,59 @@ export class LucaProvider implements InvoiceProvider {
   }
 
   async issueInvoice(input: IssueInvoiceInput): Promise<IssueInvoiceResult> {
-    // Pre-check: Kurumsal alıcıda vergi no varsa e-Fatura mükellefi mi
-    // kontrol et. Mükellefse postbox tag'ini otomatik ekleyip e-Fatura
-    // kesilmesini sağla. Aksi halde Luca "E-Arşiv kesilemez, E-Fatura
-    // kesmeniz gerekmektedir" hatası döner.
-    if (
-      input.buyer.type === "corporate" &&
-      input.buyer.taxId &&
-      !input.buyer.receiverInboxTag
-    ) {
-      try {
-        const info = await this.lookupTaxPayer(input.buyer.taxId);
-        if (info?.isRegistered && info.postboxes.length > 0) {
-          input = {
-            ...input,
-            buyer: { ...input.buyer, receiverInboxTag: info.postboxes[0] },
-          };
-          console.info(`[luca] Alıcı e-Fatura mükellefi (${input.buyer.taxId}), postbox=${info.postboxes[0]} ile e-Fatura kesiliyor`);
-        }
-      } catch (e: any) {
-        console.warn(`[luca] lookupTaxPayer hata: ${e?.message}, e-Arşiv denenecek`);
-      }
+    // Pre-check: alıcının VKN/TCKN'si varsa (kurumsal VEYA bireysel — şahıs
+    // şirketleri TCKN ile e-Fatura mükellefi olabilir) GİB kaydını sorgula.
+    // Mükellefse postbox tag'ini ekleyip e-Fatura kes. Aksi halde Luca
+    // "E-Arşiv kesilemez, E-Fatura kesmeniz gerekmektedir" hatası döner.
+    if (input.buyer.type !== "foreign" && input.buyer.taxId && !input.buyer.receiverInboxTag) {
+      const tagged = await this.withPostboxIfRegistered(input);
+      if (tagged) input = tagged;
     }
 
+    const first = await this.issueOnce(input);
+    if (first.ok) return first;
+
+    // Fallback: e-Arşiv denendi ama Luca "alıcı e-Fatura mükellefi" dedi →
+    // mükellef sorgusunu tekrar dene ve e-Fatura olarak yeniden gönder.
+    if (
+      decideInvoiceType(input.buyer) === "earchive" &&
+      isEInvoiceRequiredError(first.error) &&
+      input.buyer.taxId
+    ) {
+      console.warn(`[luca] e-Arşiv reddedildi (alıcı e-Fatura mükellefi: ${input.buyer.taxId}); e-Fatura olarak yeniden deneniyor`);
+      const tagged = await this.withPostboxIfRegistered(input, /* force */ true);
+      if (tagged) {
+        const second = await this.issueOnce(tagged);
+        if (second.ok) return second;
+        return { ...second, error: `e-Fatura yeniden denemesi de başarısız: ${second.error}` };
+      }
+      return {
+        ...first,
+        error:
+          `${first.error} — Alıcı (${input.buyer.taxId}) GİB'de e-Fatura mükellefi görünüyor ama Luca adres defterinden ` +
+          `posta kutusu (postbox) alınamadı. Alıcıyı Luca'da "Adres Defteri"ne ekleyip faturayı yeniden kesin.`,
+      };
+    }
+    return first;
+  }
+
+  /** GİB mükellef sorgusu → kayıtlıysa buyer'a receiverInboxTag ekler, değilse null */
+  private async withPostboxIfRegistered(input: IssueInvoiceInput, force = false): Promise<IssueInvoiceInput | null> {
+    try {
+      const info = await this.lookupTaxPayer(input.buyer.taxId!);
+      if (info?.isRegistered && info.postboxes.length > 0) {
+        console.info(`[luca] Alıcı e-Fatura mükellefi (${input.buyer.taxId}), postbox=${info.postboxes[0]} ile e-Fatura kesiliyor`);
+        return { ...input, buyer: { ...input.buyer, receiverInboxTag: info.postboxes[0] } };
+      }
+      if (force) console.warn(`[luca] GetTaxPayer: ${input.buyer.taxId} için postbox bulunamadı`, info);
+      return null;
+    } catch (e: any) {
+      console.warn(`[luca] lookupTaxPayer hata: ${e?.message}${force ? "" : ", e-Arşiv denenecek"}`);
+      return null;
+    }
+  }
+
+  private async issueOnce(input: IssueInvoiceInput): Promise<IssueInvoiceResult> {
     const invoiceType = decideInvoiceType(input.buyer);
     const externalCode = generateExternalCode(this.cfg.invoicePrefix, Date.now());
     const ettn = randomUUID();
@@ -297,28 +335,8 @@ export class LucaProvider implements InvoiceProvider {
     }
     const totalPayable = totalLineExtension + totalVat;
 
-    if (invoiceType === "einvoice") {
-      return await this.sendEInvoice({
-        input,
-        externalCode,
-        ettn,
-        today,
-        totalLineExtension,
-        totalDiscount,
-        totalVat,
-        totalPayable,
-      });
-    }
-    return await this.sendEArchiveInvoice({
-      input,
-      externalCode,
-      ettn,
-      today,
-      totalLineExtension,
-      totalDiscount,
-      totalVat,
-      totalPayable,
-    });
+    const args = { input, externalCode, ettn, today, totalLineExtension, totalDiscount, totalVat, totalPayable };
+    return invoiceType === "einvoice" ? await this.sendEInvoice(args) : await this.sendEArchiveInvoice(args);
   }
 
   private async sendEArchiveInvoice(args: {
