@@ -12,6 +12,8 @@ Entegrasyon testleri: Express uygulaması **gerçek bir Postgres**'e karşı, HT
 | `auth.test.ts` | KVKK onayı zorunlu, parola kuralı, kayıt (201 + cookie + öğrenci no), e-posta tekilliği, kurum kodu, login 401/200, cookie oturumu, bozuk/yetim token, rol kontrolü |
 | `rate-limit.test.ts` | login 10 başarısız → 429 (başarılılar sayılmaz), forgot-password 3 → 429 |
 | `internal-payment.test.ts` | www→api HMAC imzası (yok/yanlış/gövde değişmiş → 401), bilinmeyen plan, yeni kullanıcı + abonelik + ödeme kaydı, tekrar ödeme upsert (tek satır), pre-create fatura verisi, cron token |
+| `help-center.test.ts` | kategori/makale/arama/öneri/oy, admin CRUD, taslak gizliliği |
+| `reminders.test.ts` | hatırlatma dizisi: dokunuş seçimi, idempotentlik, eşik geçişi, tercih, geri dönüş ölçümü, admin istatistik/önizleme |
 | `entitlement.test.ts` | otomatik deneme süresi, süresi geçmiş deneme, aktif abonelik, lazy expiry (past_due / expired), iptal-ama-dönem-sürüyor |
 
 ## Yerelde çalıştırma (Docker yoksa — sunucudaki test DB + SSH tüneli)

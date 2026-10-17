@@ -4,8 +4,11 @@
  * 2 tetikleyici, e-posta ile:
  *   1) Streak-at-risk  — 20:00 civarı: streak >= 2 olan ve bugün girmeyen
  *                        kullanıcıya "streak'in tehlikede" hatırlatması
- *   2) Comeback        — 09:00 civarı: son 3-14 gün içinde aktif olmuş
- *                        ama son 2+ gündür girmeyen kullanıcıya "seni özledik"
+ *   2) Comeback        — 09:00 civarı: inaktif gün sayısına göre 3/7/14/30/60. gün
+ *                        dizisi (lib/reminder-sequence.ts) — her dokunuş farklı
+ *                        açı, kişiselleştirilmiş içerik, A/B konu satırı.
+ *                        Geri dönüş (7 gün içinde giriş) notification_log'a işlenir;
+ *                        admin: GET /admin/notifications/reminder-stats
  *
  * Endpoint (internal — INTERNAL_TOKEN gerekli):
  *   POST /internal/notifications/run-daily-reminders?type=streak_risk|comeback
@@ -26,6 +29,11 @@ import { Router, type Request, type Response } from "express";
 import { pool } from "@workspace/db";
 import { sendEmail } from "../lib/email";
 import { sendPushToUser } from "./push-notifications";
+import { authMiddleware, requireRole, type AuthRequest } from "../middlewares/auth";
+import {
+  COMEBACK_TOUCHES, loadCandidates, pickTouch, pickVariant, alreadySentThisPeriod, sentRecently,
+  renderComeback, renderStreakRisk, type ReminderUser,
+} from "../lib/reminder-sequence";
 
 const router = Router();
 
@@ -63,6 +71,12 @@ async function ensureTables() {
     )
   `);
   await pool.query(`CREATE INDEX IF NOT EXISTS nlog_user_type_idx ON notification_log(user_id, type, sent_date DESC)`);
+  // Dizi / A-B / geri dönüş ölçümü
+  await pool.query(`ALTER TABLE notification_log ADD COLUMN IF NOT EXISTS variant VARCHAR(4)`);
+  await pool.query(`ALTER TABLE notification_log ADD COLUMN IF NOT EXISTS touch_day INTEGER`);
+  await pool.query(`ALTER TABLE notification_log ADD COLUMN IF NOT EXISTS returned_at TIMESTAMPTZ`);
+  await pool.query(`ALTER TABLE notification_log ADD COLUMN IF NOT EXISTS returned_days INTEGER`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS nlog_type_sent_idx ON notification_log(type, sent_date DESC)`);
 }
 ensureTables().catch((e) => console.warn("[notifications] ensureTables warn:", e?.message));
 
@@ -79,81 +93,6 @@ function checkInternal(req: Request, res: Response): boolean {
 }
 
 // ─── E-posta şablonları ────────────────────────────────────────────────────
-
-function streakRiskEmail(name: string, streak: number, appUrl: string): { subject: string; html: string } {
-  const subject = `${name}, ${streak} günlük serin tehlikede!`;
-  const html = `
-<!DOCTYPE html>
-<html><head><meta charset="utf-8"><title>${subject}</title></head>
-<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; background: #f8fafc; margin: 0; padding: 20px;">
-  <table role="presentation" width="100%" style="max-width: 560px; margin: 0 auto; background: white; border-radius: 12px; padding: 32px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
-    <tr><td>
-      <div style="font-size: 48px; margin-bottom: 8px;">🔥</div>
-      <h1 style="color: #ea580c; font-size: 24px; margin: 0 0 8px 0;">${streak} günlük serin tehlikede!</h1>
-      <p style="color: #475569; font-size: 15px; line-height: 1.6; margin: 16px 0;">
-        Merhaba <strong>${name}</strong>,
-      </p>
-      <p style="color: #475569; font-size: 15px; line-height: 1.6; margin: 16px 0;">
-        Bugün henüz İngilizce çalışmadın. Sadece <strong>2 dakika</strong> yeter —
-        günün iş kartlarına bak ve serini korumaya devam et.
-      </p>
-      <div style="margin: 28px 0; text-align: center;">
-        <a href="${appUrl}/dashboard" style="display: inline-block; background: linear-gradient(to right, #10b981, #059669); color: white; padding: 14px 32px; border-radius: 10px; text-decoration: none; font-weight: 700; font-size: 16px;">
-          Serimi Koru →
-        </a>
-      </div>
-      <p style="color: #94a3b8; font-size: 13px; line-height: 1.5; margin: 24px 0 0 0; border-top: 1px solid #e2e8f0; padding-top: 16px;">
-        Bu bildirimleri almak istemiyorsan
-        <a href="${appUrl}/ayarlar/bildirimler" style="color: #64748b;">tercihlerinden</a>
-        kapatabilirsin.
-      </p>
-    </td></tr>
-  </table>
-</body></html>`;
-  return { subject, html };
-}
-
-function comebackEmail(name: string, daysAway: number, appUrl: string): { subject: string; html: string } {
-  const subject = daysAway <= 3
-    ? `${name}, ${daysAway} gündür seni bekliyoruz`
-    : `${name}, biraz aradın verdin — geri dön`;
-
-  const html = `
-<!DOCTYPE html>
-<html><head><meta charset="utf-8"><title>${subject}</title></head>
-<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; background: #f8fafc; margin: 0; padding: 20px;">
-  <table role="presentation" width="100%" style="max-width: 560px; margin: 0 auto; background: white; border-radius: 12px; padding: 32px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
-    <tr><td>
-      <div style="font-size: 48px; margin-bottom: 8px;">👋</div>
-      <h1 style="color: #4f46e5; font-size: 24px; margin: 0 0 8px 0;">${daysAway <= 3 ? "Seni özledik" : "Yolun açık olsun"}</h1>
-      <p style="color: #475569; font-size: 15px; line-height: 1.6; margin: 16px 0;">
-        Merhaba <strong>${name}</strong>,
-      </p>
-      <p style="color: #475569; font-size: 15px; line-height: 1.6; margin: 16px 0;">
-        Son ${daysAway} gündür Sphere English'e uğramadın. Sadece bugün için
-        <strong>2 dakikalık bir iş kartı</strong> hazırladık — göz atıp devam
-        edersen kaldığın yerden ilerleyebilirsin.
-      </p>
-      <ul style="color: #64748b; font-size: 14px; line-height: 1.7; margin: 16px 0; padding-left: 20px;">
-        <li>🎯 Bugün için 1 küçük görev bekliyor</li>
-        <li>💼 Sektörüne özel yeni iş İngilizcesi kalıpları</li>
-        <li>🏆 Haftalık sıralamanda geride kalmayasın</li>
-      </ul>
-      <div style="margin: 28px 0; text-align: center;">
-        <a href="${appUrl}/dashboard" style="display: inline-block; background: linear-gradient(to right, #4f46e5, #6366f1); color: white; padding: 14px 32px; border-radius: 10px; text-decoration: none; font-weight: 700; font-size: 16px;">
-          Kaldığım Yerden Devam →
-        </a>
-      </div>
-      <p style="color: #94a3b8; font-size: 13px; line-height: 1.5; margin: 24px 0 0 0; border-top: 1px solid #e2e8f0; padding-top: 16px;">
-        Bu bildirimleri almak istemiyorsan
-        <a href="${appUrl}/ayarlar/bildirimler" style="color: #64748b;">tercihlerinden</a>
-        kapatabilirsin.
-      </p>
-    </td></tr>
-  </table>
-</body></html>`;
-  return { subject, html };
-}
 
 // ─── Yardımcı ──────────────────────────────────────────────────────────────
 
@@ -173,14 +112,15 @@ async function logNotification(
   channel: string,
   status: "sent" | "skipped" | "failed",
   error?: string,
+  extra?: { variant?: string; touchDay?: number },
 ): Promise<boolean> {
   try {
     const r = await pool.query(
-      `INSERT INTO notification_log (user_id, type, channel, status, error)
-       VALUES ($1, $2, $3, $4, $5)
+      `INSERT INTO notification_log (user_id, type, channel, status, error, variant, touch_day)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
        ON CONFLICT (user_id, type, channel, sent_date) DO NOTHING
        RETURNING id`,
-      [userId, type, channel, status, error ?? null],
+      [userId, type, channel, status, error ?? null, extra?.variant ?? null, extra?.touchDay ?? null],
     );
     return r.rows.length > 0;
   } catch (e: any) {
@@ -219,15 +159,15 @@ async function runStreakRisk(appUrl: string) {
       skipped++;
       continue;
     }
-    const inserted = await logNotification(row.id, "streak_risk", "email", "sent");
+    const firstName = String(row.name || "Merhaba").split(" ")[0];
+    const mail = renderStreakRisk(firstName, row.streak, appUrl);
+    const inserted = await logNotification(row.id, "streak_risk", "email", "sent", undefined, { variant: mail.variant });
     if (!inserted) {
       // Bugün zaten gönderilmiş
       skipped++;
       continue;
     }
-
-    const firstName = String(row.name || "Merhaba").split(" ")[0];
-    const { subject, html } = streakRiskEmail(firstName, row.streak, appUrl);
+    const { subject, html } = mail;
     const result = await sendEmail(row.email, subject, html);
     if (result.ok) {
       sent++;
@@ -246,9 +186,9 @@ async function runStreakRisk(appUrl: string) {
       if (pushInserted) {
         try {
           await sendPushToUser(row.id, {
-            title: `🔥 ${row.streak} günlük serin tehlikede!`,
-            body: `${firstName}, sadece 2 dakika ayır — serini korumaya devam et.`,
-            url: "/dashboard",
+            title: mail.pushTitle,
+            body: mail.pushBody,
+            url: mail.ctaPath,
             tag: "streak_risk",
           });
         } catch (e: any) {
@@ -267,96 +207,84 @@ async function runStreakRisk(appUrl: string) {
 
 // ─── COMEBACK — sabah 09:00 çağrısı ────────────────────────────────────────
 
-async function runComeback(appUrl: string) {
-  const today = todayIso();
-  const twoDaysAgo = new Date(Date.now() - 2 * 86400000).toISOString().slice(0, 10);
-  const fourteenDaysAgo = new Date(Date.now() - 14 * 86400000).toISOString().slice(0, 10);
+/**
+ * Geri dönüş dizisi (3/7/14/30/60) — bkz. lib/reminder-sequence.ts
+ * Önce geri dönüş ölçümünü günceller, sonra adayları işler.
+ */
+export async function runComeback(appUrl: string) {
+  await markReturns();
 
-  const rows = await pool.query(
-    `SELECT u.id, u.first_name AS name, u.email, u.last_active_date,
-            COALESCE(p.inactivity_email, TRUE) AS opt_in,
-            COALESCE(p.inactivity_push, FALSE) AS push_opt_in
-     FROM users u
-     LEFT JOIN notification_preferences p ON p.user_id = u.id
-     WHERE u.email IS NOT NULL AND u.email <> ''
-       AND u.last_active_date IS NOT NULL
-       AND u.last_active_date >= $1
-       AND u.last_active_date <= $2
-       AND u.role = 'student'
-       AND (u.streak IS NULL OR u.streak = 0)
-     LIMIT 5000`,
-    [fourteenDaysAgo, twoDaysAgo],
-  );
-
+  const candidates = await loadCandidates(3);
   let sent = 0;
   let skipped = 0;
   let failed = 0;
+  const byTouch: Record<string, number> = {};
 
-  for (const row of rows.rows) {
-    if (row.opt_in === false) {
-      skipped++;
-      continue;
-    }
-    const daysAway = daysBetween(row.last_active_date, today);
-    if (daysAway < 2) {
-      skipped++;
-      continue;
-    }
-    // Aynı hafta içinde 1'den fazla comeback göndermeyelim — son 6 gün kontrolü
-    const recent = await pool.query(
-      `SELECT 1 FROM notification_log
-       WHERE user_id = $1 AND type = 'comeback' AND channel = 'email'
-         AND sent_date >= CURRENT_DATE - INTERVAL '6 days'
-       LIMIT 1`,
-      [row.id],
-    );
-    if (recent.rowCount && recent.rowCount > 0) {
-      skipped++;
-      continue;
-    }
-    const inserted = await logNotification(row.id, "comeback", "email", "sent");
-    if (!inserted) {
-      skipped++;
-      continue;
-    }
+  for (const u of candidates) {
+    const touch = pickTouch(u.inactiveDays);
+    if (!touch) { skipped++; continue; }
+    if (await alreadySentThisPeriod(u.id, touch.key)) { skipped++; continue; }
+    if (await sentRecently(u.id, 2)) { skipped++; continue; }
 
-    const firstName = String(row.name || "Merhaba").split(" ")[0];
-    const { subject, html } = comebackEmail(firstName, daysAway, appUrl);
-    const result = await sendEmail(row.email, subject, html);
+    const variant = pickVariant(u.id);
+    const inserted = await logNotification(u.id, touch.key, "email", "sent", undefined, { variant, touchDay: touch.day });
+    if (!inserted) { skipped++; continue; }
+
+    const mail = renderComeback(touch, u, variant, appUrl);
+    const result = await sendEmail(u.email, mail.subject, mail.html);
     if (result.ok) {
       sent++;
+      byTouch[touch.key] = (byTouch[touch.key] ?? 0) + 1;
     } else {
       failed++;
       await pool.query(
         `UPDATE notification_log SET status = 'failed', error = $1
-         WHERE user_id = $2 AND type = 'comeback' AND channel = 'email' AND sent_date = CURRENT_DATE`,
-        [result.error ?? "unknown", row.id],
+         WHERE user_id = $2 AND type = $3 AND channel = 'email' AND sent_date = CURRENT_DATE`,
+        [result.error ?? "unknown", u.id, touch.key],
       );
     }
 
-    // Push kanalı
-    if (row.push_opt_in) {
-      const pushInserted = await logNotification(row.id, "comeback", "push", "sent");
+    // Push — opt-in ise (tercih tablosundan)
+    const pref = await pool.query(`SELECT inactivity_push FROM notification_preferences WHERE user_id = $1`, [u.id]);
+    if (pref.rows[0]?.inactivity_push) {
+      const pushInserted = await logNotification(u.id, touch.key, "push", "sent", undefined, { variant, touchDay: touch.day });
       if (pushInserted) {
         try {
-          await sendPushToUser(row.id, {
-            title: `👋 ${firstName}, seni özledik`,
-            body: `${daysAway} gündür yoksun — bugün için 2 dakikalık bir görev hazırladık.`,
-            url: "/dashboard",
-            tag: "comeback",
-          });
+          await sendPushToUser(u.id, { title: mail.pushTitle, body: mail.pushBody, url: mail.ctaPath, tag: touch.key });
         } catch (e: any) {
           await pool.query(
             `UPDATE notification_log SET status = 'failed', error = $1
-             WHERE user_id = $2 AND type = 'comeback' AND channel = 'push' AND sent_date = CURRENT_DATE`,
-            [e?.message ?? "unknown", row.id],
+             WHERE user_id = $2 AND type = $3 AND channel = 'push' AND sent_date = CURRENT_DATE`,
+            [e?.message ?? "unknown", u.id, touch.key],
           );
         }
       }
     }
   }
 
-  return { candidates: rows.rowCount, sent, skipped, failed };
+  return { candidates: candidates.length, sent, skipped, failed, byTouch };
+}
+
+/**
+ * Geri dönüş ölçümü: gönderimden sonraki 7 gün içinde kullanıcı aktif olduysa
+ * returned_at / returned_days işaretlenir. Hem comeback hem streak_risk için.
+ * Idempotent — her cron koşusunda çağrılır.
+ */
+export async function markReturns(): Promise<number> {
+  const r = await pool.query(
+    `UPDATE notification_log nl
+        SET returned_at = NOW(),
+            returned_days = (u.last_active_date::date - nl.sent_date)
+       FROM users u
+      WHERE u.id = nl.user_id
+        AND nl.returned_at IS NULL
+        AND nl.status = 'sent'
+        AND nl.channel = 'email'
+        AND u.last_active_date IS NOT NULL
+        AND u.last_active_date::date > nl.sent_date
+        AND u.last_active_date::date <= nl.sent_date + 7`,
+  );
+  return r.rowCount ?? 0;
 }
 
 // ─── POST /internal/notifications/run-daily-reminders ─────────────────────
@@ -410,8 +338,6 @@ router.get("/internal/notifications/preview", async (req: Request, res: Response
 
   const today = todayIso();
   const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
-  const twoDaysAgo = new Date(Date.now() - 2 * 86400000).toISOString().slice(0, 10);
-  const fourteenDaysAgo = new Date(Date.now() - 14 * 86400000).toISOString().slice(0, 10);
 
   try {
     const risk = await pool.query(
@@ -428,9 +354,8 @@ router.get("/internal/notifications/preview", async (req: Request, res: Response
        LEFT JOIN notification_preferences p ON p.user_id = u.id
        WHERE u.email IS NOT NULL AND u.email <> ''
          AND u.role = 'student'
-         AND u.last_active_date >= $1 AND u.last_active_date <= $2
+         AND (CURRENT_DATE - u.last_active_date::date) BETWEEN 3 AND 75
          AND COALESCE(p.inactivity_email, TRUE) = TRUE`,
-      [fourteenDaysAgo, twoDaysAgo],
     );
     const lastRun = await pool.query(
       `SELECT type, channel, sent_date, COUNT(*)::int AS n, SUM(CASE WHEN status='sent' THEN 1 ELSE 0 END)::int AS sent
@@ -452,6 +377,97 @@ router.get("/internal/notifications/preview", async (req: Request, res: Response
   } catch (e: any) {
     return res.status(500).json({ error: e?.message });
   }
+});
+
+// ─── ADMIN — hatırlatma etkisi ──────────────────────────────────────────────
+
+/**
+ * GET /admin/notifications/reminder-stats?days=90
+ * Dokunuş + varyant bazında gönderim / 7 gün içinde geri dönüş.
+ * Not: "geri döndü" = mailden sonraki 7 gün içinde last_active_date ilerledi;
+ * maile tıklamadan da dönmüş olabilir — nedensellik değil, korelasyon.
+ */
+router.get("/admin/notifications/reminder-stats", authMiddleware, requireRole("admin"), async (req: AuthRequest, res: Response) => {
+  const days = Math.min(Math.max(parseInt(String(req.query.days ?? "90"), 10) || 90, 7), 365);
+  try {
+    await markReturns();
+    const [byTouch, byVariant, series, recent] = await Promise.all([
+      pool.query(
+        `SELECT type, touch_day AS "touchDay",
+                COUNT(*) FILTER (WHERE status = 'sent')::int AS sent,
+                COUNT(*) FILTER (WHERE status = 'failed')::int AS failed,
+                COUNT(*) FILTER (WHERE returned_at IS NOT NULL)::int AS returned,
+                ROUND(AVG(returned_days) FILTER (WHERE returned_days IS NOT NULL), 1)::float AS "avgReturnDays"
+           FROM notification_log
+          WHERE channel = 'email' AND sent_date >= CURRENT_DATE - ($1::int)
+            AND sent_date < CURRENT_DATE - 7   -- 7 günlük pencere dolmuş olanlar (adil karşılaştırma)
+          GROUP BY type, touch_day ORDER BY touch_day NULLS FIRST, type`,
+        [days],
+      ),
+      pool.query(
+        `SELECT type, COALESCE(variant, '-') AS variant,
+                COUNT(*) FILTER (WHERE status = 'sent')::int AS sent,
+                COUNT(*) FILTER (WHERE returned_at IS NOT NULL)::int AS returned
+           FROM notification_log
+          WHERE channel = 'email' AND sent_date >= CURRENT_DATE - ($1::int)
+            AND sent_date < CURRENT_DATE - 7
+          GROUP BY type, variant ORDER BY type, variant`,
+        [days],
+      ),
+      pool.query(
+        `SELECT date_trunc('week', sent_date)::date AS week,
+                COUNT(*) FILTER (WHERE status = 'sent')::int AS sent,
+                COUNT(*) FILTER (WHERE returned_at IS NOT NULL)::int AS returned
+           FROM notification_log
+          WHERE channel = 'email' AND sent_date >= CURRENT_DATE - ($1::int)
+          GROUP BY 1 ORDER BY 1`,
+        [days],
+      ),
+      pool.query(
+        `SELECT nl.sent_date AS "sentDate", nl.type, nl.variant, nl.status, nl.returned_days AS "returnedDays",
+                u.first_name AS "firstName", u.email
+           FROM notification_log nl LEFT JOIN users u ON u.id = nl.user_id
+          WHERE nl.channel = 'email'
+          ORDER BY nl.created_at DESC LIMIT 40`,
+      ),
+    ]);
+    const pending = await pool.query(
+      `SELECT COUNT(*)::int AS n FROM notification_log WHERE channel = 'email' AND status = 'sent' AND sent_date >= CURRENT_DATE - 7`,
+    );
+    return res.json({
+      days,
+      touches: COMEBACK_TOUCHES,
+      byTouch: byTouch.rows,
+      byVariant: byVariant.rows,
+      weekly: series.rows,
+      recent: recent.rows,
+      pendingWindow: pending.rows[0]?.n ?? 0,
+    });
+  } catch (e: any) {
+    return res.status(500).json({ error: e?.message });
+  }
+});
+
+/** GET /admin/notifications/reminder-preview?touch=comeback_7&variant=A → HTML (örnek kullanıcıyla) */
+router.get("/admin/notifications/reminder-preview", authMiddleware, requireRole("admin"), async (req: AuthRequest, res: Response) => {
+  const appUrl = process.env.APP_URL ?? "https://app.sphereenglish.com";
+  const key = String(req.query.touch ?? "comeback_3");
+  const variant = (String(req.query.variant ?? "A").toUpperCase() === "B" ? "B" : "A") as "A" | "B";
+  const sample: ReminderUser = {
+    id: variant === "A" ? 2 : 1, firstName: "Ayşe", email: "ornek@sphereenglish.com", inactiveDays: 0,
+    level: "B1", learningGoal: "customer", sector: "manufacturing", dueVocab: 23, topModule: "pronunciation_coach", totalMinutes30: 95,
+  };
+  if (key === "streak_risk") {
+    const m = renderStreakRisk("Ayşe", 6, appUrl, variant === "A" ? 0 : 1);
+    res.type("html").send(`<!-- subject: ${m.subject} -->\n${m.html}`);
+    return;
+  }
+  const touch = COMEBACK_TOUCHES.find((t) => t.key === key);
+  if (!touch) return res.status(404).json({ error: "touch bulunamadı" });
+  sample.inactiveDays = touch.day;
+  const m = renderComeback(touch, sample, variant, appUrl);
+  res.setHeader("X-Subject", encodeURIComponent(m.subject));
+  res.type("html").send(`<!-- subject: ${m.subject} -->\n${m.html}`);
 });
 
 export default router;

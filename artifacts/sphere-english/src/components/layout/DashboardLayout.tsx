@@ -6,7 +6,7 @@ import {
   BookOpen, LayoutDashboard, Video, FileQuestion, LineChart,
   Award, MessageSquare, Users, Megaphone, LogOut, Menu, Building2, BarChart3, GraduationCap, Mic, MessageCircle, FolderOpen, PenLine, TrendingUp, Settings2, Gamepad2, Crown, Lock,
   Sparkles, ChevronDown, Brain, Briefcase, Presentation, Wand2, Compass, Bot, Activity, UserPlus, ShoppingBag, Phone, UserCircle, Ticket, HardDrive, Package, Receipt, Mail, ChevronLeft, ChevronRight, Calendar, Newspaper, BookMarked, Gift, MapPin, Award as AwardIcon, Send,
-  LifeBuoy,
+  LifeBuoy, BellRing,
 } from "lucide-react";
 import { Avatar } from "../ui/core";
 import { NotificationBell } from "../NotificationBell";
@@ -177,6 +177,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       { name: 'Sistem Sağlığı',      href: '/admin/monitoring',               icon: Activity },
       { name: 'Sistem Raporları',    href: '/admin/reports',                  icon: LineChart },
       { name: 'Aktivite Analizi',    href: '/admin/analytics',                icon: Activity },
+      { name: 'Hatırlatma Etkisi',   href: '/admin/reminders',                icon: BellRing },
       { name: 'Web Analiz',          href: '/admin/web-analytics',            icon: Activity },
       { name: 'MEB Aktivite Raporu', href: '/admin/meb-report',               icon: BarChart3 },
 
