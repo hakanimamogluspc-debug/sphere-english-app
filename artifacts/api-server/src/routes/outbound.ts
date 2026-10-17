@@ -595,7 +595,7 @@ router.get("/admin/outbound/scheduler-status", authMiddleware, requireRole("admi
   async (_req: AuthRequest, res: Response) => {
     try {
       const { getSchedulerStatus } = await import("../services/outbound-scheduler.js");
-      return res.json({ ok: true, status: getSchedulerStatus() });
+      return res.json({ ok: true, status: await getSchedulerStatus() });
     } catch (e: any) { return res.status(500).json({ error: e?.message }); }
   });
 
@@ -603,9 +603,9 @@ router.get("/admin/outbound/scheduler-status", authMiddleware, requireRole("admi
 router.post("/admin/outbound/scheduler-tick", authMiddleware, requireRole("admin"),
   async (_req: AuthRequest, res: Response) => {
     try {
-      const { forceTick } = await import("../services/outbound-scheduler.js");
-      await forceTick();
-      return res.json({ ok: true, message: "Tick tamamlandı — email_events tablosunda sonuç var mı bak" });
+      const { forceTick, getSchedulerStatus } = await import("../services/outbound-scheduler.js");
+      const result = await forceTick();
+      return res.json({ ok: true, result, status: await getSchedulerStatus() });
     } catch (e: any) { return res.status(500).json({ error: e?.message }); }
   });
 

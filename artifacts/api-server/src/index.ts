@@ -128,6 +128,10 @@ if (cluster.isPrimary) {
         startFailedPaymentRetryCron();
         // Learning cron'ları (content ingest + weekly report) — primary'de tek instance
         void import("./lib/scheduler.js").then(m => m.startScheduler()).catch(e => logger.warn({ err: e?.message }, "scheduler import fail"));
+        // B2B outbound sequence scheduler — primary'de tek instance (worker çökse de yaşar)
+        void import("./services/outbound-scheduler.js")
+          .then(({ startOutboundScheduler }) => startOutboundScheduler())
+          .catch(err => logger.error({ err }, "outbound-scheduler başlatılamadı"));
       } else {
         logger.warn({ appEnv: appEnv() }, "Arka plan cron'ları KAPALI (staging / DISABLE_BACKGROUND_JOBS)");
       }
@@ -156,13 +160,7 @@ if (cluster.isPrimary) {
     }
     logger.info({ port, pid: process.pid, worker: cluster.worker?.id }, "Worker hazır");
     startMetricsFlusher();
-    // B2B Outbound sequence scheduler — primary worker (id=1) veya cluster'sız çalışan tek süreç
-    if ((!cluster.worker || cluster.worker.id === 1) && backgroundJobsEnabled()) {
-      logger.info("outbound-scheduler başlatılıyor…");
-      import("./services/outbound-scheduler.js")
-        .then(({ startOutboundScheduler }) => startOutboundScheduler())
-        .catch(err => logger.error({ err }, "outbound-scheduler başlatılamadı"));
-    }
+    // Outbound scheduler artık primary süreçte başlıyor (yukarıda, backgroundJobsEnabled bloğu).
   });
 
   // ─── Graceful shutdown — deploy sırasında aktif istekleri kesmeden kapat ───

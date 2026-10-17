@@ -15,7 +15,7 @@
  */
 
 import {
-  db,
+  db, pool,
   outboundCampaignsTable, outboundSequenceStepsTable,
   outboundCampaignLeadsTable, outboundEmailEventsTable,
   outboundTemplatesTable, outreachLeadsTable,
@@ -23,31 +23,85 @@ import {
 import { and, eq, lte, sql, inArray, count } from "drizzle-orm";
 import { sendOutboundEmail, renderTemplate } from "./email-provider.js";
 
+/**
+ * NOT (cluster): Scheduler PRIMARY süreçte çalışır (index.ts, diğer cron'larla birlikte).
+ * Eskiden worker id=1'de başlıyordu; worker 1 çöküp yeniden açılınca yeni id 1 olmadığı için
+ * scheduler sessizce ölüyordu. Durum bilgisi süreç belleğinde değil DB'de tutulur
+ * (outbound_scheduler_state) — admin isteği hangi worker'a düşerse düşsün doğru görünür.
+ * Aynı anda iki tick (otomatik + admin "şimdi dene") çift mail atmasın diye
+ * pg advisory lock kullanılır.
+ */
+
 const TICK_INTERVAL_MS = 5 * 60 * 1000; // 5 dakika
+const LOCK_KEY = 728_101; // outbound-scheduler için sabit advisory lock anahtarı
 let timer: NodeJS.Timeout | null = null;
-let running = false;
-let lastTickAt: Date | null = null;
-let lastTickError: string | null = null;
-let tickCount = 0;
 let lastDebug: any = null;
 
-export function getSchedulerStatus() {
+async function ensureStateTable() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS outbound_scheduler_state (
+      id INT PRIMARY KEY DEFAULT 1,
+      started_at TIMESTAMPTZ,
+      started_pid INT,
+      last_tick_at TIMESTAMPTZ,
+      last_tick_error TEXT,
+      last_tick_forced BOOLEAN DEFAULT false,
+      tick_count INT NOT NULL DEFAULT 0,
+      last_debug JSONB,
+      CONSTRAINT outbound_scheduler_state_single CHECK (id = 1)
+    )`);
+  await pool.query(`INSERT INTO outbound_scheduler_state (id) VALUES (1) ON CONFLICT (id) DO NOTHING`);
+}
+
+async function recordStart() {
+  await ensureStateTable();
+  await pool.query(
+    `UPDATE outbound_scheduler_state SET started_at = NOW(), started_pid = $1 WHERE id = 1`,
+    [process.pid],
+  );
+}
+
+async function recordTick(error: string | null, forced: boolean) {
+  try {
+    await pool.query(
+      `UPDATE outbound_scheduler_state
+         SET last_tick_at = NOW(), last_tick_error = $1, last_tick_forced = $2,
+             tick_count = tick_count + 1, last_debug = $3::jsonb
+       WHERE id = 1`,
+      [error, forced, lastDebug ? JSON.stringify(lastDebug) : null],
+    );
+  } catch (e: any) {
+    console.error("[outbound-scheduler] durum kaydedilemedi:", e?.message);
+  }
+}
+
+export async function getSchedulerStatus() {
+  await ensureStateTable();
+  const { rows } = await pool.query(`SELECT * FROM outbound_scheduler_state WHERE id = 1`);
+  const s = rows[0] ?? {};
+  const lastTickAt: Date | null = s.last_tick_at ?? null;
+  // Otomatik tick 5 dk'da bir; 12 dk içinde tick yoksa scheduler ölü sayılır.
+  const alive = Boolean(lastTickAt && Date.now() - new Date(lastTickAt).getTime() < 12 * 60 * 1000);
   return {
-    started: timer !== null,
-    running,
+    started: Boolean(s.started_at) && alive,
+    alive,
+    startedAt: s.started_at ?? null,
+    startedPid: s.started_pid ?? null,
     lastTickAt,
-    lastTickError,
-    tickCount,
+    lastTickError: s.last_tick_error ?? null,
+    lastTickForced: s.last_tick_forced ?? false,
+    tickCount: s.tick_count ?? 0,
     envEnabled: process.env.OUTBOUND_SCHEDULER_ENABLED === "true",
     skipBusinessHours: process.env.OUTBOUND_SKIP_BUSINESS_HOURS === "true",
+    allowWeekend: process.env.OUTBOUND_ALLOW_WEEKEND === "true",
     inBusinessHours: isInBusinessHours(),
-    lastDebug,
+    lastDebug: s.last_debug ?? null,
   };
 }
 
-/** Manuel tick — admin panel'den tetiklenir, business hours atlar */
-export async function forceTick() {
-  await tick(true);
+/** Manuel tick — admin panel'den tetiklenir, business hours atlar. Hata/uyarı kodunu döner. */
+export async function forceTick(): Promise<string | null> {
+  return tick(true);
 }
 
 export function startOutboundScheduler() {
@@ -56,44 +110,62 @@ export function startOutboundScheduler() {
     return;
   }
   if (timer) return;
-  console.log("[outbound-scheduler] Başlatıldı, her 5 dakikada bir çalışacak");
+  console.log(`[outbound-scheduler] Başlatıldı (pid ${process.pid}), her 5 dakikada bir çalışacak`);
+  recordStart().catch((e) => console.error("[outbound-scheduler] start kaydı:", e?.message));
+  const run = () => tick().catch((e) => console.error("[outbound-scheduler] tick error:", e?.message));
   // İlk çalışma: 30 saniye sonra (app boot bekle)
-  setTimeout(() => tick().catch(e => console.error("[outbound-scheduler] tick error:", e?.message)), 30_000);
-  timer = setInterval(() => {
-    tick().catch(e => console.error("[outbound-scheduler] tick error:", e?.message));
-  }, TICK_INTERVAL_MS);
+  setTimeout(run, 30_000);
+  timer = setInterval(run, TICK_INTERVAL_MS);
 }
 
 export function stopOutboundScheduler() {
   if (timer) { clearInterval(timer); timer = null; }
 }
 
-async function tick(force = false) {
-  if (running) return;
-  running = true;
-  lastTickAt = new Date();
-  tickCount++;
+async function tick(force = false): Promise<string | null> {
+  // Süreçler arası kilit: aynı anda tek tick (çift gönderimi önler)
+  const client = await pool.connect();
+  let locked = false;
+  let error: string | null = null;
+  lastDebug = null;
   try {
+    const { rows } = await client.query(`SELECT pg_try_advisory_lock($1) AS ok`, [LOCK_KEY]);
+    locked = Boolean(rows[0]?.ok);
+    if (!locked) {
+      error = "another_tick_running";
+      return error;
+    }
+
     // Business hours kontrolü — TR zaman diliminde çalıştır
     if (!force && !isInBusinessHours()) {
-      lastTickError = "outside_business_hours";
-      return;
+      error = "outside_business_hours";
+      return error;
     }
-    lastTickError = null;
 
     // Aktif kampanyaları çek
     const activeCampaigns = await db.select().from(outboundCampaignsTable)
       .where(eq(outboundCampaignsTable.status, "active"));
+    if (activeCampaigns.length === 0) error = "no_active_campaigns";
 
     for (const campaign of activeCampaigns) {
       try {
         await processCampaign(campaign);
       } catch (e: any) {
         console.error(`[outbound-scheduler] campaign ${campaign.id} error:`, e?.message);
+        error = `campaign_${campaign.id}: ${e?.message ?? "error"}`;
       }
     }
+    return error;
+  } catch (e: any) {
+    error = e?.message ?? "tick_failed";
+    throw e;
   } finally {
-    running = false;
+    if (locked) {
+      await client.query(`SELECT pg_advisory_unlock($1)`, [LOCK_KEY]).catch(() => {});
+    }
+    client.release();
+    // Kilit alınamadıysa durum satırını ezme (diğer tick yazacak)
+    if (error !== "another_tick_running") await recordTick(error, force);
   }
 }
 
