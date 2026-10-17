@@ -79,6 +79,13 @@ const nid = () => `t${Date.now()}_${uid++}`;
  * iPhone sessiz modda Web Audio susar; navigator.audioSession.type = "playback" bunu aşar (iOS 17+).
  * AudioContext yoksa klasik <audio> ile denenir.
  */
+function setAudioSession(type: "playback" | "play-and-record" | "auto") {
+  try {
+    const nav = navigator as any;
+    if (nav.audioSession && nav.audioSession.type !== type) nav.audioSession.type = type;
+  } catch { /* desteklenmiyor (iOS 17 öncesi / Android / masaüstü) */ }
+}
+
 function useSpeaker() {
   const ctxRef = useRef<AudioContext | null>(null);
   const srcRef = useRef<AudioBufferSourceNode | null>(null);
@@ -86,11 +93,13 @@ function useSpeaker() {
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [blocked, setBlocked] = useState(false);
 
-  const unlock = useCallback(() => {
-    try {
-      const nav = navigator as any;
-      if (nav.audioSession) nav.audioSession.type = "playback";
-    } catch { /* desteklenmiyor */ }
+  /**
+   * mode="playback": Merve konuşacak (iPhone sessiz modda da çalsın).
+   * mode="record": mikrofon açılacak — iOS "playback" oturumunda mikrofona İZİN VERMEZ,
+   * bu yüzden kayıttan önce "play-and-record"a geçilmeli.
+   */
+  const unlock = useCallback((mode: "playback" | "record" = "playback") => {
+    setAudioSession(mode === "record" ? "play-and-record" : "playback");
     try {
       const AC = (window as any).AudioContext || (window as any).webkitAudioContext;
       if (!AC) return;
@@ -297,19 +306,35 @@ export default function MerveLessons({ compact = false, simulationHref = "/stude
   const startRecording = async () => {
     if (busy || !session) return;
     speaker.stop();
-    if (voiceOn) speaker.unlock();
+    speaker.unlock("record"); // iOS: mikrofon için ses oturumu "play-and-record" olmalı
     setError(null);
     try {
       await mic.start();
-    } catch {
-      setError(mic.error?.message || "Mikrofon açılamadı. Yazarak da cevap verebilirsin.");
+    } catch (e: any) {
+      // Bazı iOS sürümleri oturum türünü sevmiyor → varsayılana dönüp bir kez daha dene
+      setAudioSession("auto");
+      try {
+        await mic.start();
+        return;
+      } catch (e2: any) {
+        const name = e2?.name || e?.name || "";
+        setError(
+          name === "NotAllowedError" || name === "SecurityError"
+            ? "Mikrofon izni verilmedi. Tarayıcı ayarlarından bu siteye mikrofon izni verip tekrar dene; yazarak da cevap verebilirsin."
+            : name === "NotFoundError"
+              ? "Mikrofon bulunamadı. Yazarak cevap verebilirsin."
+              : name === "NotReadableError"
+                ? "Mikrofon başka bir uygulama tarafından kullanılıyor (arama, kayıt vb.). Onu kapatıp tekrar dene."
+                : `Mikrofon başlatılamadı${name ? ` (${name})` : ""}. Sayfayı yenileyip tekrar dene; yazarak da cevap verebilirsin.`,
+        );
+      }
     }
   };
 
   async function stopAndSend() {
     if (!session) return;
-    if (voiceOn) speaker.unlock();
     const blob = await mic.stop();
+    if (voiceOn) speaker.unlock("playback"); // kayıt bitti → Merve'nin cevabı için çalma moduna dön
     if (!blob || blob.size < 2500) {
       setError("Kayıt çok kısa geldi. Düğmeye dokun, cümleni söyle, sonra tekrar dokun.");
       return;
