@@ -69,29 +69,86 @@ const nid = () => `t${Date.now()}_${uid++}`;
 
 // ─── Ses çalma ────────────────────────────────────────────────────────────────
 
+/**
+ * Ses çalma — tarayıcıların otomatik oynatma kuralına takılmamak için Web Audio kullanır.
+ *
+ * Sorun: Merve'nin sesi butona basıldıktan SANİYELER sonra (sunucudan) gelir; iPhone Safari ve
+ * bazı Android tarayıcılar "kullanıcı dokunuşu dışında" başlatılan sesi sessizce engeller.
+ * Çözüm: her dokunuşta unlock() çağrılır → AudioContext dokunuşun içinde açılır/sürdürülür;
+ * sonradan gelen ses aynı (artık kilidi açık) context'te çalınır.
+ * iPhone sessiz modda Web Audio susar; navigator.audioSession.type = "playback" bunu aşar (iOS 17+).
+ * AudioContext yoksa klasik <audio> ile denenir.
+ */
 function useSpeaker() {
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const ctxRef = useRef<AudioContext | null>(null);
+  const srcRef = useRef<AudioBufferSourceNode | null>(null);
+  const htmlRef = useRef<HTMLAudioElement | null>(null);
   const [playingId, setPlayingId] = useState<string | null>(null);
+  const [blocked, setBlocked] = useState(false);
+
+  const unlock = useCallback(() => {
+    try {
+      const nav = navigator as any;
+      if (nav.audioSession) nav.audioSession.type = "playback";
+    } catch { /* desteklenmiyor */ }
+    try {
+      const AC = (window as any).AudioContext || (window as any).webkitAudioContext;
+      if (!AC) return;
+      if (!ctxRef.current || ctxRef.current.state === "closed") ctxRef.current = new AC();
+      const ctx = ctxRef.current!;
+      if (ctx.state === "suspended") void ctx.resume();
+      // iOS: dokunuş içinde boş bir tampon çalmak context'in kilidini kalıcı açar
+      const b = ctx.createBuffer(1, 1, 22050);
+      const s = ctx.createBufferSource();
+      s.buffer = b;
+      s.connect(ctx.destination);
+      s.start(0);
+    } catch { /* yoksay */ }
+  }, []);
 
   const stop = useCallback(() => {
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current = null;
-    }
+    try { srcRef.current?.stop(); } catch { /* zaten durdu */ }
+    srcRef.current = null;
+    if (htmlRef.current) { htmlRef.current.pause(); htmlRef.current = null; }
     setPlayingId(null);
   }, []);
 
-  const play = useCallback((id: string, base64: string) => {
-    stop();
+  const playHtml = useCallback((id: string, base64: string) => {
     const a = new Audio(`data:audio/mpeg;base64,${base64}`);
-    audioRef.current = a;
+    htmlRef.current = a;
     setPlayingId(id);
     a.onended = () => setPlayingId((p) => (p === id ? null : p));
-    a.play().catch(() => setPlayingId(null)); // otomatik oynatma engellenirse ▶ butonu kalır
-  }, [stop]);
+    a.play().then(() => setBlocked(false)).catch(() => { setPlayingId(null); setBlocked(true); });
+  }, []);
 
-  useEffect(() => stop, [stop]);
-  return { play, stop, playingId };
+  const play = useCallback(async (id: string, base64: string) => {
+    stop();
+    const ctx = ctxRef.current;
+    if (!ctx) return playHtml(id, base64);
+    try {
+      if (ctx.state === "suspended") await ctx.resume();
+      const bin = atob(base64);
+      const bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      const buffer = await ctx.decodeAudioData(bytes.buffer);
+      const src = ctx.createBufferSource();
+      src.buffer = buffer;
+      src.connect(ctx.destination);
+      src.onended = () => setPlayingId((p) => (p === id ? null : p));
+      srcRef.current = src;
+      setPlayingId(id);
+      src.start(0);
+      setBlocked(ctx.state !== "running");
+    } catch {
+      playHtml(id, base64);
+    }
+  }, [stop, playHtml]);
+
+  useEffect(() => () => {
+    stop();
+    ctxRef.current?.close().catch(() => {});
+  }, [stop]);
+  return { play, stop, unlock, playingId, blocked };
 }
 
 // ─── Ana bileşen ──────────────────────────────────────────────────────────────
@@ -143,6 +200,7 @@ export default function MerveLessons({ compact = false, simulationHref = "/stude
 
   // ── Başlat / devam ──
   const start = async (slug: string | "personal") => {
+    if (voiceOn) speaker.unlock(); // dokunuşun içinde — sesin sonradan çalabilmesi için
     setBusy("starting");
     setError(null);
     setSummary(null);
@@ -158,6 +216,7 @@ export default function MerveLessons({ compact = false, simulationHref = "/stude
       });
       setSession(d.session);
       if (d.voiceQuotaReached) setQuotaNote("Bugünlük sesli hakkın doldu; Merve yazıyla devam edecek.");
+      else if (d.voiceFailed) setQuotaNote("Merve'nin sesi şu an oluşturulamadı; ders yazıyla devam ediyor.");
       addMerve(d.reply);
     } catch (e: any) {
       setError(e.message);
@@ -167,6 +226,7 @@ export default function MerveLessons({ compact = false, simulationHref = "/stude
   };
 
   const resume = async (id: number) => {
+    if (voiceOn) speaker.unlock();
     setBusy("starting");
     setError(null);
     try {
@@ -203,6 +263,7 @@ export default function MerveLessons({ compact = false, simulationHref = "/stude
     setSession(d.session);
     setShowHint(false);
     if (d.voiceQuotaReached) setQuotaNote("Bugünlük sesli hakkın doldu; yazarak devam edebilirsin.");
+    else if (d.voiceFailed) setQuotaNote("Merve'nin sesi şu an oluşturulamadı; ders yazıyla devam ediyor.");
     addMerve(d.reply);
     if (d.completed && d.summary) setSummary(d.summary);
   };
@@ -211,6 +272,7 @@ export default function MerveLessons({ compact = false, simulationHref = "/stude
     const msg = text.trim();
     if (!msg || !session || busy) return;
     speaker.stop();
+    if (voiceOn) speaker.unlock();
     const pendingId = nid();
     setTurns((prev) => [...prev, { id: pendingId, role: "user", text: msg, inputMode: "text" }]);
     setText("");
@@ -235,6 +297,7 @@ export default function MerveLessons({ compact = false, simulationHref = "/stude
   const startRecording = async () => {
     if (busy || !session) return;
     speaker.stop();
+    if (voiceOn) speaker.unlock();
     setError(null);
     try {
       await mic.start();
@@ -245,6 +308,7 @@ export default function MerveLessons({ compact = false, simulationHref = "/stude
 
   async function stopAndSend() {
     if (!session) return;
+    if (voiceOn) speaker.unlock();
     const blob = await mic.stop();
     if (!blob || blob.size < 2500) {
       setError("Kayıt çok kısa geldi. Düğmeye dokun, cümleni söyle, sonra tekrar dokun.");
@@ -304,7 +368,7 @@ export default function MerveLessons({ compact = false, simulationHref = "/stude
             </p>
           </div>
           <button
-            onClick={() => { setVoiceOn((v) => !v); speaker.stop(); }}
+            onClick={() => { if (!voiceOn) speaker.unlock(); setVoiceOn((v) => !v); speaker.stop(); }}
             className="p-2 rounded-lg hover:bg-slate-100"
             style={{ color: voiceOn ? TURQ_DEEP : "#94a3b8" }}
             title={voiceOn ? "Merve sesli konuşuyor" : "Merve'nin sesi kapalı"}
@@ -318,10 +382,24 @@ export default function MerveLessons({ compact = false, simulationHref = "/stude
         </div>
       </div>
 
+      {speaker.blocked && voiceOn && (
+        <button
+          onClick={() => {
+            speaker.unlock();
+            const last = [...turns].reverse().find((t) => t.role === "merve" && t.audioBase64);
+            if (last?.audioBase64) void speaker.play(last.id, last.audioBase64);
+          }}
+          className="mx-4 mt-2 rounded-lg px-3 py-2 text-xs font-semibold flex items-center gap-2 text-left"
+          style={{ background: "#e8eef8", color: NAVY }}
+        >
+          <Volume2 size={14} /> Tarayıcın sesi engelledi. Merve'yi dinlemek için dokun. (iPhone'da sessiz modu da kontrol et.)
+        </button>
+      )}
+
       {/* Konuşma */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-3" style={{ background: "#f8fafc" }}>
         {turns.map((t) => (
-          <TurnBubble key={t.id} turn={t} playing={speaker.playingId === t.id} onPlay={() => t.audioBase64 && speaker.play(t.id, t.audioBase64)} />
+          <TurnBubble key={t.id} turn={t} playing={speaker.playingId === t.id} onPlay={() => { speaker.unlock(); if (t.audioBase64) void speaker.play(t.id, t.audioBase64); }} />
         ))}
         {busy === "sending" && (
           <div className="flex items-center gap-2 text-xs text-slate-500 pl-11">

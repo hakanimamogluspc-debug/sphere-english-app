@@ -124,7 +124,7 @@ export async function speak(text: string): Promise<string | null> {
     const r = await withTimeout(getOpenAI().audio.speech.create(params), 25_000, "TTS");
     return Buffer.from(await r.arrayBuffer()).toString("base64");
   } catch (e: any) {
-    console.warn("[tutor-lesson] TTS başarısız:", e?.message);
+    console.warn("[tutor-lesson] TTS başarısız:", e?.status ?? "", e?.code ?? "", e?.message);
     return null;
   }
 }

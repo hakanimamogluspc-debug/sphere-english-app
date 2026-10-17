@@ -210,6 +210,7 @@ async function startSession(
     session: publicSession(s),
     reply: { text, audioBase64 },
     voiceQuotaReached: wantVoice && !canVoice,
+    voiceFailed: canVoice && aiAvailable() && !audioBase64,
   });
 }
 
@@ -422,6 +423,7 @@ router.post(
         completed,
         summary: completed ? await buildSummary(s.id) : null,
         voiceQuotaReached: wantVoice && !canVoice,
+        voiceFailed: canVoice && !audioBase64,
       });
     } catch (e: any) {
       console.error("[tutor-lessons] turn:", e?.message);
