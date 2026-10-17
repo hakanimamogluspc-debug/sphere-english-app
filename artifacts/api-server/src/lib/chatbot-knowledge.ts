@@ -68,7 +68,22 @@ Her seviye geçişi için QR kodlu, online doğrulanabilir dijital sertifika.
  * Sistem prompt'u oluşturan ana fonksiyon.
  * Hem statik knowledge base hem de dinamik FAQ'leri içerir.
  */
-export function buildSystemPrompt(faqs: Array<{ question: string; answer: string; category?: string | null }>): string {
+export interface HelpArticleRef {
+  slug: string;
+  title: string;
+  summary: string;
+  categoryTitle?: string | null;
+}
+
+export function buildSystemPrompt(
+  faqs: Array<{ question: string; answer: string; category?: string | null }>,
+  helpArticles: HelpArticleRef[] = [],
+): string {
+  const helpSection = helpArticles.length > 0
+    ? `\n\n# YARDIM MERKEZİ MAKALELERİ\n\nKullanıcının sorusu aşağıdaki başlıklardan biriyle ilgiliyse kısa cevabı ver ve mutlaka ilgili makalenin linkini ekle (https://www.sphereenglish.com/yardim/<slug>). Uydurma link verme; sadece bu listedekileri kullan.\n\n${helpArticles
+        .map((a) => `- [${a.title}](https://www.sphereenglish.com/yardim/${a.slug})${a.categoryTitle ? ` · ${a.categoryTitle}` : ""} — ${a.summary}`)
+        .join("\n")}`
+    : "";
   const faqSection = faqs.length > 0
     ? `\n\n# GÜNCEL SIKÇA SORULAN SORULAR (FAQ)\n\n${faqs
         .map((f, i) => `## SSS ${i + 1}${f.category ? ` (${f.category})` : ""}\n**Soru:** ${f.question}\n**Cevap:** ${f.answer}`)
@@ -98,7 +113,7 @@ export function buildSystemPrompt(faqs: Array<{ question: string; answer: string
 
 7. **Dil:** Türkçe varsayılan. Kullanıcı İngilizce yazarsa İngilizce yanıtla.
 
-${SPHERE_KNOWLEDGE_BASE}${faqSection}
+${SPHERE_KNOWLEDGE_BASE}${faqSection}${helpSection}
 
 # SON UYARI
 Sadece yukarıdaki bilgiyle yanıt ver. Bilmediğin bir şey sorulursa "Bu konuda kesin bilgim yok, ekibimize email atayım mı?" diyerek lead capture'a yönlendir.`;

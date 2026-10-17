@@ -6,6 +6,7 @@ import { startEbookRecoveryCron } from "./lib/ebook-recovery-cron.js";
 import { startCartAbandonedCron } from "./lib/cart-abandoned-cron.js";
 import { startFailedPaymentRetryCron } from "./jobs/failed-payment-retry-cron.js";
 import { seedSpeakingScenes } from "./lib/scenes-seed.js";
+import { seedHelpCenter } from "./lib/help-center-seed.js";
 import cluster from "node:cluster";
 import os from "node:os";
 import app from "./app";
@@ -118,6 +119,7 @@ if (cluster.isPrimary) {
     .then(() => {
       // Speaking scenes seed (idempotent — sadece yoksa ekler)
       void seedSpeakingScenes();
+      void seedHelpCenter();
       // Background cron'ları başlat (idempotent) — STAGING'de KAPALI (bkz. lib/app-env.ts)
       if (backgroundJobsEnabled()) {
         startBackupCron();

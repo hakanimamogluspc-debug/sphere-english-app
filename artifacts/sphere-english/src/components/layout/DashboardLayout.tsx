@@ -5,7 +5,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   BookOpen, LayoutDashboard, Video, FileQuestion, LineChart,
   Award, MessageSquare, Users, Megaphone, LogOut, Menu, Building2, BarChart3, GraduationCap, Mic, MessageCircle, FolderOpen, PenLine, TrendingUp, Settings2, Gamepad2, Crown, Lock,
-  Sparkles, ChevronDown, Brain, Briefcase, Presentation, Wand2, Compass, Bot, Activity, UserPlus, ShoppingBag, Phone, UserCircle, Ticket, HardDrive, Package, Receipt, Mail, ChevronLeft, ChevronRight, Calendar, Newspaper, BookMarked, Gift, MapPin, Award as AwardIcon, Send
+  Sparkles, ChevronDown, Brain, Briefcase, Presentation, Wand2, Compass, Bot, Activity, UserPlus, ShoppingBag, Phone, UserCircle, Ticket, HardDrive, Package, Receipt, Mail, ChevronLeft, ChevronRight, Calendar, Newspaper, BookMarked, Gift, MapPin, Award as AwardIcon, Send,
+  LifeBuoy,
 } from "lucide-react";
 import { Avatar } from "../ui/core";
 import { NotificationBell } from "../NotificationBell";
@@ -99,6 +100,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       { name: 'Sertifikalar',        href: '/certificates',                   icon: Award,         moduleKey: 'student-certificates' },
       { name: 'Sıralama',            href: '/leaderboard',                    icon: Users,         moduleKey: 'student-leaderboard' },
       { name: 'Mesajlar',            href: '/messages',                       icon: MessageSquare },
+      { name: 'Yardım Merkezi',      href: '/yardim',                         icon: LifeBuoy },
     ],
     teacher: [
       { name: 'Kontrol Paneli',      href: '/dashboard',                      icon: LayoutDashboard },
@@ -148,6 +150,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       { name: 'Kitaplar',            href: '/admin/ebooks',                   icon: BookOpen },
       { name: 'Paketler',            href: '/admin/bundles',                  icon: Package },
       { name: 'E-Kitap Sayfası',     href: '/admin/ebook-marketing',          icon: Megaphone },
+      { name: 'Yardım Merkezi',      href: '/admin/help-center',              icon: LifeBuoy },
 
       // ─── Satış & Finans ───
       { name: 'Satış & Finans',      href: '',                                icon: ShoppingBag,   isSectionHeader: true },

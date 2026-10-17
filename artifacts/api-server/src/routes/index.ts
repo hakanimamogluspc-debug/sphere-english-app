@@ -57,6 +57,7 @@ import adminEbooksRouter from "./admin-ebooks";
 import adminEbookPurchasesRouter from "./admin-ebook-purchases";
 import ebookPurchaseRouter from "./ebook-purchase";
 import ebookMarketingRouter from "./ebook-marketing";
+import helpCenterRouter from "./help-center";
 import adminEbookMarketingRouter from "./admin-ebook-marketing";
 import adminMonitoringRouter from "./admin-monitoring";
 import cartRouter from "./cart";
@@ -113,6 +114,7 @@ const proGuard = [authMiddleware, requireSubscription];
 const router: IRouter = Router();
 
 router.use(healthRouter);
+router.use(helpCenterRouter); // public /help/* — auth zincirinden önce
 router.use(apiSpecRouter);
 router.use(authRouter);
 router.use(corporateRouter);

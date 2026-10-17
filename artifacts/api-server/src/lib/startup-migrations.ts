@@ -1787,6 +1787,59 @@ export async function runStartupMigrations() {
       ('worklife',         'WorkLife with Adam Grant',   'podcast', 'en', 'https://feeds.simplecast.com/xL3nlBnj', 'https://www.adamgrant.net/podcast/'),
       ('masters-of-scale', 'Masters of Scale',           'podcast', 'en', 'https://feeds.megaphone.fm/mastersofscale', 'https://mastersofscale.com/')
     ON CONFLICT (slug) DO NOTHING`,
+
+    // ─── Yardım Merkezi (help center) ──────────────────────────────
+    `CREATE TABLE IF NOT EXISTS help_categories (
+      id SERIAL PRIMARY KEY,
+      slug VARCHAR(80) NOT NULL UNIQUE,
+      title VARCHAR(120) NOT NULL,
+      description TEXT,
+      icon VARCHAR(40),
+      audience VARCHAR(20) NOT NULL DEFAULT 'all',
+      sort_order INTEGER NOT NULL DEFAULT 100,
+      is_active BOOLEAN NOT NULL DEFAULT true,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`,
+    `CREATE TABLE IF NOT EXISTS help_articles (
+      id SERIAL PRIMARY KEY,
+      category_id INTEGER REFERENCES help_categories(id) ON DELETE SET NULL,
+      slug VARCHAR(120) NOT NULL UNIQUE,
+      title VARCHAR(200) NOT NULL,
+      summary TEXT NOT NULL DEFAULT '',
+      body_md TEXT NOT NULL DEFAULT '',
+      audience VARCHAR(20) NOT NULL DEFAULT 'all',
+      tags TEXT[] NOT NULL DEFAULT '{}',
+      is_published BOOLEAN NOT NULL DEFAULT false,
+      sort_order INTEGER NOT NULL DEFAULT 100,
+      view_count INTEGER NOT NULL DEFAULT 0,
+      helpful_yes INTEGER NOT NULL DEFAULT 0,
+      helpful_no INTEGER NOT NULL DEFAULT 0,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`,
+    `CREATE INDEX IF NOT EXISTS help_articles_cat_idx ON help_articles(category_id, is_published, sort_order)`,
+    // Tam metin arama (basit 'simple' sözlük — Türkçe için kök bulma yok ama ek/önek eşleşir; ILIKE ile birlikte kullanılır)
+    `CREATE INDEX IF NOT EXISTS help_articles_fts_idx ON help_articles
+       USING GIN (to_tsvector('simple', coalesce(title,'') || ' ' || coalesce(summary,'') || ' ' || coalesce(body_md,'')))`,
+    `CREATE TABLE IF NOT EXISTS help_article_feedback (
+      id SERIAL PRIMARY KEY,
+      article_id INTEGER NOT NULL REFERENCES help_articles(id) ON DELETE CASCADE,
+      user_id INTEGER,
+      voter_hash VARCHAR(64) NOT NULL,
+      helpful BOOLEAN NOT NULL,
+      comment TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`,
+    `CREATE UNIQUE INDEX IF NOT EXISTS help_feedback_unique_idx ON help_article_feedback(article_id, voter_hash)`,
+    `CREATE TABLE IF NOT EXISTS help_search_log (
+      id SERIAL PRIMARY KEY,
+      query VARCHAR(200) NOT NULL,
+      result_count INTEGER NOT NULL DEFAULT 0,
+      source VARCHAR(20) NOT NULL DEFAULT 'app',
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`,
+    `CREATE INDEX IF NOT EXISTS help_search_log_created_idx ON help_search_log(created_at DESC)`,
   ];
   for (const sql of migrations) {
     try {

@@ -75,6 +75,9 @@ const AdminCareer         = lazy(() => import("./pages/admin/AdminCareer"));
 const CareerPage          = lazy(() => import("./pages/student/Career"));
 const Partner             = lazy(() => import("./pages/Partner"));
 const PartnerApply        = lazy(() => import("./pages/PartnerApply"));
+const HelpCenter          = lazy(() => import("./pages/help/HelpCenter"));
+const HelpArticle         = lazy(() => import("./pages/help/HelpArticle"));
+const AdminHelpCenter     = lazy(() => import("./pages/admin/AdminHelpCenter"));
 const AdminChatbotFaqs    = lazy(() => import("./pages/admin/ChatbotFaqs"));
 const MebReport           = lazy(() => import("./pages/admin/MebReport"));
 const AdminModules        = lazy(() => import("./pages/admin/AdminModules"));
@@ -314,6 +317,8 @@ function Router() {
         <Route path="/sifre-belirle" component={SetupPassword} />
         <Route path="/sifremi-unuttum" component={ForgotPassword} />
         <Route path="/ai-studio" component={AIStudio} />
+        <Route path="/yardim" component={HelpCenter} />
+        <Route path="/yardim/:slug" component={HelpArticle} />
         <Route path="/placement-test" component={PlacementTestRoute} />
         <Route path="/onboarding">
           <OnboardingRoute />
@@ -413,6 +418,7 @@ function Router() {
         <Route path="/admin/ebooks/yeni"><LayoutWrapper component={AdminEbookForm} allowedRoles={['admin']} /></Route>
         <Route path="/admin/ebook-purchases"><LayoutWrapper component={AdminEbookPurchases} allowedRoles={['admin']} /></Route>
         <Route path="/admin/ebook-marketing"><LayoutWrapper component={AdminEbookMarketing} allowedRoles={['admin']} /></Route>
+        <Route path="/admin/help-center"><LayoutWrapper component={AdminHelpCenter} allowedRoles={['admin']} /></Route>
         <Route path="/admin/monitoring"><LayoutWrapper component={AdminMonitoring} allowedRoles={['admin']} /></Route>
         <Route path="/admin/ebook-waitlist"><LayoutWrapper component={AdminEbookMarketing} allowedRoles={['admin']} /></Route>
         <Route path="/admin/ebooks/:id"><LayoutWrapper component={AdminEbookForm} allowedRoles={['admin']} /></Route>

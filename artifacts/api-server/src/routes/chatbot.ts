@@ -16,6 +16,7 @@
 import { Router, type Request, type Response } from "express";
 import {
   db,
+  pool,
   chatbotFaqsTable,
   chatbotConversationsTable,
   contactLeadsTable,
@@ -25,7 +26,7 @@ import { and, desc, eq, sql } from "drizzle-orm";
 import OpenAI from "openai";
 import { openaiTrackedFetch } from "../lib/ai-usage.js";
 import { authMiddleware, requireRole, type AuthRequest } from "../middlewares/auth.js";
-import { buildSystemPrompt } from "../lib/chatbot-knowledge.js";
+import { buildSystemPrompt, type HelpArticleRef } from "../lib/chatbot-knowledge.js";
 
 const router = Router();
 
@@ -106,7 +107,20 @@ router.post("/chat", async (req: Request, res: Response) => {
       console.warn("[chatbot] FAQ select fail (boş ile devam):", faqErr?.message);
     }
 
-    const systemPrompt = buildSystemPrompt(faqs);
+    // Yardım merkezi makaleleri (yayımlı) — asistan link verebilsin
+    let helpArticles: HelpArticleRef[] = [];
+    try {
+      const { rows } = await pool.query(
+        `SELECT a.slug, a.title, a.summary, c.title AS "categoryTitle"
+           FROM help_articles a LEFT JOIN help_categories c ON c.id = a.category_id
+          WHERE a.is_published = true ORDER BY c.sort_order, a.sort_order LIMIT 60`,
+      );
+      helpArticles = rows as HelpArticleRef[];
+    } catch (helpErr: any) {
+      console.warn("[chatbot] help articles select fail (boş ile devam):", helpErr?.message);
+    }
+
+    const systemPrompt = buildSystemPrompt(faqs, helpArticles);
 
     // OpenAI'e gönder (sadece son N mesajı tut)
     const recentMessages = messages.slice(-MAX_HISTORY_MESSAGES);

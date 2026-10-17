@@ -14,7 +14,30 @@ Entegrasyon testleri: Express uygulaması **gerçek bir Postgres**'e karşı, HT
 | `internal-payment.test.ts` | www→api HMAC imzası (yok/yanlış/gövde değişmiş → 401), bilinmeyen plan, yeni kullanıcı + abonelik + ödeme kaydı, tekrar ödeme upsert (tek satır), pre-create fatura verisi, cron token |
 | `entitlement.test.ts` | otomatik deneme süresi, süresi geçmiş deneme, aktif abonelik, lazy expiry (past_due / expired), iptal-ama-dönem-sürüyor |
 
-## Yerelde çalıştırma
+## Yerelde çalıştırma (Docker yoksa — sunucudaki test DB + SSH tüneli)
+
+Kullandığımız yol: test Postgres'i Hetzner sunucusunda, sadece 127.0.0.1'e bağlı; bilgisayardan
+SSH tüneliyle erişilir (dışarıya port açılmaz).
+
+```bash
+# sunucuda, bir kez oluşturuldu:
+docker run -d --name sphere-test-db --restart unless-stopped -p 127.0.0.1:5433:5432 \
+  -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=sphere_test postgres:16
+docker start sphere-test-db      # test koşacağın gün
+docker stop  sphere-test-db      # işin bitince (RAM)
+```
+
+```powershell
+# bilgisayarda — ayrı pencere, açık kalsın:
+ssh -N -L 5433:127.0.0.1:5433 root@46.224.223.19
+# test penceresi:
+$env:TEST_DATABASE_URL = "postgresql://postgres:postgres@localhost:5433/sphere_test"
+pnpm run test
+```
+
+Bitince tünel penceresini kapat (Ctrl+C) ve sunucuda `docker stop sphere-test-db`.
+
+## Yerelde çalıştırma (Docker varsa)
 
 1. Test veritabanı (bir kez):
    ```powershell

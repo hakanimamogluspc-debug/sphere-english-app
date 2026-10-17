@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { Link } from "wouter";
+import { API } from "@/lib/api-url";
 import { useAuth } from "@/hooks/use-auth";
-import { MessageSquarePlus, X, Bug, Lightbulb, HelpCircle, Loader2, CheckCircle2 } from "lucide-react";
+import { MessageSquarePlus, X, Bug, Lightbulb, HelpCircle, Loader2, CheckCircle2, BookOpen } from "lucide-react";
 
 /**
  * SupportFab — floating "Bize bildir" butonu.
@@ -30,6 +32,17 @@ export default function SupportFab() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  // Yardım merkezi önerileri — başlık yazılırken ilgili makaleler (ticket açmadan çözüm)
+  const [suggestions, setSuggestions] = useState<{ slug: string; title: string; categoryTitle: string | null }[]>([]);
+  useEffect(() => {
+    const q = title.trim();
+    if (q.length < 3) { setSuggestions([]); return; }
+    const t = setTimeout(() => {
+      fetch(`${API}/help/suggest?q=${encodeURIComponent(q)}`)
+        .then((r) => r.json()).then((d) => setSuggestions(d.articles ?? [])).catch(() => {});
+    }, 350);
+    return () => clearTimeout(t);
+  }, [title]);
 
   // Login olmamış kullanıcıya gösterme
   if (!user) return null;
@@ -174,6 +187,22 @@ export default function SupportFab() {
                       maxLength={200}
                       className="w-full px-3 py-2 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary"
                     />
+                    {suggestions.length > 0 && (
+                      <div className="mt-2 rounded-lg border border-sky-200 bg-sky-50/70 p-2.5">
+                        <div className="text-[11px] font-semibold text-sky-800 uppercase tracking-wide mb-1.5 flex items-center gap-1">
+                          <BookOpen className="h-3.5 w-3.5" /> Bunlar yardımcı olabilir
+                        </div>
+                        <ul className="space-y-1">
+                          {suggestions.map((s) => (
+                            <li key={s.slug}>
+                              <Link href={`/yardim/${s.slug}`} onClick={close} className="text-sm text-sky-800 hover:underline leading-snug block">
+                                {s.title}{s.categoryTitle ? <span className="text-sky-600/70"> · {s.categoryTitle}</span> : null}
+                              </Link>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
                   </div>
 
                   {/* Body */}
