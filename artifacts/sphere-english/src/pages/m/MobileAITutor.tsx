@@ -252,14 +252,14 @@ function MobileFreeChat({ onLessons }: { onLessons: () => void }) {
 
   return (
     <ModuleShell
-      title={activeConvo?.title || "Merve ile Sohbet"}
+      title={activeConvo?.title || "Lara ile Sohbet"}
       subtitle={activeConvo?.focusArea ? FOCUS_OPTIONS.find(f => f.id === activeConvo.focusArea)?.label : "Serbest sohbet"}
       backTo="/m/pratik"
       rightAction={
         <div style={{ display: "flex", gap: 4 }}>
           <button
             onClick={onLessons}
-            aria-label="Merve ile Ders"
+            aria-label="Lara ile Ders"
             style={{
               background: "#1e3a6e", border: "none", color: "#ffffff",
               height: 36, borderRadius: 18, padding: "0 12px",
@@ -709,15 +709,15 @@ function MobileFreeChat({ onLessons }: { onLessons: () => void }) {
 }
 
 /**
- * /m/pratik/ai-ogretmen — Merve.
- * Varsayılan: "Merve ile Ders" (sesli, yönlendirmeli). Sağ üstten serbest sohbete geçilir.
+ * /m/pratik/ai-ogretmen — Lara.
+ * Varsayılan: "Lara ile Ders" (sesli, yönlendirmeli). Sağ üstten serbest sohbete geçilir.
  */
 export default function MobileAITutor() {
   const [mode, setMode] = useState<"lessons" | "chat">("lessons");
   if (mode === "chat") return <MobileFreeChat onLessons={() => setMode("lessons")} />;
   return (
     <ModuleShell
-      title="Merve ile Ders"
+      title="Lara ile Ders"
       subtitle="Sesli, adım adım iş İngilizcesi"
       backTo="/m/pratik"
       contentPadding="0"

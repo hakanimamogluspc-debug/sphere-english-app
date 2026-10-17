@@ -70,7 +70,7 @@ describe("konuşmayı parçalara ayırma", () => {
   });
 });
 
-describe("admin — Merve'nin sesi", () => {
+describe("admin — Lara'nın sesi", () => {
   it("öğrenci giremez", async () => {
     const { token } = await registerUser();
     expect((await api().get("/api/admin/tutor-voice").set("Authorization", `Bearer ${token}`)).status).toBe(403);

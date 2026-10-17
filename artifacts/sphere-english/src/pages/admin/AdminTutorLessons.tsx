@@ -6,8 +6,8 @@ import {
 import { API } from "@/lib/api-url";
 
 /**
- * Admin → Merve Dersleri
- * Merve'nin yürüttüğü sesli derslerin (sahnelerin) kütüphanesi: listele, düzenle, yayımla, istatistik.
+ * Admin → Lara Dersleri
+ * Lara'nın yürüttüğü sesli derslerin (sahnelerin) kütüphanesi: listele, düzenle, yayımla, istatistik.
  * Düzenlenen bir ders artık açılış seed'iyle ezilmez.
  */
 
@@ -118,9 +118,9 @@ export default function AdminTutorLessons() {
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2" style={{ color: NAVY }}>
-            <GraduationCap size={24} /> Merve Dersleri
+            <GraduationCap size={24} /> Lara Dersleri
           </h1>
-          <p className="text-sm text-slate-500">AI öğretmen Merve'nin yürüttüğü sesli, adım adım derslerin kütüphanesi.</p>
+          <p className="text-sm text-slate-500">AI öğretmen Lara'nın yürüttüğü sesli, adım adım derslerin kütüphanesi.</p>
         </div>
         <div className="flex gap-2">
           <button onClick={load} className="p-2 rounded-lg border border-slate-200 hover:bg-slate-50" aria-label="Yenile"><RefreshCw size={16} /></button>
@@ -274,7 +274,7 @@ function Editor({ value, onChange, onCancel, onSave, saving }: {
               <input type="number" className={input} value={value.sortOrder} onChange={(e) => set("sortOrder", Number(e.target.value))} />
             </div>
           </Field>
-          <Field label="Merve'nin açılışı (sesli okunur; selamdan sonra)" wide>
+          <Field label="Lara'nın açılışı (sesli okunur; selamdan sonra)" wide>
             <textarea rows={2} className={input} value={value.introTr} onChange={(e) => set("introTr", e.target.value)} />
           </Field>
           <Field label="Kapanış" wide>
@@ -295,7 +295,7 @@ function Editor({ value, onChange, onCancel, onSave, saving }: {
                 </div>
               </div>
               <Field label="Görev (ekranda görünür)"><input className={input} value={s.goalTr} onChange={(e) => setStep(i, { goalTr: e.target.value })} /></Field>
-              <Field label="Kurgu (Merve sesli okur)"><textarea rows={2} className={input} value={s.setupTr} onChange={(e) => setStep(i, { setupTr: e.target.value })} /></Field>
+              <Field label="Kurgu (Lara sesli okur)"><textarea rows={2} className={input} value={s.setupTr} onChange={(e) => setStep(i, { setupTr: e.target.value })} /></Field>
               <Field label="Hedef İngilizce cümleler (her satıra bir tane; ilki örnek doğru cevap)">
                 <textarea rows={2} className={input} value={s.targets.join("\n")} onChange={(e) => setStep(i, { targets: e.target.value.split("\n") })} />
               </Field>

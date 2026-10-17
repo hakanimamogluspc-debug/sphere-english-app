@@ -1,5 +1,5 @@
 /**
- * Merve ile Ders — ders motoru.
+ * Lara ile Ders — ders motoru.
  *
  * Akış (her tur):
  *   öğrenci (ses → Whisper ya da yazı) → GPT-4o-mini değerlendirir (JSON) →
@@ -21,7 +21,7 @@ import { synthesizeSpeech, type SpeechPart } from "./tutor-voice.js";
 
 const execFileAsync = promisify(execFile);
 
-export const TEACHER_NAME = "Merve";
+export const TEACHER_NAME = "Lara";
 
 export type LessonSnapshot = {
   slug: string | null;
@@ -145,7 +145,7 @@ export function languageMixFor(level: string | null): string {
 
 // ─── Değerlendirme ────────────────────────────────────────────────────────────
 
-const PERSONA = `Sen ${TEACHER_NAME}'sin: Sphere English'in Türk İngilizce öğretmeni. 30'lu yaşlardasın; sıcak, esprili, kısa ve net konuşursun.
+const PERSONA = `Sen ${TEACHER_NAME}'sın: Sphere English'in Türk İngilizce öğretmeni. 30'lu yaşlardasın; sıcak, esprili, kısa ve net konuşursun.
 Öğrencilerin Türk şirketlerinde çalışan profesyoneller; iş İngilizcesi öğreniyorlar.
 
 KİŞİLİK VE TON:
@@ -153,7 +153,7 @@ KİŞİLİK VE TON:
 - "Kızım", "canım", "hayatım", "tatlım", "dostum", "abicim" gibi HİTAPLAR ASLA KULLANMA.
 - Hafif, zararsız espri yapabilirsin (ör. "Upper size mı? Gökyüzüne çıkmıyoruz, beden soruyoruz."). Asla alay etme, küçümseme.
 - Hata = öğrenme fırsatı. Doğru olanı net söyle, nedenini bir cümleyle açıkla.
-- Yapay zekâ olduğundan bahsetme. Sen Merve'sin.
+- Yapay zekâ olduğundan bahsetme. Sen Lara'sın.
 
 KONUŞMA BİÇİMİ ("say" alanı SESLİ OKUNACAK):
 - Markdown, madde işareti, emoji, parantez içi açıklama KULLANMA. Düz konuşma metni.
@@ -278,7 +278,7 @@ export async function evaluateTurn(opts: {
 }
 
 // ─── Gerçek konuşma (rol yapma) bölümü ────────────────────────────────────────
-// Adımlar bittikten sonra Merve dersin konusundaki karşı tarafı (müşteri, yönetici, tedarikçi…) canlandırır;
+// Adımlar bittikten sonra Lara dersin konusundaki karşı tarafı (müşteri, yönetici, tedarikçi…) canlandırır;
 // öğrenci istediği kadar konuşur. Hatalar konuşmayı bölmeden, kısaca düzeltilir.
 
 export function roleplayEnabled(): boolean {
@@ -389,7 +389,7 @@ export async function roleplayOpener(opts: { lesson: LessonSnapshot; level: stri
 // ─── Konuşma metinleri (LLM gerektirmeyen) ────────────────────────────────────
 
 export function openingLine(lesson: LessonSnapshot, firstName: string | null): string {
-  const hello = firstName ? `Merhaba ${firstName}, ben Merve.` : "Merhaba, ben Merve.";
+  const hello = firstName ? `Merhaba ${firstName}, ben Lara.` : "Merhaba, ben Lara.";
   return `${hello} ${lesson.introTr} ${lesson.steps[0]?.setupTr ?? ""}`.replace(/\s+/g, " ").trim();
 }
 
@@ -397,7 +397,7 @@ export function openingLine(lesson: LessonSnapshot, firstName: string | null): s
 export function openingSpeech(lesson: LessonSnapshot, firstName: string | null): SpeechPart[] {
   const fixed = Boolean(lesson.slug);
   return [
-    { text: firstName ? `Merhaba ${firstName}, ben Merve.` : "Merhaba, ben Merve.", cacheable: !firstName },
+    { text: firstName ? `Merhaba ${firstName}, ben Lara.` : "Merhaba, ben Lara.", cacheable: !firstName },
     { text: lesson.introTr, cacheable: fixed },
     { text: lesson.steps[0]?.setupTr ?? "", cacheable: fixed },
   ].filter((p) => p.text.trim());
@@ -451,7 +451,7 @@ Ton kuralları geçerli: hitap yok, kısa, esprili ama saygılı. setupTr sesli 
 {
   "title": "<Türkçe, en fazla 8 kelime>",
   "summary": "<Türkçe, tek cümle>",
-  "introTr": "<Merve'nin açılışı, en fazla 30 kelime>",
+  "introTr": "<Lara'nın açılışı, en fazla 30 kelime>",
   "outroTr": "<kapanış, en fazla 25 kelime>",
   "steps": [
     { "goalTr": "<kısa görev>", "setupTr": "<durumu kuran Türkçe anlatım>", "targets": ["<İngilizce örnek doğru cevap>", "<alternatif>"], "hintTr": "<ipucu>" }

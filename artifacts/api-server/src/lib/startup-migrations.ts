@@ -1841,7 +1841,7 @@ export async function runStartupMigrations() {
     )`,
     `CREATE INDEX IF NOT EXISTS help_search_log_created_idx ON help_search_log(created_at DESC)`,
 
-    // ─── Merve ile Ders (AI öğretmen — sesli, yönlendirmeli dersler) ─────────
+    // ─── Lara ile Ders (AI öğretmen — sesli, yönlendirmeli dersler) ─────────
     `CREATE TABLE IF NOT EXISTS tutor_lessons (
       id SERIAL PRIMARY KEY,
       slug VARCHAR(120) NOT NULL UNIQUE,

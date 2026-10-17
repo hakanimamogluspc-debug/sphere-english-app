@@ -155,13 +155,13 @@
     "duration": "Soru sayısına göre 5-15 dk"
   },
   "ai_tutor": {
-    "name": "AI Öğretmen Merve",
-    "tagline": "Merve seni adım adım konuşturur, hatanı anında düzeltir",
-    "value_prop": "Merve, Sphere'in Türk İngilizce öğretmeni. Bir iş anı seçersin (müşteriye gecikme bildirmek, toplantıda söz almak, fiyat konuşmak…); Merve durumu Türkçe kurar, sen İngilizce söylersin, o da anında düzeltip bir sonraki adıma geçer. Takıldığın yerde ipucu verir. İstersen yazarak da cevap verebilir ya da serbest sohbete geçebilirsin.",
+    "name": "AI Öğretmen Lara",
+    "tagline": "Lara seni adım adım konuşturur, hatanı anında düzeltir",
+    "value_prop": "Lara, Sphere'in Türk İngilizce öğretmeni. Bir iş anı seçersin (müşteriye gecikme bildirmek, toplantıda söz almak, fiyat konuşmak…); Lara durumu Türkçe kurar, sen İngilizce söylersin, o da anında düzeltip bir sonraki adıma geçer. Takıldığın yerde ipucu verir. İstersen yazarak da cevap verebilir ya da serbest sohbete geçebilirsin.",
     "how_to": [
-      "AI Öğretmen Merve'yi aç ve bir ders kartı seç",
-      "Merve durumu anlatınca mikrofona dokun, cevabını İngilizce söyle, tekrar dokun",
-      "Düzeltmeyi oku, Merve'nin söylediği doğru hâli bir kez de sen tekrar et",
+      "AI Öğretmen Lara'yı aç ve bir ders kartı seç",
+      "Lara durumu anlatınca mikrofona dokun, cevabını İngilizce söyle, tekrar dokun",
+      "Düzeltmeyi oku, Lara'nın söylediği doğru hâli bir kez de sen tekrar et",
       "Ders sonunda öğrendiğin kalıpları özet kartında gör; hatalar hata defterine eklenir"
     ],
     "target_level": "A2 ve üzeri — konuşurken takılan, işte kullanacağı kalıpları pratik etmek isteyen herkes",

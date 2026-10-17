@@ -51,7 +51,7 @@ const MODULE_META: Record<string, { name: string; icon: React.ReactNode; color: 
   interview_sim:         { name: "Mülakat Simülatörü",   icon: <GraduationCap size={18} />, color: "emerald", href: "/student/interview-sim" },
   presentation_sim:      { name: "Sunum Simülatörü",     icon: <Presentation size={18} />, color: "orange",  href: "/student/presentation-sim" },
   ai_quiz:               { name: "Akıllı Quiz",          icon: <Wand2 size={18} />,        color: "violet",  href: "/student/ai-quiz" },
-  ai_tutor:              { name: "AI Öğretmen Merve",  icon: <GraduationCap size={18} />, color: "teal",   href: "/student/ai-tutor" },
+  ai_tutor:              { name: "AI Öğretmen Lara",  icon: <GraduationCap size={18} />, color: "teal",   href: "/student/ai-tutor" },
   learning_path:         { name: "Öğrenme Yolu",         icon: <Compass size={18} />,      color: "sky",     href: "/student/learning-path" },
   level_exams:           { name: "Seviye Sınavları",     icon: <Trophy size={18} />,       color: "yellow",  href: "/student/level-exams" },
   speaking_scenes:       { name: "Konuşma Sahneleri",    icon: <Mic size={18} />,          color: "rose",    href: "/student/speaking-scenes" },

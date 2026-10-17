@@ -90,7 +90,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       { name: 'Mülakat Simülatörü', href: '/student/interview-sim',          icon: GraduationCap, moduleKey: 'student-interview-sim',        group: 'ai-studio' },
       { name: 'Sunum Simülatörü',   href: '/student/presentation-sim',       icon: Presentation,  moduleKey: 'student-presentation-sim',     group: 'ai-studio' },
       { name: 'Akıllı Quiz',         href: '/student/ai-quiz',               icon: Wand2,         moduleKey: 'student-ai-quiz',              group: 'ai-studio' },
-      { name: 'AI Öğretmen Merve',   href: '/student/ai-tutor',              icon: GraduationCap, moduleKey: 'student-ai-tutor',             group: 'ai-studio' },
+      { name: 'AI Öğretmen Lara',    href: '/student/ai-tutor',              icon: GraduationCap, moduleKey: 'student-ai-tutor',             group: 'ai-studio' },
       { name: 'Öğrenme Yolu',        href: '/student/learning-path',         icon: Compass,       moduleKey: 'student-learning-path',        group: 'ai-studio' },
       { name: 'Seviye Sınavları',    href: '/student/level-exams',           icon: GraduationCap, moduleKey: 'student-level-exams' },
       // Abonelik kaldırıldı — uygulama herkes için ücretsiz
@@ -142,8 +142,8 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       { name: 'İçerik Envanteri',    href: '/admin/content-envanteri',        icon: BarChart3 },
       { name: 'Kelime Havuzu',       href: '/admin/vocab',                    icon: BookMarked },
       { name: 'Konuşma Sahneleri',   href: '/admin/scenes',                   icon: Mic },
-      { name: 'Merve Dersleri',      href: '/admin/tutor-lessons',            icon: GraduationCap },
-      { name: "Merve'nin Sesi",      href: '/admin/tutor-voice',              icon: Mic },
+      { name: 'Lara Dersleri',      href: '/admin/tutor-lessons',            icon: GraduationCap },
+      { name: "Lara'nın Sesi",      href: '/admin/tutor-voice',              icon: Mic },
       { name: 'Kariyer & Motivasyon',href: '/admin/career',                   icon: Compass },
       { name: 'Kelime Oyunu 🎮',     href: '/student/vocab-game',             icon: Gamepad2 },
 

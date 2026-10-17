@@ -1,11 +1,11 @@
 /**
- * Merve ile Ders — başlangıç sahne kütüphanesi.
+ * Lara ile Ders — başlangıç sahne kütüphanesi.
  *
  * Her ders 4–5 adımdan oluşur. Her adımda:
- *   setupTr  → Merve'nin adımı açarken söylediği Türkçe kurgu (aynen seslendirilir, LLM gerekmez)
+ *   setupTr  → Lara'nın adımı açarken söylediği Türkçe kurgu (aynen seslendirilir, LLM gerekmez)
  *   goalTr   → ekranda görünen kısa görev ("Ne söylemelisin?")
  *   targets  → öğrencinin ağzından çıkması beklenen İngilizce kalıp(lar); ilki "örnek doğru cevap"
- *   hintTr   → takılırsa Merve'nin vereceği ipucu
+ *   hintTr   → takılırsa Lara'nın vereceği ipucu
  *
  * Seed idempotenttir (slug bazlı). Admin bir dersi düzenlediyse (updated_at > created_at)
  * seed o dersi EZMEZ — sadece eksik dersleri ekler.

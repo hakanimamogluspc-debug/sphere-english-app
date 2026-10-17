@@ -176,7 +176,7 @@ const SimulationModePro        = withProGate(SimulationMode        as ComponentT
 const InterviewSimulatorPro    = withProGate(InterviewSimulator    as ComponentType<any>, "student-interview-sim",        "Mülakat Simülatörü");
 const PresentationSimulatorPro = withProGate(PresentationSimulator as ComponentType<any>, "student-presentation-sim",     "Sunum Simülatörü");
 const AIQuizGeneratorPro       = withProGate(AIQuizGenerator       as ComponentType<any>, "student-ai-quiz",              "Akıllı Quiz");
-const AITutorPro               = withProGate(AITutor               as ComponentType<any>, "student-ai-tutor",             "AI Öğretmen Merve");
+const AITutorPro               = withProGate(AITutor               as ComponentType<any>, "student-ai-tutor",             "AI Öğretmen Lara");
 const LearningPathPro          = withProGate(LearningPath          as ComponentType<any>, "student-learning-path",        "Öğrenme Yolu");
 
 const queryClient = new QueryClient({

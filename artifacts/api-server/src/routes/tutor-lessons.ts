@@ -1,5 +1,5 @@
 /**
- * Merve ile Ders — öğrenci uçları (Pro; routes/index.ts'te proGuard ile mount edilir).
+ * Lara ile Ders — öğrenci uçları (Pro; routes/index.ts'te proGuard ile mount edilir).
  *
  *   GET  /tutor/lessons                         ders kütüphanesi + öneri + devam eden oturum + kota
  *   POST /tutor/lessons/personal/start          hata defterinden kişiye özel ders
@@ -83,7 +83,7 @@ function publicSession(s: any) {
     totalSteps: lesson.steps.length,
     steps: lesson.steps.map((st) => ({ key: st.key, goalTr: st.goalTr })),
     currentGoal: s.phase === "roleplay"
-      ? "Gerçek konuşma: Merve karşı tarafı oynuyor. Öğrendiklerini kullan, istediğin kadar konuş."
+      ? "Gerçek konuşma: Lara karşı tarafı oynuyor. Öğrendiklerini kullan, istediğin kadar konuş."
       : lesson.steps[s.current_step]?.goalTr ?? null,
     currentHint: s.phase === "roleplay"
       ? `Kalıplar: ${lesson.steps.map((st) => st.targets[0]).join(" · ")}`
@@ -171,7 +171,7 @@ router.get("/tutor/lessons", authMiddleware, async (req: AuthRequest, res: Respo
     );
     const used = await voiceTurnsToday(userId);
     return res.json({
-      teacher: { name: "Merve" },
+      teacher: { name: "Lara" },
       lessons,
       activeSession: active[0] ? publicSession(active[0]) : null,
       personalAvailable: (mist[0]?.n ?? 0) >= 2,
@@ -240,7 +240,7 @@ router.post("/tutor/lessons/personal/start", authMiddleware, async (req: AuthReq
         code: "no_mistakes",
       });
     }
-    if (!aiAvailable()) return res.status(503).json({ error: "Merve şu an ulaşılamıyor.", code: "ai_unavailable" });
+    if (!aiAvailable()) return res.status(503).json({ error: "Lara şu an ulaşılamıyor.", code: "ai_unavailable" });
     const user = await loadUser(userId);
     const lesson = await generatePersonalLesson({ mistakes, level: user.level, sector: user.sector });
     if (!lesson) return res.status(502).json({ error: "Ders hazırlanamadı, bir kez daha dener misin?" });
@@ -317,7 +317,7 @@ router.post(
       const s = await ownSession(userId, String(req.params.id));
       if (!s) return res.status(404).json({ error: "Oturum bulunamadı." });
       if (s.status !== "active") return res.status(409).json({ error: "Bu ders bitti. Yeni bir ders başlatabilirsin.", code: "not_active" });
-      if (!aiAvailable()) return res.status(503).json({ error: "Merve şu an ulaşılamıyor, birazdan tekrar dene.", code: "ai_unavailable" });
+      if (!aiAvailable()) return res.status(503).json({ error: "Lara şu an ulaşılamıyor, birazdan tekrar dene.", code: "ai_unavailable" });
 
       const lesson: LessonSnapshot = s.lesson_snapshot;
       const stepIndex: number = s.current_step;
@@ -446,7 +446,7 @@ router.post(
         return res.status(409).json({ error: "Bu cevap zaten işlendi.", code: "stale" });
       }
 
-      // Merve'nin konuşması: tepki + (ilerlediyse) sonraki adımın kurgusu / gerçek konuşmaya geçiş / kapanış
+      // Lara'nın konuşması: tepki + (ilerlediyse) sonraki adımın kurgusu / gerçek konuşmaya geçiş / kapanış
       let opener = "";
       if (enterRoleplay) opener = await roleplayOpener({ lesson, level: user.level, sector: user.sector, firstName: user.firstName });
       const follow = !evaluation.advance ? ""
@@ -500,7 +500,7 @@ router.post(
       console.error("[tutor-lessons] turn:", e?.message);
       const timeout = /zaman aşımı|timeout/i.test(String(e?.message ?? ""));
       return res.status(timeout ? 504 : 500).json({
-        error: timeout ? "Merve biraz yavaş kaldı, bir kez daha dener misin?" : "Bir hata oldu, tekrar dener misin?",
+        error: timeout ? "Lara biraz yavaş kaldı, bir kez daha dener misin?" : "Bir hata oldu, tekrar dener misin?",
       });
     }
   },

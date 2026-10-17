@@ -410,7 +410,7 @@ function FreeChat() {
               </div>
               <div className="min-w-0">
                 <p className="font-bold text-sm text-gray-900 truncate">
-                  {activeConvo?.title || "Merve ile Serbest Sohbet"}
+                  {activeConvo?.title || "Lara ile Serbest Sohbet"}
                 </p>
                 <p className="text-[11px] text-gray-500">
                   Kişisel İngilizce öğretmenin
@@ -421,7 +421,7 @@ function FreeChat() {
             <button
               onClick={() => setShowMemory(true)}
               className="inline-flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-700"
-              title="Merve'nin seninle ilgili hatırladıkları"
+              title="Lara'nın seninle ilgili hatırladıkları"
             >
               <Brain size={12} />
               Hafıza ({memory?.facts.length ?? 0})
@@ -442,7 +442,7 @@ function FreeChat() {
                   <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 text-white mb-3">
                     <GraduationCap size={28} />
                   </div>
-                  <h2 className="text-lg font-bold text-gray-900">Merhaba, ben Merve</h2>
+                  <h2 className="text-lg font-bold text-gray-900">Merhaba, ben Lara</h2>
                   <p className="text-sm text-gray-500 mt-1">
                     Senin kişisel İngilizce öğretmeninim. Bana ne istersen sorabilirsin — hatalarını düzeltirim, yeni konular öğretirim, pratik yaparım.
                   </p>
@@ -531,7 +531,7 @@ function FreeChat() {
                 }}
                 onKeyDown={onKey}
                 disabled={sending}
-                placeholder="Merve'ye bir şey sor... (Enter = gönder, Shift+Enter = yeni satır)"
+                placeholder="Lara'ya bir şey sor... (Enter = gönder, Shift+Enter = yeni satır)"
                 className="flex-1 px-3 py-2.5 rounded-xl border border-gray-200 focus:border-purple-400 focus:ring-2 focus:ring-purple-100 outline-none text-sm resize-none disabled:bg-gray-50"
                 style={{ maxHeight: 160 }}
               />
@@ -614,7 +614,7 @@ function FreeChat() {
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <h3 className="font-bold text-gray-900 flex items-center gap-1.5">
-                    <Brain size={16} className="text-purple-600" /> Merve'nin Hafızası
+                    <Brain size={16} className="text-purple-600" /> Lara'nın Hafızası
                   </h3>
                   <p className="text-xs text-gray-500">Sohbetlerinden öğrendiklerim, sürekli hatırlıyorum.</p>
                 </div>
@@ -701,8 +701,8 @@ function escapeHtml(s: string): string {
 }
 
 /**
- * AI Öğretmen = Merve. İki mod:
- *  - "Ders": Merve'nin yönettiği sesli, adım adım dersler (varsayılan)
+ * AI Öğretmen = Lara. İki mod:
+ *  - "Ders": Lara'nın yönettiği sesli, adım adım dersler (varsayılan)
  *  - "Serbest sohbet": eski yazılı sohbet (hafıza, odak alanları)
  */
 function AITutor() {
@@ -710,7 +710,7 @@ function AITutor() {
   return (
     <div className="max-w-7xl mx-auto">
       <div className="inline-flex p-1 rounded-xl bg-slate-100 mb-4" role="tablist">
-        {([["lessons", "Merve ile Ders"], ["chat", "Serbest sohbet"]] as const).map(([id, label]) => (
+        {([["lessons", "Lara ile Ders"], ["chat", "Serbest sohbet"]] as const).map(([id, label]) => (
           <button
             key={id}
             role="tab"

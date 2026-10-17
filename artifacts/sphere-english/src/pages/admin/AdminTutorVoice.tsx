@@ -3,8 +3,8 @@ import { Volume2, Loader2, AlertCircle, X, Play, Square, Check, RefreshCw, Trash
 import { API } from "@/lib/api-url";
 
 /**
- * Admin → Merve'nin Sesi
- * ElevenLabs hesabındaki seslerden Merve'yi seç, aynı ders cümlesiyle dinleyip karşılaştır,
+ * Admin → Lara'nın Sesi
+ * ElevenLabs hesabındaki seslerden Lara'yı seç, aynı ders cümlesiyle dinleyip karşılaştır,
  * duraklama / hız / ifade ayarlarını yap. Kaydedilen ayar hemen canlıya geçer (60 sn önbellek).
  */
 
@@ -140,7 +140,7 @@ export default function AdminTutorVoice() {
     <div className="max-w-6xl mx-auto space-y-5">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2" style={{ color: NAVY }}><Volume2 size={24} /> Merve'nin Sesi</h1>
+          <h1 className="text-2xl font-bold flex items-center gap-2" style={{ color: NAVY }}><Volume2 size={24} /> Lara'nın Sesi</h1>
           <p className="text-sm text-slate-500">
             Şu an: <strong>{st.settings.provider === "elevenlabs" ? `ElevenLabs — ${st.settings.elevenVoiceName || st.settings.elevenVoiceId}` : `OpenAI — ${st.settings.openaiVoice}`}</strong>
             {st.settings.provider === "elevenlabs" && ` · ${st.settings.elevenModel}`}
@@ -225,7 +225,7 @@ export default function AdminTutorVoice() {
           {st.voicesError && <p className="text-sm text-rose-600 mb-2">{st.voicesError}</p>}
           <p className="text-xs text-slate-500 mb-3">
             Hesabındaki sesler listelenir. Türkçe bir kadın sesi istiyorsan ElevenLabs → Voice Library'de "Turkish" ara, beğendiğini "Add to my voices" ile ekle; burada görünür.
-            "Merve olarak dinle" deneme metnini o sesle, gerçek ders akışıyla okur.
+            "Lara olarak dinle" deneme metnini o sesle, gerçek ders akışıyla okur.
           </p>
           <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-3">
             {voices.map((v) => {
@@ -247,7 +247,7 @@ export default function AdminTutorVoice() {
                       style={{ background: NAVY }}
                     >
                       {busyVoice === v.voiceId ? <Loader2 size={12} className="animate-spin" /> : playing === v.voiceId ? <Square size={12} /> : <Play size={12} />}
-                      Merve olarak dinle
+                      Lara olarak dinle
                     </button>
                     {v.previewUrl && (
                       <button onClick={() => (playing === `p-${v.voiceId}` ? stop() : playSrc(`p-${v.voiceId}`, v.previewUrl!))} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs border border-slate-200">
@@ -261,7 +261,7 @@ export default function AdminTutorVoice() {
                         className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold border"
                         style={{ borderColor: TURQ_DEEP, color: TURQ_DEEP }}
                       >
-                        <Check size={12} /> Merve bu olsun
+                        <Check size={12} /> Lara bu olsun
                       </button>
                     )}
                   </div>

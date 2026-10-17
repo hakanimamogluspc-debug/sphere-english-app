@@ -7,7 +7,7 @@ import { API } from "@/lib/api-url";
 import { useMicRecorder } from "@/components/mobile/useMicRecorder";
 
 /**
- * Merve ile Ders — sesli, öğretmenin yönettiği adım adım dersler.
+ * Lara ile Ders — sesli, öğretmenin yönettiği adım adım dersler.
  * Hem web (/student/ai-tutor) hem mobil (/m/pratik/ai-ogretmen) kullanır.
  *
  * Marka: navy #1e3a6e (ana), turkuaz #13a9e0 (yalnız vurgu), açık zeminde turkuaz metin #0e7da6.
@@ -73,7 +73,7 @@ const nid = () => `t${Date.now()}_${uid++}`;
 /**
  * Ses çalma — tarayıcıların otomatik oynatma kuralına takılmamak için Web Audio kullanır.
  *
- * Sorun: Merve'nin sesi butona basıldıktan SANİYELER sonra (sunucudan) gelir; iPhone Safari ve
+ * Sorun: Lara'nın sesi butona basıldıktan SANİYELER sonra (sunucudan) gelir; iPhone Safari ve
  * bazı Android tarayıcılar "kullanıcı dokunuşu dışında" başlatılan sesi sessizce engeller.
  * Çözüm: her dokunuşta unlock() çağrılır → AudioContext dokunuşun içinde açılır/sürdürülür;
  * sonradan gelen ses aynı (artık kilidi açık) context'te çalınır.
@@ -95,7 +95,7 @@ function useSpeaker() {
   const [blocked, setBlocked] = useState(false);
 
   /**
-   * mode="playback": Merve konuşacak (iPhone sessiz modda da çalsın).
+   * mode="playback": Lara konuşacak (iPhone sessiz modda da çalsın).
    * mode="record": mikrofon açılacak — iOS "playback" oturumunda mikrofona İZİN VERMEZ,
    * bu yüzden kayıttan önce "play-and-record"a geçilmeli.
    */
@@ -225,8 +225,8 @@ export default function MerveLessons({ compact = false, simulationHref = "/stude
         body: JSON.stringify({ speak: voiceOn }),
       });
       setSession(d.session);
-      if (d.voiceQuotaReached) setQuotaNote("Bugünlük sesli hakkın doldu; Merve yazıyla devam edecek.");
-      else if (d.voiceFailed) setQuotaNote("Merve'nin sesi şu an oluşturulamadı; ders yazıyla devam ediyor.");
+      if (d.voiceQuotaReached) setQuotaNote("Bugünlük sesli hakkın doldu; Lara yazıyla devam edecek.");
+      else if (d.voiceFailed) setQuotaNote("Lara'nın sesi şu an oluşturulamadı; ders yazıyla devam ediyor.");
       addMerve(d.reply);
     } catch (e: any) {
       setError(e.message);
@@ -290,7 +290,7 @@ export default function MerveLessons({ compact = false, simulationHref = "/stude
     setSession(d.session);
     setShowHint(false);
     if (d.voiceQuotaReached) setQuotaNote("Bugünlük sesli hakkın doldu; yazarak devam edebilirsin.");
-    else if (d.voiceFailed) setQuotaNote("Merve'nin sesi şu an oluşturulamadı; ders yazıyla devam ediyor.");
+    else if (d.voiceFailed) setQuotaNote("Lara'nın sesi şu an oluşturulamadı; ders yazıyla devam ediyor.");
     addMerve(d.reply);
     if (d.completed && d.summary) setSummary(d.summary);
   };
@@ -352,7 +352,7 @@ export default function MerveLessons({ compact = false, simulationHref = "/stude
   async function stopAndSend() {
     if (!session) return;
     const blob = await mic.stop();
-    if (voiceOn) speaker.unlock("playback"); // kayıt bitti → Merve'nin cevabı için çalma moduna dön
+    if (voiceOn) speaker.unlock("playback"); // kayıt bitti → Lara'nın cevabı için çalma moduna dön
     if (!blob || blob.size < 2500) {
       setError("Kayıt çok kısa geldi. Düğmeye dokun, cümleni söyle, sonra tekrar dokun.");
       return;
@@ -408,14 +408,14 @@ export default function MerveLessons({ compact = false, simulationHref = "/stude
           <div className="min-w-0 flex-1">
             <p className="font-bold text-sm truncate" style={{ color: NAVY, fontFamily: "Outfit, sans-serif" }}>{session.title}</p>
             <p className="text-[11px] text-slate-500">
-              Merve ile ders · {finished ? "tamamlandı" : roleplay ? `Gerçek konuşma · ${(session.roleplayTurns ?? 0) + 1}. tur` : `Adım ${Math.min(session.stepIndex + 1, session.totalSteps)}/${session.totalSteps}`}
+              Lara ile ders · {finished ? "tamamlandı" : roleplay ? `Gerçek konuşma · ${(session.roleplayTurns ?? 0) + 1}. tur` : `Adım ${Math.min(session.stepIndex + 1, session.totalSteps)}/${session.totalSteps}`}
             </p>
           </div>
           <button
             onClick={() => { if (!voiceOn) speaker.unlock(); setVoiceOn((v) => !v); speaker.stop(); }}
             className="p-2 rounded-lg hover:bg-slate-100"
             style={{ color: voiceOn ? TURQ_DEEP : "#94a3b8" }}
-            title={voiceOn ? "Merve sesli konuşuyor" : "Merve'nin sesi kapalı"}
+            title={voiceOn ? "Lara sesli konuşuyor" : "Lara'nın sesi kapalı"}
             aria-label="Sesi aç/kapat"
           >
             {voiceOn ? <Volume2 size={18} /> : <VolumeX size={18} />}
@@ -436,7 +436,7 @@ export default function MerveLessons({ compact = false, simulationHref = "/stude
           className="mx-4 mt-2 rounded-lg px-3 py-2 text-xs font-semibold flex items-center gap-2 text-left"
           style={{ background: "#e8eef8", color: NAVY }}
         >
-          <Volume2 size={14} /> Tarayıcın sesi engelledi. Merve'yi dinlemek için dokun. (iPhone'da sessiz modu da kontrol et.)
+          <Volume2 size={14} /> Tarayıcın sesi engelledi. Lara'yı dinlemek için dokun. (iPhone'da sessiz modu da kontrol et.)
         </button>
       )}
 
@@ -447,7 +447,7 @@ export default function MerveLessons({ compact = false, simulationHref = "/stude
         ))}
         {busy === "sending" && (
           <div className="flex items-center gap-2 text-xs text-slate-500 pl-11">
-            <Loader2 size={14} className="animate-spin" /> Merve dinliyor…
+            <Loader2 size={14} className="animate-spin" /> Lara dinliyor…
           </div>
         )}
         {summary && <SummaryCard summary={summary} simulationHref={simulationHref} onAgain={leave} />}
@@ -712,9 +712,9 @@ function Library({
       <div className="rounded-2xl p-4 sm:p-5 mb-4 text-white flex items-start gap-3" style={{ background: NAVY }}>
         <MerveAvatar size={48} />
         <div className="flex-1 min-w-0">
-          <p className="font-bold text-lg" style={{ fontFamily: "Outfit, sans-serif" }}>Merve ile Ders</p>
+          <p className="font-bold text-lg" style={{ fontFamily: "Outfit, sans-serif" }}>Lara ile Ders</p>
           <p className="text-sm text-white/80">
-            Bir iş anı seç, Merve seni adım adım konuştursun. Hatanı anında düzeltir, takılırsan ipucu verir. Bir ders 5–8 dakika.
+            Bir iş anı seç, Lara seni adım adım konuştursun. Hatanı anında düzeltir, takılırsan ipucu verir. Bir ders 5–8 dakika.
           </p>
           <div className="flex flex-wrap items-center gap-3 mt-3 text-xs">
             <button onClick={onToggleVoice} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/10 hover:bg-white/20">
@@ -754,13 +754,13 @@ function Library({
           <Sparkles size={20} style={{ color: TURQ }} />
           <div className="flex-1">
             <p className="font-semibold" style={{ color: NAVY }}>Sana özel ders</p>
-            <p className="text-xs text-slate-500">Merve son hatalarından kısa bir tekrar dersi hazırlasın.</p>
+            <p className="text-xs text-slate-500">Lara son hatalarından kısa bir tekrar dersi hazırlasın.</p>
           </div>
         </button>
       )}
 
       {busy && (
-        <div className="mb-4 flex items-center gap-2 text-sm text-slate-500"><Loader2 size={16} className="animate-spin" /> Merve dersi hazırlıyor…</div>
+        <div className="mb-4 flex items-center gap-2 text-sm text-slate-500"><Loader2 size={16} className="animate-spin" /> Lara dersi hazırlıyor…</div>
       )}
 
       {recommended.length > 0 && <SectionTitle>Senin için önerilen</SectionTitle>}

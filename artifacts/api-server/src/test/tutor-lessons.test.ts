@@ -113,7 +113,7 @@ describe("öğrenci akışı", () => {
     expect((await api().get("/api/tutor/lessons")).status).toBe(401);
     const res = await api().get("/api/tutor/lessons").set(auth());
     expect(res.status, JSON.stringify(res.body)).toBe(200);
-    expect(res.body.teacher.name).toBe("Merve");
+    expect(res.body.teacher.name).toBe("Lara");
     expect(res.body.lessons).toHaveLength(TUTOR_LESSONS.length);
     expect(res.body.lessons.some((l: any) => l.recommended)).toBe(true);
     expect(res.body.activeSession).toBeNull();
@@ -121,10 +121,10 @@ describe("öğrenci akışı", () => {
     expect(res.body.voice.available).toBe(false);
   });
 
-  it("ders başlar: Merve adla selamlar, ilk adımın kurgusunu söyler (AI olmadan da)", async () => {
+  it("ders başlar: Lara adla selamlar, ilk adımın kurgusunu söyler (AI olmadan da)", async () => {
     const res = await api().post(`/api/tutor/lessons/${SLUG}/start`).set(auth()).send({});
     expect(res.status, JSON.stringify(res.body)).toBe(201);
-    expect(res.body.reply.text).toContain("Merhaba Ayşe, ben Merve.");
+    expect(res.body.reply.text).toContain("Merhaba Ayşe, ben Lara.");
     expect(res.body.reply.text).toContain(lessonSeed.steps[0].setupTr);
     expect(res.body.reply.audioBase64).toBeNull();
     expect(res.body.session).toMatchObject({ stepIndex: 0, totalSteps: lessonSeed.steps.length, status: "active" });
@@ -225,7 +225,7 @@ describe("öğrenci akışı", () => {
     expect(g.body.summary.completed).toBe(true);
   });
 
-  it("gerçek konuşma: Merve kapanışa karar verirse (ended) ders kapanış cümlesiyle tamamlanır", async () => {
+  it("gerçek konuşma: Lara kapanışa karar verirse (ended) ders kapanış cümlesiyle tamamlanır", async () => {
     const start = await api().post(`/api/tutor/lessons/${SLUG}/start`).set(auth()).send({});
     const sid = start.body.session.id;
     await pool.query(`UPDATE tutor_lesson_sessions SET phase = 'roleplay', current_step = $2 WHERE id = $1`, [sid, lessonSeed.steps.length]);

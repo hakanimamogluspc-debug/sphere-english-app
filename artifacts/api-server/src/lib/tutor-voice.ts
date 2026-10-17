@@ -1,5 +1,5 @@
 /**
- * Merve'nin sesi — gerçekçi Türkçe/İngilizce seslendirme.
+ * Lara'nın sesi — gerçekçi Türkçe/İngilizce seslendirme.
  *
  * Neden parça parça?
  *   Tek seferde "Türkçe cümle + İngilizce örnek" okutulunca ses motoru ya İngilizceyi Türk aksanıyla
@@ -11,7 +11,7 @@
  *     4. Sabit metinler (adım kurguları, açılış/kapanış, hedef cümleler) önbelleğe alınır → ucuz ve hızlı.
  *
  * Sağlayıcı: ElevenLabs (ELEVENLABS_API_KEY + seçili ses varsa). Hata olursa OpenAI'ye düşer — ders sessiz kalmaz.
- * Ayarlar: admin "Merve'nin Sesi" ekranından (tutor_settings), yoksa env.
+ * Ayarlar: admin "Lara'nın Sesi" ekranından (tutor_settings), yoksa env.
  */
 
 import OpenAI from "openai";
@@ -225,7 +225,7 @@ function openai(): OpenAI {
 }
 
 const OPENAI_INSTR = {
-  tr: "Sen Merve'sin: 30'lu yaşlarda, sıcak ve esprili bir Türk İngilizce öğretmeni. Doğal, akıcı İstanbul Türkçesiyle konuş; cümle sonlarında doğal duraklamalar yap, gülümseyen ve cesaret veren bir ton kullan, abartma.",
+  tr: "Sen Lara'sın: 30'lu yaşlarda, sıcak ve esprili bir Türk İngilizce öğretmeni. Doğal, akıcı İstanbul Türkçesiyle konuş; cümle sonlarında doğal duraklamalar yap, gülümseyen ve cesaret veren bir ton kullan, abartma.",
   en: "Read this English sentence as a friendly teacher modelling it for a learner: clear, natural native English pronunciation, slightly slower than normal, with natural stress on key words.",
 };
 
@@ -386,7 +386,7 @@ async function cachePut(hash: string, audio: Buffer, chars: number) {
 
 async function concatWithSilence(clips: Buffer[], pausesMs: number[]): Promise<Buffer> {
   if (clips.length === 1 && !pausesMs[0]) return clips[0];
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "merve-"));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "lara-"));
   try {
     const args: string[] = ["-y"];
     const filterIn: string[] = [];

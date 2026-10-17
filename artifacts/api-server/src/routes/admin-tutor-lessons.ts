@@ -1,5 +1,5 @@
 /**
- * Merve ile Ders — admin sahne kütüphanesi.
+ * Lara ile Ders — admin sahne kütüphanesi.
  *
  *   GET    /admin/tutor-lessons            liste + ders bazlı istatistik (30 gün)
  *   GET    /admin/tutor-lessons/overview   genel istatistik (30 gün)
@@ -232,7 +232,7 @@ router.delete("/admin/tutor-lessons/:id", authMiddleware, requireRole("admin"), 
   return res.json({ ok: true });
 });
 
-// ─── Merve'nin sesi ───────────────────────────────────────────────────────────
+// ─── Lara'nın sesi ───────────────────────────────────────────────────────────
 
 /** Ses denemesinde okunan örnek: Türkçe kurgu + İngilizce hedef cümle + övgü — gerçek ders akışına benzer. */
 export const VOICE_SAMPLE =

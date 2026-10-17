@@ -239,7 +239,7 @@ router.use(proGuard, interviewRouter);
 router.use(proGuard, presentationRouter);
 router.use(proGuard, aiQuizRouter);
 router.use(proGuard, tutorRouter);
-router.use(proGuard, tutorLessonsRouter); // Merve ile Ders
+router.use(proGuard, tutorLessonsRouter); // Lara ile Ders
 router.use(proGuard, learningPathRouter);
 
 export default router;
