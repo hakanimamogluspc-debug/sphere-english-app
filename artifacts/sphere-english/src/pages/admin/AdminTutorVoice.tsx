@@ -86,7 +86,10 @@ export default function AdminTutorVoice() {
         body: JSON.stringify({ voiceId: voiceId ?? undefined, text: sample, settings: draft }),
       });
       playSrc(key, `data:audio/mpeg;base64,${d.audioBase64}`);
-      if (d.provider !== "elevenlabs" && st?.elevenAvailable) setNotice("ElevenLabs başarısız oldu, OpenAI sesiyle çalındı. Sunucu günlüğünde [tutor-voice] satırına bak.");
+      if (d.provider !== "elevenlabs" && st?.elevenAvailable) {
+        setNotice(null);
+        setError(`ElevenLabs çalışmadı, duyduğun OpenAI sesi. Sebep: ${d.fallbackReason || "bilinmiyor (sunucu günlüğünde [tutor-voice] satırına bak)"}`);
+      }
     } catch (e: any) {
       setError(e.message);
     } finally {

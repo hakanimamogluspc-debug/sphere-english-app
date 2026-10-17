@@ -222,10 +222,49 @@ async function logElevenUsage(model: string, chars: number, ms: number, status: 
   ).catch(() => {});
 }
 
+/** ElevenLabs hata gövdesini insan okunur Türkçe açıklamaya çevir. Saf fonksiyon (test edilir). */
+export function explainElevenError(status: number, raw: string): string {
+  let detail = raw;
+  try {
+    const j = JSON.parse(raw);
+    const d = j?.detail;
+    detail = typeof d === "string" ? d : d?.message ? `${d.status ?? ""} ${d.message}`.trim() : JSON.stringify(d ?? j);
+  } catch { /* düz metin */ }
+  const low = detail.toLowerCase();
+  let hint = "";
+  if (status === 401 && low.includes("quota")) hint = "Karakter kotası dolmuş — planını/kullanımını kontrol et.";
+  else if (status === 401 && (low.includes("permission") || low.includes("missing_permissions"))) hint = "API anahtarının izni eksik — anahtara \"Text to Speech\" iznini ver.";
+  else if (status === 401) hint = "API anahtarı geçersiz ya da hatalı kopyalanmış.";
+  else if (status === 402 || low.includes("paid_plan") || low.includes("subscription")) hint = "Bu ses/model API'de ücretli plan istiyor (kütüphane sesleri için en az Starter).";
+  else if (status === 404 || low.includes("voice_not_found")) hint = "Ses bulunamadı — sesi ElevenLabs'ta \"Add to my voices\" ile hesabına ekle.";
+  else if (status === 429) hint = "Çok fazla istek / eşzamanlılık sınırı — birazdan tekrar dene.";
+  else if (low.includes("model")) hint = "Model bu ses ya da plan için kullanılamıyor — ayarlardan başka model dene (ör. Multilingual v2).";
+  return `ElevenLabs ${status}: ${detail.slice(0, 220)}${hint ? ` → ${hint}` : ""}`;
+}
+
+async function elevenRequest(voiceId: string, body: Record<string, unknown>, model: string): Promise<{ ok: true; buf: Buffer } | { ok: false; status: number; raw: string }> {
+  const t0 = Date.now();
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 25_000);
+  try {
+    const res = await fetch(`${ELEVEN_BASE}/text-to-speech/${encodeURIComponent(voiceId)}?output_format=mp3_44100_64`, {
+      method: "POST",
+      headers: { "xi-api-key": process.env.ELEVENLABS_API_KEY!, "Content-Type": "application/json", Accept: "audio/mpeg" },
+      body: JSON.stringify(body),
+      signal: ctrl.signal,
+    });
+    void logElevenUsage(model, String(body.text).length, Date.now() - t0, res.status);
+    if (!res.ok) return { ok: false, status: res.status, raw: await res.text().catch(() => "") };
+    return { ok: true, buf: Buffer.from(await res.arrayBuffer()) };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 async function elevenSegment(seg: Segment, s: VoiceSettings, prevText?: string, nextText?: string, voiceIdOverride?: string): Promise<Buffer> {
   const voiceId = voiceIdOverride || s.elevenVoiceId;
   if (!voiceId) throw new Error("ElevenLabs ses seçilmemiş");
-  const body: Record<string, unknown> = {
+  const full: Record<string, unknown> = {
     text: deliveryText(seg, s, "elevenlabs"),
     model_id: s.elevenModel,
     voice_settings: {
@@ -237,29 +276,24 @@ async function elevenSegment(seg: Segment, s: VoiceSettings, prevText?: string, 
     },
   };
   // multilingual_v2 language_code desteklemiyor
-  if (!s.elevenModel.startsWith("eleven_multilingual")) body.language_code = seg.lang;
-  if (prevText) body.previous_text = prevText.slice(-300);
-  if (nextText) body.next_text = nextText.slice(0, 300);
+  if (!s.elevenModel.startsWith("eleven_multilingual")) full.language_code = seg.lang;
+  if (prevText) full.previous_text = prevText.slice(-300);
+  if (nextText) full.next_text = nextText.slice(0, 300);
 
-  const t0 = Date.now();
-  const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), 25_000);
-  try {
-    const res = await fetch(`${ELEVEN_BASE}/text-to-speech/${encodeURIComponent(voiceId)}?output_format=mp3_44100_64`, {
-      method: "POST",
-      headers: { "xi-api-key": process.env.ELEVENLABS_API_KEY!, "Content-Type": "application/json", Accept: "audio/mpeg" },
-      body: JSON.stringify(body),
-      signal: ctrl.signal,
-    });
-    void logElevenUsage(s.elevenModel, String(body.text).length, Date.now() - t0, res.status);
-    if (!res.ok) {
-      const msg = await res.text().catch(() => "");
-      throw new Error(`ElevenLabs ${res.status}: ${msg.slice(0, 300)}`);
+  const first = await elevenRequest(voiceId, full, s.elevenModel);
+  if (first.ok) return first.buf;
+
+  // 400/422: bazı model/ses kombinasyonları ek parametreleri reddedebilir → sade istekle bir kez daha
+  if (first.status === 400 || first.status === 422) {
+    const minimal = { text: seg.text, model_id: s.elevenModel, voice_settings: { stability: s.stability, similarity_boost: s.similarity } };
+    const second = await elevenRequest(voiceId, minimal, s.elevenModel);
+    if (second.ok) {
+      console.warn("[tutor-voice] ElevenLabs tam istek reddedildi, sade istek çalıştı:", explainElevenError(first.status, first.raw));
+      return second.buf;
     }
-    return Buffer.from(await res.arrayBuffer());
-  } finally {
-    clearTimeout(timer);
+    throw new Error(explainElevenError(second.status, second.raw));
   }
+  throw new Error(explainElevenError(first.status, first.raw));
 }
 
 // ─── Önbellek ─────────────────────────────────────────────────────────────────
@@ -337,7 +371,7 @@ async function concatWithSilence(clips: Buffer[], pausesMs: number[]): Promise<B
 export async function synthesizeSpeech(
   parts: SpeechPart[] | string,
   opts: { voiceIdOverride?: string; settingsOverride?: Partial<VoiceSettings> } = {},
-): Promise<{ audioBase64: string; provider: "elevenlabs" | "openai" } | null> {
+): Promise<{ audioBase64: string; provider: "elevenlabs" | "openai"; fallbackReason?: string } | null> {
   const list: SpeechPart[] = typeof parts === "string" ? [{ text: parts }] : parts;
   const segs = splitSegments(list);
   if (segs.length === 0) return null;
@@ -364,10 +398,12 @@ export async function synthesizeSpeech(
     }));
 
   let clips: Buffer[];
+  let fallbackReason: string | undefined;
   try {
     clips = await render(provider);
   } catch (e: any) {
     console.warn(`[tutor-voice] ${provider} başarısız:`, e?.message);
+    if (provider === "elevenlabs") fallbackReason = String(e?.message ?? "bilinmeyen hata");
     if (provider === "elevenlabs" && process.env.OPENAI_API_KEY) {
       provider = "openai";
       try {
@@ -382,7 +418,7 @@ export async function synthesizeSpeech(
   }
   const pauses = segs.map((seg, i) => pauseBefore(segs[i - 1], seg, s));
   const audio = await concatWithSilence(clips, pauses);
-  return { audioBase64: audio.toString("base64"), provider };
+  return { audioBase64: audio.toString("base64"), provider, fallbackReason };
 }
 
 // ─── Admin: ses listesi ───────────────────────────────────────────────────────

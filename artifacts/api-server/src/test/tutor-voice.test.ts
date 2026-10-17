@@ -1,7 +1,17 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { pool } from "@workspace/db";
 import { api, resetDb, closeDb, registerUser, createAdmin } from "./helpers.js";
-import { splitSegments, pauseBefore, deliveryText, getVoiceSettings, ensureVoiceTables } from "../lib/tutor-voice.js";
+import { splitSegments, pauseBefore, deliveryText, getVoiceSettings, ensureVoiceTables, explainElevenError } from "../lib/tutor-voice.js";
+
+describe("ElevenLabs hata açıklaması", () => {
+  it("bilinen hataları Türkçe yönlendirmeye çevirir", () => {
+    expect(explainElevenError(404, JSON.stringify({ detail: { status: "voice_not_found", message: "Voice not found" } }))).toContain("Add to my voices");
+    expect(explainElevenError(401, JSON.stringify({ detail: { status: "quota_exceeded", message: "quota exceeded" } }))).toContain("kota");
+    expect(explainElevenError(401, JSON.stringify({ detail: { status: "missing_permissions", message: "missing permission text_to_speech" } }))).toContain("izni");
+    expect(explainElevenError(401, "Unauthorized")).toContain("geçersiz");
+    expect(explainElevenError(402, "")).toContain("ücretli plan");
+  });
+});
 
 beforeAll(async () => {
   await resetDb();
