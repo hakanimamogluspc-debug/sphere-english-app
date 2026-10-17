@@ -139,7 +139,23 @@ export async function saveVoiceSettings(patch: Partial<Record<(typeof SETTING_KE
 export type Segment = { lang: "tr" | "en"; text: string; part: number; cacheable: boolean };
 export type SpeechPart = { text: string; cacheable?: boolean };
 
-/** Tırnak içindeki (≥2 kelime ya da ≥8 harf) İngilizce örnekleri ayrı parça yapar. Saf fonksiyon. */
+const EN_HINTS = new Set([
+  "the", "you", "your", "i", "i'm", "i'll", "i'd", "we", "we're", "we'll", "our", "is", "are", "was", "were", "to", "and",
+  "can", "could", "would", "will", "should", "what", "how", "when", "why", "where", "this", "that", "it", "it's", "for",
+  "of", "a", "an", "do", "does", "did", "have", "has", "please", "thanks", "thank", "me", "my", "us", "with", "about",
+  "let's", "sure", "hello", "hi", "great", "good", "yes", "okay", "so", "be", "there", "they", "their", "on", "at", "in",
+]);
+
+/** Tırnaksız bir cümlenin İngilizce olup olmadığını tahmin eder (rol yapma bölümündeki İngilizce repliklar için). */
+export function looksEnglishSentence(t: string): boolean {
+  if (/[çğıöşüÇĞİÖŞÜâ]/.test(t)) return false;
+  const words = t.toLowerCase().replace(/[’]/g, "'").match(/[a-z']+/g) ?? [];
+  if (words.length === 0) return false;
+  const hits = words.filter((w) => EN_HINTS.has(w)).length;
+  return hits >= 2 || (hits >= 1 && hits / words.length >= 0.25);
+}
+
+/** Tırnak içindeki (≥2 kelime ya da ≥8 harf) İngilizce örnekleri ve tırnaksız İngilizce cümleleri ayrı parça yapar. Saf fonksiyon. */
 export function splitSegments(parts: SpeechPart[]): Segment[] {
   const out: Segment[] = [];
   parts.forEach((p, part) => {
@@ -151,7 +167,15 @@ export function splitSegments(parts: SpeechPart[]): Segment[] {
     const push = (lang: "tr" | "en", t: string) => {
       const clean = t.replace(/\s+/g, " ").trim();
       if (!/[\p{L}\p{N}]/u.test(clean)) return; // yalnız noktalama
-      out.push({ lang, text: clean, part, cacheable: Boolean(p.cacheable) });
+      if (lang === "en") {
+        out.push({ lang, text: clean, part, cacheable: Boolean(p.cacheable) });
+        return;
+      }
+      // Tırnaksız metni cümlelere böl; İngilizce görünen cümleleri İngilizce oku
+      for (const sentence of clean.split(/(?<=[.!?…])\s+/)) {
+        if (!/[\p{L}\p{N}]/u.test(sentence)) continue;
+        out.push({ lang: looksEnglishSentence(sentence) ? "en" : "tr", text: sentence, part, cacheable: Boolean(p.cacheable) });
+      }
     };
     while ((m = re.exec(text))) {
       const inner = m[1].trim();
@@ -167,7 +191,7 @@ export function splitSegments(parts: SpeechPart[]): Segment[] {
   const merged: Segment[] = [];
   for (const s of out) {
     const prev = merged[merged.length - 1];
-    if (prev && prev.lang === s.lang && prev.part === s.part && s.lang === "tr") prev.text = `${prev.text} ${s.text}`;
+    if (prev && prev.lang === s.lang && prev.part === s.part) prev.text = `${prev.text} ${s.text}`;
     else merged.push({ ...s });
   }
   return merged;

@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
 import { pool } from "@workspace/db";
 
 // Ders motorunun yapay zekâ çağrılarını kontrol edilebilir hâle getir (test env'de OpenAI anahtarı yok).
-const mock = vi.hoisted(() => ({ aiOn: false, queue: [] as any[] }));
+const mock = vi.hoisted(() => ({ aiOn: false, queue: [] as any[], rp: [] as any[] }));
 vi.mock("../lib/tutor-lesson-engine.js", async (importOriginal) => {
   const real: any = await importOriginal();
   return {
@@ -15,12 +15,18 @@ vi.mock("../lib/tutor-lesson-engine.js", async (importOriginal) => {
       if (!next) throw new Error("test: kuyrukta değerlendirme yok");
       return next;
     },
+    roleplayOpener: async () => "Hello, I'm your customer. What happened to my order?",
+    roleplayTurn: async () => {
+      const next = mock.rp.shift();
+      if (!next) throw new Error("test: kuyrukta rol yapma cevabı yok");
+      return next;
+    },
   };
 });
 
 import { api, resetDb, closeDb, registerUser, createAdmin } from "./helpers.js";
 import { TUTOR_LESSONS, seedTutorLessons } from "../lib/tutor-lessons-seed.js";
-import { parseEvaluation, sanitizeGeneratedLesson, languageMixFor } from "../lib/tutor-lesson-engine.js";
+import { parseEvaluation, sanitizeGeneratedLesson, languageMixFor, parseRoleplay, ROLEPLAY_TRANSITION } from "../lib/tutor-lesson-engine.js";
 import { validateLessonInput, slugify } from "../routes/admin-tutor-lessons.js";
 
 const SLUG = "yabanci-musteriye-kendini-tanit";
@@ -47,6 +53,13 @@ describe("saf mantık", () => {
     }), false);
     expect(almost.correction?.corrected).toBe("responsible for");
     expect(parseEvaluation(JSON.stringify({ verdict: "uydurma", say: "x" }), false).verdict).toBe("wrong");
+  });
+
+  it("parseRoleplay: bozuk çıktıda nazik bir tekrar isteği; düzeltme ve bitiş bayrağı okunur", () => {
+    expect(parseRoleplay("??").say).toContain("say that again");
+    const r = parseRoleplay(JSON.stringify({ say: "**Sure.** What size?", correction: { original: "upper size", corrected: "one size bigger" }, ended: true }));
+    expect(r).toMatchObject({ say: "Sure. What size?", ended: true });
+    expect(r.correction?.corrected).toBe("one size bigger");
   });
 
   it("seviye dil karışımı A2'de Türkçe ağırlıklı, C1'de İngilizce", () => {
@@ -158,21 +171,43 @@ describe("öğrenci akışı", () => {
     const { rows: m } = await pool.query(`SELECT source_module, correct_text FROM user_mistakes WHERE user_id = $1`, [userId]);
     expect(m).toEqual([{ source_module: "tutor_lesson", correct_text: "responsible for" }]);
 
-    // 4–5) kalan adımlar
+    // 4–5) kalan adımlar → adımlar bitince ders BİTMEZ, gerçek konuşmaya geçer
     for (let i = 2; i < lessonSeed.steps.length; i++) {
       mock.queue.push({ verdict: "correct", say: "Harika.", correction: null, advance: true });
       r = await turn("Good sentence");
     }
-    expect(r.body.completed).toBe(true);
-    expect(r.body.reply.text).toContain(lessonSeed.outroTr);
-    expect(r.body.summary).toMatchObject({ completed: true, stepsDone: lessonSeed.steps.length, totalSteps: lessonSeed.steps.length });
-    expect(r.body.summary.corrections).toHaveLength(1);
-    expect(r.body.summary.learned[0].phrase).toBe(lessonSeed.steps[0].targets[0]);
+    expect(r.body.completed).toBe(false);
+    expect(r.body.session.phase).toBe("roleplay");
+    expect(r.body.reply.text).toContain(ROLEPLAY_TRANSITION);
+    expect(r.body.reply.text).toContain("What happened to my order?");
+
+    // 6) gerçek konuşma: istediği kadar sürer, düzeltme kaydedilir
+    mock.rp.push({ say: "I see. And when can you deliver?", correction: null, ended: false });
+    r = await turn("Our shipment is late because of the port.");
+    expect(r.status, JSON.stringify(r.body)).toBe(200);
+    expect(r.body.completed).toBe(false);
+    expect(r.body.session.roleplayTurns).toBe(1);
+    mock.rp.push({
+      say: 'Küçük düzeltme: "next week" diyoruz. Okay, next week works for us.',
+      correction: { original: "in next week", corrected: "next week", whyTr: "next week önüne in gelmez." },
+      ended: false,
+    });
+    r = await turn("We deliver in next week.");
+    expect(r.body.correction.corrected).toBe("next week");
+    expect(r.body.session.roleplayTurns).toBe(2);
+
+    // 7) öğrenci "Dersi bitir" der → tamamlandı + özet
+    const fin = await api().post(`/api/tutor/lesson-sessions/${sid}/finish`).set(auth());
+    expect(fin.status).toBe(200);
+    expect(fin.body.summary).toMatchObject({ completed: true, stepsDone: lessonSeed.steps.length, totalSteps: lessonSeed.steps.length, roleplayTurns: 2 });
+    expect(fin.body.summary.corrections).toHaveLength(2);
+    expect(fin.body.summary.learned[0].phrase).toBe(lessonSeed.steps[0].targets[0]);
 
     // bitmiş derse cevap → 409
-    mock.queue.push({ verdict: "correct", say: "x", correction: null, advance: true });
+    mock.rp.push({ say: "x", correction: null, ended: false });
     expect((await turn("again")).status).toBe(409);
     mock.queue.length = 0;
+    mock.rp.length = 0;
 
     // puan
     await new Promise((res) => setTimeout(res, 100));
@@ -186,8 +221,25 @@ describe("öğrenci akışı", () => {
 
     // oturum geçmişi
     const g = await api().get(`/api/tutor/lesson-sessions/${sid}`).set(auth());
-    expect(g.body.turns.filter((t: any) => t.role === "user")).toHaveLength(lessonSeed.steps.length + 1);
+    expect(g.body.turns.filter((t: any) => t.role === "user")).toHaveLength(lessonSeed.steps.length + 1 + 2);
     expect(g.body.summary.completed).toBe(true);
+  });
+
+  it("gerçek konuşma: Merve kapanışa karar verirse (ended) ders kapanış cümlesiyle tamamlanır", async () => {
+    const start = await api().post(`/api/tutor/lessons/${SLUG}/start`).set(auth()).send({});
+    const sid = start.body.session.id;
+    await pool.query(`UPDATE tutor_lesson_sessions SET phase = 'roleplay', current_step = $2 WHERE id = $1`, [sid, lessonSeed.steps.length]);
+    mock.rp.push({ say: "Thank you, goodbye!", correction: null, ended: true });
+    const r = await api().post(`/api/tutor/lesson-sessions/${sid}/turn?speak=0`).set(auth()).send({ text: "That's all, thank you." });
+    expect(r.body.completed).toBe(true);
+    expect(r.body.reply.text).toContain(lessonSeed.outroTr);
+    expect(r.body.summary.completed).toBe(true);
+  });
+
+  it("adım bölümünde yarıda bırakılan ders 'tamamlandı' sayılmaz", async () => {
+    const start = await api().post(`/api/tutor/lessons/${SLUG}/start`).set(auth()).send({});
+    const fin = await api().post(`/api/tutor/lesson-sessions/${start.body.session.id}/finish`).set(auth());
+    expect(fin.body.summary.completed).toBe(false);
   });
 
   it("yanlış cevaplarda adım değişmez, deneme sayısı artar (3. deneme motorda 'son deneme' olur)", async () => {

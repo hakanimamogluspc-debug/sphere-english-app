@@ -1889,6 +1889,9 @@ export async function runStartupMigrations() {
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )`,
     `CREATE INDEX IF NOT EXISTS tutor_lesson_turns_session_idx ON tutor_lesson_turns(session_id, id)`,
+    // Adımlardan sonra "gerçek konuşma" (rol yapma) bölümü
+    `ALTER TABLE tutor_lesson_sessions ADD COLUMN IF NOT EXISTS phase VARCHAR(12) NOT NULL DEFAULT 'steps'`,
+    `ALTER TABLE tutor_lesson_sessions ADD COLUMN IF NOT EXISTS roleplay_turns INTEGER NOT NULL DEFAULT 0`,
   ];
   for (const sql of migrations) {
     try {

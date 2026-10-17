@@ -34,6 +34,12 @@ describe("konuşmayı parçalara ayırma", () => {
     ]);
   });
 
+  it("rol yapmada tırnaksız İngilizce replik İngilizce okunur; Türkçe düzeltme Türkçe kalır", () => {
+    const segs = splitSegments([{ text: 'Küçük düzeltme: "next week" diyoruz. Okay, next week works for us. What time is best for you?' }]);
+    expect(segs.map((s) => s.lang)).toEqual(["tr", "en", "tr", "en"]);
+    expect(segs[3].text).toBe("Okay, next week works for us. What time is best for you?");
+  });
+
   it("tek kelimelik ya da Türkçe karakterli tırnaklar İngilizce sayılmaz", () => {
     const segs = splitSegments([{ text: '"No" kelimesi tehlikeli. "Merhaba dünya" dedi.' }]);
     expect(segs).toHaveLength(1);

@@ -184,14 +184,18 @@ DERS: "${opts.lesson.title}" — ${opts.lesson.summary}
 ŞU ANKİ ADIM (${opts.stepIndex + 1}/${opts.lesson.steps.length}):
 - Görev: ${step.goalTr}
 - Kurgu (sen az önce söyledin): ${step.setupTr}
-- Örnek doğru cevaplar (birebir aynısı GEREKMEZ): ${step.targets.map((t) => `"${t}"`).join(" | ")}
+- Örnek cevaplar (YALNIZCA FİKİR VERMEK İÇİN — öğrencinin bunlardan birini söylemesi BEKLENMİYOR): ${step.targets.map((t) => `"${t}"`).join(" | ")}
 - İpucu: ${step.hintTr || "(yok)"}
 - Bu adımdaki deneme sayısı: ${opts.attempts + 1}${finalAttempt ? " — SON DENEME" : ""}
 
-DEĞERLENDİRME KURALLARI:
-- "correct": görevi yerine getiren, seviyesine göre anlaşılır ve doğal bir İngilizce cümle. Örnek cevapla aynı olması gerekmez; isim, şirket, rakam vb. öğrencinin kendisininki olabilir. advance=true. Kısa ve içten bir övgü ver.
-- "almost": görevi yerine getiriyor ama düzeltilmeye değer bir hata var (ör. "responsible of", "upper size", eksik "for"). correction doldur, say içinde doğrusunu söyle; advance=true (takılmasın, öğrenerek ilerlesin).
-- "wrong": görevi karşılamıyor ya da anlaşılmıyor. advance=false; ipucu ver ve tekrar denemesini iste.
+DEĞERLENDİRME KURALLARI — EN ÖNEMLİ İLKE: ANLAMA VE İŞE BAK, KELİMELERE DEĞİL.
+Gerçek bir öğretmen gibi düşün: "Bu cümleyi gerçek bir iş ortamında söyleseydi, karşı taraf anlar ve iş görülür müydü?" Evet ise öğrenci BAŞARDI.
+- Örnek cevaplardan FARKLI kelime, farklı yapı, farklı uzunluk, ek bilgi, kendi isim/şirket/rakamları, daha resmi ya da daha samimi bir üslup kullanmak ASLA tek başına hata değildir. Doğaçlamayı ödüllendir.
+  Örnek: görev "gecikmeyi söyle", örnek "I'm afraid your order will be delayed." → "Unfortunately your shipment is going to arrive late, sorry about that." = correct.
+  Örnek: görev "kendini tanıt", örnek "Hi, I'm Ayşe." → "Good morning, my name is Ayşe and I'm happy to be here." = correct.
+- "correct": görevi yerine getiren, anlaşılır İngilizce. Küçük üslup tercihleri, eksik virgül, büyük/küçük harf, ufak doğal kısaltmalar hata değildir. advance=true. Kısa, içten bir övgü; istersen "Bunu şöyle de diyebilirsin: …" diye ALTERNATİF öner (correction alanını DOLDURMA — alternatif hata değildir).
+- "almost": görevi yerine getiriyor ama gerçekten düzeltilmesi gereken bir dilbilgisi/kelime hatası var (ör. "responsible of", "upper size", "I am agree", eksik özne). correction doldur; advance=true (öğrenerek ilerlesin).
+- "wrong": YALNIZCA şu durumlarda: cevap görevi hiç karşılamıyor (başka bir şey söylüyor), anlaşılmıyor, ya da neredeyse tamamen Türkçe. Emin değilsen "wrong" DEME — "correct" ya da "almost" seç. advance=false; ipucu ver, tekrar denemesini iste.
 - "question": öğrenci Türkçe soru soruyor / "bilmiyorum", "nasıl derim" diyor. advance=false; kısa yardım et (kalıbın başını ver), tekrar denemesini iste.
 - "off_topic": dersle ilgisiz. advance=false; nazikçe göreve döndür.
 ${finalAttempt ? `- SON DENEME: Cevap hâlâ doğru değilse doğru cümleyi tırnak içinde ver, bir kez yüksek sesle tekrar etmesini öner ve advance=true yap (öğrenci aynı adımda takılı kalmasın).` : ""}
@@ -261,9 +265,9 @@ export async function evaluateTurn(opts: {
   ];
   const completion = await withTimeout(
     getOpenAI().chat.completions.create({
-      model: process.env.TUTOR_LLM_MODEL || "gpt-4o-mini",
+      model: process.env.TUTOR_LLM_MODEL || "gpt-4.1-mini",
       messages,
-      temperature: 0.5,
+      temperature: 0.4,
       max_tokens: 350,
       response_format: { type: "json_object" },
     }),
@@ -271,6 +275,115 @@ export async function evaluateTurn(opts: {
     "GPT",
   );
   return parseEvaluation(completion.choices[0]?.message?.content || "", opts.attempts >= 2);
+}
+
+// ─── Gerçek konuşma (rol yapma) bölümü ────────────────────────────────────────
+// Adımlar bittikten sonra Merve dersin konusundaki karşı tarafı (müşteri, yönetici, tedarikçi…) canlandırır;
+// öğrenci istediği kadar konuşur. Hatalar konuşmayı bölmeden, kısaca düzeltilir.
+
+export function roleplayEnabled(): boolean {
+  return process.env.TUTOR_ROLEPLAY !== "0";
+}
+export function roleplayMaxTurns(): number {
+  const n = Number(process.env.TUTOR_ROLEPLAY_MAX_TURNS);
+  return Number.isFinite(n) && n >= 2 ? Math.round(n) : 20;
+}
+
+export const ROLEPLAY_TRANSITION =
+  "Süper, bu dersin kalıpları tamam. Şimdi gerçek bir konuşma yapalım: ben karşı tarafı oynayacağım, sen öğrendiklerini kullanarak istediğin gibi cevap ver. Bitirmek istediğinde Dersi bitir'e basman yeterli.";
+
+export type RoleplayResult = { say: string; correction: Correction | null; ended: boolean };
+
+function buildRoleplayPrompt(opts: { lesson: LessonSnapshot; level: string | null; sector: string | null; firstName: string | null; turnNo: number; maxTurns: number }): string {
+  const phrases = opts.lesson.steps.map((s) => `"${s.targets[0]}"`).join(", ");
+  const nearEnd = opts.turnNo >= opts.maxTurns - 1;
+  return `${PERSONA}
+
+ŞİMDİ ROL YAPMA BÖLÜMÜNDESİN.
+Ders: "${opts.lesson.title}" — ${opts.lesson.summary}
+Öğrencinin bu derste çalıştığı kalıplar: ${phrases}
+Öğrenci: ${opts.firstName || "(isim yok)"}${opts.sector ? `, sektör: ${opts.sector}` : ""}
+${languageMixFor(opts.level)}
+
+GÖREVİN:
+- Dersin konusundaki KARŞI TARAFI canlandır (ör. yabancı müşteri, yönetici, tedarikçi, toplantıdaki meslektaş). Bu rolde İNGİLİZCE konuş, öğrencinin seviyesine uygun, doğal ve kısa (1–3 cümle).
+- Gerçek bir iş konuşması gibi ilerlet: soru sor, itiraz et, ayrıntı iste, konuyu doğal biçimde genişlet. Öğrenciyi konuşturmak için her cevabın sonunda bir soru ya da konuşmayı sürdüren bir söz olsun.
+- Öğrenci doğaçlama yapabilir; farklı kelime ve yapılar SERBEST. Sadece gerçek bir hata varsa (anlamı bozan ya da belirgin dilbilgisi hatası) rolden çıkmadan önce TEK kısa Türkçe düzeltme yap, sonra rolüne dön.
+  Biçim: Küçük düzeltme: "doğru hâli" diyoruz. Sonra İngilizce rol cümlen.
+  Hata yoksa düzeltme YAPMA, doğrudan rolünle devam et.
+- Öğrenci Türkçe "nasıl derim" diye sorarsa kısa yardım et, sonra rolüne dön.
+- Öğrenci konuşmayı bitirmek istediğini söylerse ("bitirelim", "that's all", "goodbye" vb.) ya da konu doğal olarak kapandıysa: rolündeki kapanış cümlesini söyle, ended=true.
+${nearEnd ? "- Bu konuşmanın SON turu: rolündeki kapanış cümlesini söyle ve ended=true yap." : ""}
+- "say" sesli okunur: markdown yok, en fazla 50 kelime. İngilizce rol cümlelerini tırnak İÇİNE ALMA (yalnız düzeltmedeki doğru hâli tırnakla).
+
+ÇIKTI — yalnızca geçerli JSON:
+{ "say": "<...>", "correction": null | { "original": "<yanlış kısım>", "corrected": "<doğrusu>", "whyTr": "<Türkçe, en fazla 15 kelime>" }, "ended": true | false }`;
+}
+
+/** Saf fonksiyon: rol yapma çıktısını doğrula. */
+export function parseRoleplay(raw: string): RoleplayResult {
+  let j: any = null;
+  try {
+    const m = raw.match(/\{[\s\S]*\}/);
+    j = m ? JSON.parse(m[0]) : null;
+  } catch { j = null; }
+  if (!j || typeof j !== "object") return { say: "Sorry, could you say that again?", correction: null, ended: false };
+  const say = String(j.say || "").replace(/[*_#`>]/g, "").replace(/\s+/g, " ").trim().slice(0, 700) || "Could you tell me a bit more?";
+  let correction: Correction | null = null;
+  if (j.correction && typeof j.correction === "object" && j.correction.corrected) {
+    correction = {
+      original: String(j.correction.original || "").slice(0, 300),
+      corrected: String(j.correction.corrected).slice(0, 300),
+      whyTr: String(j.correction.whyTr || "").slice(0, 200),
+    };
+  }
+  return { say, correction, ended: Boolean(j.ended) };
+}
+
+export async function roleplayTurn(opts: {
+  lesson: LessonSnapshot; level: string | null; sector: string | null; firstName: string | null;
+  turnNo: number; maxTurns: number;
+  history: Array<{ role: "merve" | "user"; text: string }>; learnerText: string;
+}): Promise<RoleplayResult> {
+  const completion = await withTimeout(
+    getOpenAI().chat.completions.create({
+      model: process.env.TUTOR_LLM_MODEL || "gpt-4.1-mini",
+      messages: [
+        { role: "system", content: buildRoleplayPrompt(opts) },
+        ...opts.history.slice(-12).map((h) => ({ role: h.role === "merve" ? "assistant" : "user", content: h.text })),
+        { role: "user", content: opts.learnerText },
+      ] as any,
+      temperature: 0.7,
+      max_tokens: 350,
+      response_format: { type: "json_object" },
+    }),
+    25_000,
+    "GPT",
+  );
+  return parseRoleplay(completion.choices[0]?.message?.content || "");
+}
+
+/** Rol yapmanın ilk cümlesi (karşı taraf konuşmayı açar). Hata olursa genel bir açılış. */
+export async function roleplayOpener(opts: { lesson: LessonSnapshot; level: string | null; sector: string | null; firstName: string | null }): Promise<string> {
+  try {
+    const completion = await withTimeout(
+      getOpenAI().chat.completions.create({
+        model: process.env.TUTOR_LLM_MODEL || "gpt-4.1-mini",
+        messages: [
+          { role: "system", content: buildRoleplayPrompt({ ...opts, turnNo: 0, maxTurns: 99 }) },
+          { role: "user", content: "(Konuşmayı rolündeki karşı taraf olarak SEN başlat: İngilizce, 1–2 cümle, bir soruyla bitir. correction=null, ended=false.)" },
+        ] as any,
+        temperature: 0.8,
+        max_tokens: 200,
+        response_format: { type: "json_object" },
+      }),
+      20_000,
+      "GPT",
+    );
+    return parseRoleplay(completion.choices[0]?.message?.content || "").say;
+  } catch {
+    return "Hello! Thanks for taking the time to talk today. So, where would you like to start?";
+  }
 }
 
 // ─── Konuşma metinleri (LLM gerektirmeyen) ────────────────────────────────────
@@ -346,7 +459,7 @@ Ton kuralları geçerli: hitap yok, kısa, esprili ama saygılı. setupTr sesli 
 }`;
   const completion = await withTimeout(
     getOpenAI().chat.completions.create({
-      model: process.env.TUTOR_LLM_MODEL || "gpt-4o-mini",
+      model: process.env.TUTOR_LLM_MODEL || "gpt-4.1-mini",
       messages: [
         { role: "system", content: system },
         { role: "user", content: `Öğrencinin son hataları:\n${list}` },

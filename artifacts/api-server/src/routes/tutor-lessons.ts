@@ -19,6 +19,7 @@ import { authMiddleware, type AuthRequest } from "../middlewares/auth.js";
 import { awardPoints } from "../lib/points.js";
 import {
   aiAvailable, transcribeLearner, speak, evaluateTurn, openingLine, openingSpeech, closingLine,
+  roleplayEnabled, roleplayMaxTurns, roleplayTurn, roleplayOpener, ROLEPLAY_TRANSITION,
   generatePersonalLesson, type LessonSnapshot, type Correction,
 } from "../lib/tutor-lesson-engine.js";
 
@@ -77,11 +78,18 @@ function publicSession(s: any) {
     status: s.status,
     title: lesson.title,
     summary: lesson.summary,
+    phase: (s.phase ?? "steps") as "steps" | "roleplay",
     stepIndex: s.current_step,
     totalSteps: lesson.steps.length,
     steps: lesson.steps.map((st) => ({ key: st.key, goalTr: st.goalTr })),
-    currentGoal: lesson.steps[s.current_step]?.goalTr ?? null,
-    currentHint: lesson.steps[s.current_step]?.hintTr ?? null,
+    currentGoal: s.phase === "roleplay"
+      ? "Gerçek konuşma: Merve karşı tarafı oynuyor. Öğrendiklerini kullan, istediğin kadar konuş."
+      : lesson.steps[s.current_step]?.goalTr ?? null,
+    currentHint: s.phase === "roleplay"
+      ? `Kalıplar: ${lesson.steps.map((st) => st.targets[0]).join(" · ")}`
+      : lesson.steps[s.current_step]?.hintTr ?? null,
+    roleplayTurns: s.roleplay_turns ?? 0,
+    roleplayMaxTurns: roleplayMaxTurns(),
     startedAt: s.started_at,
   };
 }
@@ -96,7 +104,7 @@ async function buildSummary(sessionId: number) {
   const corrections: Correction[] = turns
     .filter((t: any) => t.role === "user" && t.meta?.correction)
     .map((t: any) => t.meta.correction);
-  const stepsDone = s.status === "completed" ? lesson.steps.length : s.current_step;
+  const stepsDone = s.status === "completed" || s.phase === "roleplay" ? lesson.steps.length : s.current_step;
   const learned = lesson.steps.slice(0, stepsDone).map((st) => ({ goalTr: st.goalTr, phrase: st.targets[0] }));
   const end = s.finished_at ? new Date(s.finished_at) : new Date(s.last_turn_at);
   return {
@@ -105,6 +113,7 @@ async function buildSummary(sessionId: number) {
     stepsDone,
     totalSteps: lesson.steps.length,
     turns: s.turns,
+    roleplayTurns: s.roleplay_turns ?? 0,
     corrections,
     learned,
     durationSec: Math.max(0, Math.round((end.getTime() - new Date(s.started_at).getTime()) / 1000)),
@@ -290,6 +299,14 @@ router.get("/tutor/lesson-sessions/:id", authMiddleware, async (req: AuthRequest
   }
 });
 
+function recordMistake(userId: number, c: Correction, learnerText: string, sessionId: number, level: string | null, slug: string | null) {
+  pool.query(
+    `INSERT INTO user_mistakes (user_id, mistake_type, wrong_text, correct_text, explanation, context, source_module, source_ref, cefr_tag, tags)
+     VALUES ($1, 'grammar', $2, $3, $4, $5, 'tutor_lesson', $6, $7, $8)`,
+    [userId, c.original || learnerText, c.corrected, c.whyTr || null, learnerText, String(sessionId), level, [slug ?? "personal"]],
+  ).catch(() => {});
+}
+
 router.post(
   "/tutor/lesson-sessions/:id/turn",
   authMiddleware,
@@ -304,7 +321,8 @@ router.post(
 
       const lesson: LessonSnapshot = s.lesson_snapshot;
       const stepIndex: number = s.current_step;
-      if (stepIndex >= lesson.steps.length) return res.status(409).json({ error: "Ders zaten tamamlandı.", code: "not_active" });
+      const phase: "steps" | "roleplay" = s.phase === "roleplay" ? "roleplay" : "steps";
+      if (phase === "steps" && stepIndex >= lesson.steps.length) return res.status(409).json({ error: "Ders zaten tamamlandı.", code: "not_active" });
 
       const wantVoice = String(req.query.speak ?? req.body?.speak ?? "1") !== "0" && req.body?.speak !== false;
       const used = await voiceTurnsToday(userId);
@@ -331,12 +349,69 @@ router.post(
         return res.status(400).json({ error: "Seni duyamadım. Biraz daha yüksek ve net söyler misin?", code: "empty" });
       }
 
-      // 2) Değerlendirme
       const user = await loadUser(userId);
       const { rows: hist } = await pool.query(
-        `SELECT role, text FROM tutor_lesson_turns WHERE session_id = $1 ORDER BY id DESC LIMIT 8`,
+        `SELECT role, text FROM tutor_lesson_turns WHERE session_id = $1 ORDER BY id DESC LIMIT 12`,
         [s.id],
       );
+      const history = hist.reverse();
+      const canVoice = wantVoice && used < limit;
+
+      // ── A) Gerçek konuşma (rol yapma) bölümü ────────────────────────────────
+      if (phase === "roleplay") {
+        const maxTurns = roleplayMaxTurns();
+        const turnNo = (s.roleplay_turns ?? 0) + 1;
+        const rp = await roleplayTurn({
+          lesson, level: user.level, sector: user.sector, firstName: user.firstName,
+          turnNo, maxTurns, history, learnerText,
+        });
+        const completed = rp.ended || turnNo >= maxTurns;
+        const upd = await pool.query(
+          `UPDATE tutor_lesson_sessions
+              SET turns = turns + 1, roleplay_turns = roleplay_turns + 1,
+                  voice_turns = voice_turns + $3, corrections = corrections + $4,
+                  status = CASE WHEN $5 THEN 'completed' ELSE status END,
+                  finished_at = CASE WHEN $5 THEN NOW() ELSE finished_at END,
+                  last_turn_at = NOW()
+            WHERE id = $1 AND roleplay_turns = $2 AND status = 'active'`,
+          [s.id, turnNo - 1, inputMode === "voice" ? 1 : 0, rp.correction ? 1 : 0, completed],
+        );
+        if ((upd.rowCount ?? 0) === 0) return res.status(409).json({ error: "Bu cevap zaten işlendi.", code: "stale" });
+
+        const closing = completed ? closingLine(lesson) : "";
+        const replyText = `${rp.say} ${closing}`.replace(/\s+/g, " ").trim();
+        const audioBase64 = canVoice
+          ? await speak([{ text: rp.say }, { text: closing, cacheable: Boolean(lesson.slug) }].filter((p) => p.text.trim()))
+          : null;
+        await pool.query(
+          `INSERT INTO tutor_lesson_turns (session_id, role, text, input_mode, step_index, meta)
+           VALUES ($1, 'user', $2, $3, $4, $5::jsonb), ($1, 'merve', $6, NULL, $4, $7::jsonb)`,
+          [
+            s.id, learnerText, inputMode, stepIndex,
+            JSON.stringify({ phase: "roleplay", verdict: rp.correction ? "almost" : "correct", correction: rp.correction }),
+            replyText, JSON.stringify({ phase: "roleplay", voiced: Boolean(audioBase64) }),
+          ],
+        );
+        if (rp.correction?.corrected) recordMistake(userId, rp.correction, learnerText, s.id, user.level, lesson.slug);
+        awardPoints(userId, "tutor_lesson_turn", { dailyCap: 30, silent: true }).catch(() => {});
+        if (completed) awardPoints(userId, "tutor_lesson_complete", { onceEverForRef: true, refId: `tutor-session-${s.id}`, silent: true }).catch(() => {});
+
+        const { rows: [fresh] } = await pool.query(`SELECT * FROM tutor_lesson_sessions WHERE id = $1`, [s.id]);
+        return res.json({
+          learnerText, inputMode,
+          verdict: rp.correction ? "almost" : "correct",
+          correction: rp.correction,
+          advanced: false,
+          reply: { text: replyText, audioBase64 },
+          session: publicSession(fresh),
+          completed,
+          summary: completed ? await buildSummary(s.id) : null,
+          voiceQuotaReached: wantVoice && !canVoice,
+          voiceFailed: canVoice && !audioBase64,
+        });
+      }
+
+      // ── B) Adımlı bölüm ─────────────────────────────────────────────────────
       const evaluation = await evaluateTurn({
         lesson,
         stepIndex,
@@ -344,13 +419,15 @@ router.post(
         level: user.level,
         firstName: user.firstName,
         sector: user.sector,
-        history: hist.reverse(),
+        history: history.slice(-8),
         learnerText,
       });
 
-      // 3) Adımı ilerlet (yarış koşuluna karşı current_step koşullu)
+      // Adımı ilerlet (yarış koşuluna karşı current_step koşullu). Adımlar bitince ya gerçek konuşmaya geçilir ya ders biter.
       const nextIndex = evaluation.advance ? stepIndex + 1 : stepIndex;
-      const completed = nextIndex >= lesson.steps.length;
+      const stepsDone = nextIndex >= lesson.steps.length;
+      const enterRoleplay = stepsDone && roleplayEnabled();
+      const completed = stepsDone && !enterRoleplay;
       const upd = await pool.query(
         `UPDATE tutor_lesson_sessions
             SET current_step = $3,
@@ -360,25 +437,29 @@ router.post(
                 corrections = corrections + $6,
                 status = CASE WHEN $7 THEN 'completed' ELSE status END,
                 finished_at = CASE WHEN $7 THEN NOW() ELSE finished_at END,
+                phase = CASE WHEN $8 THEN 'roleplay' ELSE phase END,
                 last_turn_at = NOW()
-          WHERE id = $1 AND current_step = $2 AND status = 'active'`,
-        [s.id, stepIndex, nextIndex, evaluation.advance, inputMode === "voice" ? 1 : 0, evaluation.correction ? 1 : 0, completed],
+          WHERE id = $1 AND current_step = $2 AND status = 'active' AND phase = 'steps'`,
+        [s.id, stepIndex, nextIndex, evaluation.advance, inputMode === "voice" ? 1 : 0, evaluation.correction ? 1 : 0, completed, enterRoleplay],
       );
       if ((upd.rowCount ?? 0) === 0) {
         return res.status(409).json({ error: "Bu cevap zaten işlendi.", code: "stale" });
       }
 
-      // 4) Merve'nin konuşması: tepki + (ilerlediyse) sonraki adımın kurgusu ya da kapanış
-      const follow = evaluation.advance
-        ? completed ? closingLine(lesson) : lesson.steps[nextIndex].setupTr
-        : "";
-      const replyText = `${evaluation.say} ${follow}`.replace(/\s+/g, " ").trim();
+      // Merve'nin konuşması: tepki + (ilerlediyse) sonraki adımın kurgusu / gerçek konuşmaya geçiş / kapanış
+      let opener = "";
+      if (enterRoleplay) opener = await roleplayOpener({ lesson, level: user.level, sector: user.sector, firstName: user.firstName });
+      const follow = !evaluation.advance ? ""
+        : enterRoleplay ? ROLEPLAY_TRANSITION
+        : completed ? closingLine(lesson)
+        : lesson.steps[nextIndex].setupTr;
+      const replyText = `${evaluation.say} ${follow} ${opener}`.replace(/\s+/g, " ").trim();
 
-      const canVoice = wantVoice && used < limit;
-      // Tepki (dinamik) + sonraki adım/kapanış (sabit → önbellekten) ayrı parçalar: arada doğal duraklama
+      // Tepki (dinamik) + sonraki adım/geçiş (sabit → önbellekten) + rol açılışı (dinamik): arada doğal duraklama
       const speechParts = [
         { text: evaluation.say },
-        { text: follow, cacheable: Boolean(lesson.slug) },
+        { text: follow, cacheable: Boolean(lesson.slug) || enterRoleplay },
+        { text: opener },
       ].filter((p) => p.text.trim());
       const audioBase64 = canVoice ? await speak(speechParts) : null;
 
@@ -389,28 +470,13 @@ router.post(
         [
           s.id, learnerText, inputMode, stepIndex,
           JSON.stringify({ verdict: evaluation.verdict, correction: evaluation.correction }),
-          replyText, completed ? stepIndex : nextIndex,
-          JSON.stringify({ voiced: Boolean(audioBase64), advanced: evaluation.advance }),
+          replyText, stepsDone ? stepIndex : nextIndex,
+          JSON.stringify({ voiced: Boolean(audioBase64), advanced: evaluation.advance, enteredRoleplay: enterRoleplay }),
         ],
       );
 
-      // 5) Hata defteri + puan
-      if (evaluation.correction?.corrected) {
-        pool.query(
-          `INSERT INTO user_mistakes (user_id, mistake_type, wrong_text, correct_text, explanation, context, source_module, source_ref, cefr_tag, tags)
-           VALUES ($1, 'grammar', $2, $3, $4, $5, 'tutor_lesson', $6, $7, $8)`,
-          [
-            userId,
-            evaluation.correction.original || learnerText,
-            evaluation.correction.corrected,
-            evaluation.correction.whyTr || null,
-            learnerText,
-            String(s.id),
-            user.level,
-            [lesson.slug ?? "personal"],
-          ],
-        ).catch(() => {});
-      }
+      // Hata defteri + puan
+      if (evaluation.correction?.corrected) recordMistake(userId, evaluation.correction, learnerText, s.id, user.level, lesson.slug);
       awardPoints(userId, "tutor_lesson_turn", { dailyCap: 30, silent: true }).catch(() => {});
       if (completed) {
         awardPoints(userId, "tutor_lesson_complete", { onceEverForRef: true, refId: `tutor-session-${s.id}`, silent: true }).catch(() => {});
@@ -445,10 +511,15 @@ router.post("/tutor/lesson-sessions/:id/finish", authMiddleware, async (req: Aut
     const s = await ownSession(req.userId!, String(req.params.id));
     if (!s) return res.status(404).json({ error: "Oturum bulunamadı." });
     if (s.status === "active") {
+      // Gerçek konuşma bölümüne geçmiş ders = adımlar bitti → tamamlandı sayılır; yoksa yarım kaldı
+      const done = s.phase === "roleplay";
       await pool.query(
-        `UPDATE tutor_lesson_sessions SET status = 'abandoned', finished_at = NOW() WHERE id = $1 AND status = 'active'`,
-        [s.id],
+        `UPDATE tutor_lesson_sessions SET status = $2, finished_at = NOW() WHERE id = $1 AND status = 'active'`,
+        [s.id, done ? "completed" : "abandoned"],
       );
+      if (done) {
+        awardPoints(req.userId!, "tutor_lesson_complete", { onceEverForRef: true, refId: `tutor-session-${s.id}`, silent: true }).catch(() => {});
+      }
     }
     return res.json({ summary: await buildSummary(s.id) });
   } catch (e: any) {

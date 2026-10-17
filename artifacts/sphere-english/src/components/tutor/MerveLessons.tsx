@@ -27,6 +27,7 @@ type LessonCard = {
 type SessionInfo = {
   id: number; kind: "library" | "personal"; status: string; title: string; summary: string;
   stepIndex: number; totalSteps: number; steps: { key: string; goalTr: string }[];
+  phase?: "steps" | "roleplay"; roleplayTurns?: number; roleplayMaxTurns?: number;
   currentGoal: string | null; currentHint: string | null;
 };
 type Correction = { original: string; corrected: string; whyTr: string };
@@ -253,6 +254,23 @@ export default function MerveLessons({ compact = false, simulationHref = "/stude
     }
   };
 
+  const [finishing, setFinishing] = useState(false);
+  const finishLesson = async () => {
+    if (!session || finishing) return;
+    speaker.stop();
+    mic.cancel();
+    setFinishing(true);
+    try {
+      const d = await api(`/tutor/lesson-sessions/${session.id}/finish`, { method: "POST" });
+      setSummary(d.summary);
+      setSession({ ...session, status: "completed" });
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setFinishing(false);
+    }
+  };
+
   const leave = async () => {
     speaker.stop();
     mic.cancel();
@@ -374,7 +392,8 @@ export default function MerveLessons({ compact = false, simulationHref = "/stude
     );
   }
 
-  const progress = session.totalSteps ? Math.min(1, (summary?.completed ? session.totalSteps : session.stepIndex) / session.totalSteps) : 0;
+  const roleplay = session.phase === "roleplay";
+  const progress = roleplay || summary?.completed ? 1 : session.totalSteps ? Math.min(1, session.stepIndex / session.totalSteps) : 0;
   const finished = Boolean(summary) || session.status !== "active";
 
   return (
@@ -389,7 +408,7 @@ export default function MerveLessons({ compact = false, simulationHref = "/stude
           <div className="min-w-0 flex-1">
             <p className="font-bold text-sm truncate" style={{ color: NAVY, fontFamily: "Outfit, sans-serif" }}>{session.title}</p>
             <p className="text-[11px] text-slate-500">
-              Merve ile ders · {finished ? "tamamlandı" : `Adım ${Math.min(session.stepIndex + 1, session.totalSteps)}/${session.totalSteps}`}
+              Merve ile ders · {finished ? "tamamlandı" : roleplay ? `Gerçek konuşma · ${(session.roleplayTurns ?? 0) + 1}. tur` : `Adım ${Math.min(session.stepIndex + 1, session.totalSteps)}/${session.totalSteps}`}
             </p>
           </div>
           <button
@@ -441,15 +460,27 @@ export default function MerveLessons({ compact = false, simulationHref = "/stude
             <div className="mb-3 rounded-xl px-3 py-2 flex items-start gap-2" style={{ background: "#e8eef8" }}>
               <Target size={15} className="mt-0.5 shrink-0" style={{ color: NAVY }} />
               <div className="flex-1 min-w-0">
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Görevin</p>
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">{roleplay ? "Serbest konuşma" : "Görevin"}</p>
                 <p className="text-sm font-medium" style={{ color: NAVY }}>{session.currentGoal}</p>
                 {showHint && session.currentHint && <p className="text-xs mt-1 text-slate-600">{session.currentHint}</p>}
               </div>
               {session.currentHint && (
                 <button onClick={() => setShowHint((s) => !s)} className="text-xs font-semibold flex items-center gap-1 shrink-0" style={{ color: TURQ_DEEP }}>
-                  <Lightbulb size={13} /> {showHint ? "Gizle" : "İpucu"}
+                  <Lightbulb size={13} /> {showHint ? "Gizle" : roleplay ? "Kalıplar" : "İpucu"}
                 </button>
               )}
+            </div>
+          )}
+          {roleplay && (
+            <div className="mb-3 flex justify-end">
+              <button
+                onClick={() => void finishLesson()}
+                disabled={finishing || Boolean(busy)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border disabled:opacity-50"
+                style={{ borderColor: NAVY, color: NAVY }}
+              >
+                {finishing ? <Loader2 size={13} className="animate-spin" /> : <CheckCircle2 size={13} />} Dersi bitir
+              </button>
             </div>
           )}
 
