@@ -17,6 +17,7 @@ import os from "os";
 import path from "path";
 import { openaiTrackedFetch } from "./ai-usage.js";
 import type { TutorStep } from "./tutor-lessons-seed.js";
+import { synthesizeSpeech, type SpeechPart } from "./tutor-voice.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -108,21 +109,15 @@ export async function transcribeLearner(audio: Buffer, mimeHint?: string): Promi
 
 // ─── Metin → ses ──────────────────────────────────────────────────────────────
 
-const TTS_INSTRUCTIONS =
-  "Sen Merve'sin: 30'lu yaşlarda, sıcak ve esprili bir Türk İngilizce öğretmeni. " +
-  "Türkçe kısımları doğal, akıcı İstanbul Türkçesiyle; İngilizce örnek cümleleri net, " +
-  "anlaşılır ve biraz yavaş, doğru İngilizce telaffuzla oku. Gülümseyen, cesaret veren bir ton; abartılı değil.";
-
-/** TTS başarısız olursa null döner — ders yazıyla devam eder, akış kesilmez. */
-export async function speak(text: string): Promise<string | null> {
-  if (!aiAvailable() || !text.trim()) return null;
+/**
+ * Konuşmayı seslendir (ayrıntı: lib/tutor-voice.ts — ElevenLabs/OpenAI, TR/EN parçalama, duraklama, önbellek).
+ * Parça listesi verilirse parçalar arasına doğal bir duraklama girer; cacheable=true olan sabit metinler önbelleğe alınır.
+ * Başarısızsa null döner — ders yazıyla devam eder.
+ */
+export async function speak(parts: SpeechPart[] | string): Promise<string | null> {
   try {
-    const model = process.env.TUTOR_TTS_MODEL || "gpt-4o-mini-tts";
-    const voice = process.env.TUTOR_TTS_VOICE || "coral";
-    const params: any = { model, voice, input: text.slice(0, 1200), response_format: "mp3" };
-    if (model.startsWith("gpt-4o")) params.instructions = TTS_INSTRUCTIONS;
-    const r = await withTimeout(getOpenAI().audio.speech.create(params), 25_000, "TTS");
-    return Buffer.from(await r.arrayBuffer()).toString("base64");
+    const r = await withTimeout(synthesizeSpeech(parts), 40_000, "TTS");
+    return r?.audioBase64 ?? null;
   } catch (e: any) {
     console.warn("[tutor-lesson] TTS başarısız:", e?.status ?? "", e?.code ?? "", e?.message);
     return null;
@@ -164,7 +159,9 @@ KONUŞMA BİÇİMİ ("say" alanı SESLİ OKUNACAK):
 - Markdown, madde işareti, emoji, parantez içi açıklama KULLANMA. Düz konuşma metni.
 - En fazla 45 kelime. Kısa cümleler.
 - Öğretilen dil HER ZAMAN İngilizcedir. Türkçe yalnızca açıklama ve yönlendirme içindir; Türkçe cümleyi "öğretilecek kalıp" olarak verme.
-- İngilizce örnek cümleyi tırnak içinde ver: "I'm afraid your order will be delayed."`;
+- İngilizce örnek cümleyi tırnak içinde ver: "I'm afraid your order will be delayed." Tırnak içine YALNIZCA İngilizce yaz (Türkçe kelime koyma).
+- Gerçek bir insan gibi konuş: önce kısa bir tepki ("Güzel!", "Hmm, neredeyse."), sonra açıklama. Nefes alınacak yerlere virgül koy; düşünme ya da vurgu anında "…" kullanabilirsin (bir cevapta en fazla bir kez).
+- Rakam, saat ve kısaltmaları okunduğu gibi yaz (3 → üç, 15:00 → saat üç, vb. → ve benzeri) — metin seslendirilecek.`;
 
 export function buildEvaluationPrompt(opts: {
   lesson: LessonSnapshot;
@@ -281,6 +278,16 @@ export async function evaluateTurn(opts: {
 export function openingLine(lesson: LessonSnapshot, firstName: string | null): string {
   const hello = firstName ? `Merhaba ${firstName}, ben Merve.` : "Merhaba, ben Merve.";
   return `${hello} ${lesson.introTr} ${lesson.steps[0]?.setupTr ?? ""}`.replace(/\s+/g, " ").trim();
+}
+
+/** Açılışın seslendirme parçaları: selam (kişiye özel) + giriş + ilk adım (kütüphane derslerinde önbelleklenir). */
+export function openingSpeech(lesson: LessonSnapshot, firstName: string | null): SpeechPart[] {
+  const fixed = Boolean(lesson.slug);
+  return [
+    { text: firstName ? `Merhaba ${firstName}, ben Merve.` : "Merhaba, ben Merve.", cacheable: !firstName },
+    { text: lesson.introTr, cacheable: fixed },
+    { text: lesson.steps[0]?.setupTr ?? "", cacheable: fixed },
+  ].filter((p) => p.text.trim());
 }
 
 export function closingLine(lesson: LessonSnapshot): string {

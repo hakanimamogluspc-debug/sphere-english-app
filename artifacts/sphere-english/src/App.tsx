@@ -80,6 +80,7 @@ const HelpArticle         = lazy(() => import("./pages/help/HelpArticle"));
 const AdminHelpCenter     = lazy(() => import("./pages/admin/AdminHelpCenter"));
 const AdminReminders      = lazy(() => import("./pages/admin/AdminReminders"));
 const AdminTutorLessons   = lazy(() => import("./pages/admin/AdminTutorLessons"));
+const AdminTutorVoice     = lazy(() => import("./pages/admin/AdminTutorVoice"));
 const AdminChatbotFaqs    = lazy(() => import("./pages/admin/ChatbotFaqs"));
 const MebReport           = lazy(() => import("./pages/admin/MebReport"));
 const AdminModules        = lazy(() => import("./pages/admin/AdminModules"));
@@ -423,6 +424,7 @@ function Router() {
         <Route path="/admin/help-center"><LayoutWrapper component={AdminHelpCenter} allowedRoles={['admin']} /></Route>
         <Route path="/admin/reminders"><LayoutWrapper component={AdminReminders} allowedRoles={['admin']} /></Route>
         <Route path="/admin/tutor-lessons"><LayoutWrapper component={AdminTutorLessons} allowedRoles={['admin']} /></Route>
+        <Route path="/admin/tutor-voice"><LayoutWrapper component={AdminTutorVoice} allowedRoles={['admin']} /></Route>
         <Route path="/admin/monitoring"><LayoutWrapper component={AdminMonitoring} allowedRoles={['admin']} /></Route>
         <Route path="/admin/ebook-waitlist"><LayoutWrapper component={AdminEbookMarketing} allowedRoles={['admin']} /></Route>
         <Route path="/admin/ebooks/:id"><LayoutWrapper component={AdminEbookForm} allowedRoles={['admin']} /></Route>

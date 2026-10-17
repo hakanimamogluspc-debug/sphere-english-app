@@ -143,6 +143,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       { name: 'Kelime Havuzu',       href: '/admin/vocab',                    icon: BookMarked },
       { name: 'Konuşma Sahneleri',   href: '/admin/scenes',                   icon: Mic },
       { name: 'Merve Dersleri',      href: '/admin/tutor-lessons',            icon: GraduationCap },
+      { name: "Merve'nin Sesi",      href: '/admin/tutor-voice',              icon: Mic },
       { name: 'Kariyer & Motivasyon',href: '/admin/career',                   icon: Compass },
       { name: 'Kelime Oyunu 🎮',     href: '/student/vocab-game',             icon: Gamepad2 },
 

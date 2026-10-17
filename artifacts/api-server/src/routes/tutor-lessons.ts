@@ -18,7 +18,7 @@ import { pool } from "@workspace/db";
 import { authMiddleware, type AuthRequest } from "../middlewares/auth.js";
 import { awardPoints } from "../lib/points.js";
 import {
-  aiAvailable, transcribeLearner, speak, evaluateTurn, openingLine, closingLine,
+  aiAvailable, transcribeLearner, speak, evaluateTurn, openingLine, openingSpeech, closingLine,
   generatePersonalLesson, type LessonSnapshot, type Correction,
 } from "../lib/tutor-lesson-engine.js";
 
@@ -198,7 +198,7 @@ async function startSession(
 
   const text = openingLine(opts.lesson, user.firstName);
   const canVoice = wantVoice && (await voiceTurnsToday(userId)) < dailyVoiceLimit();
-  const audioBase64 = canVoice ? await speak(text) : null;
+  const audioBase64 = canVoice ? await speak(openingSpeech(opts.lesson, user.firstName)) : null;
   await pool.query(
     `INSERT INTO tutor_lesson_turns (session_id, role, text, step_index, meta)
      VALUES ($1, 'merve', $2, 0, $3::jsonb)`,
@@ -375,7 +375,12 @@ router.post(
       const replyText = `${evaluation.say} ${follow}`.replace(/\s+/g, " ").trim();
 
       const canVoice = wantVoice && used < limit;
-      const audioBase64 = canVoice ? await speak(replyText) : null;
+      // Tepki (dinamik) + sonraki adım/kapanış (sabit → önbellekten) ayrı parçalar: arada doğal duraklama
+      const speechParts = [
+        { text: evaluation.say },
+        { text: follow, cacheable: Boolean(lesson.slug) },
+      ].filter((p) => p.text.trim());
+      const audioBase64 = canVoice ? await speak(speechParts) : null;
 
       await pool.query(
         `INSERT INTO tutor_lesson_turns (session_id, role, text, input_mode, step_index, meta)

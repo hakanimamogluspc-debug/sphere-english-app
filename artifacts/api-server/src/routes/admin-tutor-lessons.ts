@@ -14,6 +14,10 @@
 import { Router, type Response } from "express";
 import { pool } from "@workspace/db";
 import { authMiddleware, requireRole, type AuthRequest } from "../middlewares/auth.js";
+import {
+  getVoiceSettings, saveVoiceSettings, synthesizeSpeech, listElevenVoices, elevenAvailable,
+  ttsCacheStats, clearTtsCache, SETTING_KEYS,
+} from "../lib/tutor-voice.js";
 
 const router = Router();
 
@@ -226,6 +230,63 @@ router.delete("/admin/tutor-lessons/:id", authMiddleware, requireRole("admin"), 
   const { rowCount } = await pool.query(`DELETE FROM tutor_lessons WHERE id = $1`, [Number(req.params.id) || 0]);
   if (!rowCount) return res.status(404).json({ error: "Ders bulunamadı." });
   return res.json({ ok: true });
+});
+
+// ─── Merve'nin sesi ───────────────────────────────────────────────────────────
+
+/** Ses denemesinde okunan örnek: Türkçe kurgu + İngilizce hedef cümle + övgü — gerçek ders akışına benzer. */
+export const VOICE_SAMPLE =
+  "Müşteri tabii ki nedenini soruyor. Kısa ve dürüst bir sebep ver, mesela limandaki yoğunluk. " +
+  "Şöyle diyebilirsin: \"The delay is due to heavy congestion at the port.\" " +
+  "Upper size mı? Gökyüzüne çıkmıyoruz, beden soruyoruz. Doğrusu: \"Could I try one size bigger?\" Hadi, bir de sen söyle.";
+
+router.get("/admin/tutor-voice", authMiddleware, requireRole("admin"), async (_req: AuthRequest, res: Response) => {
+  const settings = await getVoiceSettings(true);
+  let voices: unknown[] = [];
+  let voicesError: string | null = null;
+  if (elevenAvailable()) {
+    try { voices = await listElevenVoices(); } catch (e: any) { voicesError = e?.message ?? "Ses listesi alınamadı"; }
+  }
+  return res.json({
+    settings,
+    elevenAvailable: elevenAvailable(),
+    openaiAvailable: Boolean(process.env.OPENAI_API_KEY),
+    voices,
+    voicesError,
+    cache: await ttsCacheStats(),
+    sample: VOICE_SAMPLE,
+  });
+});
+
+router.patch("/admin/tutor-voice", authMiddleware, requireRole("admin"), async (req: AuthRequest, res: Response) => {
+  const body = req.body ?? {};
+  const patch: Record<string, any> = {};
+  for (const k of SETTING_KEYS) if (k in body) patch[k] = body[k];
+  if (Object.keys(patch).length === 0) return res.status(400).json({ error: "Güncellenecek ayar yok." });
+  return res.json({ settings: await saveVoiceSettings(patch) });
+});
+
+router.post("/admin/tutor-voice/preview", authMiddleware, requireRole("admin"), async (req: AuthRequest, res: Response) => {
+  const text = String(req.body?.text || VOICE_SAMPLE).slice(0, 800);
+  const voiceId = req.body?.voiceId ? String(req.body.voiceId) : undefined;
+  const o = req.body?.settings ?? {};
+  const settingsOverride: Record<string, unknown> = {};
+  for (const k of ["stability", "similarity", "style", "speed", "pauseAroundEnglishMs", "pauseBetweenPartsMs"]) {
+    if (o[k] !== undefined && Number.isFinite(Number(o[k]))) settingsOverride[k] = Number(o[k]);
+  }
+  if (typeof o.deliveryTags === "boolean") settingsOverride.deliveryTags = o.deliveryTags;
+  if (typeof o.elevenModel === "string" && o.elevenModel) settingsOverride.elevenModel = o.elevenModel;
+  // Ders akışındaki gibi iki parça: tepki + sonraki adım
+  const sentences = text.split(/(?<=[.!?])\s+(?=Upper|Hadi)/);
+  const parts = sentences.length > 1 ? [{ text: sentences[0] }, { text: sentences.slice(1).join(" ") }] : [{ text }];
+  const out = await synthesizeSpeech(parts, { voiceIdOverride: voiceId, settingsOverride: settingsOverride as any });
+  if (!out) return res.status(502).json({ error: "Ses üretilemedi. Sunucu günlüğünde [tutor-voice] satırına bak." });
+  return res.json(out);
+});
+
+router.post("/admin/tutor-voice/clear-cache", authMiddleware, requireRole("admin"), async (_req: AuthRequest, res: Response) => {
+  await clearTtsCache();
+  return res.json({ ok: true, cache: await ttsCacheStats() });
 });
 
 export default router;
