@@ -1840,6 +1840,55 @@ export async function runStartupMigrations() {
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )`,
     `CREATE INDEX IF NOT EXISTS help_search_log_created_idx ON help_search_log(created_at DESC)`,
+
+    // ─── Merve ile Ders (AI öğretmen — sesli, yönlendirmeli dersler) ─────────
+    `CREATE TABLE IF NOT EXISTS tutor_lessons (
+      id SERIAL PRIMARY KEY,
+      slug VARCHAR(120) NOT NULL UNIQUE,
+      title VARCHAR(200) NOT NULL,
+      summary TEXT NOT NULL DEFAULT '',
+      category VARCHAR(30) NOT NULL DEFAULT 'ofis',
+      level_min VARCHAR(2) NOT NULL DEFAULT 'A2',
+      level_max VARCHAR(2) NOT NULL DEFAULT 'C1',
+      sectors TEXT[] NOT NULL DEFAULT '{}',
+      est_minutes INTEGER NOT NULL DEFAULT 6,
+      intro_tr TEXT NOT NULL DEFAULT '',
+      outro_tr TEXT NOT NULL DEFAULT '',
+      steps JSONB NOT NULL DEFAULT '[]'::jsonb,
+      is_published BOOLEAN NOT NULL DEFAULT true,
+      sort_order INTEGER NOT NULL DEFAULT 100,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`,
+    `CREATE TABLE IF NOT EXISTS tutor_lesson_sessions (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      lesson_id INTEGER REFERENCES tutor_lessons(id) ON DELETE SET NULL,
+      kind VARCHAR(12) NOT NULL DEFAULT 'library',      -- library | personal
+      lesson_snapshot JSONB NOT NULL,                   -- ders o anki hâli (admin sonradan düzenlese de oturum bozulmaz)
+      current_step INTEGER NOT NULL DEFAULT 0,
+      step_attempts INTEGER NOT NULL DEFAULT 0,
+      status VARCHAR(12) NOT NULL DEFAULT 'active',     -- active | completed | abandoned
+      turns INTEGER NOT NULL DEFAULT 0,
+      voice_turns INTEGER NOT NULL DEFAULT 0,
+      corrections INTEGER NOT NULL DEFAULT 0,
+      started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      last_turn_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      finished_at TIMESTAMPTZ
+    )`,
+    `CREATE INDEX IF NOT EXISTS tutor_lesson_sessions_user_idx ON tutor_lesson_sessions(user_id, started_at DESC)`,
+    `CREATE INDEX IF NOT EXISTS tutor_lesson_sessions_lesson_idx ON tutor_lesson_sessions(lesson_id, status)`,
+    `CREATE TABLE IF NOT EXISTS tutor_lesson_turns (
+      id SERIAL PRIMARY KEY,
+      session_id INTEGER NOT NULL REFERENCES tutor_lesson_sessions(id) ON DELETE CASCADE,
+      role VARCHAR(10) NOT NULL,                        -- merve | user
+      text TEXT NOT NULL,
+      input_mode VARCHAR(10),                           -- voice | text (yalnız user)
+      step_index INTEGER NOT NULL DEFAULT 0,
+      meta JSONB,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`,
+    `CREATE INDEX IF NOT EXISTS tutor_lesson_turns_session_idx ON tutor_lesson_turns(session_id, id)`,
   ];
   for (const sql of migrations) {
     try {

@@ -14,6 +14,7 @@ Entegrasyon testleri: Express uygulaması **gerçek bir Postgres**'e karşı, HT
 | `internal-payment.test.ts` | www→api HMAC imzası (yok/yanlış/gövde değişmiş → 401), bilinmeyen plan, yeni kullanıcı + abonelik + ödeme kaydı, tekrar ödeme upsert (tek satır), pre-create fatura verisi, cron token |
 | `help-center.test.ts` | kategori/makale/arama/öneri/oy, admin CRUD, taslak gizliliği |
 | `reminders.test.ts` | hatırlatma dizisi: dokunuş seçimi, idempotentlik, eşik geçişi, tercih, geri dönüş ölçümü, admin istatistik/önizleme |
+| `tutor-lessons.test.ts` | Merve ile Ders: kütüphane, başlatma, adım ilerletme (yanlış/doğru/neredeyse), hata defteri, özet, puan, sesli kota, sahiplik, admin CRUD, seed'in admin düzenlemesini ezmemesi (AI çağrıları mock'lu) |
 | `entitlement.test.ts` | otomatik deneme süresi, süresi geçmiş deneme, aktif abonelik, lazy expiry (past_due / expired), iptal-ama-dönem-sürüyor |
 
 ## Yerelde çalıştırma (Docker yoksa — sunucudaki test DB + SSH tüneli)

@@ -26,6 +26,8 @@ export const POINT_VALUES = {
 
   // AI coaches (mevcut sistemleri koruyalım — bu ekstra bonus)
   ai_tutor_message: 1,          // her mesaj — günde max 15
+  tutor_lesson_turn: 2,         // Merve ile ders — her cevap, günde max 30
+  tutor_lesson_complete: 15,    // Merve ile ders — dersi bitirme
   writing_submit: 3,            // günde max 15
   scene_turn: 5,                // konuşma turu — günde max 30
   scene_complete: 15,           // tam sahne bitirme

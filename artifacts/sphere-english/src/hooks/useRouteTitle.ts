@@ -34,7 +34,7 @@ const ROUTE_TITLES: RouteTitleEntry[] = [
   { prefix: '/student/interview-sim', title: 'Mülakat Simülatörü — AI Studio' },
   { prefix: '/student/presentation-sim', title: 'Sunum Simülatörü — AI Studio' },
   { prefix: '/student/ai-quiz', title: 'Akıllı Quiz — AI Studio' },
-  { prefix: '/student/ai-tutor', title: 'Kişisel AI Öğretmen — AI Studio' },
+  { prefix: '/student/ai-tutor', title: 'AI Öğretmen Merve — AI Studio' },
   { prefix: '/student/learning-path', title: 'Öğrenme Yolu — AI Studio' },
   { prefix: '/student/level-exams', title: 'Seviye Sınavları' },
   { prefix: '/student/subscription', title: 'Aboneliğim' },

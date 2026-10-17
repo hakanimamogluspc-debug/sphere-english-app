@@ -275,7 +275,7 @@ type QuickAction = {
 
 // Her modül için: accent (dikey şerit + ikon rengi)
 const QUICK_ACTIONS: QuickAction[] = [
-  { label: "Kişisel AI Öğretmen", subtitle: "Sohbet ederek öğren",     href: "/student/ai-tutor",           icon: GraduationCap, bg: "",  accent: "#1B365D",  featureKey: "student-ai-tutor" },
+  { label: "AI Öğretmen Merve", subtitle: "Konuşarak öğren",     href: "/student/ai-tutor",           icon: GraduationCap, bg: "",  accent: "#1B365D",  featureKey: "student-ai-tutor" },
   { label: "Konuşma Sahneleri", subtitle: "Rol yaparak konuş",       href: "/student/speaking-scenes",    icon: Cpu,           bg: "",  accent: "#0d9488",  featureKey: "student-speaking-scenes" },
   { label: "Yazma Koçu",        subtitle: "Metnini geliştir",        href: "/student/writing-coach",      icon: BookMarked,    bg: "",  accent: "#c2410c",  featureKey: "student-writing-coach" },
   { label: "Dilbilgisi Koçu",   subtitle: "Kurallara hakim ol",      href: "/student/grammar-coach",      icon: Cpu,           bg: "",  accent: "#7c3aed",  featureKey: "student-grammar-coach" },

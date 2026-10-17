@@ -44,6 +44,8 @@ import interviewRouter from "./interview";
 import presentationRouter from "./presentation";
 import aiQuizRouter from "./ai-quiz";
 import tutorRouter from "./tutor";
+import tutorLessonsRouter from "./tutor-lessons";
+import adminTutorLessonsRouter from "./admin-tutor-lessons";
 import learningPathRouter from "./learning-path";
 import corporateAiReportRouter from "./corporate-ai-report";
 import levelExamsRouter from "./level-exams";
@@ -225,6 +227,7 @@ router.use(presenceRouter);
 router.use(notificationsRouter);
 router.use(corporateAiReportRouter);
 router.use(levelExamsRouter);
+router.use(adminTutorLessonsRouter); // admin — proGuard'dan önce
 
 // PRO (login + abonelik) router'lar — EN SONA, path-less proGuard mount'ları
 router.use(proGuard, pronunciationRouter);
@@ -236,6 +239,7 @@ router.use(proGuard, interviewRouter);
 router.use(proGuard, presentationRouter);
 router.use(proGuard, aiQuizRouter);
 router.use(proGuard, tutorRouter);
+router.use(proGuard, tutorLessonsRouter); // Merve ile Ders
 router.use(proGuard, learningPathRouter);
 
 export default router;

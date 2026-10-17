@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { API } from "@/lib/api-url";
+import MerveLessons from "@/components/tutor/MerveLessons";
 import {
   ModuleShell, Toast, useToast, MobileModuleIntro,
   colors, fonts, radius,
@@ -62,7 +63,7 @@ async function fetchAuth(path: string, init: RequestInit = {}) {
   });
 }
 
-export default function MobileAITutor() {
+function MobileFreeChat({ onLessons }: { onLessons: () => void }) {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeId, setActiveId] = useState<number | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -251,11 +252,22 @@ export default function MobileAITutor() {
 
   return (
     <ModuleShell
-      title={activeConvo?.title || "AI Öğretmen"}
-      subtitle={activeConvo?.focusArea ? FOCUS_OPTIONS.find(f => f.id === activeConvo.focusArea)?.label : "Kişisel AI koçun"}
+      title={activeConvo?.title || "Merve ile Sohbet"}
+      subtitle={activeConvo?.focusArea ? FOCUS_OPTIONS.find(f => f.id === activeConvo.focusArea)?.label : "Serbest sohbet"}
       backTo="/m/pratik"
       rightAction={
         <div style={{ display: "flex", gap: 4 }}>
+          <button
+            onClick={onLessons}
+            aria-label="Merve ile Ders"
+            style={{
+              background: "#1e3a6e", border: "none", color: "#ffffff",
+              height: 36, borderRadius: 18, padding: "0 12px",
+              fontSize: 12, fontWeight: 700, cursor: "pointer",
+            }}
+          >
+            Ders
+          </button>
           <button
             onClick={() => setShowMemory(true)}
             aria-label="Hafıza"
@@ -692,6 +704,40 @@ export default function MobileAITutor() {
       )}
 
       <Toast {...toast} onClose={hideToast} />
+    </ModuleShell>
+  );
+}
+
+/**
+ * /m/pratik/ai-ogretmen — Merve.
+ * Varsayılan: "Merve ile Ders" (sesli, yönlendirmeli). Sağ üstten serbest sohbete geçilir.
+ */
+export default function MobileAITutor() {
+  const [mode, setMode] = useState<"lessons" | "chat">("lessons");
+  if (mode === "chat") return <MobileFreeChat onLessons={() => setMode("lessons")} />;
+  return (
+    <ModuleShell
+      title="Merve ile Ders"
+      subtitle="Sesli, adım adım iş İngilizcesi"
+      backTo="/m/pratik"
+      contentPadding="0"
+      rightAction={
+        <button
+          onClick={() => setMode("chat")}
+          aria-label="Serbest sohbet"
+          style={{
+            background: colors.navy50, border: "none", color: colors.navy,
+            height: 36, borderRadius: 18, padding: "0 12px",
+            fontSize: 12, fontWeight: 700, cursor: "pointer",
+          }}
+        >
+          Sohbet
+        </button>
+      }
+    >
+      <div style={{ height: "calc(100dvh - 72px)", overflowY: "auto" }}>
+        <MerveLessons compact simulationHref="/m/pratik/is-senaryolari" />
+      </div>
     </ModuleShell>
   );
 }

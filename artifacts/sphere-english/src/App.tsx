@@ -79,6 +79,7 @@ const HelpCenter          = lazy(() => import("./pages/help/HelpCenter"));
 const HelpArticle         = lazy(() => import("./pages/help/HelpArticle"));
 const AdminHelpCenter     = lazy(() => import("./pages/admin/AdminHelpCenter"));
 const AdminReminders      = lazy(() => import("./pages/admin/AdminReminders"));
+const AdminTutorLessons   = lazy(() => import("./pages/admin/AdminTutorLessons"));
 const AdminChatbotFaqs    = lazy(() => import("./pages/admin/ChatbotFaqs"));
 const MebReport           = lazy(() => import("./pages/admin/MebReport"));
 const AdminModules        = lazy(() => import("./pages/admin/AdminModules"));
@@ -174,7 +175,7 @@ const SimulationModePro        = withProGate(SimulationMode        as ComponentT
 const InterviewSimulatorPro    = withProGate(InterviewSimulator    as ComponentType<any>, "student-interview-sim",        "Mülakat Simülatörü");
 const PresentationSimulatorPro = withProGate(PresentationSimulator as ComponentType<any>, "student-presentation-sim",     "Sunum Simülatörü");
 const AIQuizGeneratorPro       = withProGate(AIQuizGenerator       as ComponentType<any>, "student-ai-quiz",              "Akıllı Quiz");
-const AITutorPro               = withProGate(AITutor               as ComponentType<any>, "student-ai-tutor",             "Kişisel AI Öğretmen");
+const AITutorPro               = withProGate(AITutor               as ComponentType<any>, "student-ai-tutor",             "AI Öğretmen Merve");
 const LearningPathPro          = withProGate(LearningPath          as ComponentType<any>, "student-learning-path",        "Öğrenme Yolu");
 
 const queryClient = new QueryClient({
@@ -421,6 +422,7 @@ function Router() {
         <Route path="/admin/ebook-marketing"><LayoutWrapper component={AdminEbookMarketing} allowedRoles={['admin']} /></Route>
         <Route path="/admin/help-center"><LayoutWrapper component={AdminHelpCenter} allowedRoles={['admin']} /></Route>
         <Route path="/admin/reminders"><LayoutWrapper component={AdminReminders} allowedRoles={['admin']} /></Route>
+        <Route path="/admin/tutor-lessons"><LayoutWrapper component={AdminTutorLessons} allowedRoles={['admin']} /></Route>
         <Route path="/admin/monitoring"><LayoutWrapper component={AdminMonitoring} allowedRoles={['admin']} /></Route>
         <Route path="/admin/ebook-waitlist"><LayoutWrapper component={AdminEbookMarketing} allowedRoles={['admin']} /></Route>
         <Route path="/admin/ebooks/:id"><LayoutWrapper component={AdminEbookForm} allowedRoles={['admin']} /></Route>

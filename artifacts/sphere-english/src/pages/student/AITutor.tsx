@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { DictionaryHost } from "@/components/ClickableText";
 import { withModuleIntro } from "@/components/withModuleIntro";
+import MerveLessons from "@/components/tutor/MerveLessons";
 
 const TOKEN_KEY = "sphere_token";
 const API = import.meta.env.BASE_URL.replace(/\/$/, "") + "/api";
@@ -89,7 +90,7 @@ const SUGGESTED_PROMPTS = [
   { tr: "TOEFL writing için iyi bir giriş paragrafı nasıl yazılır?", icon: Award },
 ];
 
-function AITutor() {
+function FreeChat() {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeId, setActiveId] = useState<number | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -335,7 +336,7 @@ function AITutor() {
   const activeConvo = useMemo(() => conversations.find((c) => c.id === activeId), [conversations, activeId]);
 
   return (
-    <div className="max-w-7xl mx-auto -my-4 sm:-my-6">
+    <div className="max-w-7xl mx-auto">
       <div className="flex h-[calc(100vh-160px)] min-h-[560px] gap-4 relative">
         {/* Sidebar */}
         <aside className={`${showSidebar ? "block" : "hidden"} lg:block fixed lg:static top-0 left-0 z-40 w-72 h-full lg:h-auto bg-white border-r lg:border lg:rounded-2xl border-gray-200 shadow-xl lg:shadow-none flex-col`}>
@@ -409,7 +410,7 @@ function AITutor() {
               </div>
               <div className="min-w-0">
                 <p className="font-bold text-sm text-gray-900 truncate">
-                  {activeConvo?.title || "Sphere AI Öğretmen"}
+                  {activeConvo?.title || "Merve ile Serbest Sohbet"}
                 </p>
                 <p className="text-[11px] text-gray-500">
                   Kişisel İngilizce öğretmenin
@@ -420,7 +421,7 @@ function AITutor() {
             <button
               onClick={() => setShowMemory(true)}
               className="inline-flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-700"
-              title="Sphere'in seninle ilgili hatırladıkları"
+              title="Merve'nin seninle ilgili hatırladıkları"
             >
               <Brain size={12} />
               Hafıza ({memory?.facts.length ?? 0})
@@ -441,7 +442,7 @@ function AITutor() {
                   <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 text-white mb-3">
                     <GraduationCap size={28} />
                   </div>
-                  <h2 className="text-lg font-bold text-gray-900">Merhaba, ben Sphere</h2>
+                  <h2 className="text-lg font-bold text-gray-900">Merhaba, ben Merve</h2>
                   <p className="text-sm text-gray-500 mt-1">
                     Senin kişisel İngilizce öğretmeninim. Bana ne istersen sorabilirsin — hatalarını düzeltirim, yeni konular öğretirim, pratik yaparım.
                   </p>
@@ -530,7 +531,7 @@ function AITutor() {
                 }}
                 onKeyDown={onKey}
                 disabled={sending}
-                placeholder="Sphere'e bir şey sor... (Enter = gönder, Shift+Enter = yeni satır)"
+                placeholder="Merve'ye bir şey sor... (Enter = gönder, Shift+Enter = yeni satır)"
                 className="flex-1 px-3 py-2.5 rounded-xl border border-gray-200 focus:border-purple-400 focus:ring-2 focus:ring-purple-100 outline-none text-sm resize-none disabled:bg-gray-50"
                 style={{ maxHeight: 160 }}
               />
@@ -613,7 +614,7 @@ function AITutor() {
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <h3 className="font-bold text-gray-900 flex items-center gap-1.5">
-                    <Brain size={16} className="text-purple-600" /> Sphere'in Hafızası
+                    <Brain size={16} className="text-purple-600" /> Merve'nin Hafızası
                   </h3>
                   <p className="text-xs text-gray-500">Sohbetlerinden öğrendiklerim, sürekli hatırlıyorum.</p>
                 </div>
@@ -697,6 +698,33 @@ function escapeHtml(s: string): string {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
+}
+
+/**
+ * AI Öğretmen = Merve. İki mod:
+ *  - "Ders": Merve'nin yönettiği sesli, adım adım dersler (varsayılan)
+ *  - "Serbest sohbet": eski yazılı sohbet (hafıza, odak alanları)
+ */
+function AITutor() {
+  const [tab, setTab] = useState<"lessons" | "chat">("lessons");
+  return (
+    <div className="max-w-7xl mx-auto">
+      <div className="inline-flex p-1 rounded-xl bg-slate-100 mb-4" role="tablist">
+        {([["lessons", "Merve ile Ders"], ["chat", "Serbest sohbet"]] as const).map(([id, label]) => (
+          <button
+            key={id}
+            role="tab"
+            aria-selected={tab === id}
+            onClick={() => setTab(id)}
+            className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-colors ${tab === id ? "bg-white shadow-sm text-[#1e3a6e]" : "text-slate-500 hover:text-slate-700"}`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+      {tab === "lessons" ? <MerveLessons /> : <FreeChat />}
+    </div>
+  );
 }
 
 export default withModuleIntro("ai_tutor")(AITutor);
