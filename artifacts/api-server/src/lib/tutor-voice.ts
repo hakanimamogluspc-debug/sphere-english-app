@@ -232,17 +232,51 @@ export function explainElevenError(status: number, raw: string): string {
   } catch { /* düz metin */ }
   const low = detail.toLowerCase();
   let hint = "";
-  if (status === 401 && low.includes("quota")) hint = "Karakter kotası dolmuş — planını/kullanımını kontrol et.";
+  if (status === 429 || low.includes("concurrent")) hint = "Aynı anda istek sınırı aşıldı — sistem sırayla yeniden dener; çok öğrenci aynı anda konuşuyorsa planın eşzamanlılık sınırı yetmiyor olabilir.";
+  else if (status === 401 && low.includes("quota")) hint = "Karakter kotası dolmuş — planını/kullanımını kontrol et.";
   else if (status === 401 && (low.includes("permission") || low.includes("missing_permissions"))) hint = "API anahtarının izni eksik — anahtara \"Text to Speech\" iznini ver.";
   else if (status === 401) hint = "API anahtarı geçersiz ya da hatalı kopyalanmış.";
   else if (status === 402 || low.includes("paid_plan") || low.includes("subscription")) hint = "Bu ses/model API'de ücretli plan istiyor (kütüphane sesleri için en az Starter).";
   else if (status === 404 || low.includes("voice_not_found")) hint = "Ses bulunamadı — sesi ElevenLabs'ta \"Add to my voices\" ile hesabına ekle.";
-  else if (status === 429) hint = "Çok fazla istek / eşzamanlılık sınırı — birazdan tekrar dene.";
   else if (low.includes("model")) hint = "Model bu ses ya da plan için kullanılamıyor — ayarlardan başka model dene (ör. Multilingual v2).";
   return `ElevenLabs ${status}: ${detail.slice(0, 220)}${hint ? ` → ${hint}` : ""}`;
 }
 
+// ─── Eşzamanlılık sınırı ─────────────────────────────────────────────────────
+// ElevenLabs planı aynı anda en fazla N isteğe izin verir (Starter: 3). Bir cevap birden çok parça
+// içerdiği ve birden çok öğrenci aynı anda konuşabildiği için istekler sıraya alınır.
+// Sınır süreç (worker) başınadır; birden çok worker varsa ELEVENLABS_MAX_CONCURRENCY'yi buna göre düşük tut.
+const MAX_CONCURRENCY = Math.max(1, Number(process.env.ELEVENLABS_MAX_CONCURRENCY) || 2);
+let active = 0;
+const waiters: Array<() => void> = [];
+async function acquire(): Promise<void> {
+  if (active < MAX_CONCURRENCY) { active++; return; }
+  await new Promise<void>((resolve) => waiters.push(resolve));
+  active++;
+}
+function release(): void {
+  active--;
+  const next = waiters.shift();
+  if (next) next();
+}
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
 async function elevenRequest(voiceId: string, body: Record<string, unknown>, model: string): Promise<{ ok: true; buf: Buffer } | { ok: false; status: number; raw: string }> {
+  // 429 (eşzamanlılık / hız sınırı) gelirse kısa beklemeyle 3 kez daha dene
+  for (let attempt = 0; ; attempt++) {
+    await acquire();
+    let r: { ok: true; buf: Buffer } | { ok: false; status: number; raw: string };
+    try {
+      r = await elevenRequestOnce(voiceId, body, model);
+    } finally {
+      release();
+    }
+    if (r.ok || r.status !== 429 || attempt >= 3) return r;
+    await sleep(400 * (attempt + 1) + Math.random() * 250);
+  }
+}
+
+async function elevenRequestOnce(voiceId: string, body: Record<string, unknown>, model: string): Promise<{ ok: true; buf: Buffer } | { ok: false; status: number; raw: string }> {
   const t0 = Date.now();
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), 25_000);

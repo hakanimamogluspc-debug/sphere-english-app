@@ -10,6 +10,10 @@ describe("ElevenLabs hata açıklaması", () => {
     expect(explainElevenError(401, JSON.stringify({ detail: { status: "missing_permissions", message: "missing permission text_to_speech" } }))).toContain("izni");
     expect(explainElevenError(401, "Unauthorized")).toContain("geçersiz");
     expect(explainElevenError(402, "")).toContain("ücretli plan");
+    // 429 metninde "subscription" geçse de ücretli plan değil, eşzamanlılık açıklaması çıkmalı
+    const conc = explainElevenError(429, JSON.stringify({ detail: { status: "too_many_concurrent_requests", message: "Your current subscription is associated with a maximum of 3 concurrent requests" } }));
+    expect(conc).toContain("eşzamanlılık");
+    expect(conc).not.toContain("ücretli plan");
   });
 });
 
