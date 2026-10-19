@@ -25,11 +25,11 @@ const MAX_HISTORY = 8;
 const SPHERE_KNOWLEDGE = `Sphere English hakkında bilgiler:
 
 ## ŞİRKET
-- Sphere English: Türkiye'nin önde gelen Kurumsal İş İngilizcesi Eğitimi platformu
+- Sphere English: Türk şirketleri ve profesyoneller için Kurumsal İş İngilizcesi eğitim platformu
 - Kurucu: Didem İmamoğlu (kurumsal iş İngilizcesi koçu)
 - Lokasyon: Ayvalık, Balıkesir (150 Evler Mah. Atatürk Blv. No:456/35)
-- Oxford University Press resmi eğitim ortağı
-- 6 ay program sonunda ortalama 2 seviye ilerleme
+- Eğitimlerde Oxford University Press müfredat ve kaynakları kullanılır (resmi ortaklık YOK — "resmi ortak", "Oxford onaylı", "sertifikalı" DEME)
+- Sonuç sorulursa rakam uydurma; doğrulanmış örnek: anonim referans vakada 6 katılımcının 6'sı seviye atladı (www.sphereenglish.com/referanslar)
 
 ## ÜRÜNLER VE FİYATLAR
 Bireysel Abonelik Planları (KDV dahil):
@@ -79,7 +79,7 @@ Tüm planlarda **7 GÜN ÜCRETSİZ DENEME**, kart bilgisi gerekmez.
 - "Hangi seviyeden başlamalı?" → app.sphereenglish.com'da ücretsiz seviye tespiti (5 dk)
 - "Kayıt nasıl olur?" → /abonelik sayfasından 7 gün ücretsiz deneme başlat
 - "İptal edebilir miyim?" → 7 gün içinde tek tık iptal, otomatik kesinti olmaz
-- "Sertifika var mı?" → Evet, Oxford University Press onaylı program sonunda
+- "Sertifika var mı?" → Sertifika programı sunmuyoruz; ilerleme CEFR seviye sınavları ve raporlarla takip edilir
 `;
 
 const DM_SYSTEM_PROMPT = `Sen Sphere English'in Instagram'da konuşan müşteri temsilcisisin. Adın Ezgi. Sahici bir insan gibi yaz. Robot değilsin, bir pazarlama uzmanısın — anla, sor, çöz.

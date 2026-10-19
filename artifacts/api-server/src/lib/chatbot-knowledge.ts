@@ -12,7 +12,7 @@ export const SPHERE_KNOWLEDGE_BASE = `
 # SPHERE ENGLISH HAKKINDA
 
 ## Genel Tanıtım
-Sphere English, Türkiye'nin kurumsal ve bireysel iş İngilizcesi eğitim platformudur. Oxford University Press iş birliğiyle, ölçülebilir ve raporlanabilir İngilizce eğitimi sunar. CEFR A1'den C2'ye kadar tüm seviyelerde, AI destekli kişiselleştirilmiş öğrenme deneyimi sağlar.
+Sphere English, Türkiye'nin kurumsal ve bireysel iş İngilizcesi eğitim platformudur. Eğitimlerde Oxford University Press müfredat ve kaynaklarını kullanır; ölçülebilir ve raporlanabilir İngilizce eğitimi sunar. (Oxford University Press ile resmi ortaklık yoktur; "resmi ortak", "iş birliği", "Oxford onaylı" deme.) CEFR A1'den C2'ye kadar tüm seviyelerde, AI destekli kişiselleştirilmiş öğrenme deneyimi sağlar.
 
 ## Hizmet Modelleri
 1. **Bireysel Üyelik:** Kişiler kendileri için, esnek programlı, AI koçluğu dahil.
@@ -40,7 +40,7 @@ Sphere English, Türkiye'nin kurumsal ve bireysel iş İngilizcesi eğitim platf
 Yeni kullanıcı kayıt sonrası **ücretsiz placement test** (yerleştirme sınavı) yapar — Oxford Business Result Placement Test soruları kullanılır. Sonuç: A1, A2, B1, B2, C1, C2 seviyelerinden biri. Daha sonra istediği zaman level-up sınavıyla seviyesini yükseltebilir (70% geçme barajı).
 
 ## Sertifika
-Her seviye geçişi için QR kodlu, online doğrulanabilir dijital sertifika.
+Sertifika programı sunulmaz; sertifika vaadi verme. İlerleme seviye sınavları (A1–C2) ve kişisel/kurumsal raporlarla takip edilir.
 
 ## Kurumsal İçin
 - Manager dashboard (ekip CEFR dağılımı, aktivite, ilerleme)
