@@ -19,6 +19,7 @@ import { db } from "@workspace/db";
 import { sendEbookDownloadMail } from "../lib/ebook-mail.js";
 import { notifyNewEbookPurchase } from "../lib/admin-notifications.js";
 import { issueInvoiceForSource } from "../lib/invoice/index.js";
+import { presignDownload } from "../lib/object-storage.js";
 
 /**
  * E-kitap satışı için otomatik e-Fatura/e-Arşiv kes + mail'i tetikle.
@@ -635,7 +636,7 @@ router.get("/ebooks/download", async (req: Request, res: Response) => {
 
     // Full PDF asset'i bul
     const assetRows = await db.execute(sql`
-      SELECT filename, mime_type, size_bytes, data_base64
+      SELECT filename, mime_type, size_bytes, data_base64, storage_key
       FROM ebook_assets
       WHERE ebook_id = ${purchase.ebook_id} AND asset_type = 'full'
       LIMIT 1
@@ -651,6 +652,14 @@ router.get("/ebooks/download", async (req: Request, res: Response) => {
       UPDATE ebook_purchases SET download_count = download_count + 1, updated_at = NOW()
       WHERE id = ${purchase.id}
     `);
+
+    if (asset.storage_key) {
+      // Dosya nesne deposunda → 5 dakikalık süreli bağlantıyla doğrudan oradan indir.
+      // Sunucu ve veritabanı dosyayı hiç taşımaz.
+      const url = await presignDownload(asset.storage_key, asset.filename, asset.mime_type || "application/pdf", 300);
+      res.setHeader("Cache-Control", "private, no-store");
+      return res.redirect(302, url);
+    }
 
     res.setHeader("Content-Type", asset.mime_type || "application/pdf");
     res.setHeader("Content-Length", String(asset.size_bytes));

@@ -389,6 +389,9 @@ export async function runStartupMigrations() {
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )`,
     `CREATE INDEX IF NOT EXISTS ebook_assets_ebook_idx ON ebook_assets(ebook_id, asset_type, position)`,
+    // Nesne deposu (Hetzner Object Storage): dosya bucket'taysa storage_key dolu, data_base64 NULL
+    `ALTER TABLE ebook_assets ADD COLUMN IF NOT EXISTS storage_key VARCHAR(400)`,
+    `ALTER TABLE ebook_assets ALTER COLUMN data_base64 DROP NOT NULL`,
     // Admin sidebar entry
     `INSERT INTO feature_settings (key, label, is_enabled, visible_to, category) VALUES
       ('admin-ebooks', 'E-Kitap Yönetimi', true, ARRAY['admin']::TEXT[], 'admin')

@@ -35,8 +35,10 @@ export const ebookAssetsTable = pgTable(
     filename: varchar("filename", { length: 300 }).notNull(),
     mimeType: varchar("mime_type", { length: 100 }).notNull(),
     sizeBytes: integer("size_bytes").notNull(),
-    /** Binary içerik — PostgreSQL BYTEA olarak saklanır */
-    dataBase64: text("data_base64").notNull(),
+    /** Eski yöntem: içerik base64 metin. Nesne deposuna taşınan dosyalarda NULL. */
+    dataBase64: text("data_base64"),
+    /** Nesne deposu anahtarı (Hetzner Object Storage). Doluysa içerik bucket'tadır. */
+    storageKey: varchar("storage_key", { length: 400 }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => ({

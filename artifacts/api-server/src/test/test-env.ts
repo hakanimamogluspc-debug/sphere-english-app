@@ -43,4 +43,10 @@ export function applyTestEnv(): void {
   delete process.env.META_ACCESS_TOKEN;
   delete process.env.IYZICO_API_KEY;
   delete process.env.IYZICO_SECRET_KEY;
+  // Dış depolama / yedek / ses servisleri — testler gerçek hesaplara asla dokunmasın
+  for (const k of [
+    "S3_ENDPOINT", "S3_BUCKET", "S3_ACCESS_KEY", "S3_SECRET_KEY",
+    "BACKUP_WEBDAV_URL", "BACKUP_WEBDAV_USER", "BACKUP_WEBDAV_PASS", "BACKUP_ENCRYPTION_KEY",
+    "ELEVENLABS_API_KEY", "ELEVENLABS_VOICE_ID",
+  ]) delete process.env[k];
 }

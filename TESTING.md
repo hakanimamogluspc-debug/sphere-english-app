@@ -16,6 +16,7 @@ Entegrasyon testleri: Express uygulaması **gerçek bir Postgres**'e karşı, HT
 | `reminders.test.ts` | hatırlatma dizisi: dokunuş seçimi, idempotentlik, eşik geçişi, tercih, geri dönüş ölçümü, admin istatistik/önizleme |
 | `tutor-lessons.test.ts` | Lara ile Ders: kütüphane, başlatma, adım ilerletme (yanlış/doğru/neredeyse), hata defteri, özet, puan, sesli kota, sahiplik, admin CRUD, seed'in admin düzenlemesini ezmemesi (AI çağrıları mock'lu) |
 | `tutor-voice.test.ts` | Lara'nın sesi: TR/EN parçalama, duraklama süreleri, ton etiketleri, admin ses ayarları (anahtarsız OpenAI'de kalma, kaydet/oku, önbellek) |
+| `storage-backup.test.ts` | Object Storage yardımcıları (konum kodu, güvenli dosya adı, anahtar), yedek şifreleme gidiş-dönüş + yanlış anahtar, Storage Box listesi/saklama süresi, admin durum uçları (yapılandırma yokken) |
 | `entitlement.test.ts` | otomatik deneme süresi, süresi geçmiş deneme, aktif abonelik, lazy expiry (past_due / expired), iptal-ama-dönem-sürüyor |
 
 ## Yerelde çalıştırma (Docker yoksa — sunucudaki test DB + SSH tüneli)

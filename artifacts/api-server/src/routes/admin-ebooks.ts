@@ -25,6 +25,8 @@ import { sql } from "drizzle-orm";
 import { db, pool } from "@workspace/db";
 import { authMiddleware, requireRole, type AuthRequest } from "../middlewares/auth.js";
 import { generatePreviewPdf } from "../lib/pdf-preview.js";
+import { storeAssetBytes, deleteStoredObjects } from "../lib/ebook-asset-store.js";
+import { getObjectStream } from "../lib/object-storage.js";
 
 const router = Router();
 
@@ -205,7 +207,8 @@ router.delete(
     const id = parseInt((req.params.id as string), 10);
     if (!Number.isFinite(id)) return res.status(400).json({ error: "Geçersiz id" });
     try {
-      // ON DELETE CASCADE ile assets de silinir
+      // ON DELETE CASCADE ile assets de silinir — önce bucket'taki dosyaları temizle
+      await deleteStoredObjects({ ebookId: id });
       await db.execute(sql`DELETE FROM ebooks WHERE id = ${id}`);
       return res.json({ ok: true });
     } catch (e: any) {
@@ -239,18 +242,20 @@ router.post(
     try {
       // Cover, preview, full için tek satır kuralı — eskisini sil
       if (assetType !== "gallery") {
+        await deleteStoredObjects({ ebookIdAndType: [id, assetType] });
         await db.execute(sql`
           DELETE FROM ebook_assets
           WHERE ebook_id = ${id} AND asset_type = ${assetType}
         `);
       }
 
-      const dataBase64 = file.buffer.toString("base64");
+      // Nesne deposu etkinse bucket'a, değilse (eskisi gibi) veritabanına
+      const stored = await storeAssetBytes(id, assetType, file.originalname, file.mimetype, file.buffer);
       const inserted = await db.execute(sql`
         INSERT INTO ebook_assets (
-          ebook_id, asset_type, position, filename, mime_type, size_bytes, data_base64
+          ebook_id, asset_type, position, filename, mime_type, size_bytes, data_base64, storage_key
         ) VALUES (
-          ${id}, ${assetType}, ${position}, ${file.originalname}, ${file.mimetype}, ${file.size}, ${dataBase64}
+          ${id}, ${assetType}, ${position}, ${file.originalname}, ${file.mimetype}, ${file.size}, ${stored.dataBase64}, ${stored.storageKey}
         )
         RETURNING id, asset_type, position, filename, mime_type, size_bytes, created_at
       `);
@@ -272,10 +277,11 @@ router.post(
         // Hata olursa loglar, yine de full upload başarılı kabul edilir
         try {
           const preview = await generatePreviewPdf(file.buffer, 5);
-          const previewBase64 = preview.buffer.toString("base64");
           const previewFilename = file.originalname.replace(/(\.[^.]+)?$/, "-preview.pdf");
+          const previewStored = await storeAssetBytes(id, "preview", previewFilename, "application/pdf", preview.buffer);
 
           // Eski preview varsa sil
+          await deleteStoredObjects({ ebookIdAndType: [id, "preview"] });
           await db.execute(sql`
             DELETE FROM ebook_assets
             WHERE ebook_id = ${id} AND asset_type = 'preview'
@@ -283,9 +289,9 @@ router.post(
 
           const insertedPreview = await db.execute(sql`
             INSERT INTO ebook_assets (
-              ebook_id, asset_type, position, filename, mime_type, size_bytes, data_base64
+              ebook_id, asset_type, position, filename, mime_type, size_bytes, data_base64, storage_key
             ) VALUES (
-              ${id}, 'preview', 0, ${previewFilename}, 'application/pdf', ${preview.byteSize}, ${previewBase64}
+              ${id}, 'preview', 0, ${previewFilename}, 'application/pdf', ${preview.byteSize}, ${previewStored.dataBase64}, ${previewStored.storageKey}
             )
             RETURNING id
           `);
@@ -354,6 +360,7 @@ router.delete(
       const a = (rows.rows ?? rows)[0] as any;
       if (!a) return res.status(404).json({ error: "Asset bulunamadı" });
 
+      await deleteStoredObjects({ assetId: id });
       await db.execute(sql`DELETE FROM ebook_assets WHERE id = ${id}`);
 
       // ebooks tablosundaki URL alanını güncelle
@@ -411,11 +418,15 @@ router.get("/ebooks/asset/:assetId", async (req: Request, res: Response) => {
   if (!Number.isFinite(id)) return res.status(400).send("Invalid id");
   try {
     const rows = await db.execute(sql`
-      SELECT filename, mime_type, size_bytes, data_base64
+      SELECT filename, mime_type, size_bytes, data_base64, storage_key
       FROM ebook_assets WHERE id = ${id}
     `);
     const asset = (rows.rows ?? rows)[0] as any;
     if (!asset) return res.status(404).send("Asset bulunamadı");
+    // ETag: asset id'si ve boyutu değişmez → tarayıcı tekrar sorarsa 304 (gövde gönderilmez)
+    const etag = `"ea-${id}-${asset.size_bytes}"`;
+    if (req.headers["if-none-match"] === etag) return res.status(304).end();
+    res.setHeader("ETag", etag);
 
     res.setHeader("Content-Type", asset.mime_type || "application/octet-stream");
     res.setHeader("Content-Length", String(asset.size_bytes));
@@ -426,6 +437,12 @@ router.get("/ebooks/asset/:assetId", async (req: Request, res: Response) => {
     res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
     res.setHeader("Access-Control-Allow-Origin", "*");
 
+    if (asset.storage_key) {
+      // Bucket'tan akıt — dosya belleğe alınmaz
+      const obj = await getObjectStream(asset.storage_key);
+      obj.stream.on("error", () => { if (!res.headersSent) res.status(502); res.end(); });
+      return obj.stream.pipe(res);
+    }
     const buf = Buffer.from(asset.data_base64, "base64");
     return res.send(buf);
   } catch (e: any) {

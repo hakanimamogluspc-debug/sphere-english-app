@@ -13,6 +13,8 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1155.0",
+    "@aws-sdk/s3-request-presigner": "^3.1155.0",
     "@sentry/node": "^8.45.0",
     "@types/compression": "^1.8.1",
     "@types/nodemailer": "^7.0.11",

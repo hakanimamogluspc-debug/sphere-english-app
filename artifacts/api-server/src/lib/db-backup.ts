@@ -18,6 +18,7 @@ import { promisify } from "node:util";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { captureException } from "./sentry.js";
+import { offsiteConfigured, offsiteMissing, shipBackup, pruneRemote, recordRun } from "./backup-offsite.js";
 
 const execAsync = promisify(exec);
 
@@ -42,6 +43,7 @@ export async function runBackup(): Promise<{
   sizeBytes?: number;
   durationMs?: number;
   error?: string;
+  remote?: { ok: boolean; file?: string; bytes?: number; error?: string; skipped?: string };
 }> {
   const start = Date.now();
   const dir = backupDir();
@@ -64,10 +66,36 @@ export async function runBackup(): Promise<{
     console.info(
       `[db-backup] OK: ${filename} (${(stat.size / 1024 / 1024).toFixed(2)} MB, ${(durationMs / 1000).toFixed(1)}s)`,
     );
-    return { ok: true, path: filepath, sizeBytes: stat.size, durationMs };
+
+    // Sunucu dışı kopya (Hetzner Storage Box) — şifreli
+    let remote: { ok: boolean; file?: string; bytes?: number; error?: string; skipped?: string };
+    if (!offsiteConfigured()) {
+      remote = { ok: false, skipped: `Sunucu dışı yedek yapılandırılmamış (eksik: ${offsiteMissing().join(", ")})` };
+      console.warn(`[db-backup] ${remote.skipped}`);
+    } else {
+      try {
+        const shipped = await shipBackup(filepath);
+        remote = { ok: true, file: shipped.remoteFile, bytes: shipped.remoteBytes };
+        console.info(`[db-backup] Storage Box'a yüklendi: ${shipped.remoteFile}`);
+        pruneRemote().then((p) => p.deleted && console.info(`[db-backup] uzakta ${p.deleted} eski yedek silindi`))
+          .catch((e) => console.warn("[db-backup] uzak temizlik hatası:", e?.message));
+      } catch (e: any) {
+        remote = { ok: false, error: e?.message ?? "bilinmeyen" };
+        console.error("[db-backup] Storage Box HATA:", e?.message);
+        captureException(e, { source: "db-backup-offsite" });
+      }
+    }
+    await recordRun({
+      localFile: filename, localBytes: stat.size,
+      remoteFile: remote.file, remoteBytes: remote.bytes,
+      remoteOk: remote.skipped ? null : remote.ok, error: remote.error ?? remote.skipped ?? null,
+      durationMs: Date.now() - start,
+    });
+    return { ok: true, path: filepath, sizeBytes: stat.size, durationMs, remote };
   } catch (e: any) {
     console.error("[db-backup] HATA:", e?.message);
     captureException(e, { source: "db-backup" });
+    await recordRun({ remoteOk: false, error: `Yerel yedek alınamadı: ${e?.message ?? "bilinmeyen"}`, durationMs: Date.now() - start });
     return { ok: false, error: e?.message ?? "bilinmeyen" };
   }
 }
