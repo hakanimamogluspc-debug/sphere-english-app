@@ -6,6 +6,8 @@ PORT = "3000"
 
 [phases.setup]
 nixPkgs = ["nodejs_20", "ffmpeg", "postgresql_17"]  # pg_dump sürümü veritabanıyla aynı olmalı (DB: 17.x)
+# Nixpacks'in varsayılan nixpkgs'inde postgresql_17 yok → NixOS 24.11 kararlı dalının sabit bir commit'i
+nixpkgsArchive = "50ab793786d9de88ee30ec4e4c24fb4236fc2674"
 cmds = ["npm install -g pnpm@9"]
 
 [phases.install]
