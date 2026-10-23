@@ -13,14 +13,42 @@
  * NOT: pg_dump CLI gerekir. nixpacks.toml'da postgresql_16 eklendi.
  */
 
-import { exec } from "node:child_process";
-import { promisify } from "node:util";
-import { promises as fs } from "node:fs";
+import { spawn } from "node:child_process";
+import { createWriteStream, promises as fs } from "node:fs";
+import { createGzip } from "node:zlib";
+import { pipeline } from "node:stream/promises";
 import path from "node:path";
 import { captureException } from "./sentry.js";
 import { offsiteConfigured, offsiteMissing, shipBackup, pruneRemote, recordRun } from "./backup-offsite.js";
 
-const execAsync = promisify(exec);
+/** Bundan küçük bir yedek dosyası "boş" sayılır (gerçek bir dump sıkıştırılmış hâlde bile onlarca KB'tır). */
+const MIN_BACKUP_BYTES = 10 * 1024;
+
+/**
+ * pg_dump'ı doğrudan çalıştır, çıktısını Node içinde gzip'le dosyaya yaz.
+ * Eskiden `pg_dump | gzip > dosya` kabuk boru hattı kullanılıyordu: pg_dump hata verse bile
+ * (ör. sürüm uyuşmazlığı) gzip boş dosya yazıp başarılı dönüyor ve hata yutuluyordu.
+ * Şimdi pg_dump'ın çıkış kodu ve hata çıktısı kontrol ediliyor.
+ */
+async function dumpToGzip(dbUrl: string, filepath: string): Promise<void> {
+  const child = spawn("pg_dump", [dbUrl, "--format=plain", "--no-owner", "--no-acl"], { stdio: ["ignore", "pipe", "pipe"] });
+  let stderr = "";
+  child.stderr.on("data", (d) => { if (stderr.length < 4000) stderr += String(d); });
+  const exited = new Promise<number>((resolve, reject) => {
+    child.on("error", reject); // pg_dump bulunamadı vb.
+    child.on("close", (code) => resolve(code ?? -1));
+  });
+  const timer = setTimeout(() => child.kill("SIGTERM"), 30 * 60 * 1000);
+  try {
+    await pipeline(child.stdout, createGzip({ level: 6 }), createWriteStream(filepath));
+    const code = await exited;
+    if (code !== 0) {
+      throw new Error(`pg_dump çıkış kodu ${code}: ${stderr.trim().slice(0, 600) || "(hata çıktısı yok)"}`);
+    }
+  } finally {
+    clearTimeout(timer);
+  }
+}
 
 function backupDir(): string {
   return process.env["BACKUP_DIR"] ?? "/app/backups";
@@ -56,11 +84,19 @@ export async function runBackup(): Promise<{
     const filename = `sphere_${stamp}_${Date.now()}.sql.gz`;
     const filepath = path.join(dir, filename);
 
-    // pg_dump → gzip → file. format=p (plain SQL) çoğu kurtarma senaryosunda en esnek.
-    const cmd = `pg_dump "${dbUrl}" --format=plain --no-owner --no-acl | gzip > "${filepath}"`;
-    await execAsync(cmd, { maxBuffer: 1024 * 1024 * 512, timeout: 30 * 60 * 1000 });
+    // pg_dump → gzip → dosya. format=p (plain SQL) çoğu kurtarma senaryosunda en esnek.
+    try {
+      await dumpToGzip(dbUrl, filepath);
+    } catch (e) {
+      await fs.unlink(filepath).catch(() => {});
+      throw e;
+    }
 
     const stat = await fs.stat(filepath);
+    if (stat.size < MIN_BACKUP_BYTES) {
+      await fs.unlink(filepath).catch(() => {});
+      throw new Error(`Yedek dosyası şüpheli derecede küçük (${stat.size} bayt) — pg_dump çıktı üretmedi`);
+    }
     const durationMs = Date.now() - start;
 
     console.info(

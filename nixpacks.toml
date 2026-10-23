@@ -5,7 +5,7 @@ NODE_ENV = "production"
 PORT = "3000"
 
 [phases.setup]
-nixPkgs = ["nodejs_20", "ffmpeg", "postgresql_16"]
+nixPkgs = ["nodejs_20", "ffmpeg", "postgresql_17"]  # pg_dump sürümü veritabanıyla aynı olmalı (DB: 17.x)
 cmds = ["npm install -g pnpm@9"]
 
 [phases.install]
