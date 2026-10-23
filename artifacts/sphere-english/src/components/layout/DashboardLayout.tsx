@@ -97,7 +97,8 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       // { name: 'Aboneliğim',          href: '/student/subscription',           icon: Crown,         moduleKey: 'student-subscription' },
       { name: 'Forum',               href: '/forum',                          icon: MessageCircle, moduleKey: 'student-forum' },
       { name: 'İlerleme Durumum',    href: '/progress',                       icon: LineChart,     moduleKey: 'student-progress' },
-      { name: 'Sertifikalar',        href: '/certificates',                   icon: Award,         moduleKey: 'student-certificates' },
+      // Sertifika vaadi verilmiyor — menüden gizlendi (sayfa /certificates adresinde duruyor)
+      // { name: 'Sertifikalar',        href: '/certificates',                   icon: Award,         moduleKey: 'student-certificates' },
       { name: 'Sıralama',            href: '/leaderboard',                    icon: Users,         moduleKey: 'student-leaderboard' },
       { name: 'Mesajlar',            href: '/messages',                       icon: MessageSquare },
       { name: 'Yardım Merkezi',      href: '/yardim',                         icon: LifeBuoy },
