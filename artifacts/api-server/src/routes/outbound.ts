@@ -51,6 +51,7 @@ import {
 } from "@workspace/db";
 import { and, count, desc, eq, gte, inArray, sql } from "drizzle-orm";
 import { authMiddleware, requireRole, type AuthRequest } from "../middlewares/auth.js";
+import { verifyUnsubscribe } from "../lib/outbound-unsubscribe.js";
 import { sendOutboundEmail, renderTemplate } from "../services/email-provider.js";
 
 const router = Router();
@@ -125,7 +126,11 @@ router.get("/admin/outbound/campaigns", authMiddleware, requireRole("admin"),
     try {
       const rows = await db.select().from(outboundCampaignsTable)
         .orderBy(desc(outboundCampaignsTable.updatedAt));
-      return res.json({ ok: true, campaigns: rows });
+      const stepCounts = await db.select({ campaignId: outboundSequenceStepsTable.campaignId, n: count() })
+        .from(outboundSequenceStepsTable)
+        .groupBy(outboundSequenceStepsTable.campaignId);
+      const byId = new Map(stepCounts.map((r) => [r.campaignId, Number(r.n)]));
+      return res.json({ ok: true, campaigns: rows.map((c) => ({ ...c, stepCount: byId.get(c.id) ?? 0 })) });
     } catch (e: any) { return res.status(500).json({ error: e?.message }); }
   });
 
@@ -167,6 +172,11 @@ router.post("/admin/outbound/campaigns/:id/start", authMiddleware, requireRole("
   async (req: AuthRequest, res: Response) => {
     try {
       const id = parseInt((req.params.id as string), 10);
+      const [{ n: stepN }] = await db.select({ n: count() }).from(outboundSequenceStepsTable)
+        .where(eq(outboundSequenceStepsTable.campaignId, id));
+      if (Number(stepN) === 0) {
+        return res.status(400).json({ error: "Kampanyada hiç adım (gönderilecek e-posta) yok. Önce kampanyayı açıp bir şablonla adım ekleyin." });
+      }
       const [row] = await db.update(outboundCampaignsTable)
         .set({ status: "active", startedAt: new Date(), updatedAt: new Date() })
         .where(eq(outboundCampaignsTable.id, id)).returning();
@@ -520,8 +530,8 @@ router.get("/outbound/unsubscribe", async (req: Request, res: Response) => {
   try {
     const campaignId = Number(req.query.c);
     const leadId = Number(req.query.l);
-    if (!campaignId || !leadId) {
-      return res.status(400).send("Geçersiz link.");
+    if (!campaignId || !leadId || !verifyUnsubscribe(campaignId, leadId, req.query.s)) {
+      return res.status(400).send("Geçersiz ya da eksik abonelikten çıkma bağlantısı. Lütfen destek@sphereenglish.com adresine yazın, sizi hemen listeden çıkaralım.");
     }
     // Kayıt: unsubscribe event + tüm aktif kampanyalardan çıkar
     await db.insert(outboundEmailEventsTable).values({

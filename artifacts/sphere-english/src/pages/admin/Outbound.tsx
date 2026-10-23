@@ -367,6 +367,11 @@ function CampaignCard({ campaign, onStart, onPause, onOpen }: any) {
               <span>📅 {c.bookings} toplantı</span>
               <span>💥 {c.bounces} bounce</span>
             </div>
+            {c.stepCount === 0 && (
+              <p className="mt-2 text-xs font-semibold text-red-700 bg-red-50 border border-red-200 rounded-md px-2 py-1 inline-block">
+                ⚠️ Bu kampanyada adım (gönderilecek e-posta) yok — hiçbir şey gönderilmez. Kampanyaya tıklayıp bir şablonla adım ekleyin.
+              </p>
+            )}
           </div>
           <div className="flex flex-col gap-2 shrink-0">
             {c.status === "active" ? (
@@ -1276,6 +1281,11 @@ function AddStepForm({ templates, onAdd }: any) {
           <option value="">Seç…</option>
           {templates.map((t: any) => <option key={t.id} value={t.id}>{t.name}</option>)}
         </select>
+        {templates.length === 0 && (
+          <p className="text-[11px] text-red-700 mt-1">
+            Bu kampanyanın segmentine uygun şablon yok. Şablonlar sekmesinde bu segmentle (ya da segmentsiz) bir şablon oluşturun.
+          </p>
+        )}
       </div>
       <div>
         <div className="text-[10px] text-slate-500 uppercase font-bold mb-1">Gecikme (gün)</div>

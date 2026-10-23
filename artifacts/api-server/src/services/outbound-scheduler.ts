@@ -22,6 +22,7 @@ import {
 } from "@workspace/db";
 import { and, eq, lte, sql, inArray, count } from "drizzle-orm";
 import { sendOutboundEmail, renderTemplate } from "./email-provider.js";
+import { unsubscribeUrl } from "../lib/outbound-unsubscribe.js";
 
 /**
  * NOT (cluster): Scheduler PRIMARY süreçte çalışır (index.ts, diğer cron'larla birlikte).
@@ -61,14 +62,17 @@ async function recordStart() {
   );
 }
 
-async function recordTick(error: string | null, forced: boolean) {
+async function recordTick(error: string | null, forced: boolean, keepDebug = false) {
   try {
+    // keepDebug: iş saati dışı / kilit beklemesi gibi "iş yapılmayan" turlarda, son gerçek turun
+    // ayrıntısını (hangi kampanya, kaç lead hazır, neden göndermedi) silme.
     await pool.query(
       `UPDATE outbound_scheduler_state
          SET last_tick_at = NOW(), last_tick_error = $1, last_tick_forced = $2,
-             tick_count = tick_count + 1, last_debug = $3::jsonb
+             tick_count = tick_count + 1,
+             last_debug = CASE WHEN $4 THEN last_debug ELSE $3::jsonb END
        WHERE id = 1`,
-      [error, forced, lastDebug ? JSON.stringify(lastDebug) : null],
+      [error, forced, lastDebug ? JSON.stringify(lastDebug) : null, keepDebug],
     );
   } catch (e: any) {
     console.error("[outbound-scheduler] durum kaydedilemedi:", e?.message);
@@ -147,9 +151,16 @@ async function tick(force = false): Promise<string | null> {
       .where(eq(outboundCampaignsTable.status, "active"));
     if (activeCampaigns.length === 0) error = "no_active_campaigns";
 
+    const runs: any[] = [];
+    lastDebug = runs;
     for (const campaign of activeCampaigns) {
       try {
-        await processCampaign(campaign);
+        const dbg = await processCampaign(campaign);
+        runs.push(dbg);
+        // Adımı olmayan aktif kampanya sessizce geçilmesin — durum sayfasında görünsün
+        if (dbg?.exit === "no_steps") {
+          error = `campaign_${campaign.id}_no_steps: "${campaign.name}" kampanyasında gönderilecek adım (şablon) yok`;
+        }
       } catch (e: any) {
         console.error(`[outbound-scheduler] campaign ${campaign.id} error:`, e?.message);
         error = `campaign_${campaign.id}: ${e?.message ?? "error"}`;
@@ -165,7 +176,7 @@ async function tick(force = false): Promise<string | null> {
     }
     client.release();
     // Kilit alınamadıysa durum satırını ezme (diğer tick yazacak)
-    if (error !== "another_tick_running") await recordTick(error, force);
+    if (error !== "another_tick_running") await recordTick(error, force, error === "outside_business_hours");
   }
 }
 
@@ -187,9 +198,8 @@ function isInBusinessHours(): boolean {
   return h >= startHour && h < endHour;
 }
 
-async function processCampaign(campaign: any) {
-  const dbg: any = { campaignId: campaign.id, campaignName: campaign.name };
-  lastDebug = dbg;
+async function processCampaign(campaign: any): Promise<any> {
+  const dbg: any = { campaignId: campaign.id, campaignName: campaign.name, at: new Date().toISOString() };
 
   // Bu kampanyanın step'leri
   const steps = await db.select().from(outboundSequenceStepsTable)
@@ -197,7 +207,7 @@ async function processCampaign(campaign: any) {
     .orderBy(outboundSequenceStepsTable.stepOrder);
 
   dbg.stepsCount = steps.length;
-  if (steps.length === 0) { dbg.exit = "no_steps"; return; }
+  if (steps.length === 0) { dbg.exit = "no_steps"; return dbg; }
 
   // Günlük gönderilen sayısı (bugün, bu kampanya)
   const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
@@ -213,7 +223,7 @@ async function processCampaign(campaign: any) {
   const remainingBudget = campaign.dailySendLimit - Number(sentToday);
   dbg.sentToday = Number(sentToday);
   dbg.remainingBudget = remainingBudget;
-  if (remainingBudget <= 0) { dbg.exit = "no_budget"; return; }
+  if (remainingBudget <= 0) { dbg.exit = "no_budget"; return dbg; }
 
   // Global suppression list — unsubscribe veya spam/bounce olmuş leadIds
   // KVKK: Herhangi bir kampanyada unsubscribe olan user başka kampanyaya eklense bile mail almasın
@@ -263,6 +273,7 @@ async function processCampaign(campaign: any) {
   }
   dbg.sendResults = sendResults;
   dbg.exit = "completed";
+  return dbg;
 }
 
 async function sendNextStep(campaign: any, cl: any, steps: any[]) {
@@ -365,8 +376,7 @@ async function sendNextStep(campaign: any, cl: any, steps: any[]) {
  * KVKK gereği unsubscribe link zorunlu.
  */
 function wrapWithFooter(html: string, campaignId: number, leadId: number): string {
-  const base = process.env.PUBLIC_API_URL || "https://api.sphereenglish.com";
-  const unsubUrl = `${base}/outbound/unsubscribe?c=${campaignId}&l=${leadId}`;
+  const unsubUrl = unsubscribeUrl(campaignId, leadId);
 
   const footer = `
     <div style="margin-top:32px;padding-top:16px;border-top:1px solid #e8eef8;font-family:sans-serif;font-size:11px;color:#8ba7d9;">
