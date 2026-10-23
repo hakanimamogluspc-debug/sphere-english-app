@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import {
   Ticket, Plus, RefreshCw, Loader2, AlertCircle, X, Check,
-  Calendar, Percent, DollarSign, Eye, EyeOff, Trash2,
+  Calendar, Percent, DollarSign, Eye, EyeOff, Trash2, Pencil,
 } from "lucide-react";
 import { API } from "@/lib/api-url";
 
@@ -29,6 +29,22 @@ function tl(kurus: number | null | undefined): string {
   return (k / 100).toLocaleString("tr-TR", { minimumFractionDigits: 0 }) + " TL";
 }
 
+/** ISO tarih → <input type="datetime-local"> değeri (tarayıcının yerel saatiyle). */
+function toLocalInput(iso: string | null | undefined): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return "";
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+/** datetime-local değeri → saat dilimi bilgili ISO (sunucu UTC sanıp 3 saat kaydırmasın). */
+function fromLocalInput(v: string): string | null {
+  if (!v) return null;
+  const d = new Date(v);
+  return isNaN(d.getTime()) ? null : d.toISOString();
+}
+
 const SCOPE_LABELS: Record<string, string> = {
   subscription_all: "Tüm Abonelikler",
   subscription_monthly: "Aylık Abonelikler",
@@ -41,6 +57,7 @@ export default function AdminCoupons() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const [editing, setEditing] = useState<any>(null);
   const [detail, setDetail] = useState<any>(null);
   const [filter, setFilter] = useState<"all" | "active" | "inactive">("all");
   const [search, setSearch] = useState("");
@@ -62,6 +79,15 @@ export default function AdminCoupons() {
   async function toggle(id: number) {
     try {
       await apiFetch(`/admin/coupons/${id}/toggle`, { method: "POST" });
+      await load();
+    } catch (e: any) { setError(e.message); }
+  }
+
+  async function remove(c: any) {
+    if (!window.confirm(`"${c.code}" kuponu silinsin mi? Bu işlem geri alınamaz.`)) return;
+    try {
+      await apiFetch(`/admin/coupons/${c.id}`, { method: "DELETE" });
+      setDetail(null);
       await load();
     } catch (e: any) { setError(e.message); }
   }
@@ -185,7 +211,19 @@ export default function AdminCoupons() {
           <div className="col-span-12 lg:col-span-5 bg-white border border-slate-200 rounded-lg p-4 max-h-[80vh] overflow-y-auto">
             <div className="flex justify-between mb-3">
               <h3 className="font-bold text-lg font-mono">{detail.coupon.code}</h3>
-              <button onClick={() => setDetail(null)}><X size={18} /></button>
+              <div className="flex items-center gap-1">
+                <button onClick={() => setEditing(detail.coupon)}
+                  className="flex items-center gap-1 px-2 py-1 text-xs rounded-md border border-slate-200 hover:bg-slate-50">
+                  <Pencil size={13} /> Düzenle
+                </button>
+                <button onClick={() => remove(detail.coupon)}
+                  disabled={Number(detail.coupon.total_used_count) > 0}
+                  title={Number(detail.coupon.total_used_count) > 0 ? "Kullanılmış kupon silinemez — pasifleştirin" : "Sil"}
+                  className="flex items-center gap-1 px-2 py-1 text-xs rounded-md border border-red-200 text-red-700 hover:bg-red-50 disabled:opacity-40 disabled:cursor-not-allowed">
+                  <Trash2 size={13} /> Sil
+                </button>
+                <button onClick={() => setDetail(null)} className="p-1"><X size={18} /></button>
+              </div>
             </div>
             <div className="space-y-2 text-sm">
               <div><strong>Tip:</strong> {detail.coupon.discount_type === "percentage" ? `%${detail.coupon.discount_value}` : `${detail.coupon.discount_value} TL`}</div>
@@ -193,6 +231,7 @@ export default function AdminCoupons() {
               {detail.coupon.min_purchase_kurus > 0 && (
                 <div><strong>Min. alışveriş:</strong> {tl(detail.coupon.min_purchase_kurus)}</div>
               )}
+              <div><strong>Başlangıç:</strong> {detail.coupon.valid_from ? new Date(detail.coupon.valid_from).toLocaleString("tr-TR") : "—"}</div>
               <div><strong>Geçerlilik:</strong> {detail.coupon.valid_until ? new Date(detail.coupon.valid_until).toLocaleString("tr-TR") : "Süresiz"}</div>
               {detail.coupon.notes && <div className="text-slate-600 italic">"{detail.coupon.notes}"</div>}
 
@@ -219,23 +258,30 @@ export default function AdminCoupons() {
         )}
       </div>
 
-      {showForm && <CouponForm onClose={() => setShowForm(false)} onCreated={() => { setShowForm(false); load(); }} />}
+      {showForm && <CouponForm onClose={() => setShowForm(false)} onSaved={() => { setShowForm(false); load(); }} />}
+      {editing && (
+        <CouponForm coupon={editing} onClose={() => setEditing(null)}
+          onSaved={() => { const id = editing.id; setEditing(null); load(); openDetail(id); }} />
+      )}
     </div>
   );
 }
 
-function CouponForm({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
-  const [form, setForm] = useState({
-    code: "", description: "",
-    discountType: "percentage" as "percentage" | "fixed",
-    discountValue: "10",
-    appliesTo: ["subscription_all", "ebook"] as string[],
-    minPurchaseTl: "0",
-    maxUses: "" as string,
-    maxUsesPerUser: "1",
-    validUntil: "",
-    notes: "",
-  });
+function CouponForm({ coupon, onClose, onSaved }: { coupon?: any; onClose: () => void; onSaved: () => void }) {
+  const isEdit = !!coupon;
+  const [form, setForm] = useState(() => ({
+    code: coupon?.code ?? "",
+    description: coupon?.description ?? "",
+    discountType: (coupon?.discount_type ?? "percentage") as "percentage" | "fixed",
+    discountValue: coupon ? String(Number(coupon.discount_value)) : "10",
+    appliesTo: (coupon?.applies_to ?? ["subscription_all", "ebook"]) as string[],
+    minPurchaseTl: coupon ? String(Number(coupon.min_purchase_kurus ?? 0) / 100) : "0",
+    maxUses: coupon?.max_uses != null ? String(coupon.max_uses) : "",
+    maxUsesPerUser: coupon ? String(coupon.max_uses_per_user ?? 1) : "1",
+    validFrom: toLocalInput(coupon?.valid_from),
+    validUntil: toLocalInput(coupon?.valid_until),
+    notes: coupon?.notes ?? "",
+  }));
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
@@ -252,11 +298,14 @@ function CouponForm({ onClose, onCreated }: { onClose: () => void; onCreated: ()
     const val = parseFloat(form.discountValue);
     if (!val || val <= 0) return setErr("Geçerli bir indirim değeri gir");
     if (form.discountType === "percentage" && val > 100) return setErr("Yüzde 0-100 arası");
+    const from = fromLocalInput(form.validFrom);
+    const until = fromLocalInput(form.validUntil);
+    if (from && until && new Date(until) <= new Date(from)) return setErr("Bitiş tarihi başlangıçtan sonra olmalı");
 
     setBusy(true); setErr(null);
     try {
-      await apiFetch("/admin/coupons", {
-        method: "POST",
+      await apiFetch(isEdit ? `/admin/coupons/${coupon.id}` : "/admin/coupons", {
+        method: isEdit ? "PATCH" : "POST",
         body: JSON.stringify({
           code: form.code.trim().toUpperCase(),
           description: form.description.trim() || null,
@@ -266,11 +315,12 @@ function CouponForm({ onClose, onCreated }: { onClose: () => void; onCreated: ()
           minPurchaseKurus: Math.round(parseFloat(form.minPurchaseTl || "0") * 100),
           maxUses: form.maxUses ? parseInt(form.maxUses, 10) : null,
           maxUsesPerUser: parseInt(form.maxUsesPerUser || "1", 10),
-          validUntil: form.validUntil || null,
+          ...(isEdit ? { validFrom: from } : from ? { validFrom: from } : {}),
+          validUntil: until,
           notes: form.notes.trim() || null,
         }),
       });
-      onCreated();
+      onSaved();
     } catch (e: any) {
       setErr(e.message);
     } finally {
@@ -282,7 +332,7 @@ function CouponForm({ onClose, onCreated }: { onClose: () => void; onCreated: ()
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-lg max-w-xl w-full max-h-[90vh] overflow-y-auto p-6">
         <div className="flex justify-between mb-4">
-          <h2 className="text-xl font-bold">Yeni Kupon</h2>
+          <h2 className="text-xl font-bold">{isEdit ? "Kuponu Düzenle" : "Yeni Kupon"}</h2>
           <button onClick={onClose}><X size={20} /></button>
         </div>
 
@@ -360,12 +410,25 @@ function CouponForm({ onClose, onCreated }: { onClose: () => void; onCreated: ()
             </div>
           </div>
 
-          <div>
-            <label className="block text-xs font-medium mb-1">Son geçerlilik (boş = süresiz)</label>
-            <input type="datetime-local" value={form.validUntil}
-              onChange={(e) => setForm({ ...form, validUntil: e.target.value })}
-              className="w-full px-3 py-2 border border-slate-200 rounded-md" />
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium mb-1">Başlangıç (boş = hemen)</label>
+              <input type="datetime-local" value={form.validFrom}
+                onChange={(e) => setForm({ ...form, validFrom: e.target.value })}
+                className="w-full px-3 py-2 border border-slate-200 rounded-md" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium mb-1">Son geçerlilik (boş = süresiz)</label>
+              <input type="datetime-local" value={form.validUntil}
+                onChange={(e) => setForm({ ...form, validUntil: e.target.value })}
+                className="w-full px-3 py-2 border border-slate-200 rounded-md" />
+            </div>
           </div>
+          {isEdit && Number(coupon.total_used_count) > 0 && (
+            <div className="p-2 bg-amber-50 border border-amber-200 rounded text-xs text-amber-800">
+              Bu kupon {coupon.total_used_count} kez kullanıldı. Değişiklikler yalnızca bundan sonraki kullanımları etkiler.
+            </div>
+          )}
 
           <div>
             <label className="block text-xs font-medium mb-1">İç not (opsiyonel)</label>
@@ -381,7 +444,7 @@ function CouponForm({ onClose, onCreated }: { onClose: () => void; onCreated: ()
             </button>
             <button onClick={submit} disabled={busy}
               className="flex-1 px-4 py-2 bg-blue-700 text-white rounded-md hover:bg-blue-800 disabled:opacity-50">
-              {busy ? "Kaydediliyor..." : "Kupon Oluştur"}
+              {busy ? "Kaydediliyor..." : isEdit ? "Kaydet" : "Kupon Oluştur"}
             </button>
           </div>
         </div>

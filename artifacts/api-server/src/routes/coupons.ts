@@ -169,7 +169,29 @@ router.patch(
       const id = parseInt((req.params.id as string) ?? "", 10);
       if (!id) return res.status(400).json({ error: "id geçersiz" });
       const body = (req.body ?? {}) as any;
+      const curRows = await db.execute(sql`SELECT discount_type, discount_value, valid_from, valid_until FROM coupons WHERE id = ${id} LIMIT 1`);
+      const cur = (curRows.rows ?? curRows)[0] as any;
+      if (!cur) return res.status(404).json({ error: "bulunamadı" });
+
+      // Doğrulama — yeni değerlerle mevcutların birleşimi üzerinden
+      const nextType = body.discountType ?? cur.discount_type;
+      const nextValue = body.discountValue !== undefined ? Number(body.discountValue) : Number(cur.discount_value);
+      if (!["percentage", "fixed"].includes(nextType)) return res.status(400).json({ error: "discountType: percentage|fixed" });
+      if (!(nextValue > 0)) return res.status(400).json({ error: "İndirim değeri 0'dan büyük olmalı" });
+      if (nextType === "percentage" && nextValue > 100) return res.status(400).json({ error: "Yüzde 0-100 arası olmalı" });
+      const nextFrom = body.validFrom !== undefined ? (body.validFrom ? new Date(body.validFrom) : new Date()) : new Date(cur.valid_from);
+      const nextUntil = body.validUntil !== undefined ? (body.validUntil ? new Date(body.validUntil) : null) : (cur.valid_until ? new Date(cur.valid_until) : null);
+      if (isNaN(nextFrom.getTime()) || (nextUntil && isNaN(nextUntil.getTime()))) return res.status(400).json({ error: "Geçersiz tarih" });
+      if (nextUntil && nextUntil <= nextFrom) return res.status(400).json({ error: "Bitiş tarihi başlangıçtan sonra olmalı" });
+
       const sets: any[] = [];
+      if (body.code !== undefined) {
+        const normCode = normalizeCode(String(body.code ?? ""));
+        if (!normCode || normCode.length < 3) return res.status(400).json({ error: "Kod en az 3 karakter" });
+        sets.push(sql`code = ${normCode}`);
+      }
+      if (body.discountType !== undefined) sets.push(sql`discount_type = ${nextType}`);
+      if (body.validFrom !== undefined) sets.push(sql`valid_from = ${nextFrom.toISOString()}::TIMESTAMPTZ`);
       if (body.description !== undefined) sets.push(sql`description = ${body.description}`);
       if (body.discountValue !== undefined) sets.push(sql`discount_value = ${Number(body.discountValue)}`);
       if (body.appliesTo !== undefined && Array.isArray(body.appliesTo)) {
@@ -190,6 +212,38 @@ router.patch(
       sets.push(sql`updated_at = NOW()`);
 
       await db.execute(sql`UPDATE coupons SET ${sql.join(sets, sql`, `)} WHERE id = ${id}`);
+      return res.json({ ok: true });
+    } catch (e: any) {
+      if (e?.message?.includes("duplicate") || e?.code === "23505") {
+        return res.status(409).json({ error: "Bu kod zaten kullanımda" });
+      }
+      return res.status(500).json({ error: e?.message });
+    }
+  },
+);
+
+// ─── ADMIN: Sil ─────────────────────────────────────────────────────────
+// Kullanılmış kupon silinmez (satış kayıtlarındaki indirim geçmişi kaybolmasın) → pasifleştirilmeli.
+router.delete(
+  "/admin/coupons/:id",
+  authMiddleware,
+  requireRole("admin"),
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const id = parseInt((req.params.id as string) ?? "", 10);
+      if (!id) return res.status(400).json({ error: "id geçersiz" });
+      const used = await db.execute(sql`
+        SELECT (SELECT COUNT(*) FROM coupon_redemptions WHERE coupon_id = ${id})::int AS n,
+               (SELECT total_used_count FROM coupons WHERE id = ${id}) AS total
+      `);
+      const row = (used.rows ?? used)[0] as any;
+      if (row?.total == null) return res.status(404).json({ error: "bulunamadı" });
+      if (Number(row.n) > 0 || Number(row.total) > 0) {
+        return res.status(409).json({
+          error: "Bu kupon kullanılmış; satış geçmişi korunsun diye silinemez. Bunun yerine pasifleştirin.",
+        });
+      }
+      await db.execute(sql`DELETE FROM coupons WHERE id = ${id}`);
       return res.json({ ok: true });
     } catch (e: any) {
       return res.status(500).json({ error: e?.message });
