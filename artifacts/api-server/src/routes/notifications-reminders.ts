@@ -131,7 +131,7 @@ async function logNotification(
 
 // ─── STREAK-AT-RISK — akşam 20:00 çağrısı ─────────────────────────────────
 
-async function runStreakRisk(appUrl: string) {
+export async function runStreakRisk(appUrl: string) {
   const today = todayIso();
   const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
 

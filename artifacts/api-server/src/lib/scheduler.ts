@@ -164,6 +164,63 @@ async function tryWeeklyReport(t: ReturnType<typeof nowTr>) {
   }
 }
 
+/**
+ * Günlük bir işi o gün için "sahiplen" — aynı gün ikinci kez (ya da başka süreçte) çalışmasın.
+ * Pencere bir saat; o saat içinde sunucu yeniden başlasa bile iş bir kez çalışır.
+ */
+async function claimDaily(job: string): Promise<boolean> {
+  await pool.query(`CREATE TABLE IF NOT EXISTS scheduler_daily_runs (
+    job VARCHAR(60) NOT NULL, run_date DATE NOT NULL, started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    result JSONB, PRIMARY KEY (job, run_date))`);
+  const r = await pool.query(
+    `INSERT INTO scheduler_daily_runs (job, run_date) VALUES ($1, (NOW() AT TIME ZONE 'Europe/Istanbul')::date)
+     ON CONFLICT DO NOTHING RETURNING job`,
+    [job],
+  );
+  return (r.rowCount ?? 0) > 0;
+}
+
+async function finishDaily(job: string, result: unknown) {
+  await pool.query(
+    `UPDATE scheduler_daily_runs SET result = $2 WHERE job = $1 AND run_date = (NOW() AT TIME ZONE 'Europe/Istanbul')::date`,
+    [job, JSON.stringify(result)],
+  ).catch(() => {});
+}
+
+function appUrl(): string {
+  return process.env.APP_URL ?? "https://app.sphereenglish.com";
+}
+
+/** Geri dönüş hatırlatma dizisi (3/7/14/30/60. gün) — her sabah 09:00–09:59 TR */
+async function tryComeback(t: ReturnType<typeof nowTr>) {
+  if (t.hour !== 9) return;
+  if (!(await claimDaily("comeback"))) return;
+  const { runComeback } = await import("../routes/notifications-reminders.js");
+  try {
+    const r = await runComeback(appUrl());
+    log(`Comeback: ${r.candidates} aday, ${r.sent} gönderildi, ${r.skipped} atlandı, ${r.failed} hata`);
+    await finishDaily("comeback", r);
+  } catch (e: any) {
+    log(`Comeback HATA: ${e?.message}`);
+    await finishDaily("comeback", { error: e?.message });
+  }
+}
+
+/** Seri riski hatırlatması — her akşam 20:00–20:59 TR */
+async function tryStreakRisk(t: ReturnType<typeof nowTr>) {
+  if (t.hour !== 20) return;
+  if (!(await claimDaily("streak_risk"))) return;
+  const { runStreakRisk } = await import("../routes/notifications-reminders.js");
+  try {
+    const r = await runStreakRisk(appUrl());
+    log(`Seri riski: ${r.candidates} aday, ${r.sent} gönderildi, ${r.skipped} atlandı, ${r.failed} hata`);
+    await finishDaily("streak_risk", r);
+  } catch (e: any) {
+    log(`Seri riski HATA: ${e?.message}`);
+    await finishDaily("streak_risk", { error: e?.message });
+  }
+}
+
 /** Ana tick — her 60 sn */
 let started = false;
 export function startScheduler() {
@@ -182,6 +239,8 @@ export function startScheduler() {
     try { await tryCareerIngest(t); } catch (e: any) { log(`career tick err: ${e?.message}`); }
     try { await tryLearningEnglish(t); } catch (e: any) { log(`learning-en tick err: ${e?.message}`); }
     try { await tryWeeklyReport(t); } catch (e: any) { log(`weekly tick err: ${e?.message}`); }
+    try { await tryComeback(t); } catch (e: any) { log(`comeback tick err: ${e?.message}`); }
+    try { await tryStreakRisk(t); } catch (e: any) { log(`streak tick err: ${e?.message}`); }
   };
 
   // 60 sn'de bir
