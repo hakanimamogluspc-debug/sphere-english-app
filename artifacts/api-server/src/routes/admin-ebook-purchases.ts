@@ -14,6 +14,7 @@ import { db } from "@workspace/db";
 import crypto from "node:crypto";
 import { authMiddleware, requireRole, type AuthRequest } from "../middlewares/auth.js";
 import { sendPurchaseEmailFireForget } from "./ebook-purchase.js";
+import { sendCartOrderMail } from "./cart.js";
 import { sendEbookDownloadMail } from "../lib/ebook-mail.js";
 import { notifyNewEbookPurchase } from "../lib/admin-notifications.js";
 import { downloadExpiry, DOWNLOAD_VALID_DAYS } from "../lib/ebook-download-policy.js";
@@ -552,11 +553,18 @@ router.post(
     try {
       // Önce satın almayı doğrula
       const rows = await db.execute(sql`
-        SELECT id, payment_status, download_token, buyer_email
+        SELECT id, payment_status, download_token, buyer_email, order_id
         FROM ebook_purchases WHERE id = ${id} LIMIT 1
       `);
       const purchase = (rows.rows ?? rows)[0] as any;
       if (!purchase) return res.status(404).json({ error: "Satın alma bulunamadı" });
+
+      // Sepet / set siparişi → siparişteki TÜM kitapların linkleri tek mailde
+      if (purchase.order_id) {
+        const r = await sendCartOrderMail(String(purchase.order_id));
+        if (r.ok) return res.json({ ok: true, to: purchase.buyer_email, wholeOrder: true });
+        return res.status(502).json({ error: r.error ?? "Mail gönderilemedi (detay log'da)" });
+      }
       if (purchase.payment_status !== "success") {
         return res
           .status(400)
@@ -629,15 +637,30 @@ router.post(
     if (!id) return res.status(400).json({ error: "id geçersiz" });
     try {
       const rows = await db.execute(sql`
-        SELECT id, payment_status, download_token, buyer_email FROM ebook_purchases WHERE id = ${id} LIMIT 1
+        SELECT id, payment_status, download_token, buyer_email, order_id FROM ebook_purchases WHERE id = ${id} LIMIT 1
       `);
       const purchase = (rows.rows ?? rows)[0] as any;
       if (!purchase) return res.status(404).json({ error: "Satın alma bulunamadı" });
       if (purchase.payment_status !== "success") {
         return res.status(400).json({ error: `Bağlantı yenilenemez — ödeme durumu '${purchase.payment_status}'` });
       }
-      const token = purchase.download_token || crypto.randomBytes(32).toString("base64url");
       const expiresAt = downloadExpiry().toISOString();
+
+      // Sepet / set siparişi → siparişteki tüm kitapların linkleri yenilenir, tek mailde gider
+      if (purchase.order_id) {
+        const orderKey = String(purchase.order_id);
+        await db.execute(sql`
+          UPDATE ebook_purchases
+             SET download_expires_at = ${expiresAt}::TIMESTAMPTZ, download_count = 0, updated_at = NOW()
+           WHERE order_id = ${orderKey} AND payment_status = 'success'
+        `);
+        console.info(`[admin-ebook-purchases/renew-link] sipariş ${orderKey} yenilendi (${DOWNLOAD_VALID_DAYS} gün)`);
+        const r = await sendCartOrderMail(orderKey);
+        if (r.ok) return res.json({ ok: true, to: purchase.buyer_email, expiresAt, wholeOrder: true });
+        return res.status(502).json({ error: `Bağlantılar yenilendi ama mail gönderilemedi: ${r.error ?? "detay log'da"}`, renewed: true, expiresAt });
+      }
+
+      const token = purchase.download_token || crypto.randomBytes(32).toString("base64url");
       await db.execute(sql`
         UPDATE ebook_purchases
            SET download_token = ${token}, download_expires_at = ${expiresAt}::TIMESTAMPTZ,

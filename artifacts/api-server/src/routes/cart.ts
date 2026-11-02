@@ -481,78 +481,7 @@ router.post("/internal/cart/activate", async (req: Request, res: Response) => {
       // Bu bekleme mail atılırken viewer URL DB'de hazır olması için.
       await new Promise((r) => setTimeout(r, 9000));
       try {
-        const detailRows = await db.execute(sql`
-          SELECT p.id, p.buyer_email, p.buyer_name, p.invoice_type,
-                 p.amount_paid, p.currency,
-                 p.download_token, p.download_expires_at, p.bundle_id,
-                 e.title AS ebook_title, e.author AS ebook_author,
-                 b.title AS bundle_title
-          FROM ebook_purchases p
-          LEFT JOIN ebooks e ON e.id = p.ebook_id
-          LEFT JOIN ebook_bundles b ON b.id = p.bundle_id
-          WHERE p.order_id = ${orderKey} AND p.payment_status = 'success'
-          ORDER BY p.id ASC
-        `);
-        const details = (detailRows.rows ?? detailRows) as any[];
-        if (details.length === 0) return;
-
-        await db.execute(sql`
-          UPDATE ebook_purchases SET mail_attempts = mail_attempts + 1, updated_at = NOW()
-          WHERE order_id = ${orderKey}
-        `);
-
-        // Sepet için fatura viewer URL — order_id ile invoices tablosundan çek
-        let invoiceViewerUrl: string | null = null;
-        try {
-          const invRows = await db.execute(sql`
-            SELECT viewer_url FROM invoices
-            WHERE order_id = ${orderKey} AND status = 'sent'
-            ORDER BY id DESC LIMIT 1
-          `);
-          invoiceViewerUrl = ((invRows.rows ?? invRows)[0] as any)?.viewer_url ?? null;
-        } catch (e: any) {
-          console.warn("[CART] invoice viewer URL çekilirken hata:", e?.message);
-        }
-
-        const totalAmount = details.reduce((s, d) => s + Number(d.amount_paid), 0);
-        const first = details[0];
-        const mailResult = await sendCartDownloadMail({
-          buyerEmail: String(first.buyer_email),
-          buyerName: first.buyer_name ?? null,
-          orderId: orderKey,
-          totalAmount,
-          currency: String(first.currency ?? "TRY"),
-          invoiceType: first.invoice_type === "corporate" ? "corporate" : "individual",
-          items: details.map((d) => ({
-            ebookTitle: String(d.ebook_title ?? "E-kitap"),
-            ebookAuthor: d.ebook_author ?? "Sphere English",
-            downloadToken: String(d.download_token),
-            downloadExpiresAt: new Date(d.download_expires_at),
-            bundleTitle: d.bundle_title ?? null,
-          })),
-          invoiceViewerUrl,
-        });
-
-        if (mailResult.ok) {
-          await db.execute(sql`
-            UPDATE ebook_purchases SET
-              mail_status = 'sent',
-              mail_sent_at = NOW(),
-              mail_error = NULL,
-              updated_at = NOW()
-            WHERE order_id = ${orderKey}
-          `);
-          console.info(`[CART] mail gönderildi: order_id=${orderKey} → ${first.buyer_email}`);
-        } else {
-          await db.execute(sql`
-            UPDATE ebook_purchases SET
-              mail_status = 'failed',
-              mail_error = ${mailResult.error ?? "bilinmeyen hata"},
-              updated_at = NOW()
-            WHERE order_id = ${orderKey}
-          `);
-          console.error(`[CART] mail başarısız: order_id=${orderKey} err=${mailResult.error}`);
-        }
+        await sendCartOrderMail(orderKey);
       } catch (e: any) {
         console.error("[CART] mail fire-forget HATA:", e?.message);
       }
@@ -737,3 +666,84 @@ router.get("/order/:orderId", async (req: Request, res: Response) => {
 });
 
 export default router;
+
+/**
+ * Sepet siparişinin TÜM kitaplarının indirme linklerini tek mailde gönderir
+ * (ödeme sonrası + admin "yeniden gönder / linki yenile").
+ * mail_status sipariş satırlarının hepsinde güncellenir.
+ */
+export async function sendCartOrderMail(orderKey: string): Promise<{ ok: boolean; error?: string }> {
+  const detailRows = await db.execute(sql`
+    SELECT p.id, p.buyer_email, p.buyer_name, p.invoice_type,
+           p.amount_paid, p.currency,
+           p.download_token, p.download_expires_at, p.bundle_id,
+           e.title AS ebook_title, e.author AS ebook_author,
+           b.title AS bundle_title
+    FROM ebook_purchases p
+    LEFT JOIN ebooks e ON e.id = p.ebook_id
+    LEFT JOIN ebook_bundles b ON b.id = p.bundle_id
+    WHERE p.order_id = ${orderKey} AND p.payment_status = 'success'
+    ORDER BY p.id ASC
+  `);
+  const details = (detailRows.rows ?? detailRows) as any[];
+  if (details.length === 0) return { ok: false, error: "Siparişte ödenmiş kitap yok" };
+
+  await db.execute(sql`
+    UPDATE ebook_purchases SET mail_attempts = mail_attempts + 1, updated_at = NOW()
+    WHERE order_id = ${orderKey}
+  `);
+
+  // Sepet için fatura viewer URL — order_id ile invoices tablosundan çek
+  let invoiceViewerUrl: string | null = null;
+  try {
+    const invRows = await db.execute(sql`
+      SELECT viewer_url FROM invoices
+      WHERE order_id = ${orderKey} AND status = 'sent'
+      ORDER BY id DESC LIMIT 1
+    `);
+    invoiceViewerUrl = ((invRows.rows ?? invRows)[0] as any)?.viewer_url ?? null;
+  } catch (e: any) {
+    console.warn("[CART] invoice viewer URL çekilirken hata:", e?.message);
+  }
+
+  const totalAmount = details.reduce((s, d) => s + Number(d.amount_paid), 0);
+  const first = details[0];
+  const mailResult = await sendCartDownloadMail({
+    buyerEmail: String(first.buyer_email),
+    buyerName: first.buyer_name ?? null,
+    orderId: orderKey,
+    totalAmount,
+    currency: String(first.currency ?? "TRY"),
+    invoiceType: first.invoice_type === "corporate" ? "corporate" : "individual",
+    items: details.map((d) => ({
+      ebookTitle: String(d.ebook_title ?? "E-kitap"),
+      ebookAuthor: d.ebook_author ?? "Sphere English",
+      downloadToken: String(d.download_token),
+      downloadExpiresAt: new Date(d.download_expires_at),
+      bundleTitle: d.bundle_title ?? null,
+    })),
+    invoiceViewerUrl,
+  });
+
+  if (mailResult.ok) {
+    await db.execute(sql`
+      UPDATE ebook_purchases SET
+        mail_status = 'sent',
+        mail_sent_at = NOW(),
+        mail_error = NULL,
+        updated_at = NOW()
+      WHERE order_id = ${orderKey}
+    `);
+    console.info(`[CART] mail gönderildi: order_id=${orderKey} → ${first.buyer_email}`);
+  } else {
+    await db.execute(sql`
+      UPDATE ebook_purchases SET
+        mail_status = 'failed',
+        mail_error = ${mailResult.error ?? "bilinmeyen hata"},
+        updated_at = NOW()
+      WHERE order_id = ${orderKey}
+    `);
+    console.error(`[CART] mail başarısız: order_id=${orderKey} err=${mailResult.error}`);
+  }
+  return mailResult;
+}

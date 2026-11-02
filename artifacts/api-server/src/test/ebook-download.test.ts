@@ -87,4 +87,23 @@ describe("e-kitap indirme sayfası", () => {
     const pending = await makePurchase({ status: "pending" });
     expect((await api().post(`/api/admin/ebook-purchases/${pending.id}/renew-link`).set({ Authorization: `Bearer ${token}` })).status).toBe(400);
   });
+
+  it("set / sepet siparişinde 'linki yenile' siparişteki TÜM kitapları yeniler", async () => {
+    const { token } = await createAdmin();
+    const a = await makePurchase({ count: 10, expiresInMs: -1000 });
+    const b = await makePurchase({ count: 4, expiresInMs: -1000 });
+    const order = `ORD-TEST-${Date.now()}`;
+    await pool.query(`UPDATE ebook_purchases SET order_id = $1 WHERE id = ANY($2::int[])`, [order, [a.id, b.id]]);
+
+    const r = await api().post(`/api/admin/ebook-purchases/${a.id}/renew-link`).set({ Authorization: `Bearer ${token}` });
+    expect([200, 502], JSON.stringify(r.body)).toContain(r.status);
+    const rows = (await pool.query(
+      `SELECT download_count, download_expires_at FROM ebook_purchases WHERE order_id = $1`, [order],
+    )).rows;
+    expect(rows).toHaveLength(2);
+    for (const row of rows) {
+      expect(row.download_count).toBe(0);
+      expect(new Date(row.download_expires_at).getTime()).toBeGreaterThan(Date.now() + 29 * 86400000);
+    }
+  });
 });

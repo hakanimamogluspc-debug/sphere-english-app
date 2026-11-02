@@ -1043,14 +1043,16 @@ function MailSection({
   const needsRenew = purchase.payment_status === "success" && (expired || limitFull);
 
   async function renew() {
-    if (!window.confirm(`${purchase.buyer_email} için indirme bağlantısı 30 gün uzatılsın, indirme hakkı sıfırlansın ve mail tekrar gönderilsin mi?`)) return;
+    const many = (purchase.item_count ?? 1) > 1;
+    const what = many ? `siparişteki ${purchase.item_count} kitabın indirme bağlantıları` : "indirme bağlantısı";
+    if (!window.confirm(`${purchase.buyer_email} için ${what} 30 gün uzatılsın, indirme hakları sıfırlansın ve mail tekrar gönderilsin mi?`)) return;
     setSending(true);
     setMsg(null);
     try {
       const data = await apiFetch(`/admin/ebook-purchases/${purchase.id}/renew-link`, { method: "POST" });
       setMsg({
         kind: "ok",
-        text: `Bağlantı yenilendi (son gün: ${formatDateTime(data.expiresAt)}) ve mail gönderildi: ${data.to}`,
+        text: `${data.wholeOrder ? "Siparişteki tüm bağlantılar" : "Bağlantı"} yenilendi (son gün: ${formatDateTime(data.expiresAt)}) ve mail gönderildi: ${data.to}`,
       });
     } catch (e: any) {
       setMsg({ kind: "err", text: e.message });
