@@ -15,7 +15,7 @@
 import { Router, Request, Response } from "express";
 import { createHash } from "node:crypto";
 import { pool, EBOOK_INTEREST_AREAS } from "@workspace/db";
-import { sendEbookWaitlistConfirmation } from "../lib/ebook-waitlist-mail.js";
+import { sendEbookWaitlistConfirmation, verifyWaitlistUnsub } from "../lib/ebook-waitlist-mail.js";
 import { notifyNewEbookWaitlist } from "../lib/admin-notifications.js";
 
 const router = Router();
@@ -61,6 +61,30 @@ router.get("/ebook-marketing/guide", async (_req: Request, res: Response) => {
 router.get("/ebook-marketing/interests", (_req: Request, res: Response) => {
   res.setHeader("Cache-Control", "public, max-age=3600");
   return res.json({ interests: EBOOK_INTEREST_AREAS });
+});
+
+// Duyuru maillerindeki "Listeden çık" bağlantısı — imzalı; e-postanın tüm kayıtlarını siler.
+router.get("/ebook-marketing/waitlist/unsubscribe", async (req: Request, res: Response) => {
+  const email = String(req.query.e ?? "").trim().toLowerCase();
+  const ok = !!email && verifyWaitlistUnsub(email, req.query.s);
+  if (ok) {
+    try {
+      await pool.query(`DELETE FROM ebook_waitlist WHERE lower(email) = $1`, [email]);
+    } catch (e: any) {
+      console.error("[EBOOK-MKT] unsubscribe HATA:", e?.message);
+    }
+  }
+  res.status(ok ? 200 : 400);
+  res.setHeader("Content-Type", "text/html; charset=utf-8");
+  res.setHeader("X-Robots-Tag", "noindex");
+  res.setHeader("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'");
+  return res.send(`<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Sphere English</title>
+<style>body{margin:0;background:#e8eef8;font-family:system-ui,sans-serif;color:#1e3a6e;display:flex;min-height:100vh;align-items:center;justify-content:center;padding:24px}
+.c{background:#fff;border-radius:16px;max-width:440px;padding:32px;box-shadow:0 8px 30px rgba(30,58,110,.12)}p{color:#334155;line-height:1.6}a{color:#0e7da6}</style></head>
+<body><div class="c"><h2>${ok ? "Listeden çıkarıldın" : "Bağlantı geçersiz"}</h2><p>${ok
+    ? "Yeni e-kitap duyurularını artık almayacaksın."
+    : "Bu bağlantı tanınmadı. Listeden çıkmak için info@sphereenglish.com adresine yazabilirsin."}</p>
+<p><a href="https://www.sphereenglish.com/e-kitaplar">E-kitaplara dön</a></p></div></body></html>`);
 });
 
 router.post("/ebook-marketing/waitlist", async (req: Request, res: Response) => {

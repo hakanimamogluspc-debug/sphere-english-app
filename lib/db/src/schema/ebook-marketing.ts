@@ -85,6 +85,8 @@ export const EBOOK_INTEREST_AREAS = [
   { key: "finans", label: "Finans & Muhasebe" },
   { key: "teknoloji", label: "Teknoloji & Yazılım" },
   { key: "liderlik", label: "Liderlik & İK" },
+  { key: "sektorel", label: "Sektörel İngilizce (havacılık, turizm, sağlık…)" },
+  { key: "beceri", label: "Beceri kitapları (sunum, müzakere, mülakat…)" },
   { key: "diger", label: "Diğer" },
 ] as const;
 export type EbookInterestArea = (typeof EBOOK_INTEREST_AREAS)[number]["key"];

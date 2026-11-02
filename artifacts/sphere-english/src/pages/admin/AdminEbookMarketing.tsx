@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   Megaphone, RefreshCw, Loader2, AlertCircle, X, Plus, Trash2,
-  ArrowUp, ArrowDown, Eye, EyeOff, Download, Mail, HelpCircle, Compass, Pencil, Check,
+  ArrowUp, ArrowDown, Eye, EyeOff, Download, Mail, HelpCircle, Compass, Pencil, Check, Send,
 } from "lucide-react";
 import { API } from "@/lib/api-url";
 
@@ -135,6 +135,7 @@ function WaitlistTab({ onError }: { onError: (m: string | null) => void }) {
 
   return (
     <div>
+      {stats && <AnnouncePanel stats={stats} onError={onError} />}
       {stats && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
           <Stat label="Toplam kayıt" value={stats.total} />
@@ -199,6 +200,156 @@ function WaitlistTab({ onError }: { onError: (m: string | null) => void }) {
               className="px-3 py-1 border border-slate-200 rounded-md bg-white disabled:opacity-40">Önceki</button>
             <button disabled={offset + LIMIT >= total} onClick={() => setOffset(offset + LIMIT)}
               className="px-3 py-1 border border-slate-200 rounded-md bg-white disabled:opacity-40">Sonraki</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── YENİ KİTAP DUYURUSU ─────────────────────────────────────────────────
+
+type WaitlistStats = { total: number; byArea: { key: string | null; label: string; count: number }[]; areas: { key: string; label: string }[] };
+
+function AnnouncePanel({ stats, onError }: { stats: WaitlistStats; onError: (m: string | null) => void }) {
+  const [open, setOpen] = useState(false);
+  const [ebooks, setEbooks] = useState<{ id: number; title: string; is_active: boolean }[]>([]);
+  const [ebookId, setEbookId] = useState<number | "">("");
+  const [areas, setAreas] = useState<string[]>([]); // boş = herkes
+  const [intro, setIntro] = useState("");
+  const [preview, setPreview] = useState<{ recipients: number; alreadySent: number; running: boolean; subject: string; html: string } | null>(null);
+  const [showMail, setShowMail] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [status, setStatus] = useState<{ running: boolean; sent: number; failed: number; queued: number } | null>(null);
+
+  useEffect(() => {
+    if (!open || ebooks.length) return;
+    apiFetch(`/admin/ebooks`).then((d) => setEbooks(d.ebooks ?? [])).catch((e) => onError(e.message));
+  }, [open, ebooks.length, onError]);
+
+  const loadPreview = useCallback(async () => {
+    if (!ebookId) { setPreview(null); return; }
+    try {
+      const qs = new URLSearchParams({ ebookId: String(ebookId), areas: areas.join(",") });
+      if (intro.trim()) qs.set("intro", intro.trim());
+      setPreview(await apiFetch(`/admin/ebook-waitlist/announce/preview?${qs}`));
+    } catch (e: any) { onError(e.message); }
+  }, [ebookId, areas, intro, onError]);
+
+  useEffect(() => { const t = setTimeout(loadPreview, 300); return () => clearTimeout(t); }, [loadPreview]);
+
+  // Gönderim sürerken durumu izle
+  useEffect(() => {
+    if (!ebookId || !status?.running) return;
+    const t = setInterval(async () => {
+      try {
+        const st = await apiFetch(`/admin/ebook-waitlist/announce/status?ebookId=${ebookId}`);
+        setStatus(st);
+        if (!st.running) loadPreview();
+      } catch { /* yoksay */ }
+    }, 3000);
+    return () => clearInterval(t);
+  }, [ebookId, status?.running, loadPreview]);
+
+  const areaOptions: { key: string; label: string; count: number }[] = [
+    ...stats.areas.map((a) => ({ key: a.key, label: a.label, count: stats.byArea.find((b) => b.key === a.key)?.count ?? 0 })),
+    { key: "__none__", label: "Genel (alan seçmemiş)", count: stats.byArea.find((b) => b.key === null)?.count ?? 0 },
+  ];
+
+  function toggleArea(k: string) {
+    setAreas((cur) => (cur.includes(k) ? cur.filter((x) => x !== k) : [...cur, k]));
+  }
+
+  async function send() {
+    if (!preview || !ebookId) return;
+    const book = ebooks.find((b) => b.id === ebookId);
+    if (!confirm(`"${book?.title}" duyurusu ${preview.recipients} kişiye gönderilsin mi?`)) return;
+    setBusy(true);
+    try {
+      await apiFetch(`/admin/ebook-waitlist/announce`, {
+        method: "POST",
+        body: JSON.stringify({ ebookId, areas, intro: intro.trim() || undefined }),
+      });
+      setStatus({ running: true, sent: preview.alreadySent, failed: 0, queued: preview.recipients });
+    } catch (e: any) { onError(e.message); }
+    finally { setBusy(false); }
+  }
+
+  const selectedBook = ebooks.find((b) => b.id === ebookId);
+
+  return (
+    <div className="mb-5 bg-white border border-sky-200 rounded-lg">
+      <button onClick={() => setOpen((o) => !o)} className="w-full flex items-center justify-between px-4 py-3 text-left">
+        <span className="flex items-center gap-2 font-semibold text-blue-800"><Send size={16} /> Yeni kitap duyurusu gönder</span>
+        <span className="text-xs text-slate-500">{open ? "Kapat" : `${stats.total} kayıt`}</span>
+      </button>
+      {open && (
+        <div className="px-4 pb-4 space-y-3 text-sm">
+          <div>
+            <label className="block text-xs font-medium mb-1">Duyurulacak kitap</label>
+            <select value={ebookId} onChange={(e) => { setEbookId(e.target.value ? Number(e.target.value) : ""); setStatus(null); }}
+              className="w-full max-w-md px-3 py-2 border border-slate-200 rounded-md bg-white">
+              <option value="">Kitap seç…</option>
+              {ebooks.map((b) => <option key={b.id} value={b.id}>{b.title}{b.is_active ? "" : " (pasif)"}</option>)}
+            </select>
+            {selectedBook && !selectedBook.is_active && (
+              <p className="mt-1 text-xs text-amber-700">Bu kitap pasif. Duyuru göndermeden önce yayına al.</p>
+            )}
+          </div>
+          <div>
+            <label className="block text-xs font-medium mb-1">Kime? (hiçbiri seçili değilse listedeki herkes)</label>
+            <div className="flex flex-wrap gap-1.5">
+              {areaOptions.map((a) => (
+                <label key={a.key} className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs cursor-pointer ${
+                  areas.includes(a.key) ? "bg-sky-50 border-sky-300 text-sky-800" : "border-slate-200 text-slate-600"}`}>
+                  <input type="checkbox" checked={areas.includes(a.key)} onChange={() => toggleArea(a.key)} />
+                  {a.label} <span className="text-slate-400">({a.count})</span>
+                </label>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-medium mb-1">Giriş cümlesi (isteğe bağlı)</label>
+            <input value={intro} onChange={(e) => setIntro(e.target.value)} maxLength={600}
+              placeholder="Haberdar olmak için kaydolduğun e-kitap kütüphanemize yeni bir kitap eklendi."
+              className="w-full px-3 py-2 border border-slate-200 rounded-md" />
+          </div>
+          {preview && (
+            <div className="p-3 rounded-md bg-slate-50 border border-slate-200 flex flex-wrap items-center gap-3 justify-between">
+              <div>
+                <div><b className="text-blue-800">{preview.recipients}</b> kişiye gidecek
+                  {preview.alreadySent > 0 && <span className="text-slate-500"> · {preview.alreadySent} kişiye bu kitap zaten duyuruldu (tekrar gitmez)</span>}
+                </div>
+                <div className="text-xs text-slate-500 mt-0.5">Konu: {preview.subject} · Aynı e-posta birden çok alanda kayıtlıysa tek mail gider.</div>
+              </div>
+              <div className="flex gap-2">
+                <button onClick={() => setShowMail(true)} className="flex items-center gap-1 px-3 py-1.5 rounded-md bg-white border border-slate-200 hover:bg-slate-50">
+                  <Eye size={14} /> Maili gör
+                </button>
+                <button onClick={send} disabled={busy || preview.recipients === 0 || !selectedBook?.is_active || !!status?.running}
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-md bg-blue-700 text-white hover:bg-blue-800 disabled:opacity-50">
+                  {busy ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />} Gönder
+                </button>
+              </div>
+            </div>
+          )}
+          {status && (
+            <div className={`p-2.5 rounded-md text-xs border ${status.running ? "bg-sky-50 border-sky-200 text-sky-900" : "bg-emerald-50 border-emerald-200 text-emerald-900"}`}>
+              {status.running
+                ? <><Loader2 size={12} className="animate-spin inline mr-1" /> Gönderiliyor… {status.sent} gönderildi, {status.queued} sırada</>
+                : <>Bitti: bu kitap için toplam {status.sent} kişiye gönderildi{status.failed > 0 && `, ${status.failed} hata`}.</>}
+            </div>
+          )}
+        </div>
+      )}
+      {showMail && preview && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowMail(false)}>
+          <div className="bg-white rounded-lg w-full max-w-2xl h-[85vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+            <div className="flex justify-between items-center px-4 py-2 border-b border-slate-200">
+              <span className="text-sm font-semibold">{preview.subject}</span>
+              <button onClick={() => setShowMail(false)}><X size={18} /></button>
+            </div>
+            <iframe title="Mail önizleme" srcDoc={preview.html} sandbox="" className="flex-1 w-full" />
           </div>
         </div>
       )}

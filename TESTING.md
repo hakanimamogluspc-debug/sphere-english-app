@@ -19,6 +19,7 @@ Entegrasyon testleri: Express uygulaması **gerçek bir Postgres**'e karşı, HT
 | `storage-backup.test.ts` | Object Storage yardımcıları (konum kodu, güvenli dosya adı, anahtar), yedek şifreleme gidiş-dönüş + yanlış anahtar, Storage Box listesi/saklama süresi, admin durum uçları (yapılandırma yokken) |
 | `coupons-admin.test.ts` | Kupon düzenleme (kod, tarih, değer), geçersiz tarih/yüzde reddi, kullanılmamış kuponu silme, kullanılmış kuponu silmeme |
 | `ebook-download.test.ts` | E-kitap indirme sayfası (GET hak tüketmez, POST indirir), süresi dolmuş/limit dolu/geçersiz bağlantı sayfaları, admin "linki yenile" |
+| `ebook-announce.test.ts` | Bekleme listesine yeni kitap duyurusu: alan filtresi, aynı e-postaya tek mail, kuyruğa alma, pasif kitap engeli, imzalı listeden çıkış |
 | `entitlement.test.ts` | otomatik deneme süresi, süresi geçmiş deneme, aktif abonelik, lazy expiry (past_due / expired), iptal-ama-dönem-sürüyor |
 
 ## Yerelde çalıştırma (Docker yoksa — sunucudaki test DB + SSH tüneli)
