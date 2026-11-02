@@ -19,7 +19,8 @@ import { createGzip } from "node:zlib";
 import { pipeline } from "node:stream/promises";
 import path from "node:path";
 import { captureException } from "./sentry.js";
-import { offsiteConfigured, offsiteMissing, shipBackup, pruneRemote, recordRun } from "./backup-offsite.js";
+import { offsiteConfigured, offsiteMissing, shipBackup, pruneRemote, recordRun, runsSince } from "./backup-offsite.js";
+import { pool } from "@workspace/db";
 
 /** Bundan küçük bir yedek dosyası "boş" sayılır (gerçek bir dump sıkıştırılmış hâlde bile onlarca KB'tır). */
 const MIN_BACKUP_BYTES = 10 * 1024;
@@ -190,12 +191,28 @@ export async function listBackups(): Promise<
   }
 }
 
+/** En son geçmiş "yedek zamanı" (bugünün hedef saati geçtiyse bugün, yoksa dün). */
+export function lastDueAt(now: Date, targetHourUtc: number): Date {
+  const due = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), targetHourUtc));
+  if (due.getTime() > now.getTime()) due.setUTCDate(due.getUTCDate() - 1);
+  return due;
+}
+
+/** Aynı anda tek bir sürecin yedek almasını garanti eden PostgreSQL advisory lock anahtarı. */
+const BACKUP_LOCK_KEY = 728102;
+/** Bir yedek zamanı için en fazla kaç deneme yapılır (başarısız olursa 30 dk arayla tekrar). */
+const MAX_ATTEMPTS_PER_DAY = 3;
+
 /**
- * Cron scheduler — basit setInterval tabanlı.
- * Her 1 saatte bir kontrol eder, hedef saatte ve son backup'tan en az 23 saat geçtiyse tetikler.
+ * Gece yedeği zamanlayıcısı.
+ *
+ * Eskiden "tam hedef saatte ve bellekteki son yedekten 23 saat geçtiyse" çalışıyordu. Sorunları:
+ * - Hedef saat içinde sunucu yeniden başlarsa / o saatte tetiklenmezse yedek o gün HİÇ alınmıyordu.
+ * - Her worker süreci de kendi zamanlayıcısını başlatıyordu (aynı anda birden çok pg_dump → RAM).
+ * Şimdi: son yedek zamanından beri başarılı yedek yoksa (veritabanındaki backup_runs kaydına bakarak)
+ * yedek alınır — kaçırılan gece, sunucu açılır açılmaz telafi edilir. Advisory lock ile tek süreç çalışır.
  */
 let cronStarted = false;
-let lastBackupAt = 0;
 
 export function startBackupCron(): void {
   if (cronStarted) return;
@@ -203,14 +220,26 @@ export function startBackupCron(): void {
   const targetHour = backupHourUtc();
 
   const tick = async () => {
-    const now = new Date();
-    const utcHour = now.getUTCHours();
-    const sinceLast = Date.now() - lastBackupAt;
-    if (utcHour === targetHour && sinceLast > 23 * 60 * 60 * 1000) {
-      lastBackupAt = Date.now();
-      console.info(`[db-backup] Cron tetiklendi (UTC ${targetHour}:00)`);
-      const r = await runBackup();
-      if (r.ok) await pruneOldBackups();
+    const due = lastDueAt(new Date(), targetHour);
+    const { attempts, succeeded } = await runsSince(due);
+    if (succeeded || attempts >= MAX_ATTEMPTS_PER_DAY) return;
+
+    const client = await pool.connect();
+    try {
+      const { rows } = await client.query("SELECT pg_try_advisory_lock($1) AS ok", [BACKUP_LOCK_KEY]);
+      if (!rows[0]?.ok) return; // başka bir süreç şu an yedek alıyor
+      try {
+        // Kilidi aldıktan sonra tekrar kontrol et (başka süreç az önce bitirmiş olabilir)
+        const again = await runsSince(due);
+        if (again.succeeded || again.attempts >= MAX_ATTEMPTS_PER_DAY) return;
+        console.info(`[db-backup] Yedek zamanı (${due.toISOString()}) — yedek alınıyor (deneme ${again.attempts + 1})`);
+        const r = await runBackup();
+        if (r.ok) await pruneOldBackups();
+      } finally {
+        await client.query("SELECT pg_advisory_unlock($1)", [BACKUP_LOCK_KEY]).catch(() => {});
+      }
+    } finally {
+      client.release();
     }
   };
 

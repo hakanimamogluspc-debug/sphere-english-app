@@ -30,6 +30,7 @@ import { notifyNewCartPurchase } from "../lib/admin-notifications.js";
 import { recordRedemption } from "../lib/coupon.js";
 import { attributeEbookSale } from "../lib/affiliate.js";
 import { issueInvoiceForSource } from "../lib/invoice/index.js";
+import { downloadExpiry } from "../lib/ebook-download-policy.js";
 
 const router = Router();
 
@@ -294,7 +295,7 @@ router.post("/internal/cart/activate", async (req: Request, res: Response) => {
   }
 
   try {
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+    const expiresAt = downloadExpiry().toISOString();
     const paidAtIso = paidAt ?? new Date().toISOString();
 
     // Meta Pixel/CAPI kimlik verisi — pending kayıttan çekilip callback'e response'ta döneriz.

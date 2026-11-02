@@ -6,7 +6,8 @@ import { randomBytes } from "node:crypto";
 import { api, resetDb, closeDb, registerUser, createAdmin } from "./helpers.js";
 import { regionFromEndpoint, safeFilename, storageEnabled } from "../lib/object-storage.js";
 import { assetKey } from "../lib/ebook-asset-store.js";
-import { encryptFile, decryptFile, parsePropfind, selectExpired, offsiteConfigured } from "../lib/backup-offsite.js";
+import { encryptFile, decryptFile, parsePropfind, selectExpired, offsiteConfigured, recordRun, runsSince } from "../lib/backup-offsite.js";
+import { lastDueAt } from "../lib/db-backup.js";
 
 beforeAll(resetDb);
 afterAll(closeDb);
@@ -99,5 +100,24 @@ describe("admin uçları (depo/yedek yapılandırılmamışken)", () => {
     expect(b.body.offsite.configured).toBe(false);
     expect(b.body.offsite.missing).toContain("BACKUP_ENCRYPTION_KEY");
     expect(Array.isArray(b.body.runs)).toBe(true);
+  });
+});
+
+describe("gece yedeği zamanlayıcısı", () => {
+  it("son yedek zamanı: hedef saat geçtiyse bugün, geçmediyse dün", () => {
+    expect(lastDueAt(new Date("2026-10-24T00:30:00Z"), 0).toISOString()).toBe("2026-10-24T00:00:00.000Z");
+    expect(lastDueAt(new Date("2026-10-24T09:00:00Z"), 0).toISOString()).toBe("2026-10-24T00:00:00.000Z");
+    expect(lastDueAt(new Date("2026-10-24T01:59:00Z"), 2).toISOString()).toBe("2026-10-23T02:00:00.000Z");
+  });
+
+  it("kayıtlardan başarılı yedek ve deneme sayısı okunur", async () => {
+    const since = new Date(Date.now() - 1000);
+    expect(await runsSince(since)).toEqual({ attempts: 0, succeeded: false });
+    await recordRun({ remoteOk: false, error: "Yerel yedek alınamadı: test", durationMs: 5 });
+    expect(await runsSince(since)).toEqual({ attempts: 1, succeeded: false });
+    await recordRun({ localFile: "a.sql.gz", localBytes: 20000, remoteOk: false, error: "Storage Box yok", durationMs: 5 });
+    expect((await runsSince(since)).succeeded).toBe(false);
+    await recordRun({ localFile: "b.sql.gz", localBytes: 20000, remoteOk: true, remoteFile: "b.enc", remoteBytes: 20000, durationMs: 5 });
+    expect(await runsSince(since)).toEqual({ attempts: 3, succeeded: true });
   });
 });

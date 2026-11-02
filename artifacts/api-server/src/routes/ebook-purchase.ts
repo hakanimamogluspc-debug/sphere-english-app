@@ -5,7 +5,8 @@
  *   POST /api/internal/ebook-purchase/pre-create  → Initialize aşamasında pending purchase yaz (billing info ile)
  *   POST /api/internal/ebook-purchase/activate    → Callback başarılıysa pending'i success'e çevir, downloadToken üret
  *   POST /api/internal/ebook-purchase/mark-failed → Callback başarısızsa pending'i failed olarak işaretle
- *   GET  /api/ebooks/download?token=X             → Token ile tam PDF'i stream et (max 10 indirme, 7 gün geçerli)
+ *   GET  /api/ebooks/download?token=X             → İndirme sayfası (hak tüketmez)
+ *   POST /api/ebooks/download                     → PDF'i indir (max 10 indirme, 30 gün geçerli — lib/ebook-download-policy.ts)
  *
  * Internal endpoint'ler HMAC X-Internal-Signature ile authenticate.
  */
@@ -20,6 +21,7 @@ import { sendEbookDownloadMail } from "../lib/ebook-mail.js";
 import { notifyNewEbookPurchase } from "../lib/admin-notifications.js";
 import { issueInvoiceForSource } from "../lib/invoice/index.js";
 import { presignDownload } from "../lib/object-storage.js";
+import { downloadExpiry, MAX_DOWNLOADS, SUPPORT_EMAIL, SUPPORT_WHATSAPP } from "../lib/ebook-download-policy.js";
 
 /**
  * E-kitap satışı için otomatik e-Fatura/e-Arşiv kes + mail'i tetikle.
@@ -383,7 +385,7 @@ router.post("/internal/ebook-purchase/activate", async (req: Request, res: Respo
   }
 
   try {
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+    const expiresAt = downloadExpiry().toISOString();
     const paidAtIso = paidAt ?? new Date().toISOString();
 
     // ── IDEMPOTENCY GUARD ────────────────────────────────────────────────
@@ -586,55 +588,107 @@ router.post("/internal/ebook-purchase/mark-failed", async (req: Request, res: Re
 });
 
 // ─── PUBLIC: Tam PDF indirme (token ile) ─────────────────────────────────
-// CORS açık, çoğu tarayıcıdan link tıklanır
+//
+// İki adımlı:
+//   GET  /ebooks/download?token=X  → Kitap adı + "PDF'i indir" düğmesi olan sayfa. Hak TÜKETMEZ.
+//   POST /ebooks/download (token)  → Hakkı düşer, dosyaya yönlendirir.
+// Neden: kurumsal Outlook (Safe Links), antivirüs ve sohbet uygulamaları maildeki linki
+// kendiliğinden açıyor; eskiden her açılış bir indirme sayılıyor ve hak bitiyordu.
+// Botlar form göndermez → artık sadece gerçek tıklama sayılır.
+
+function escapeHtml(v: unknown): string {
+  return String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
+}
+
+function formatTrDate(d: Date): string {
+  return d.toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric", timeZone: "Europe/Istanbul" });
+}
+
+function downloadPage(res: Response, status: number, opts: { title: string; body: string; action?: string }) {
+  res.status(status);
+  res.setHeader("Content-Type", "text/html; charset=utf-8");
+  res.setHeader("Cache-Control", "private, no-store");
+  res.setHeader("X-Robots-Tag", "noindex, nofollow");
+  // Form gönderiminden sonra nesne deposuna yönlendirme olduğu için form-action https: açık.
+  res.setHeader(
+    "Content-Security-Policy",
+    "default-src 'none'; style-src 'unsafe-inline'; img-src https: data:; form-action 'self' https:; base-uri 'none'; frame-ancestors 'none'",
+  );
+  const support = `<p class="sup">Sorun mu var? <a href="${SUPPORT_WHATSAPP}">WhatsApp'tan yaz</a> ya da <a href="mailto:${SUPPORT_EMAIL}">${SUPPORT_EMAIL}</a> adresine e-posta gönder; bağlantını hemen yenileyelim.</p>`;
+  res.send(`<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow"><title>${escapeHtml(opts.title)} — Sphere English</title>
+<style>
+body{margin:0;background:#e8eef8;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#1e3a6e;display:flex;min-height:100vh;align-items:center;justify-content:center;padding:24px;box-sizing:border-box}
+.card{background:#fff;border-radius:16px;max-width:460px;width:100%;padding:32px 28px;box-shadow:0 8px 30px rgba(30,58,110,.12)}
+.brand{font-weight:800;letter-spacing:-.01em;margin-bottom:20px;color:#1e3a6e}
+h1{font-size:22px;margin:0 0 12px}p{line-height:1.55;margin:0 0 14px;color:#334155}
+.meta{font-size:14px;color:#64748b}
+button{width:100%;border:0;border-radius:12px;background:#1e3a6e;color:#fff;font-size:17px;font-weight:700;padding:16px;cursor:pointer;margin:8px 0 14px}
+button:hover{background:#16305c}a{color:#0e7da6}.sup{font-size:13px;color:#64748b;margin-top:18px}
+</style></head><body><main class="card"><div class="brand">Sphere English</div>
+<h1>${escapeHtml(opts.title)}</h1>${opts.body}${opts.action ?? ""}${support}</main></body></html>`);
+}
+
+type DownloadCheck =
+  | { ok: true; purchase: any; title: string }
+  | { ok: false; status: number; title: string; message: string };
+
+async function checkDownloadToken(token: string): Promise<DownloadCheck> {
+  if (!token) return { ok: false, status: 400, title: "Bağlantı eksik", message: "İndirme bağlantısı eksik görünüyor. Maildeki düğmeye tekrar tıklamayı dene." };
+  const rows = await db.execute(sql`
+    SELECT p.id, p.ebook_id, p.download_count, p.download_expires_at, p.payment_status, e.title
+    FROM ebook_purchases p LEFT JOIN ebooks e ON e.id = p.ebook_id
+    WHERE p.download_token = ${token}
+    LIMIT 1
+  `);
+  const purchase = (rows.rows ?? rows)[0] as any;
+  if (!purchase) {
+    console.error(`[EBOOK-DOWNLOAD] Token bulunamadı: ${token.slice(0, 12)}... (uzunluk=${token.length})`);
+    return { ok: false, status: 404, title: "Bağlantı geçersiz", message: "Bu indirme bağlantısı tanınmadı. Bağlantı mailden eksik kopyalanmış olabilir; maildeki düğmeye doğrudan tıklamayı dene." };
+  }
+  const title = String(purchase.title ?? "E-kitabın");
+  if (purchase.payment_status !== "success") {
+    console.warn(`[EBOOK-DOWNLOAD] Reddedildi - status=${purchase.payment_status} id=${purchase.id}`);
+    return { ok: false, status: 403, title, message: "Bu siparişin ödemesi henüz tamamlanmamış görünüyor." };
+  }
+  if (!purchase.download_expires_at || new Date(purchase.download_expires_at) < new Date()) {
+    console.warn(`[EBOOK-DOWNLOAD] Reddedildi - süresi dolmuş id=${purchase.id}`);
+    return { ok: false, status: 410, title, message: "Bu indirme bağlantısının süresi dolmuş. Bize yazman yeterli; yeni bağlantını hemen gönderelim." };
+  }
+  if (Number(purchase.download_count) >= MAX_DOWNLOADS) {
+    console.warn(`[EBOOK-DOWNLOAD] Reddedildi - limit dolu id=${purchase.id}`);
+    return { ok: false, status: 429, title, message: `Bu bağlantının ${MAX_DOWNLOADS} indirme hakkı dolmuş. Bize yazman yeterli; bağlantını yenileyelim.` };
+  }
+  return { ok: true, purchase, title };
+}
+
 router.get("/ebooks/download", async (req: Request, res: Response) => {
-  // UTF-8 charset her response için (Türkçe karakterlerin tarayıcıda doğru görünmesi)
-  res.setHeader("Content-Type", "text/plain; charset=utf-8");
-
   const token = String(req.query?.token ?? "").trim();
-  if (!token) return res.status(400).send("Token eksik");
-
-  console.info(`[EBOOK-DOWNLOAD] token denendi: ${token.slice(0, 12)}... (uzunluk=${token.length})`);
-
   try {
-    // Token + süre + indirme sayısı kontrolü
-    const rows = await db.execute(sql`
-      SELECT id, ebook_id, download_count, download_expires_at, payment_status, buyer_email
-      FROM ebook_purchases
-      WHERE download_token = ${token}
-      LIMIT 1
-    `);
-    const purchase = (rows.rows ?? rows)[0] as any;
+    const c = await checkDownloadToken(token);
+    if (!c.ok) return downloadPage(res, c.status, { title: c.title, body: `<p>${escapeHtml(c.message)}</p>` });
+    const left = MAX_DOWNLOADS - Number(c.purchase.download_count);
+    const until = formatTrDate(new Date(c.purchase.download_expires_at));
+    return downloadPage(res, 200, {
+      title: c.title,
+      body: `<p>Kitabın hazır. Aşağıdaki düğmeye bastığında PDF dosyası cihazına inecek.</p>
+<p class="meta">Kalan indirme hakkı: <strong>${left}</strong> · Son gün: <strong>${escapeHtml(until)}</strong></p>`,
+      action: `<form method="post"><input type="hidden" name="token" value="${escapeHtml(token)}"><button type="submit">PDF'i indir</button></form>
+<p class="meta">İndirdikten sonra dosyayı cihazına kaydetmeni öneririz (telefonda "Dosyalar"a kaydet / Paylaş → Dosyalara kaydet).</p>`,
+    });
+  } catch (e: any) {
+    console.error("[EBOOK-DOWNLOAD] sayfa HATA:", e?.message);
+    return downloadPage(res, 500, { title: "Bir sorun oluştu", body: "<p>Şu an indirme sayfası açılamadı. Birkaç dakika sonra tekrar dene.</p>" });
+  }
+});
 
-    if (!purchase) {
-      // Token DB'de yok — ya hiç oluşturulmadı, ya silindi, ya da farklı bir token
-      // Yakın token var mı diye prefix ile bak (debug için)
-      const similarRows = await db.execute(sql`
-        SELECT id, payment_status, LEFT(download_token, 12) AS token_prefix, created_at
-        FROM ebook_purchases
-        WHERE download_token IS NOT NULL
-        ORDER BY created_at DESC
-        LIMIT 3
-      `);
-      const recent = (similarRows.rows ?? similarRows) as any[];
-      console.error(`[EBOOK-DOWNLOAD] Token bulunamadı. Denenen: ${token.slice(0, 12)}... | Son 3 DB token prefix: ${recent.map(r => `${r.token_prefix}(${r.payment_status})`).join(", ")}`);
-      return res.status(404).send("Geçersiz indirme bağlantısı");
-    }
-    console.info(`[EBOOK-DOWNLOAD] token eşleşti: id=${purchase.id} status=${purchase.payment_status} expires=${purchase.download_expires_at}`);
-    if (purchase.payment_status !== "success") {
-      console.warn(`[EBOOK-DOWNLOAD] Reddedildi - status=${purchase.payment_status} id=${purchase.id}`);
-      return res.status(403).send(`Bu sipariş için ödeme tamamlanmamış (status: ${purchase.payment_status})`);
-    }
-    if (!purchase.download_expires_at || new Date(purchase.download_expires_at) < new Date()) {
-      console.warn(`[EBOOK-DOWNLOAD] Reddedildi - süresi dolmuş id=${purchase.id} expires=${purchase.download_expires_at}`);
-      return res.status(410).send("İndirme bağlantısının süresi dolmuş (7 gün)");
-    }
-    if (purchase.download_count >= 10) {
-      console.warn(`[EBOOK-DOWNLOAD] Reddedildi - limit dolu id=${purchase.id} count=${purchase.download_count}`);
-      return res.status(429).send("İndirme limiti doldu (max 10). Destek ile iletişime geçin.");
-    }
+router.post("/ebooks/download", async (req: Request, res: Response) => {
+  const token = String((req.body as any)?.token ?? req.query?.token ?? "").trim();
+  try {
+    const c = await checkDownloadToken(token);
+    if (!c.ok) return downloadPage(res, c.status, { title: c.title, body: `<p>${escapeHtml(c.message)}</p>` });
+    const purchase = c.purchase;
 
-    // Full PDF asset'i bul
     const assetRows = await db.execute(sql`
       SELECT filename, mime_type, size_bytes, data_base64, storage_key
       FROM ebook_assets
@@ -644,38 +698,35 @@ router.get("/ebooks/download", async (req: Request, res: Response) => {
     const asset = (assetRows.rows ?? assetRows)[0] as any;
     if (!asset) {
       console.error(`[EBOOK-DOWNLOAD] Full PDF asset yok: ebookId=${purchase.ebook_id}`);
-      return res.status(500).send("PDF dosyası bulunamadı. Lütfen destek ile iletişime geçin.");
+      return downloadPage(res, 500, { title: c.title, body: "<p>Kitap dosyasına şu an ulaşılamıyor. Bize yaz, hemen ilgilenelim.</p>" });
     }
 
-    // Counter ++
-    await db.execute(sql`
+    // Hakkı düş — yarış durumunda limiti aşmamak için koşullu güncelle
+    const upd = await db.execute(sql`
       UPDATE ebook_purchases SET download_count = download_count + 1, updated_at = NOW()
-      WHERE id = ${purchase.id}
+      WHERE id = ${purchase.id} AND download_count < ${MAX_DOWNLOADS}
+      RETURNING download_count
     `);
+    if (((upd.rows ?? upd) as any[]).length === 0) {
+      return downloadPage(res, 429, { title: c.title, body: `<p>Bu bağlantının ${MAX_DOWNLOADS} indirme hakkı dolmuş. Bize yazman yeterli; bağlantını yenileyelim.</p>` });
+    }
+    console.info(`[EBOOK-DOWNLOAD] indirildi id=${purchase.id}`);
 
     if (asset.storage_key) {
       // Dosya nesne deposunda → 5 dakikalık süreli bağlantıyla doğrudan oradan indir.
-      // Sunucu ve veritabanı dosyayı hiç taşımaz.
       const url = await presignDownload(asset.storage_key, asset.filename, asset.mime_type || "application/pdf", 300);
       res.setHeader("Cache-Control", "private, no-store");
-      return res.redirect(302, url);
+      return res.redirect(303, url);
     }
 
     res.setHeader("Content-Type", asset.mime_type || "application/pdf");
     res.setHeader("Content-Length", String(asset.size_bytes));
-    res.setHeader(
-      "Content-Disposition",
-      `attachment; filename="${asset.filename.replace(/[^a-zA-Z0-9._-]/g, "_")}"`,
-    );
+    res.setHeader("Content-Disposition", `attachment; filename="${asset.filename.replace(/[^a-zA-Z0-9._-]/g, "_")}"`);
     res.setHeader("Cache-Control", "private, no-store");
-    res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
-    res.setHeader("Access-Control-Allow-Origin", "*");
-
-    const buf = Buffer.from(asset.data_base64, "base64");
-    return res.send(buf);
+    return res.send(Buffer.from(asset.data_base64, "base64"));
   } catch (e: any) {
     console.error("[EBOOK-DOWNLOAD] HATA:", e?.message);
-    return res.status(500).send("İndirme hatası");
+    return downloadPage(res, 500, { title: "Bir sorun oluştu", body: "<p>İndirme sırasında bir sorun oluştu. Birkaç dakika sonra tekrar dene.</p>" });
   }
 });
 

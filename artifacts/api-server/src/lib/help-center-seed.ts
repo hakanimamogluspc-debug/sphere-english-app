@@ -7,7 +7,7 @@
  * paneli kullanılır.
  *
  * Yazım ilkesi: kısa, somut, adım adım; sayı/süre verirken koddaki gerçek
- * değerler (örn. seviye sınavı %70, e-kitap linki 7 gün / 10 indirme).
+ * değerler (örn. seviye sınavı %70, e-kitap linki 30 gün / 10 indirme).
  */
 import { pool } from "@workspace/db";
 
@@ -287,7 +287,7 @@ Davet kazanımları dönemsel olarak değişebilir; güncel koşullar aynı sayf
     tags: ["e-kitap", "pdf", "indirme", "satın alma"], sort: 10,
     body: `1. www.sphereenglish.com/e-kitaplar'dan kitabı ya da seti sepete ekleyin, ödemeyi tamamlayın (kart, 3D Secure).
 2. Ödeme onaylanınca e-postanıza **indirme bağlantısı** gelir.
-3. Bağlantı **7 gün** geçerlidir ve en fazla **10 kez** indirilebilir; PDF'i cihazınıza kaydedin.
+3. Bağlantıyı açınca **"PDF'i indir"** düğmesine basın. Bağlantı **30 gün** geçerlidir ve en fazla **10 kez** indirilebilir; PDF'i cihazınıza kaydedin.
 
 Bağlantının süresi dolduysa ya da e-posta gelmediyse ödeme e-postanız ve sipariş bilgisiyle bize yazın; yeniden gönderelim.`,
   },

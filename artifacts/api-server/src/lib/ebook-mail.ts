@@ -13,6 +13,7 @@
  */
 
 import { sendEmail } from "./email.js";
+import { DOWNLOAD_VALID_DAYS, MAX_DOWNLOADS } from "./ebook-download-policy.js";
 
 interface EbookMailOptions {
   buyerEmail: string;
@@ -48,7 +49,7 @@ function formatDate(d: Date): string {
 
 /**
  * Satın alma sonrası alıcıya indirme linki mailini gönderir.
- * Token zaten unique + 7 gün süreli + 10 indirme limiti var.
+ * Token unique; süre ve indirme limiti: lib/ebook-download-policy.ts
  */
 export async function sendEbookDownloadMail(opts: EbookMailOptions): Promise<{
   ok: boolean;
@@ -132,8 +133,8 @@ export async function sendEbookDownloadMail(opts: EbookMailOptions): Promise<{
                 <td style="padding:14px 18px;">
                   <div style="font-size:12px;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">⏰ Önemli</div>
                   <ul style="margin:0;padding-left:18px;font-size:13px;color:#78350f;line-height:1.7;">
-                    <li>Bağlantı <strong>${expiresFormatted}</strong> tarihine kadar geçerli (7 gün)</li>
-                    <li>Maksimum <strong>10 kez</strong> indirme hakkın var</li>
+                    <li>Bağlantı <strong>${expiresFormatted}</strong> tarihine kadar geçerli</li>
+                    <li>Maksimum <strong>${MAX_DOWNLOADS} kez</strong> indirme hakkın var</li>
                     <li>Bağlantı sadece sana özel — paylaşırsan limit hızlı dolar</li>
                     <li>PDF'i indirip kendi cihazına kaydetmeni öneririz</li>
                   </ul>
@@ -423,7 +424,7 @@ export async function sendCartDownloadMail(opts: CartMailOptions): Promise<{
                 📄 PDF'i İndir
               </a>
               <div style="margin-top:10px;font-size:10px;color:#94a3b8;">
-                Süre: <strong>${expiresFormatted}</strong> · Maks 10 indirme
+                Süre: <strong>${expiresFormatted}</strong> · Maks ${MAX_DOWNLOADS} indirme
               </div>
             </td>
           </tr>
@@ -486,8 +487,8 @@ export async function sendCartDownloadMail(opts: CartMailOptions): Promise<{
                 <td style="padding:14px 18px;">
                   <div style="font-size:12px;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">⏰ Önemli</div>
                   <ul style="margin:0;padding-left:18px;font-size:13px;color:#78350f;line-height:1.7;">
-                    <li>Bağlantılar <strong>7 gün</strong> süreyle geçerli</li>
-                    <li>Her kitap için maksimum <strong>10 kez</strong> indirme hakkın var</li>
+                    <li>Bağlantılar <strong>${DOWNLOAD_VALID_DAYS} gün</strong> süreyle geçerli</li>
+                    <li>Her kitap için maksimum <strong>${MAX_DOWNLOADS} kez</strong> indirme hakkın var</li>
                     <li>Linkler sadece sana özel — paylaşırsan limit hızlı dolar</li>
                     <li>PDF'leri indirip kendi cihazına kaydetmeni öneririz</li>
                   </ul>

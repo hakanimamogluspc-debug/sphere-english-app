@@ -194,6 +194,18 @@ export async function recordRun(r: { localFile?: string; localBytes?: number; re
   }
 }
 
+/** Verilen andan bu yana kaç deneme yapıldı ve en az biri başarılı mı? (gece yedeği zamanlayıcısı için) */
+export async function runsSince(since: Date): Promise<{ attempts: number; succeeded: boolean }> {
+  await ensureRunsTable();
+  const { rows } = await pool.query(
+    `SELECT COUNT(*)::int AS attempts,
+            COALESCE(BOOL_OR(local_file IS NOT NULL AND remote_ok IS DISTINCT FROM false), false) AS succeeded
+       FROM backup_runs WHERE started_at >= $1`,
+    [since],
+  );
+  return { attempts: rows[0]?.attempts ?? 0, succeeded: rows[0]?.succeeded ?? false };
+}
+
 export async function recentRuns(limit = 10) {
   await ensureRunsTable();
   const { rows } = await pool.query(`SELECT * FROM backup_runs ORDER BY id DESC LIMIT $1`, [limit]);

@@ -18,6 +18,7 @@ import crypto from "node:crypto";
 import { sendEbookDownloadMail } from "./ebook-mail.js";
 import { notifyNewEbookPurchase } from "./admin-notifications.js";
 import { captureException } from "./sentry.js";
+import { downloadExpiry } from "./ebook-download-policy.js";
 
 const RECOVERY_INTERVAL_MS = 5 * 60 * 1000; // 5 dakika
 const MIN_AGE_MS = 1 * 60 * 1000;            // 1 dk geçmiş bekleyenleri al
@@ -52,7 +53,7 @@ async function recoverPendingPurchases(): Promise<void> {
       const id = Number(purchase.id);
       try {
         const newToken = purchase.download_token || crypto.randomBytes(32).toString("base64url");
-        const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+        const expiresAt = downloadExpiry().toISOString();
         const paidAtIso = new Date().toISOString();
 
         // Pending → success

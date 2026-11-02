@@ -16,6 +16,7 @@ import { authMiddleware, requireRole, type AuthRequest } from "../middlewares/au
 import { sendPurchaseEmailFireForget } from "./ebook-purchase.js";
 import { sendEbookDownloadMail } from "../lib/ebook-mail.js";
 import { notifyNewEbookPurchase } from "../lib/admin-notifications.js";
+import { downloadExpiry, DOWNLOAD_VALID_DAYS } from "../lib/ebook-download-policy.js";
 
 const router = Router();
 
@@ -506,7 +507,7 @@ router.post(
 
       // Sahte ama görsel olarak gerçekçi token (kullanılmayacak — sadece görüntü)
       const fakeToken = "TEST_" + Math.random().toString(36).slice(2, 18);
-      const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+      const expiresAt = downloadExpiry();
 
       const result = await sendEbookDownloadMail({
         buyerEmail: toEmail,
@@ -616,6 +617,52 @@ router.post(
   },
 );
 
+// ─── LİNKİ YENİLE VE GÖNDER ──────────────────────────────────────────────
+// Müşteri indiremediğinde: süreyi baştan başlat (DOWNLOAD_VALID_DAYS), indirme sayacını sıfırla,
+// indirme mailini tekrar gönder. Bağlantı (token) aynı kalır — eski mail de yeniden çalışır.
+router.post(
+  "/admin/ebook-purchases/:id/renew-link",
+  authMiddleware,
+  requireRole("admin"),
+  async (req: AuthRequest, res: Response) => {
+    const id = parseInt((req.params.id as string) ?? "", 10);
+    if (!id) return res.status(400).json({ error: "id geçersiz" });
+    try {
+      const rows = await db.execute(sql`
+        SELECT id, payment_status, download_token, buyer_email FROM ebook_purchases WHERE id = ${id} LIMIT 1
+      `);
+      const purchase = (rows.rows ?? rows)[0] as any;
+      if (!purchase) return res.status(404).json({ error: "Satın alma bulunamadı" });
+      if (purchase.payment_status !== "success") {
+        return res.status(400).json({ error: `Bağlantı yenilenemez — ödeme durumu '${purchase.payment_status}'` });
+      }
+      const token = purchase.download_token || crypto.randomBytes(32).toString("base64url");
+      const expiresAt = downloadExpiry().toISOString();
+      await db.execute(sql`
+        UPDATE ebook_purchases
+           SET download_token = ${token}, download_expires_at = ${expiresAt}::TIMESTAMPTZ,
+               download_count = 0, updated_at = NOW()
+         WHERE id = ${id}
+      `);
+      console.info(`[admin-ebook-purchases/renew-link] id=${id} yenilendi (${DOWNLOAD_VALID_DAYS} gün), mail gönderiliyor`);
+
+      await sendPurchaseEmailFireForget(id);
+      const st = await db.execute(sql`SELECT mail_status, mail_error FROM ebook_purchases WHERE id = ${id} LIMIT 1`);
+      const status = (st.rows ?? st)[0] as any;
+      if (status?.mail_status === "sent") {
+        return res.json({ ok: true, to: purchase.buyer_email, expiresAt });
+      }
+      return res.status(502).json({
+        error: `Bağlantı yenilendi ama mail gönderilemedi: ${status?.mail_error ?? "detay log'da"}`,
+        renewed: true, expiresAt,
+      });
+    } catch (e: any) {
+      console.error("[admin-ebook-purchases/renew-link] HATA:", e?.message);
+      return res.status(500).json({ error: "Bağlantı yenilenemedi: " + e?.message });
+    }
+  },
+);
+
 /**
  * Manuel aktive et (kurtarma) — pending kayıtları success'e çevirir,
  * download token üretir, müşteriye mail atar, admin bildirim gönderir.
@@ -653,7 +700,7 @@ router.post(
 
       // download_token yoksa üret
       const newToken = purchase.download_token || crypto.randomBytes(32).toString("base64url");
-      const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+      const expiresAt = downloadExpiry().toISOString();
       const paidAtIso = new Date().toISOString();
 
       // Mevcut paid_at'i çek (COALESCE param bug'ı önlemek için JS tarafında)

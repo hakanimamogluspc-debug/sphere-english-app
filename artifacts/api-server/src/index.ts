@@ -188,4 +188,5 @@ if (cluster.isPrimary) {
 
 // ── Background services ──
 initSentry().catch(() => {});
-if (backgroundJobsEnabled()) startBackupCron();
+// Yedek zamanlayıcısı yalnızca primary süreçte başlar (yukarıda). Eskiden burada her worker'da da
+// başlatılıyordu → aynı anda birden çok pg_dump.

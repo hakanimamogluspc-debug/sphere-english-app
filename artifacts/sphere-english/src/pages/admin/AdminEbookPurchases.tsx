@@ -1038,6 +1038,31 @@ function MailSection({
     );
   };
 
+  const expired = !purchase.download_expires_at || new Date(purchase.download_expires_at) < new Date();
+  const limitFull = Number(purchase.download_count ?? 0) >= 10;
+  const needsRenew = purchase.payment_status === "success" && (expired || limitFull);
+
+  async function renew() {
+    if (!window.confirm(`${purchase.buyer_email} için indirme bağlantısı 30 gün uzatılsın, indirme hakkı sıfırlansın ve mail tekrar gönderilsin mi?`)) return;
+    setSending(true);
+    setMsg(null);
+    try {
+      const data = await apiFetch(`/admin/ebook-purchases/${purchase.id}/renew-link`, { method: "POST" });
+      setMsg({
+        kind: "ok",
+        text: `Bağlantı yenilendi (son gün: ${formatDateTime(data.expiresAt)}) ve mail gönderildi: ${data.to}`,
+      });
+    } catch (e: any) {
+      setMsg({ kind: "err", text: e.message });
+    } finally {
+      try {
+        const fresh = await apiFetch(`/admin/ebook-purchases/${purchase.id}`);
+        if (fresh.purchase) onUpdated(fresh.purchase as Purchase);
+      } catch { /* yoksay */ }
+      setSending(false);
+    }
+  }
+
   async function resend() {
     setSending(true);
     setMsg(null);
@@ -1075,6 +1100,12 @@ function MailSection({
           value={purchase.mail_sent_at ? formatDateTime(purchase.mail_sent_at) : "Henüz yok"}
         />
         <Row label="Toplam Deneme" value={String(purchase.mail_attempts ?? 0)} />
+        {needsRenew && (
+          <div className="mt-2 p-2 rounded bg-amber-50 border border-amber-200 text-[11px] text-amber-900">
+            {expired ? "İndirme bağlantısının süresi dolmuş." : "İndirme hakkı dolmuş."} Mevcut linki tekrar göndermek işe
+            yaramaz — <strong>Linki yenile ve gönder</strong>'i kullan.
+          </div>
+        )}
         {purchase.mail_error && (
           <div className="mt-2 p-2 rounded bg-red-50 border border-red-200 text-[11px] text-red-900">
             <strong>Son hata:</strong> {purchase.mail_error}
@@ -1105,10 +1136,21 @@ function MailSection({
           </>
         ) : (
           <>
-            <Send size={14} /> {purchase.mail_status === "sent" ? "Linki Yeniden Gönder" : "Mail Gönder"}
+            <Send size={14} /> {purchase.mail_status === "sent" ? "Aynı Linki Yeniden Gönder" : "Mail Gönder"}
           </>
         )}
       </button>
+      {purchase.payment_status === "success" && (
+        <button
+          onClick={renew}
+          disabled={sending}
+          className={`mt-2 w-full py-2.5 rounded-lg disabled:opacity-50 text-sm font-bold inline-flex items-center justify-center gap-2 ${
+            needsRenew ? "bg-emerald-600 hover:bg-emerald-700 text-white" : "border border-emerald-300 text-emerald-800 hover:bg-emerald-50"
+          }`}
+        >
+          <RefreshCw size={14} /> Linki yenile ve gönder (30 gün, hak sıfırlanır)
+        </button>
+      )}
     </div>
   );
 }
