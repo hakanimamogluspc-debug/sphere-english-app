@@ -349,7 +349,9 @@ function AnnouncePanel({ stats, onError }: { stats: WaitlistStats; onError: (m: 
               <span className="text-sm font-semibold">{preview.subject}</span>
               <button onClick={() => setShowMail(false)}><X size={18} /></button>
             </div>
-            <iframe title="Mail önizleme" srcDoc={preview.html} sandbox="" className="flex-1 w-full" />
+            {/* Önizlemedeki linkler yeni sekmede açılsın (çerçeve içinde açılınca tarayıcı engelliyor) */}
+            <iframe title="Mail önizleme" srcDoc={preview.html.replace("<head>", '<head><base target="_blank">')}
+              sandbox="allow-popups allow-popups-to-escape-sandbox" className="flex-1 w-full" />
           </div>
         </div>
       )}

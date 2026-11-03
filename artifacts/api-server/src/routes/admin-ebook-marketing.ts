@@ -172,7 +172,8 @@ async function processAnnouncementQueue(ebookId: number, ebook: AnnouncementEboo
       const r = await sendEbookAnnouncement(ebook, email, intro);
       await pool.query(
         `UPDATE ebook_waitlist_announcements
-            SET status = $3, error = $4, sent_at = CASE WHEN $3 = 'sent' THEN NOW() ELSE sent_at END
+            SET status = $3::varchar, error = $4::text,
+                sent_at = CASE WHEN $3::varchar = 'sent' THEN NOW() ELSE sent_at END
           WHERE ebook_id = $1 AND email = $2`,
         [ebookId, email, r.ok ? "sent" : "failed", r.ok ? null : (r.error ?? "bilinmeyen")],
       );
