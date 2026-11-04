@@ -18,6 +18,7 @@ import { openaiTrackedFetch } from "./ai-usage.js";
 import { sql } from "drizzle-orm";
 import { db } from "@workspace/db";
 import { getLiveEbookCatalog } from "./live-ebook-catalog.js";
+import { finalizeBotReply } from "./bot-reply-text.js";
 
 const MODEL = process.env["IG_BOT_MODEL"] ?? "gpt-4o-mini";
 const MAX_HISTORY = 8;
@@ -279,10 +280,11 @@ export async function generateDmReply(
       model: MODEL,
       messages,
       temperature: 0.6,
-      max_tokens: 250,
+      // Linkler çok token tutuyor; 250'de cevap yarıda (link ortasında) kesiliyordu
+      max_tokens: 600,
     });
     const latencyMs = Date.now() - start;
-    const text = completion.choices?.[0]?.message?.content?.trim() ?? "";
+    const text = finalizeBotReply(completion.choices?.[0]?.message?.content ?? "", completion.choices?.[0]?.finish_reason);
     if (!text || text.toLowerCase().includes("skip")) return null;
 
     return {
@@ -319,10 +321,10 @@ export async function generateCommentReply(
         { role: "user", content: `Yorum: "${commentText}"\n\nUygun bir cevap üret. Eğer spam/troll ise "SKIP" yaz.` },
       ],
       temperature: 0.5,
-      max_tokens: 100,
+      max_tokens: 200,
     });
     const latencyMs = Date.now() - start;
-    const text = completion.choices?.[0]?.message?.content?.trim() ?? "";
+    const text = finalizeBotReply(completion.choices?.[0]?.message?.content ?? "", completion.choices?.[0]?.finish_reason);
     if (!text || text.toUpperCase() === "SKIP" || text.toLowerCase().includes("skip")) {
       return null;
     }

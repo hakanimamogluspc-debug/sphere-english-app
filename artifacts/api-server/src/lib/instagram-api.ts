@@ -17,6 +17,7 @@
  */
 
 import { getInstagramToken } from "./instagram-token.js";
+import { finalizeBotReply } from "./bot-reply-text.js";
 
 const IG_API_BASE = "https://graph.instagram.com";
 const FB_API_BASE = "https://graph.facebook.com";
@@ -113,7 +114,8 @@ export async function sendInstagramMessage(
   const url = `${sd.base}/${getApiVersion()}/${sd.path}/messages?access_token=${encodeURIComponent(sd.token)}`;
 
   // Instagram message text limit ~1000; yine de 950'de kesip cümle bitirelim
-  const safeText = text.length > 950 ? text.slice(0, 950).replace(/\s+\S*$/, "") + "…" : text;
+  // Instagram ~1000 karakter sınırı: uzunsa son tam cümlede kes, yarım link bırakma
+  const safeText = text.length > 950 ? finalizeBotReply(text.slice(0, 950), "length") : text;
 
   const requestBody = {
     recipient: { id: recipientIgId },

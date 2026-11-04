@@ -15,6 +15,7 @@ import { openaiTrackedFetch } from "./ai-usage.js";
 import { sql } from "drizzle-orm";
 import { db } from "@workspace/db";
 import { getLiveEbookCatalog } from "./live-ebook-catalog.js";
+import { finalizeBotReply } from "./bot-reply-text.js";
 
 const MODEL_NAME = "gpt-4o-mini";
 const MAX_HISTORY_MESSAGES = 10;
@@ -167,9 +168,9 @@ export async function generateWhatsAppReply(
       model: MODEL_NAME,
       messages,
       temperature: 0.75,
-      max_tokens: 300,
+      max_tokens: 600,
     });
-    const text = completion.choices?.[0]?.message?.content?.trim() ?? "";
+    const text = finalizeBotReply(completion.choices?.[0]?.message?.content ?? "", completion.choices?.[0]?.finish_reason);
     if (!text) return null;
     return {
       text,
