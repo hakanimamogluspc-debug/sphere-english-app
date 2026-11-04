@@ -387,3 +387,16 @@ export async function notifyBackupFailure(opts: { error: string; timestamp: stri
   );
   await notifyAll(`[Sphere] ⚠️ DB Backup HATA`, html);
 }
+
+export async function notifyInstagramTokenProblem(opts: { error: string }): Promise<void> {
+  const html = wrapHtml(
+    "⚠️ Instagram botu cevap gönderemeyecek",
+    `Instagram erişim anahtarı (token) otomatik yenilenemedi. Yeni bir token oluşturulup Easypanel'de
+     <b>IG_PAGE_ACCESS_TOKEN</b> değişkenine girilmezse bot mesajları alır ama cevap gönderemez.<br><br>${fieldList([
+      { label: "Hata", value: opts.error },
+    ])}`,
+    `${getAppUrl()}/admin/instagram-bot`,
+    "Instagram Bot",
+  );
+  await notifyAll(`[Sphere] ⚠️ Instagram token yenilenemedi`, html);
+}

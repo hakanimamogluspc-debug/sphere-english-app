@@ -27,6 +27,7 @@ import { sql } from "drizzle-orm";
 import { db } from "@workspace/db";
 import { sendInstagramMessage, replyToInstagramComment, fetchUserProfile } from "../lib/instagram-api.js";
 import { generateDmReply, generateCommentReply, shouldEscalate } from "../lib/instagram-ai.js";
+import { alertInstagramTokenFailure } from "../lib/instagram-token.js";
 
 const router = Router();
 
@@ -332,6 +333,7 @@ async function triggerAiReply(threadId: number, senderId: string, text: string):
       WHERE id = ${messageRowId}
     `);
     console.error(`[ig-webhook] DM gönderim BAŞARISIZ thread=${threadId}: ${send.error}`);
+    void alertInstagramTokenFailure(send.error ?? "");
   }
 }
 

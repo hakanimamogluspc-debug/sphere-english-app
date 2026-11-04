@@ -221,6 +221,21 @@ async function tryStreakRisk(t: ReturnType<typeof nowTr>) {
   }
 }
 
+/** Instagram token'ı — her gün 04:00–04:59 TR kontrol; 7 günden eskiyse yenile (60 gün daha) */
+async function tryInstagramToken(t: ReturnType<typeof nowTr>) {
+  if (t.hour !== 4) return;
+  if (!process.env.IG_PAGE_ACCESS_TOKEN) return;
+  if (!(await claimDaily("ig_token"))) return;
+  const { maybeRefreshInstagramToken } = await import("./instagram-token.js");
+  const r = await maybeRefreshInstagramToken();
+  log(`Instagram token: ${r.action}${r.error ? ` (${r.error})` : ""}`);
+  await finishDaily("ig_token", r);
+  if (r.warn) {
+    const { notifyInstagramTokenProblem } = await import("./admin-notifications.js");
+    await notifyInstagramTokenProblem({ error: r.error ?? "bilinmeyen" }).catch(() => {});
+  }
+}
+
 /** Ana tick — her 60 sn */
 let started = false;
 export function startScheduler() {
@@ -241,6 +256,7 @@ export function startScheduler() {
     try { await tryWeeklyReport(t); } catch (e: any) { log(`weekly tick err: ${e?.message}`); }
     try { await tryComeback(t); } catch (e: any) { log(`comeback tick err: ${e?.message}`); }
     try { await tryStreakRisk(t); } catch (e: any) { log(`streak tick err: ${e?.message}`); }
+    try { await tryInstagramToken(t); } catch (e: any) { log(`ig token tick err: ${e?.message}`); }
   };
 
   // 60 sn'de bir

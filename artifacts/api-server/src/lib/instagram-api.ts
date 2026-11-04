@@ -16,6 +16,8 @@
  *   IG_API_VERSION           — opsiyonel, default "v21.0"
  */
 
+import { getInstagramToken } from "./instagram-token.js";
+
 const IG_API_BASE = "https://graph.instagram.com";
 const DEFAULT_API_VERSION = "v21.0";
 
@@ -23,10 +25,9 @@ function getApiVersion(): string {
   return process.env["IG_API_VERSION"] ?? DEFAULT_API_VERSION;
 }
 
-function getAccessToken(): string {
-  const t = process.env["IG_PAGE_ACCESS_TOKEN"] ?? "";
-  if (!t) throw new Error("IG_PAGE_ACCESS_TOKEN env tanımlı değil");
-  return t;
+/** Otomatik yenilenen token (bkz. lib/instagram-token.ts) — ilk değer IG_PAGE_ACCESS_TOKEN */
+function getAccessToken(): Promise<string> {
+  return getInstagramToken();
 }
 
 function getBusinessAccountId(): string {
@@ -53,7 +54,7 @@ export async function sendInstagramMessage(
   recipientIgId: string,
   text: string,
 ): Promise<SendResult> {
-  const token = getAccessToken();
+  const token = await getAccessToken();
   // Yeni Instagram Login API: `me/messages` kullanılır (token'a bağlı, kestirme)
   // Eski Page-based API: `<page-id>/messages`. Bizim yeni Instagram Login API var.
   const url = `${IG_API_BASE}/${getApiVersion()}/me/messages?access_token=${encodeURIComponent(token)}`;
@@ -121,7 +122,7 @@ export async function replyToInstagramComment(
   commentId: string,
   text: string,
 ): Promise<SendResult> {
-  const token = getAccessToken();
+  const token = await getAccessToken();
   const url = `${IG_API_BASE}/${getApiVersion()}/${commentId}/replies?access_token=${encodeURIComponent(token)}`;
 
   const safeText = text.length > 280 ? text.slice(0, 280).replace(/\s+\S*$/, "") + "…" : text;
@@ -162,7 +163,7 @@ export async function fetchUserProfile(igUserId: string): Promise<{
   name?: string;
   profilePicUrl?: string;
 } | null> {
-  const token = getAccessToken();
+  const token = await getAccessToken();
   const url = `${IG_API_BASE}/${getApiVersion()}/${igUserId}?fields=username,name,profile_pic&access_token=${encodeURIComponent(token)}`;
   try {
     const res = await fetch(url);
