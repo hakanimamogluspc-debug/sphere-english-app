@@ -170,6 +170,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       { name: 'Pazarlama & E-posta', href: '/admin/marketing',                icon: TrendingUp },
       { name: 'Mail Şablonları',     href: '/admin/mail-sablonlari',          icon: Mail },
       { name: 'Medya Kütüphanesi',   href: '/admin/medya',                    icon: FolderOpen },
+      { name: 'Site Pop-up\'ları',   href: '/admin/popuplar',                 icon: Megaphone },
       { name: 'B2B Outbound',        href: '/admin/outbound',                 icon: Send },
       { name: 'Duyurular',           href: '/admin/announcements',            icon: Megaphone },
       { name: 'Chatbot (Sphere Asistan)', href: '/admin/chatbot',             icon: Bot },

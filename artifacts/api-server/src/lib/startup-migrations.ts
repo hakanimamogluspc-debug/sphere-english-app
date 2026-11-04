@@ -1152,6 +1152,46 @@ export async function runStartupMigrations() {
     `ALTER TABLE pending_subscription_drafts ADD COLUMN IF NOT EXISTS coupon_code VARCHAR(40)`,
     `ALTER TABLE pending_subscription_drafts ADD COLUMN IF NOT EXISTS coupon_discount_kurus BIGINT`,
     `ALTER TABLE pending_subscription_drafts ADD COLUMN IF NOT EXISTS affiliate_code VARCHAR(40)`,
+
+    // ─── www pop-up'ları + bülten aboneleri (kişiye özel hoş geldin kuponu) ───
+    `CREATE TABLE IF NOT EXISTS site_popups (
+      id SERIAL PRIMARY KEY,
+      kind VARCHAR(20) NOT NULL DEFAULT 'announcement',
+      title VARCHAR(200) NOT NULL,
+      body TEXT,
+      image_url TEXT,
+      cta_text VARCHAR(80),
+      cta_url TEXT,
+      delay_seconds INTEGER NOT NULL DEFAULT 8,
+      frequency_days INTEGER NOT NULL DEFAULT 7,
+      priority INTEGER NOT NULL DEFAULT 0,
+      is_active BOOLEAN NOT NULL DEFAULT FALSE,
+      starts_at TIMESTAMPTZ,
+      ends_at TIMESTAMPTZ,
+      coupon_discount_type VARCHAR(20),
+      coupon_discount_value NUMERIC(10,2),
+      coupon_applies_to TEXT[],
+      coupon_valid_days INTEGER NOT NULL DEFAULT 14,
+      views INTEGER NOT NULL DEFAULT 0,
+      clicks INTEGER NOT NULL DEFAULT 0,
+      signups INTEGER NOT NULL DEFAULT 0,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`,
+    `CREATE TABLE IF NOT EXISTS newsletter_subscribers (
+      id SERIAL PRIMARY KEY,
+      email VARCHAR(320) NOT NULL,
+      source VARCHAR(60) NOT NULL DEFAULT 'popup',
+      popup_id INTEGER REFERENCES site_popups(id) ON DELETE SET NULL,
+      coupon_id INTEGER REFERENCES coupons(id) ON DELETE SET NULL,
+      consent_text TEXT NOT NULL,
+      consent_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      ip_hash VARCHAR(64),
+      user_agent VARCHAR(500),
+      unsubscribed_at TIMESTAMPTZ,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`,
+    `CREATE UNIQUE INDEX IF NOT EXISTS newsletter_subscribers_email_uniq ON newsletter_subscribers (lower(email))`,
     `INSERT INTO feature_settings (key, label, is_enabled, visible_to, category) VALUES
       ('admin-coupons', 'Kupon Kodları', true, ARRAY['admin']::TEXT[], 'admin')
       ON CONFLICT (key) DO NOTHING`,

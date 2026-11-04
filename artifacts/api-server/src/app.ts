@@ -274,6 +274,8 @@ app.use("/api/chat", chatbotLimiter);
 // Payment — checkout flow, provider webhook'u skip ediliyor (yukarıdaki config)
 app.use("/api/ebook-marketing/waitlist", waitlistLimiter);
 app.use("/api-server/api/ebook-marketing/waitlist", waitlistLimiter);
+app.use("/api/newsletter/subscribe", waitlistLimiter);
+app.use("/api-server/api/newsletter/subscribe", waitlistLimiter);
 
 app.use("/api/checkout", paymentLimiter);
 app.use("/api/internal/payment", paymentLimiter);
