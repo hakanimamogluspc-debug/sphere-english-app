@@ -69,6 +69,7 @@ const ROUTE_TITLES: RouteTitleEntry[] = [
   { prefix: '/teacher/speaking-club', title: 'Speaking Club — Öğretmen' },
 
   // Admin
+  { prefix: '/admin/medya', title: 'Medya Kütüphanesi — Admin' },
   { prefix: '/admin/marketing', title: 'Pazarlama — Admin' },
   { prefix: '/admin/users', title: 'Kullanıcılar — Admin' },
   { prefix: '/admin/teachers', title: 'Öğretmenler — Admin' },

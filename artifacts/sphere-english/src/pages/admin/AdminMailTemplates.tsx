@@ -5,6 +5,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { API } from "@/lib/api-url";
+import { prepareMailImage } from "@/lib/prepare-mail-image";
 
 const TOKEN_KEY = "sphere_token";
 
@@ -338,8 +339,12 @@ function AssetPicker({
           setError(`${file.name}: sadece görsel dosyası`);
           continue;
         }
+        // WebP/HEIC → JPEG/PNG, büyükse küçült (Outlook uyumu) — bkz. lib/prepare-mail-image
+        const prepared = await prepareMailImage(file);
         const fd = new FormData();
-        fd.append("image", file);
+        fd.append("image", prepared.file);
+        fd.append("width", String(prepared.width));
+        fd.append("height", String(prepared.height));
         // Basit varsayılan açıklama — kullanıcı sonra edit edebilir
         fd.append("description", "");
         const r = await apiUpload("/admin/mail-assets/upload", fd);

@@ -520,6 +520,11 @@ export async function runStartupMigrations() {
     )`,
     `CREATE INDEX IF NOT EXISTS mail_assets_created_idx ON mail_assets(created_at DESC)`,
     `CREATE INDEX IF NOT EXISTS mail_assets_uploaded_by_idx ON mail_assets(uploaded_by)`,
+    // Medya Kütüphanesi: dosyalar nesne deposunda (storage_key), eski kayıtlar veritabanında (data)
+    `ALTER TABLE mail_assets ADD COLUMN IF NOT EXISTS storage_key VARCHAR(300)`,
+    `ALTER TABLE mail_assets ADD COLUMN IF NOT EXISTS width INTEGER`,
+    `ALTER TABLE mail_assets ADD COLUMN IF NOT EXISTS height INTEGER`,
+    `ALTER TABLE mail_assets ALTER COLUMN data DROP NOT NULL`,
 
     // ebook_purchases'a bundle bağlantısı — bundle satışlarında her item için kayıt açılır,
     // aynı order_id ile gruplanır, bundle_id ile hangi paketten geldiği izlenir.
