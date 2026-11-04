@@ -96,7 +96,9 @@ export async function refreshInstagramToken(): Promise<{ ok: boolean; expiresAt?
 /** Günlük kontrol: 7 günden eskiyse yenile. Yenilenemiyor ve süre azsa uyarı döndür. */
 export async function maybeRefreshInstagramToken(): Promise<{ action: string; error?: string; warn?: boolean }> {
   if (!process.env["IG_PAGE_ACCESS_TOKEN"]) return { action: "token-yok" };
-  await getInstagramToken(); // ortamdaki yeni token varsa önce benimse
+  const token = await getInstagramToken(); // ortamdaki yeni token varsa önce benimse
+  // Meta Business / sistem kullanıcısı token'ı ("EAA…") süresizdir → yenileme gerekmez
+  if (!token.startsWith("IG")) return { action: "suresiz-token" };
   const refreshedAt = await getSetting("access_token_refreshed_at");
   const ageDays = refreshedAt ? (Date.now() - new Date(refreshedAt).getTime()) / 86400000 : Infinity;
   if (ageDays < 7) return { action: "gerek-yok" };

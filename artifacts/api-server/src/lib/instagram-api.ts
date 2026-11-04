@@ -19,6 +19,23 @@
 import { getInstagramToken } from "./instagram-token.js";
 
 const IG_API_BASE = "https://graph.instagram.com";
+const FB_API_BASE = "https://graph.facebook.com";
+
+/**
+ * İki tür token desteklenir:
+ *  - Instagram Login token'ı ("IG…" ile başlar, 60 gün, otomatik yenilenir) → graph.instagram.com
+ *  - Meta Business / sistem kullanıcısı token'ı ("EAA…", süresiz) → graph.facebook.com
+ */
+function isInstagramLoginToken(token: string): boolean {
+  return token.startsWith("IG");
+}
+function apiBase(token: string): string {
+  return isInstagramLoginToken(token) ? IG_API_BASE : FB_API_BASE;
+}
+/** DM gönderim yolu: Instagram token'ında "me", Business token'ında hesap ID'si */
+function messagesPath(token: string): string {
+  return isInstagramLoginToken(token) ? "me" : getBusinessAccountId();
+}
 const DEFAULT_API_VERSION = "v21.0";
 
 function getApiVersion(): string {
@@ -57,7 +74,7 @@ export async function sendInstagramMessage(
   const token = await getAccessToken();
   // Yeni Instagram Login API: `me/messages` kullanılır (token'a bağlı, kestirme)
   // Eski Page-based API: `<page-id>/messages`. Bizim yeni Instagram Login API var.
-  const url = `${IG_API_BASE}/${getApiVersion()}/me/messages?access_token=${encodeURIComponent(token)}`;
+  const url = `${apiBase(token)}/${getApiVersion()}/${messagesPath(token)}/messages?access_token=${encodeURIComponent(token)}`;
 
   // Instagram message text limit ~1000; yine de 950'de kesip cümle bitirelim
   const safeText = text.length > 950 ? text.slice(0, 950).replace(/\s+\S*$/, "") + "…" : text;
@@ -123,7 +140,7 @@ export async function replyToInstagramComment(
   text: string,
 ): Promise<SendResult> {
   const token = await getAccessToken();
-  const url = `${IG_API_BASE}/${getApiVersion()}/${commentId}/replies?access_token=${encodeURIComponent(token)}`;
+  const url = `${apiBase(token)}/${getApiVersion()}/${commentId}/replies?access_token=${encodeURIComponent(token)}`;
 
   const safeText = text.length > 280 ? text.slice(0, 280).replace(/\s+\S*$/, "") + "…" : text;
 
@@ -164,7 +181,7 @@ export async function fetchUserProfile(igUserId: string): Promise<{
   profilePicUrl?: string;
 } | null> {
   const token = await getAccessToken();
-  const url = `${IG_API_BASE}/${getApiVersion()}/${igUserId}?fields=username,name,profile_pic&access_token=${encodeURIComponent(token)}`;
+  const url = `${apiBase(token)}/${getApiVersion()}/${igUserId}?fields=username,name,profile_pic&access_token=${encodeURIComponent(token)}`;
   try {
     const res = await fetch(url);
     if (!res.ok) return null;
