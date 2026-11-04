@@ -16,20 +16,39 @@ export interface PreparedImage {
   converted: boolean;
 }
 
-function loadImage(file: File): Promise<HTMLImageElement> {
+type Decoded = { source: CanvasImageSource; width: number; height: number };
+
+function decodeError(file: File): Error {
+  return new Error(
+    /heic|heif/i.test(file.type) || /\.(heic|heif)$/i.test(file.name)
+      ? `${file.name}: iPhone (HEIC) formatı tarayıcıda açılamıyor. Fotoğrafı JPEG olarak dışa aktarıp tekrar dene.`
+      : `${file.name}: görsel açılamadı (dosya bozuk ya da desteklenmeyen bir format olabilir)`,
+  );
+}
+
+/**
+ * Görseli çöz. Not: uygulamanın güvenlik politikası (CSP) "blob:" adreslerinden görsel yüklemeye
+ * izin vermiyor → URL.createObjectURL + <img> çalışmaz. Önce createImageBitmap (CSP'den etkilenmez),
+ * olmazsa data: URL ile <img> (CSP'de izinli) kullanılır.
+ */
+async function decodeImage(file: File): Promise<Decoded> {
+  if (typeof createImageBitmap === "function") {
+    try {
+      const bmp = await createImageBitmap(file);
+      return { source: bmp, width: bmp.width, height: bmp.height };
+    } catch { /* aşağıdaki yolu dene */ }
+  }
+  const dataUrl: string = await new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(String(r.result));
+    r.onerror = () => reject(decodeError(file));
+    r.readAsDataURL(file);
+  });
   return new Promise((resolve, reject) => {
-    const url = URL.createObjectURL(file);
     const img = new Image();
-    img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
-    img.onerror = () => {
-      URL.revokeObjectURL(url);
-      reject(new Error(
-        /heic|heif/i.test(file.type) || /\.(heic|heif)$/i.test(file.name)
-          ? `${file.name}: iPhone (HEIC) formatı tarayıcıda açılamıyor. Fotoğrafı JPEG olarak dışa aktarıp tekrar dene.`
-          : `${file.name}: görsel açılamadı`,
-      ));
-    };
-    img.src = url;
+    img.onload = () => resolve({ source: img, width: img.naturalWidth, height: img.naturalHeight });
+    img.onerror = () => reject(decodeError(file));
+    img.src = dataUrl;
   });
 }
 
@@ -44,8 +63,8 @@ function baseName(name: string): string {
 }
 
 export async function prepareMailImage(file: File, maxWidth = MAIL_IMAGE_MAX_WIDTH): Promise<PreparedImage> {
-  const img = await loadImage(file);
-  const w0 = img.naturalWidth, h0 = img.naturalHeight;
+  const img = await decodeImage(file);
+  const w0 = img.width, h0 = img.height;
   const type = file.type === "image/jpg" ? "image/jpeg" : file.type;
 
   // GIF: animasyon kaybolmasın diye dokunma
@@ -64,7 +83,7 @@ export async function prepareMailImage(file: File, maxWidth = MAIL_IMAGE_MAX_WID
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("Tarayıcı görseli işleyemedi");
   ctx.imageSmoothingQuality = "high";
-  ctx.drawImage(img, 0, 0, w, h);
+  ctx.drawImage(img.source, 0, 0, w, h);
 
   const asPng = type !== "image/jpeg" && hasTransparency(ctx, w, h);
   const outType = asPng ? "image/png" : "image/jpeg";
