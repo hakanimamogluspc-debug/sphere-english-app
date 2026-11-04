@@ -97,6 +97,20 @@ export default function AdminMedia() {
     } catch { setError("Kopyalanamadı — tarayıcı izin vermedi"); }
   }
 
+  /** Başka bir sohbete / AI aracına yapıştırmak için tüm görsellerin listesi */
+  function copyCatalog() {
+    const lines = assets.map((a) =>
+      `- ${a.description || a.filename} | ${a.width && a.height ? `${a.width}x${a.height}` : "boyut ?"} | ${a.url}`);
+    const text = [
+      "Sphere English medya kütüphanesindeki görseller (mail/HTML'de yalnızca bu linkleri kullan):",
+      "Biçim: açıklama | boyut (px) | kalıcı link",
+      ...lines,
+      "",
+      "Kurallar: <img> etiketine width niteliği ver (en fazla 600), style=\"display:block;width:100%;max-width:...px;height:auto;border:0;\" ekle, alt metni açıklamadan yaz. Bu listede olmayan görsel linki kullanma.",
+    ].join("\n");
+    copy(text, "catalog");
+  }
+
   async function saveAlt(a: MediaAsset, description: string) {
     if ((a.description ?? "") === description) return;
     try {
@@ -198,6 +212,11 @@ export default function AdminMedia() {
             className="w-full pl-8 pr-3 py-1.5 text-sm border border-slate-200 rounded-md" />
         </div>
         <span className="text-xs text-slate-500">{meta?.total ?? assets.length} görsel</span>
+        <button onClick={copyCatalog} disabled={assets.length === 0}
+          title="Tüm görsellerin link listesini kopyala — başka bir sohbete / AI aracına yapıştırmak için"
+          className="ml-auto flex items-center gap-1 px-3 py-1.5 rounded-md bg-blue-700 text-white text-sm hover:bg-blue-800 disabled:opacity-50">
+          {copied === "catalog" ? <Check size={14} /> : <Link2 size={14} />} Listeyi kopyala (AI için)
+        </button>
       </div>
 
       {loading && assets.length === 0 ? (
