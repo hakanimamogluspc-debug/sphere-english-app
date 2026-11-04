@@ -27,6 +27,7 @@ import OpenAI from "openai";
 import { openaiTrackedFetch } from "../lib/ai-usage.js";
 import { authMiddleware, requireRole, type AuthRequest } from "../middlewares/auth.js";
 import { buildSystemPrompt, type HelpArticleRef } from "../lib/chatbot-knowledge.js";
+import { getLiveEbookCatalog } from "../lib/live-ebook-catalog.js";
 
 const router = Router();
 
@@ -120,7 +121,7 @@ router.post("/chat", async (req: Request, res: Response) => {
       console.warn("[chatbot] help articles select fail (boş ile devam):", helpErr?.message);
     }
 
-    const systemPrompt = buildSystemPrompt(faqs, helpArticles);
+    const systemPrompt = `${buildSystemPrompt(faqs, helpArticles)}\n\n${await getLiveEbookCatalog()}`;
 
     // OpenAI'e gönder (sadece son N mesajı tut)
     const recentMessages = messages.slice(-MAX_HISTORY_MESSAGES);

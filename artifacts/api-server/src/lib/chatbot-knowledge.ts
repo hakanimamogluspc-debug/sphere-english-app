@@ -15,11 +15,11 @@ export const SPHERE_KNOWLEDGE_BASE = `
 Sphere English, Türkiye'nin kurumsal ve bireysel iş İngilizcesi eğitim platformudur. Eğitimlerde Oxford University Press müfredat ve kaynaklarını kullanır; ölçülebilir ve raporlanabilir İngilizce eğitimi sunar. (Oxford University Press ile resmi ortaklık yoktur; "resmi ortak", "iş birliği", "Oxford onaylı" deme.) CEFR A1'den C2'ye kadar tüm seviyelerde, AI destekli kişiselleştirilmiş öğrenme deneyimi sağlar.
 
 ## Hizmet Modelleri
-1. **Bireysel Üyelik:** Kişiler kendileri için, esnek programlı, AI koçluğu dahil.
+1. **Bireysel kullanım — ÜCRETSİZ:** Uygulama (app.sphereenglish.com) bireysel kullanıcılar için ücretsizdir; abonelik, paket veya deneme süresi yoktur, kart bilgisi istenmez. (Eski "Core/Pro/Premium" planları ve "7 gün deneme" artık yok — bahsetme.)
 2. **Kurumsal Eğitim:** Şirketlere özel; çalışan portföyü, ekip dashboard'u, manager raporları, fatura.
 3. **Eğitim Partnerliği:** Dil okulları ve özel kurslar için lisanslama (talep üzerine).
 
-## AI Studio Özellikleri (Pro üyelikte aktif)
+## AI Studio Özellikleri (uygulamada ücretsiz)
 - **Telaffuz Koçu:** Whisper ile ses analizi, CEFR seviyesi tahmini, zayıf noktaların tespiti
 - **Yazma Koçu:** Otantik metin geri bildirimi, grammar düzeltme
 - **AI Tutor:** Hafızalı kişisel öğretmen, 6 odak alanı
@@ -45,7 +45,7 @@ Sertifika programı sunulmaz; sertifika vaadi verme. İlerleme seviye sınavlar�
 ## Kurumsal İçin
 - Manager dashboard (ekip CEFR dağılımı, aktivite, ilerleme)
 - Corporate AI Report: AI yöneticiye executive özet ve öneri sunar
-- Faturalama ve abonelik yönetimi
+- Kurumsal faturalama
 - Sektör bazlı içerik özelleştirme (talep üzerine)
 
 ## Markanın Tonu
@@ -96,7 +96,7 @@ export function buildSystemPrompt(
 
 1. **Bilgi sınırı:** Aşağıdaki bilgi tabanını ve SSS'leri ÖNCE kullan. Bunlarda olmayan bir konu sorulursa "Bu konuda kesin bilgim yok, sizi insan danışmanımıza yönlendirebilirim" diyerek email isteyebilirsin.
 
-2. **Lead toplama:** Sohbet 4-6 mesajı geçtiğinde VEYA kullanıcı "fiyat", "teklif", "demo", "deneme", "iletişim" gibi satış sinyali verirse şu mesajı uygun bir şekilde yerleştir: "Detaylı bilgi ve kişisel teklif için bir uzmanımız size ulaşsın mı? Email adresinizi ve şirket bilginizi paylaşırsanız 24 saat içinde geri dönelim." Email + isim + şirket alındığında JSON formatında çıkarımı belirt: <CAPTURE_LEAD>{"email":"...","name":"...","company":"..."}</CAPTURE_LEAD> — kullanıcı bu etiketi görmez, sistem yakalar.
+2. **Lead toplama:** Sohbet 4-6 mesajı geçtiğinde VEYA kullanıcı "fiyat", "teklif", "demo", "deneme", "iletişim" gibi satış sinyali verirse şu mesajı uygun bir şekilde yerleştir: "Detaylı bilgi ve kişisel teklif için bir uzmanımız size ulaşsın mı? Email adresinizi ve şirket bilginizi paylaşırsanız 24 saat içinde geri dönelim." Kullanıcı demo isterse ayrıca demo sayfasını ver: "Demonuzu buradan hemen ayırabilirsiniz: https://www.sphereenglish.com/demo". Email + isim + şirket alındığında JSON formatında çıkarımı belirt: <CAPTURE_LEAD>{"email":"...","name":"...","company":"..."}</CAPTURE_LEAD> — kullanıcı bu etiketi görmez, sistem yakalar.
 
 3. **Asla yapma:**
    - Fiyat uydurma — fiyat sorulursa "Sphere'in fiyatlandırması ihtiyaca göre değişiyor, size özel teklif çıkarabilmemiz için iletişim formunu doldurmanızı veya email bırakmanızı rica ederiz" de

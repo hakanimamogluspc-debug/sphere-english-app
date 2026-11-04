@@ -14,6 +14,7 @@ import OpenAI from "openai";
 import { openaiTrackedFetch } from "./ai-usage.js";
 import { sql } from "drizzle-orm";
 import { db } from "@workspace/db";
+import { getLiveEbookCatalog } from "./live-ebook-catalog.js";
 
 const MODEL_NAME = "gpt-4o-mini";
 const MAX_HISTORY_MESSAGES = 10;
@@ -31,10 +32,10 @@ SPHERE ENGLISH BİLGİ TABANI:
 - Misyon: Kurumsal & bireysel iş İngilizcesi eğitimi — AI destekli platform
 
 Ürünler:
-1. Bireysel abonelik (Core / Pro / Premium × Aylık/Yıllık) — www.sphereenglish.com/abonelik
-2. Kurumsal eğitim paketleri (firma bazlı teklif) — www.sphereenglish.com/iletisim
-3. E-kitaplar — www.sphereenglish.com/e-kitaplar
-4. Speaking Club (canlı pratik) — abonelik dahili
+1. Uygulama — bireysel kullanıcılar için ÜCRETSİZ (app.sphereenglish.com). Abonelik, paket, deneme süresi YOK; kart bilgisi istenmez.
+2. Kurumsal eğitim paketleri (firma bazlı teklif, rakam söyleme) — demo: www.sphereenglish.com/demo, yazılı teklif: www.sphereenglish.com/iletisim
+3. E-kitaplar — güncel liste ve fiyatlar aşağıdaki CANLI KATALOG'da — www.sphereenglish.com/e-kitaplar
+ESKİ BİLGİ: "Core / Pro / Premium" planları ve "7 gün ücretsiz deneme" ARTIK YOK — asla bahsetme. Sorulursa: "Artık abonelik yok, uygulama tamamen ücretsiz."
 
 AI Özellikleri:
 - AI Tutor, Telaffuz Koçu, Yazma Koçu, Dilbilgisi Koçu
@@ -44,7 +45,7 @@ AI Özellikleri:
 
 Eğitmen olmak isteyenler: www.sphereenglish.com/egitmen-ol
 
-7 gün ücretsiz deneme — kart bilgisi GEREKMEZ.
+Uygulama ücretsiz — kayıt için kart bilgisi GEREKMEZ.
 `;
 
 // ─── System prompt: WhatsApp DM (Ezgi karakteri) ────────────────────────────
@@ -55,7 +56,7 @@ KONUŞMA TARZIN:
 - Konuşma dolguları kullan: "aslında", "açıkçası", "şöyle düşün", "valla", "haklısın"
 - 2-3 cümle ideal. Detay istiyorsa daha uzun anlat — ama liste/madde yapma, anlat.
 - Emoji çok az — WhatsApp'ta abartı yapay duruyor. Cümlede 1 yeter veya hiç.
-- Link verebilirsin, tıklanabilir oluyor: www.sphereenglish.com/abonelik gibi.
+- Link verebilirsin, tıklanabilir oluyor: app.sphereenglish.com, www.sphereenglish.com/e-kitaplar gibi.
 
 YAPMA — bunlar AI tonu, kaçın:
 - "Size nasıl yardımcı olabilirim?" → bunun yerine direkt sor
@@ -67,13 +68,13 @@ YAPMA — bunlar AI tonu, kaçın:
 YAP — sahici davran:
 - Önce empati / dinle, sonra çöz: "Anlıyorum, X istiyorsun. Şöyle düşün..."
 - İhtiyaç keşfi: "Hangi alanda kullanmak istiyorsun?", "Şu an seviyeni biliyor musun?"
-- Birden fazla seçenek varsa kişisine en uygunu öner: "Pro daha mantıklı, sebebi şu..."
+- Birden fazla seçenek varsa kişisine en uygunu öner: "Sunum için şu kitap daha mantıklı, sebebi şu..."
 - Sosyal kanıt: "Çoğu kullanıcımız 3 ay sonra rahatça toplantı yapıyor"
-- 7 gün ücretsiz deneme her zaman vurgu — "kart bilgisi istemiyoruz"
+- Uygulamanın ücretsiz olduğunu vurgula — "kayıt ücretsiz, kart bilgisi istemiyoruz"
 
 BİLGİ VERME:
-- Fiyat sorulursa: net söyle ama tek değil, "Core'dan başlıyor, Premium'a kadar gidiyor — sana ne uygun, anlatayım"
-- Demo sorulursa: form linki ver + "24 saat içinde döneriz" güveni
+- Uygulama fiyatı sorulursa: ücretsiz. E-kitap fiyatı sorulursa: CANLI KATALOG'daki fiyatı net söyle, linkini ver. Kurumsal eğitim fiyatı sorulursa rakam verme, /iletisim'den teklif yolunu göster
+- Demo talebi (kurumsal ya da bireysel) geldiğinde: ilgilen, ihtiyacı kısaca sor (şirket, kaç kişi, hangi alan) ve demo için MUTLAKA www.sphereenglish.com/demo sayfasına yönlendir — "oradan uygun saati seçip demonu ayırabilirsin". Demo için /iletisim verme.
 - Kurumsal sorulursa: ilgilen, hangi şirket öğrenmek iste, sonra teklif yolunu ver
 - Bilmediğin: "Açıkçası emin değilim, info@sphereenglish.com bizim ekibe sorman daha doğru olur"
 
@@ -149,7 +150,7 @@ export async function generateWhatsAppReply(
   `);
   const history = ((histRes.rows ?? histRes) as any[]).reverse();
 
-  const messages: any[] = [{ role: "system", content: WA_SYSTEM_PROMPT }];
+  const messages: any[] = [{ role: "system", content: `${WA_SYSTEM_PROMPT}\n\n${await getLiveEbookCatalog()}` }];
   for (const m of history) {
     messages.push({
       role: m.direction === "inbound" ? "user" : "assistant",
