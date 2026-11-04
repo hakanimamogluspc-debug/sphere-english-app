@@ -23,19 +23,49 @@ const FB_API_BASE = "https://graph.facebook.com";
 
 /**
  * İki tür token desteklenir:
- *  - Instagram Login token'ı ("IG…" ile başlar, 60 gün, otomatik yenilenir) → graph.instagram.com
- *  - Meta Business / sistem kullanıcısı token'ı ("EAA…", süresiz) → graph.facebook.com
+ *  - Instagram Login token'ı ("IG…", 60 gün, otomatik yenilenir) → graph.instagram.com, /me/messages
+ *  - Meta Business / sistem kullanıcısı token'ı ("EAA…", süresiz) → graph.facebook.com.
+ *    Bu durumda Instagram mesajları, Instagram hesabının bağlı olduğu Facebook SAYFASI üzerinden
+ *    gönderilir: sistem kullanıcısına atanmış sayfalar arasından Instagram hesabımıza bağlı olanı
+ *    bulunur, o sayfanın token'ı ile /{sayfa-id}/messages çağrılır.
  */
 function isInstagramLoginToken(token: string): boolean {
   return token.startsWith("IG");
 }
-function apiBase(token: string): string {
-  return isInstagramLoginToken(token) ? IG_API_BASE : FB_API_BASE;
+
+interface Sender { base: string; path: string; token: string }
+let pageCache: { at: number; userToken: string; pageId: string; pageToken: string } | null = null;
+
+/** Sistem kullanıcısı token'ından, Instagram hesabımıza bağlı Facebook Sayfası'nın token'ını bul (1 saat önbellek). */
+async function resolvePage(userToken: string): Promise<{ pageId: string; pageToken: string }> {
+  if (pageCache && pageCache.userToken === userToken && Date.now() - pageCache.at < 3600_000) {
+    return { pageId: pageCache.pageId, pageToken: pageCache.pageToken };
+  }
+  const url = `${FB_API_BASE}/${getApiVersion()}/me/accounts?fields=id,name,access_token,instagram_business_account&limit=100&access_token=${encodeURIComponent(userToken)}`;
+  const r = await fetch(url);
+  const body: any = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(body?.error?.message ?? `Sayfa listesi alınamadı (HTTP ${r.status})`);
+  const pages: any[] = body?.data ?? [];
+  const igId = process.env["IG_BUSINESS_ACCOUNT_ID"] ?? "";
+  const page = pages.find((p) => p?.instagram_business_account?.id === igId) ?? (pages.length === 1 ? pages[0] : null);
+  if (!page?.access_token) {
+    throw new Error(
+      pages.length === 0
+        ? "Token'ın sahibine hiçbir Facebook Sayfası atanmamış (Business ayarları → Sistem kullanıcısı → Varlık ata → Sayfa)"
+        : `Instagram hesabına (${igId}) bağlı sayfa bulunamadı; atanmış sayfalar: ${pages.map((p) => p.name).join(", ")}`,
+    );
+  }
+  pageCache = { at: Date.now(), userToken, pageId: String(page.id), pageToken: String(page.access_token) };
+  return { pageId: pageCache.pageId, pageToken: pageCache.pageToken };
 }
-/** DM gönderim yolu: Instagram token'ında "me", Business token'ında hesap ID'si */
-function messagesPath(token: string): string {
-  return isInstagramLoginToken(token) ? "me" : getBusinessAccountId();
+
+/** Bu token için hangi adres / yol / token ile çağrı yapılacağı */
+async function sender(token: string): Promise<Sender> {
+  if (isInstagramLoginToken(token)) return { base: IG_API_BASE, path: "me", token };
+  const { pageId, pageToken } = await resolvePage(token);
+  return { base: FB_API_BASE, path: pageId, token: pageToken };
 }
+
 const DEFAULT_API_VERSION = "v21.0";
 
 function getApiVersion(): string {
@@ -74,7 +104,13 @@ export async function sendInstagramMessage(
   const token = await getAccessToken();
   // Yeni Instagram Login API: `me/messages` kullanılır (token'a bağlı, kestirme)
   // Eski Page-based API: `<page-id>/messages`. Bizim yeni Instagram Login API var.
-  const url = `${apiBase(token)}/${getApiVersion()}/${messagesPath(token)}/messages?access_token=${encodeURIComponent(token)}`;
+  let sd: Sender;
+  try {
+    sd = await sender(token);
+  } catch (e: any) {
+    return { ok: false, error: e?.message ?? "Gönderim adresi belirlenemedi" };
+  }
+  const url = `${sd.base}/${getApiVersion()}/${sd.path}/messages?access_token=${encodeURIComponent(sd.token)}`;
 
   // Instagram message text limit ~1000; yine de 950'de kesip cümle bitirelim
   const safeText = text.length > 950 ? text.slice(0, 950).replace(/\s+\S*$/, "") + "…" : text;
@@ -140,7 +176,13 @@ export async function replyToInstagramComment(
   text: string,
 ): Promise<SendResult> {
   const token = await getAccessToken();
-  const url = `${apiBase(token)}/${getApiVersion()}/${commentId}/replies?access_token=${encodeURIComponent(token)}`;
+  let sd: Sender;
+  try {
+    sd = await sender(token);
+  } catch (e: any) {
+    return { ok: false, error: e?.message ?? "Gönderim adresi belirlenemedi" };
+  }
+  const url = `${sd.base}/${getApiVersion()}/${commentId}/replies?access_token=${encodeURIComponent(sd.token)}`;
 
   const safeText = text.length > 280 ? text.slice(0, 280).replace(/\s+\S*$/, "") + "…" : text;
 
@@ -181,7 +223,9 @@ export async function fetchUserProfile(igUserId: string): Promise<{
   profilePicUrl?: string;
 } | null> {
   const token = await getAccessToken();
-  const url = `${apiBase(token)}/${getApiVersion()}/${igUserId}?fields=username,name,profile_pic&access_token=${encodeURIComponent(token)}`;
+  const sd = await sender(token).catch(() => null);
+  if (!sd) return null;
+  const url = `${sd.base}/${getApiVersion()}/${igUserId}?fields=username,name,profile_pic&access_token=${encodeURIComponent(sd.token)}`;
   try {
     const res = await fetch(url);
     if (!res.ok) return null;
