@@ -23,6 +23,7 @@ Entegrasyon testleri: Express uygulaması **gerçek bir Postgres**'e karşı, HT
 | `media-library.test.ts` | Medya Kütüphanesi: yükleme, herkese açık link (CORP cross-origin, önbellek, ETag/304, eski adres uyumu), WebP reddi, alt metin, silme, admin yetkisi |
 | `live-ebook-catalog.test.ts` | Botların (Instagram, WhatsApp, site asistanı) kullandığı canlı e-kitap kataloğu: güncel fiyat, link, www ile aynı kategori grupları, pasif kitap gizli |
 | `site-popups.test.ts` | www pop-up'ları: yayındaki/kapalı ayrımı, doğrulama, bülten kaydında onay şartı, kişiye özel tek kullanımlık kupon, aynı adrese ikinci kupon yok, istatistik, imzalı bültenden çıkış |
+| `marketing-suppression.test.ts` | Leads'te listeden çıkarma: işaretleme, toplu gönderimden hariç tutma, sadece çıkmışlara gönderim reddi, imzalı / tek tık çıkış bağlantısı, geri alma |
 | `bot-reply-text.test.ts` | Bot cevabı yarıda kesilirse yarım link ve tamamlanmamış cümle atılır |
 | `entitlement.test.ts` | otomatik deneme süresi, süresi geçmiş deneme, aktif abonelik, lazy expiry (past_due / expired), iptal-ama-dönem-sürüyor |
 

@@ -1192,6 +1192,16 @@ export async function runStartupMigrations() {
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )`,
     `CREATE UNIQUE INDEX IF NOT EXISTS newsletter_subscribers_email_uniq ON newsletter_subscribers (lower(email))`,
+    // Pazarlama e-postası engel listesi ("listeden çıkar") — bkz. lib/email-suppression.ts
+    `CREATE TABLE IF NOT EXISTS email_suppressions (
+      id SERIAL PRIMARY KEY,
+      email VARCHAR(320) NOT NULL,
+      reason VARCHAR(300),
+      source VARCHAR(20) NOT NULL DEFAULT 'admin',
+      created_by INTEGER,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`,
+    `CREATE UNIQUE INDEX IF NOT EXISTS email_suppressions_email_uniq ON email_suppressions (lower(email))`,
     `INSERT INTO feature_settings (key, label, is_enabled, visible_to, category) VALUES
       ('admin-coupons', 'Kupon Kodları', true, ARRAY['admin']::TEXT[], 'admin')
       ON CONFLICT (key) DO NOTHING`,

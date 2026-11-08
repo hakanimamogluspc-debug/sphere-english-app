@@ -7,6 +7,7 @@ import { Resend } from "resend";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import { suppressedEmails, suppress, unsuppress, verifyMarketingUnsub, marketingUnsubUrl, unsubscribeFooterHtml } from "../lib/email-suppression.js";
 
 const TEMPLATES_DIR = path.join(process.cwd(), "public", "templates");
 if (!fs.existsSync(TEMPLATES_DIR)) fs.mkdirSync(TEMPLATES_DIR, { recursive: true });
@@ -63,16 +64,17 @@ async function sendEmailViaResendOrSmtp(
   html: string,
   fromEmail: string,
   resend: Resend | null,
-  transporter: ReturnType<typeof getTransporter>
+  transporter: ReturnType<typeof getTransporter>,
+  headers?: Record<string, string>,
 ): Promise<{ ok: boolean; error?: string; resendEmailId?: string }> {
   const from = `Sphere English <${fromEmail}>`;
   if (resend) {
-    const { data, error } = await resend.emails.send({ from, to, subject, html });
+    const { data, error } = await resend.emails.send({ from, to, subject, html, ...(headers ? { headers } : {}) });
     if (error) return { ok: false, error: error.message };
     return { ok: true, resendEmailId: data?.id };
   }
   if (transporter) {
-    await transporter.sendMail({ from, to, subject, html });
+    await transporter.sendMail({ from, to, subject, html, ...(headers ? { headers } : {}) });
     return { ok: true };
   }
   return { ok: false, error: "E-posta yapılandırılmamış" };
@@ -312,6 +314,13 @@ router.get(
         return bt - at;
       });
 
+      // Listeden çıkanları işaretle (Leads ekranında rozet + toplu gönderimden hariç)
+      const sup = await suppressedEmails();
+      for (const l of merged) {
+        const s = sup.get(String(l.email || "").toLowerCase());
+        l.unsubscribed = !!s;
+        l.unsubscribedAt = s?.createdAt ?? null;
+      }
       return res.json(merged.slice(0, 500));
     } catch (e: any) {
       console.error("[marketing/leads] HATA:", e?.message);
@@ -319,6 +328,51 @@ router.get(
     }
   }
 );
+
+// ─── Admin: Listeden çıkar / geri al ──────────────────────────────────────────
+router.post(
+  "/admin/marketing/leads/unsubscribe",
+  authMiddleware,
+  requireRole("admin"),
+  async (req: AuthRequest, res: Response) => {
+    const emails = Array.isArray(req.body?.emails) ? req.body.emails.map(String) : [];
+    if (emails.length === 0) return res.status(400).json({ error: "E-posta seçilmedi" });
+    const added = await suppress(emails, String(req.body?.reason ?? "Admin: çıkma talebi"), "admin", req.userId);
+    return res.json({ ok: true, added });
+  },
+);
+
+router.post(
+  "/admin/marketing/leads/resubscribe",
+  authMiddleware,
+  requireRole("admin"),
+  async (req: AuthRequest, res: Response) => {
+    const email = String(req.body?.email ?? "").trim();
+    if (!email.includes("@")) return res.status(400).json({ error: "E-posta geçersiz" });
+    await unsuppress(email);
+    return res.json({ ok: true });
+  },
+);
+
+// ─── Public: e-postadaki "listeden çık" bağlantısı (imzalı) ─────────────────
+async function handlePublicUnsub(req: Request, res: Response) {
+  const email = String(req.query.e ?? "").trim().toLowerCase();
+  const ok = !!email && verifyMarketingUnsub(email, req.query.s);
+  if (ok) await suppress([email], "E-postadaki bağlantıyla çıktı", "link").catch(() => {});
+  if (req.method === "POST") return res.status(ok ? 200 : 400).json({ ok }); // List-Unsubscribe-Post (tek tık)
+  res.status(ok ? 200 : 400);
+  res.setHeader("Content-Type", "text/html; charset=utf-8");
+  res.setHeader("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'");
+  return res.send(`<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Sphere English</title>
+<style>body{margin:0;background:#e8eef8;font-family:system-ui,sans-serif;color:#1e3a6e;display:flex;min-height:100vh;align-items:center;justify-content:center;padding:24px}
+.c{background:#fff;border-radius:16px;max-width:440px;padding:32px}p{color:#334155;line-height:1.6}a{color:#0e7da6}</style></head>
+<body><div class="c"><h2>${ok ? "Listeden çıkarıldın" : "Bağlantı geçersiz"}</h2><p>${ok
+    ? "Artık Sphere English kampanya ve duyuru e-postası almayacaksın. Satın aldığın ürünlerle ilgili e-postalar (indirme bağlantısı, fatura) gelmeye devam eder."
+    : "Bu bağlantı tanınmadı. Listeden çıkmak için info@sphereenglish.com adresine yazabilirsin."}</p>
+<p><a href="https://www.sphereenglish.com">sphereenglish.com</a></p></div></body></html>`);
+}
+router.get("/marketing/unsubscribe", handlePublicUnsub);
+router.post("/marketing/unsubscribe", handlePublicUnsub);
 
 // ─── Admin: Update lead status ────────────────────────────────────────────────
 router.patch(
@@ -360,8 +414,14 @@ router.post(
   async (req: AuthRequest, res: Response) => {
     try {
       const { filter, customEmails } = req.body as { filter: string; customEmails?: string[] };
-      const users = await getFilteredUsers(filter, customEmails);
-      return res.json({ count: users.length, sample: users.slice(0, 5).map(u => ({ email: u.email, name: `${u.firstName} ${u.lastName}`.trim() || u.email })) });
+      const all = await getFilteredUsers(filter, customEmails);
+      const sup = await suppressedEmails();
+      const users = all.filter((u: any) => !sup.has(String(u.email).toLowerCase()));
+      return res.json({
+        count: users.length,
+        excluded: all.length - users.length, // listeden çıkmış oldukları için gönderilmeyecekler
+        sample: users.slice(0, 5).map(u => ({ email: u.email, name: `${u.firstName} ${u.lastName}`.trim() || u.email })),
+      });
     } catch {
       return res.status(500).json({ error: "Önizleme başarısız." });
     }
@@ -503,9 +563,13 @@ router.post(
         return res.status(400).json({ error: "Özel gönderim için en az bir e-posta adresi girin." });
       }
 
-      const recipients = await getFilteredUsers(filter || "all", customEmails);
+      const allRecipients = await getFilteredUsers(filter || "all", customEmails);
+      // Listeden çıkanlara hiçbir toplu e-posta gitmez
+      const sup = await suppressedEmails();
+      const recipients = allRecipients.filter((u: any) => !sup.has(String(u.email).toLowerCase()));
+      const excludedCount = allRecipients.length - recipients.length;
       if (recipients.length === 0) {
-        return res.status(400).json({ error: "Bu filtreye uyan alıcı bulunamadı." });
+        return res.status(400).json({ error: excludedCount > 0 ? "Seçilen alıcıların hepsi listeden çıkmış." : "Bu filtreye uyan alıcı bulunamadı." });
       }
 
       // Create campaign record
@@ -554,7 +618,17 @@ router.post(
                 personalizedBody = personalizedBody.replace(new RegExp(`\\{\\{${key}\\}\\}`, "g"), val);
               }
             }
-            const result = await sendEmailViaResendOrSmtp(user.email, subject, personalizedBody, fromEmail, resend, transporter);
+            // "Listeden çık" bağlantısı: şablonda {{LISTEDEN_CIK}} varsa oraya, yoksa en alta eklenir
+            const unsubUrl = marketingUnsubUrl(user.email);
+            personalizedBody = /\{\{LISTEDEN_CIK\}\}/.test(personalizedBody)
+              ? personalizedBody.replace(/\{\{LISTEDEN_CIK\}\}/g, unsubUrl)
+              : /<\/body>/i.test(personalizedBody)
+                ? personalizedBody.replace(/<\/body>/i, `${unsubscribeFooterHtml(user.email)}</body>`)
+                : personalizedBody + unsubscribeFooterHtml(user.email);
+            const result = await sendEmailViaResendOrSmtp(user.email, subject, personalizedBody, fromEmail, resend, transporter, {
+              "List-Unsubscribe": `<${unsubUrl}>`,
+              "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+            });
             if (result.ok) {
               sentCount++;
               // Resend email ID'sini kaydet (webhook ile eşleştirmek için)
@@ -587,6 +661,7 @@ router.post(
         campaignId: campaign.id,
         sent: sentCount,
         total: recipients.length,
+        excluded: excludedCount,
         provider: resend ? "resend" : transporter ? "smtp" : "demo",
         errors: sendErrors.length > 0 ? sendErrors : undefined,
       });

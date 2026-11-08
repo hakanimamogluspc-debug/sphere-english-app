@@ -57,6 +57,9 @@ interface Lead {
   status: string;
   notes?: string;
   createdAt: string;
+  /** Listeden çıkma talebi — toplu e-posta gönderilmez */
+  unsubscribed?: boolean;
+  unsubscribedAt?: string | null;
 }
 
 interface Campaign {
@@ -180,6 +183,8 @@ export default function AdminMarketing() {
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [leadNote, setLeadNote] = useState("");
   const [leadStatusEdit, setLeadStatusEdit] = useState("new");
+  const [selectedEmails, setSelectedEmails] = useState<Set<string>>(new Set());
+  const [leadInfo, setLeadInfo] = useState<string | null>(null);
 
   // Email composer
   const [subject, setSubject] = useState("");
@@ -187,6 +192,7 @@ export default function AdminMarketing() {
   const [recipientFilter, setRecipientFilter] = useState("all");
   const [previewCount, setPreviewCount] = useState<number | null>(null);
   const [previewSample, setPreviewSample] = useState<{ email: string; name: string }[]>([]);
+  const [previewExcluded, setPreviewExcluded] = useState(0);
   const [sending, setSending] = useState(false);
   const [sendResult, setSendResult] = useState<{ ok: boolean; msg: string } | null>(null);
   const [customVars, setCustomVars] = useState<Record<string, string>>({});
@@ -212,7 +218,7 @@ export default function AdminMarketing() {
     }
   };
 
-  const AUTO_VARS = ["EMAIL", "AD", "SOYAD", "AD_SOYAD"];
+  const AUTO_VARS = ["EMAIL", "AD", "SOYAD", "AD_SOYAD", "LISTEDEN_CIK"];
 
   const detectedVars = (() => {
     const matches = body.match(/\{\{([A-Z0-9_]+)\}\}/g) || [];
@@ -300,6 +306,7 @@ export default function AdminMarketing() {
         }),
       });
       setPreviewCount(data.count);
+      setPreviewExcluded(data.excluded ?? 0);
       setPreviewSample(data.sample || []);
     } catch {}
   };
@@ -332,6 +339,7 @@ export default function AdminMarketing() {
         }),
       });
       let msg = `${data.sent} / ${data.total} kişiye gönderildi!${data.provider === "demo" ? " (demo mod)" : ""}`;
+      if (data.excluded) msg += ` (${data.excluded} kişi listeden çıktığı için atlandı)`;
       if (data.errors?.length) msg += ` — ${data.errors.length} hata: ${data.errors[0]}`;
       setSendResult({ ok: data.sent > 0, msg });
       setSubject(""); setBody(""); setCustomVars({}); setCustomEmailsText(""); setCustomName("");
@@ -434,10 +442,52 @@ export default function AdminMarketing() {
     const em = (l.email || "").toLowerCase();
     const q = leadSearch.toLowerCase();
     const matchSearch = !q || nm.includes(q) || em.includes(q);
-    const matchStatus = leadStatus === "all" || l.status === leadStatus;
+    const matchStatus = leadStatus === "all"
+      || (leadStatus === "unsubscribed" ? !!l.unsubscribed : l.status === leadStatus);
     const matchSource = leadSource === "all" || l.source === leadSource;
     return matchSearch && matchStatus && matchSource;
   });
+
+  // ─── Leads: seçim, listeden çıkarma, bu listeye e-posta ───
+  const sendableFiltered = filteredLeads.filter(l => !l.unsubscribed && l.email);
+  const toggleSelect = (email: string) => setSelectedEmails(prev => {
+    const n = new Set(prev); const k = email.toLowerCase();
+    if (n.has(k)) n.delete(k); else n.add(k);
+    return n;
+  });
+  const allFilteredSelected = sendableFiltered.length > 0 && sendableFiltered.every(l => selectedEmails.has(l.email.toLowerCase()));
+  const toggleSelectAll = () => setSelectedEmails(allFilteredSelected
+    ? new Set()
+    : new Set(sendableFiltered.map(l => l.email.toLowerCase())));
+
+  const unsubscribeLeads = async (emails: string[]) => {
+    if (emails.length === 0) return;
+    if (!confirm(`${emails.length} kişi listeden çıkarılsın mı?\n\nBu kişilere bundan sonra hiçbir kampanya / duyuru e-postası gitmez. Satın alma e-postaları (indirme linki, fatura) etkilenmez.`)) return;
+    try {
+      await apiFetch("/api/admin/marketing/leads/unsubscribe", { method: "POST", body: JSON.stringify({ emails }) });
+      setSelectedEmails(new Set());
+      setSelectedLead(null);
+      setLeadInfo(`${emails.length} kişi listeden çıkarıldı.`);
+      setLeads(await apiFetch("/api/admin/marketing/leads"));
+    } catch (e: any) { setError(e.message); }
+  };
+  const resubscribeLead = async (email: string) => {
+    if (!confirm(`${email} listeye geri alınsın mı? Sadece kişi bunu açıkça istediyse yap.`)) return;
+    try {
+      await apiFetch("/api/admin/marketing/leads/resubscribe", { method: "POST", body: JSON.stringify({ email }) });
+      setSelectedLead(null);
+      setLeads(await apiFetch("/api/admin/marketing/leads"));
+    } catch (e: any) { setError(e.message); }
+  };
+  /** Seçilenlere (ya da filtredeki herkese) e-posta: E-posta sekmesini bu adreslerle açar */
+  const emailLeads = (emails: string[]) => {
+    if (emails.length === 0) return;
+    setRecipientFilter("custom");
+    setCustomEmailsText(emails.join("\n"));
+    setCustomName("");
+    setSendResult(null);
+    setTab("email");
+  };
 
   const sourceLabels: Record<string, { label: string; color: string; emoji: string }> = {
     contact_form: { label: "İletişim Formu", color: "bg-blue-100 text-blue-800", emoji: "📝" },
@@ -636,8 +686,40 @@ export default function AdminMarketing() {
             >
               <option value="all">Tüm Durumlar</option>
               {Object.entries(STATUS_LABELS).map(([v, { label }]) => <option key={v} value={v}>{label}</option>)}
+              <option value="unsubscribed">🚫 Listeden çıkanlar ({leads.filter(l => l.unsubscribed).length})</option>
             </select>
           </div>
+
+          {/* Bu listeye yönelik işlemler */}
+          <div className="flex items-center gap-2 flex-wrap bg-white border border-gray-100 rounded-xl px-4 py-3 shadow-sm">
+            {selectedEmails.size > 0 ? (
+              <>
+                <span className="text-sm text-gray-700"><strong>{selectedEmails.size}</strong> kişi seçili</span>
+                <button onClick={() => emailLeads([...selectedEmails])}
+                  className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 text-white text-sm hover:bg-blue-700">
+                  <Send size={13} /> Seçililere e-posta gönder
+                </button>
+                <button onClick={() => unsubscribeLeads([...selectedEmails])}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-200 text-red-700 text-sm hover:bg-red-50">
+                  <X size={13} /> Listeden çıkar
+                </button>
+                <button onClick={() => setSelectedEmails(new Set())} className="text-xs text-gray-500 underline">Seçimi temizle</button>
+              </>
+            ) : (
+              <>
+                <span className="text-xs text-gray-500">Kişileri soldaki kutularla seç ya da bu listedeki herkese yaz. Listeden çıkanlara e-posta gitmez.</span>
+                <button onClick={() => emailLeads(sendableFiltered.map(l => l.email))} disabled={sendableFiltered.length === 0}
+                  className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 text-white text-sm hover:bg-blue-700 disabled:opacity-50">
+                  <Send size={13} /> Bu listedeki {sendableFiltered.length} kişiye e-posta gönder
+                </button>
+              </>
+            )}
+          </div>
+          {leadInfo && (
+            <div className="flex justify-between items-center bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2 text-sm text-emerald-800">
+              <span>{leadInfo}</span><button onClick={() => setLeadInfo(null)}><X size={14} /></button>
+            </div>
+          )}
 
           {filteredLeads.length === 0 ? (
             <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-8 text-center text-gray-400">
@@ -650,6 +732,9 @@ export default function AdminMarketing() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-gray-100 bg-gray-50">
+                    <th className="pl-4 py-3 w-8">
+                      <input type="checkbox" checked={allFilteredSelected} onChange={toggleSelectAll} title="Bu listedekilerin hepsini seç" />
+                    </th>
                     <th className="px-4 py-3 text-left font-medium text-gray-600">Ad Soyad</th>
                     <th className="px-4 py-3 text-left font-medium text-gray-600">E-posta</th>
                     <th className="px-4 py-3 text-left font-medium text-gray-600">Kaynak</th>
@@ -663,7 +748,12 @@ export default function AdminMarketing() {
                   {filteredLeads.map(lead => {
                     const src = sourceLabels[lead.source];
                     return (
-                      <tr key={lead.id} className="hover:bg-gray-50">
+                      <tr key={lead.id} className={`hover:bg-gray-50 ${lead.unsubscribed ? "opacity-60" : ""}`}>
+                        <td className="pl-4 py-3">
+                          <input type="checkbox" disabled={!!lead.unsubscribed}
+                            checked={selectedEmails.has(lead.email.toLowerCase())} onChange={() => toggleSelect(lead.email)}
+                            title={lead.unsubscribed ? "Listeden çıktı — e-posta gönderilemez" : undefined} />
+                        </td>
                         <td className="px-4 py-3 font-medium text-gray-800">{lead.name || "—"}</td>
                         <td className="px-4 py-3 text-gray-500">{lead.email}</td>
                         <td className="px-4 py-3">
@@ -678,9 +768,13 @@ export default function AdminMarketing() {
                         </td>
                         <td className="px-4 py-3 text-gray-500 hidden md:table-cell">{lead.company || "—"}</td>
                         <td className="px-4 py-3">
-                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_LABELS[lead.status]?.color || "bg-gray-100 text-gray-500"}`}>
-                            {STATUS_LABELS[lead.status]?.label || lead.status}
-                          </span>
+                          {lead.unsubscribed ? (
+                            <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-red-50 text-red-700">🚫 Listeden çıktı</span>
+                          ) : (
+                            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_LABELS[lead.status]?.color || "bg-gray-100 text-gray-500"}`}>
+                              {STATUS_LABELS[lead.status]?.label || lead.status}
+                            </span>
+                          )}
                         </td>
                         <td className="px-4 py-3 text-gray-400 hidden md:table-cell text-xs">
                           {new Date(lead.createdAt).toLocaleDateString("tr-TR")}
@@ -717,11 +811,29 @@ export default function AdminMarketing() {
                   <p><span className="text-gray-400">Kaynak:</span> {selectedLead.source}</p>
                   <p><span className="text-gray-400">Tarih:</span> {new Date(selectedLead.createdAt).toLocaleString("tr-TR")}</p>
                 </div>
+                <div className="mb-4 flex gap-2">
+                  {selectedLead.unsubscribed ? (
+                    <>
+                      <span className="flex-1 text-xs text-red-700 bg-red-50 rounded-lg px-3 py-2">
+                        🚫 Listeden çıktı{selectedLead.unsubscribedAt ? ` (${new Date(selectedLead.unsubscribedAt).toLocaleDateString("tr-TR")})` : ""} — toplu e-posta gönderilmez.
+                      </span>
+                      <button onClick={() => resubscribeLead(selectedLead.email)} className="text-xs px-3 py-2 rounded-lg border border-gray-200 hover:bg-gray-50">Geri al</button>
+                    </>
+                  ) : (
+                    <>
+                      <button onClick={() => emailLeads([selectedLead.email])} className="flex-1 flex items-center justify-center gap-1.5 text-sm px-3 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700">
+                        <Send size={13} /> E-posta gönder
+                      </button>
+                      <button onClick={() => unsubscribeLeads([selectedLead.email])} className="flex-1 text-sm px-3 py-2 rounded-lg border border-red-200 text-red-700 hover:bg-red-50">
+                        Listeden çıkar
+                      </button>
+                    </>
+                  )}
+                </div>
                 {selectedLead.source === "ebook_purchase" ? (
                   <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-3 text-xs text-emerald-900">
                     🛒 <strong>E-Kitap Alıcısı</strong> — bu bir satın alma kaydından türetildi.
-                    Durum/not güncellenemez. Bu müşteriye e-posta göndermek için sağ üstteki "E-posta" sekmesinden
-                    <strong> "E-Kitap Alıcıları"</strong> segmentini kullanın.
+                    Durum/not güncellenemez.
                   </div>
                 ) : (
                   <div className="space-y-3">
@@ -846,7 +958,9 @@ export default function AdminMarketing() {
                     Alıcı sayısını önizle
                   </button>
                   {previewCount !== null && (
-                    <span className="text-xs text-gray-500">→ <strong>{previewCount}</strong> kişi</span>
+                    <span className="text-xs text-gray-500">→ <strong>{previewCount}</strong> kişi
+                      {previewExcluded > 0 && <span className="text-amber-700"> · {previewExcluded} kişi listeden çıktığı için gönderilmeyecek</span>}
+                    </span>
                   )}
                 </div>
                 {previewSample.length > 0 && (
