@@ -84,6 +84,7 @@ import metaCatalogFeedRouter from "./meta-catalog-feed";
 import adminMailTemplatesRouter from "./admin-mail-templates";
 import mailAssetsRouter from "./mail-assets";
 import sitePopupsRouter from "./site-popups";
+import myEbooksRouter from "./my-ebooks";
 import demoRouter from "./demo";
 import adminContentArticlesRouter from "./admin-content-articles";
 import adminContentInventoryRouter from "./admin-content-inventory";
@@ -174,6 +175,7 @@ router.use(metaCatalogFeedRouter);
 router.use(adminMailTemplatesRouter);
 router.use(mailAssetsRouter);
 router.use(sitePopupsRouter); // www pop-up'ları + bülten (public + admin)
+router.use(myEbooksRouter); // Kitaplarım (e-kitap alıcısı ↔ hesap)
 router.use(demoRouter);
 router.use(adminContentArticlesRouter);
 router.use(adminContentInventoryRouter);

@@ -254,6 +254,11 @@ const paymentLimiter = rateLimit({
 
 app.use("/api/auth/login", loginLimiter);
 app.use("/api/auth/register", registerLimiter);
+// E-kitap alıcısının hesap açma formu — kayıt sayacından ayrı, form hatalarına biraz pay bırakır
+app.use("/api/ebook-library/activate", rateLimit({
+  windowMs: 60 * 60 * 1000, max: 10, standardHeaders: true, legacyHeaders: false,
+  message: { error: "Çok fazla deneme. Lütfen biraz sonra tekrar dene." }, skip: limitersDisabled,
+}));
 app.use("/api/auth/forgot-password", forgotPasswordLimiter);
 
 // AI endpoint'leri — OpenAI maliyet kontrolü

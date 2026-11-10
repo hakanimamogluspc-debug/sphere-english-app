@@ -14,6 +14,7 @@
 
 import { sendEmail } from "./email.js";
 import { DOWNLOAD_VALID_DAYS, MAX_DOWNLOADS } from "./ebook-download-policy.js";
+import { libraryMailSection } from "./ebook-library.js";
 
 interface EbookMailOptions {
   buyerEmail: string;
@@ -60,6 +61,7 @@ export async function sendEbookDownloadMail(opts: EbookMailOptions): Promise<{
     ?? "https://app.sphereenglish.com";
   const downloadUrl = `${downloadBase.replace(/\/$/, "")}/api/ebooks/download?token=${encodeURIComponent(opts.downloadToken)}`;
 
+  const librarySection = await libraryMailSection(opts.buyerEmail).catch(() => "");
   const greeting = opts.buyerName ? `Merhaba ${opts.buyerName},` : "Merhaba,";
   const subject = `📚 Kitabın hazır — ${opts.ebookTitle}`;
   const expiresFormatted = formatDate(opts.downloadExpiresAt);
@@ -126,6 +128,8 @@ export async function sendEbookDownloadMail(opts: EbookMailOptions): Promise<{
                 </td>
               </tr>
             </table>
+
+            ${librarySection}
 
             <!-- Uyarı kutusu -->
             <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#fef3c7;border:1px solid #fcd34d;border-radius:12px;margin:16px 0;">
@@ -395,6 +399,7 @@ export async function sendCartDownloadMail(opts: CartMailOptions): Promise<{
     ?? process.env.PUBLIC_API_BASE_URL
     ?? "https://app.sphereenglish.com";
 
+  const librarySection = await libraryMailSection(opts.buyerEmail).catch(() => "");
   const greeting = opts.buyerName ? `Merhaba ${opts.buyerName},` : "Merhaba,";
   const itemCountLabel =
     opts.items.length === 1 ? "1 kitap" : `${opts.items.length} kitap`;
@@ -480,6 +485,8 @@ export async function sendCartDownloadMail(opts: CartMailOptions): Promise<{
               <div style="font-size:14px;font-weight:700;color:#1B365D;margin-bottom:12px;">📚 Kitaplarınız (${opts.items.length})</div>
               ${itemsHtml}
             </div>
+
+            ${librarySection}
 
             <!-- Uyarı -->
             <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#fef3c7;border:1px solid #fcd34d;border-radius:12px;margin:16px 0;">

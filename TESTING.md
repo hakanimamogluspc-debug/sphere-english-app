@@ -24,6 +24,7 @@ Entegrasyon testleri: Express uygulaması **gerçek bir Postgres**'e karşı, HT
 | `live-ebook-catalog.test.ts` | Botların (Instagram, WhatsApp, site asistanı) kullandığı canlı e-kitap kataloğu: güncel fiyat, link, www ile aynı kategori grupları, pasif kitap gizli |
 | `site-popups.test.ts` | www pop-up'ları: yayındaki/kapalı ayrımı, doğrulama, bülten kaydında onay şartı, kişiye özel tek kullanımlık kupon, aynı adrese ikinci kupon yok, istatistik, imzalı bültenden çıkış |
 | `marketing-suppression.test.ts` | Leads'te listeden çıkarma: işaretleme, toplu gönderimden hariç tutma, sadece çıkmışlara gönderim reddi, imzalı / tek tık çıkış bağlantısı, geri alma |
+| `my-ebooks.test.ts` | Kitaplarım: imzalı bağlantıyla hesap açma (koşul onayı şart, kendiliğinden açılmaz), alımların hesaba bağlanması, kitap listesi, süreli okuma bağlantısı, başkasının kitabına / bozuk bağlantıya erişim reddi |
 | `marketing-leads.test.ts` | Pazarlama → Leads: tüm kaynaklar (iletişim, bülten, haberdar ol, B2B…) tek listede, aynı e-posta tek satır + kaynaklar, kaynak filtresi, B2B durum/not güncelleme |
 | `bot-reply-text.test.ts` | Bot cevabı yarıda kesilirse yarım link ve tamamlanmamış cümle atılır |
 | `entitlement.test.ts` | otomatik deneme süresi, süresi geçmiş deneme, aktif abonelik, lazy expiry (past_due / expired), iptal-ama-dönem-sürüyor |

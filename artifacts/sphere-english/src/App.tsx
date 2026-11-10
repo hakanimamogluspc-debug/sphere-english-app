@@ -21,6 +21,8 @@ const NotFound        = lazy(() => import("@/pages/not-found"));
 const Login           = lazy(() => import("./pages/auth/Login"));
 const Register        = lazy(() => import("./pages/auth/Register"));
 const SetupPassword   = lazy(() => import("./pages/SetupPassword"));
+const EbookActivate   = lazy(() => import("./pages/EbookActivate"));
+const MyEbooks        = lazy(() => import("./pages/MyEbooks"));
 const ForgotPassword  = lazy(() => import("./pages/ForgotPassword"));
 const Dashboard       = lazy(() => import("./pages/dashboard"));
 const CourseList      = lazy(() => import("./pages/courses/CourseList"));
@@ -291,6 +293,7 @@ function Router() {
     !user?.company &&
     user?.onboardingCompleted !== true &&
     location !== "/onboarding" &&
+    !location.startsWith("/kitaplarim") && // e-kitap alıcısı önce kitaplarını görsün
     !location.startsWith("/logout")
   ) {
     return <Redirect to="/onboarding" />;
@@ -307,6 +310,7 @@ function Router() {
     location !== "/onboarding" &&
     !location.startsWith("/student/level-exams") &&
     !location.startsWith("/profile") &&
+    !location.startsWith("/kitaplarim") &&
     !location.startsWith("/logout")
   ) {
     return <Redirect to="/placement-test" />;
@@ -320,6 +324,8 @@ function Router() {
         <Route path="/login" component={Login} />
         <Route path="/register" component={Register} />
         <Route path="/sifre-belirle" component={SetupPassword} />
+        <Route path="/kitaplarim/etkinlestir" component={EbookActivate} />
+        <Route path="/kitaplarim"><LayoutWrapper component={MyEbooks} allowedRoles={['student', 'admin', 'teacher', 'corporate']} /></Route>
         <Route path="/sifremi-unuttum" component={ForgotPassword} />
         <Route path="/ai-studio" component={AIStudio} />
         <Route path="/yardim" component={HelpCenter} />

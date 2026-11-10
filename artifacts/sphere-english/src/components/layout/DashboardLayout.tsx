@@ -68,7 +68,8 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const navigation: Record<string, NavItem[]> = {
     student: [
       { name: 'Kontrol Paneli',      href: '/dashboard',                     icon: LayoutDashboard },
-      { name: 'Kurslarım',           href: '/courses',                        icon: BookOpen,      moduleKey: 'student-courses' },
+      { name: 'Kitaplarım',          href: '/kitaplarim',                     icon: BookMarked },
+      { name: 'Kurslarım',          href: '/courses',                        icon: BookOpen,      moduleKey: 'student-courses' },
       { name: 'İş Kartları',         href: '/is-kartlari',                    icon: BookMarked },
       { name: 'Arkadaşını Davet Et', href: '/davet',                          icon: Gift },
       { name: 'Yolculuğum',          href: '/yolculugum',                     icon: MapPin },

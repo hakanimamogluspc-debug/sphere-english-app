@@ -38,7 +38,7 @@ const registerSchema = z.object({
 });
 
 /** Sözleşme metni değişince artır — kabul kaydında hangi sürümün onaylandığı tutulur */
-const TERMS_VERSION = "2026-10";
+export const TERMS_VERSION = "2026-10";
 
 router.post("/auth/login", validateBody(loginSchema), async (req, res) => {
   const { email, password, rememberMe } = req.body;
