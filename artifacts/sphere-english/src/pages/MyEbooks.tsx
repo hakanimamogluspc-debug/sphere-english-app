@@ -10,7 +10,7 @@ const WWW = "https://www.sphereenglish.com";
 interface OwnedEbook {
   id: number; slug: string; title: string; subtitle: string | null; author: string | null;
   category: string | null; coverImageUrl: string | null; pageCount: number | null;
-  purchasedAt: string | null; hasFile: boolean;
+  purchasedAt: string | null; hasFile: boolean; practiceReady: boolean;
 }
 
 function authHeaders(): HeadersInit {
@@ -88,9 +88,16 @@ export default function MyEbooks() {
                     {opening === b.id ? <Loader2 size={16} className="animate-spin" /> : <BookOpen size={16} />}
                     {b.hasFile ? "Kitabı oku" : "Dosya hazırlanıyor"}
                   </button>
-                  <div className="w-full py-2 rounded-lg bg-[#e8eef8] text-[#0e7da6] text-xs font-semibold inline-flex items-center justify-center gap-1.5">
-                    <Sparkles size={14} /> Kitaba özel pratikler yakında
-                  </div>
+                  {b.practiceReady ? (
+                    <a href={`/kitaplarim/${b.id}`}
+                      className="w-full py-2.5 rounded-lg border-2 border-[#13a9e0] text-[#0e7da6] hover:bg-[#e8eef8] text-sm font-bold inline-flex items-center justify-center gap-1.5">
+                      <Sparkles size={15} /> Pratik yap
+                    </a>
+                  ) : (
+                    <div className="w-full py-2 rounded-lg bg-[#e8eef8] text-[#0e7da6] text-xs font-semibold inline-flex items-center justify-center gap-1.5">
+                      <Sparkles size={14} /> Kitaba özel pratikler yakında
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

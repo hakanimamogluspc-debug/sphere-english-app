@@ -1232,6 +1232,28 @@ export async function runStartupMigrations() {
       finished_at TIMESTAMPTZ
     )`,
     `ALTER TABLE ebooks ADD COLUMN IF NOT EXISTS practice_published BOOLEAN NOT NULL DEFAULT FALSE`,
+    // Öğrencinin kart tekrarı (Leitner kutuları) ve mini test denemeleri — bkz. routes/my-ebook-practice.ts
+    `CREATE TABLE IF NOT EXISTS ebook_practice_progress (
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      item_id INTEGER NOT NULL REFERENCES ebook_practice_items(id) ON DELETE CASCADE,
+      box INTEGER NOT NULL DEFAULT 0,
+      due_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      correct INTEGER NOT NULL DEFAULT 0,
+      wrong INTEGER NOT NULL DEFAULT 0,
+      last_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      PRIMARY KEY (user_id, item_id)
+    )`,
+    `CREATE INDEX IF NOT EXISTS ebook_practice_progress_due_idx ON ebook_practice_progress (user_id, due_at)`,
+    `CREATE TABLE IF NOT EXISTS ebook_practice_quiz_attempts (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      ebook_id INTEGER NOT NULL REFERENCES ebooks(id) ON DELETE CASCADE,
+      unit_order INTEGER,
+      correct INTEGER NOT NULL,
+      total INTEGER NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`,
+    `CREATE INDEX IF NOT EXISTS ebook_practice_quiz_user_idx ON ebook_practice_quiz_attempts (user_id, ebook_id, created_at)`,
     `INSERT INTO feature_settings (key, label, is_enabled, visible_to, category) VALUES
       ('admin-coupons', 'Kupon Kodları', true, ARRAY['admin']::TEXT[], 'admin')
       ON CONFLICT (key) DO NOTHING`,

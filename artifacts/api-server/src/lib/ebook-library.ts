@@ -103,7 +103,7 @@ export function verifyReadLink(userId: number, ebookId: number, exp: number, sig
 /** Kullanıcının sahip olduğu kitaplar (ödemesi tamamlanmış, tekilleştirilmiş) */
 export async function ownedEbooks(userId: number) {
   const r = await pool.query(
-    `SELECT e.id, e.slug, e.title, e.subtitle, e.author, e.category, e.cover_image_url, e.page_count,
+    `SELECT e.id, e.slug, e.title, e.subtitle, e.author, e.category, e.cover_image_url, e.page_count, e.practice_published,
             MIN(p.paid_at) AS purchased_at,
             EXISTS (SELECT 1 FROM ebook_assets a WHERE a.ebook_id = e.id AND a.asset_type = 'full') AS has_file
      FROM ebook_purchases p
@@ -116,6 +116,7 @@ export async function ownedEbooks(userId: number) {
   return r.rows.map((x: any) => ({
     id: x.id, slug: x.slug, title: x.title, subtitle: x.subtitle, author: x.author, category: x.category,
     coverImageUrl: x.cover_image_url, pageCount: x.page_count, purchasedAt: x.purchased_at, hasFile: x.has_file,
+    practiceReady: x.practice_published === true,
   }));
 }
 

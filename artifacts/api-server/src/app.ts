@@ -269,6 +269,8 @@ app.use("/api/interview", aiLimiter);
 app.use("/api/presentation", aiLimiter);
 app.use("/api/ai-quiz", aiLimiter);
 app.use("/api/tutor", aiLimiter);
+// Kitap pratiği AI koçu (OpenAI) — yalnızca /api/me/ebooks/:id/practice/coach
+app.use("/api/me/ebooks", (req, res, next) => (/^\/\d+\/practice\/coach\/?$/.test(req.path) ? aiLimiter(req, res, next) : next()));
 app.use("/api/scenes", aiLimiter);
 app.use("/api/vocab-game/game/guess", aiLimiter);
 app.use("/api/vocab-game/game/hint", aiLimiter);
