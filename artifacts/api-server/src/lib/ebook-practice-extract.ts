@@ -15,7 +15,8 @@ import { pool } from "@workspace/db";
 import { openaiTrackedFetch } from "./ai-usage.js";
 import { getObjectBuffer } from "./object-storage.js";
 
-export const CHUNK_PAGES = 6;
+// Küçük parça = model daha az öğe atlıyor (6 sayfada 200 öğelik kitaptan yalnızca ~50 geldi)
+export const CHUNK_PAGES = 3;
 
 export interface ExtractedItem {
   unit: string;
@@ -27,7 +28,7 @@ export interface ExtractedItem {
   example_tr: string | null;
 }
 
-export type ChunkExtractor = (pdf: Buffer, ctx: { from: number; to: number; title: string; lastUnit: string }) => Promise<ExtractedItem[]>;
+export type ChunkExtractor = (pdf: Buffer, ctx: { from: number; to: number; title: string; lastUnit: string; hint?: string }) => Promise<ExtractedItem[]>;
 
 const SYSTEM = `Sen Türk profesyonellere iş İngilizcesi öğreten bir kitabın içeriğini yapılandıran bir editörsün.
 Sana kitabın birkaç sayfası PDF olarak verilecek. Görevin bu sayfalarda AÇIKÇA öğretilen:
@@ -36,6 +37,7 @@ Sana kitabın birkaç sayfası PDF olarak verilecek. Görevin bu sayfalarda AÇI
 öğelerini çıkarmak.
 
 Kurallar:
+- EKSİKSİZ ol: sayfalardaki HER kalıbı ve HER terimi tek tek çıkar. Terim listeleri, tablolar, sözlükçeler ve kutular da dahildir; tablodaki her satır ayrı bir öğedir. Özetleme, seçme, "en önemlileri" yapma.
 - Yalnızca sayfada yazanı al. Kitapta olmayan kalıp, çeviri ya da örnek UYDURMA.
 - Türkçe anlam (tr), açıklama ve örnek cümleler kitapta varsa birebir al; yoksa tr için kısa doğru bir karşılık yaz, explanation/example alanlarını null bırak.
 - Kapak, içindekiler, önsöz, tanıtım, alıştırma soruları ve cevap anahtarı öğe DEĞİLDİR; atla.
@@ -87,7 +89,8 @@ const openaiExtractor: ChunkExtractor = async (pdf, ctx) => {
       {
         role: "user",
         content: [
-          { type: "text", text: `Kitap: "${ctx.title}". Sayfalar ${ctx.from}–${ctx.to}. Önceki ünite: "${ctx.lastUnit || "(yok)"}".` },
+          { type: "text", text: `Kitap: "${ctx.title}". Sayfalar ${ctx.from}–${ctx.to}. Önceki ünite: "${ctx.lastUnit || "(yok)"}".`
+            + (ctx.hint ? `\nKitabın tanıtımı (kaç kalıp/terim içerdiğine dair ipucu): ${ctx.hint}` : "") },
           { type: "file", file: { filename: `sayfa-${ctx.from}-${ctx.to}.pdf`, file_data: `data:application/pdf;base64,${pdf.toString("base64")}` } } as any,
         ],
       },
@@ -146,7 +149,7 @@ export async function claimExtractionJob(ebookId: number): Promise<boolean> {
  */
 export async function runPracticeExtraction(ebookId: number): Promise<{ items: number }> {
   try {
-    const book = (await pool.query(`SELECT title FROM ebooks WHERE id = $1`, [ebookId])).rows[0];
+    const book = (await pool.query(`SELECT title, description FROM ebooks WHERE id = $1`, [ebookId])).rows[0];
     if (!book) throw new Error("Kitap bulunamadı");
     const chunks = await splitPdf(await loadFullPdf(ebookId));
     await pool.query(`UPDATE ebook_practice_jobs SET total = $2 WHERE ebook_id = $1`, [ebookId, chunks.length]);
@@ -154,27 +157,42 @@ export async function runPracticeExtraction(ebookId: number): Promise<{ items: n
 
     const kept = await pool.query(`SELECT kind, en, unit_title, unit_order FROM ebook_practice_items WHERE ebook_id = $1`, [ebookId]);
     const seen = new Set(kept.rows.map((x: any) => `${x.kind}|${norm(x.en)}`));
-    const unitOrder = new Map<string, number>(kept.rows.map((x: any) => [x.unit_title, x.unit_order]));
+    // Ünite eşleştirme büyük/küçük harfe duyarsız: "Günlük Ofis Dili" ile "GÜNLÜK OFİS DİLİ" aynı ünite
+    const unitKey = (s: string) => s.toLocaleLowerCase("tr").replace(/\s+/g, " ").trim();
+    const unitOrder = new Map<string, number>();
+    const unitName = new Map<string, string>();
+    for (const x of kept.rows as any[]) {
+      const k = unitKey(x.unit_title);
+      if (!unitOrder.has(k)) { unitOrder.set(k, x.unit_order); unitName.set(k, x.unit_title); }
+    }
+    const isAllCaps = (s: string) => s === s.toLocaleUpperCase("tr") && s !== s.toLocaleLowerCase("tr");
     let position = 0;
     let lastUnit = "";
     let inserted = 0;
 
     for (let i = 0; i < chunks.length; i++) {
       const c = chunks[i];
-      const items = await extractor(c.pdf, { from: c.from, to: c.to, title: book.title, lastUnit });
+      const items = await extractor(c.pdf, { from: c.from, to: c.to, title: book.title, lastUnit, hint: String(book.description ?? "").slice(0, 400) });
       for (const it of items) {
         const en = String(it.en ?? "").trim();
         if (!en || (it.kind !== "pattern" && it.kind !== "term")) continue;
         const key = `${it.kind}|${norm(en)}`;
         if (seen.has(key)) continue;
         seen.add(key);
-        const unit = String(it.unit ?? "").trim().slice(0, 300) || lastUnit;
+        const raw = String(it.unit ?? "").replace(/\s+/g, " ").trim().slice(0, 300);
+        const k = raw ? unitKey(raw) : unitKey(lastUnit);
+        if (!unitOrder.has(k)) { unitOrder.set(k, unitOrder.size + 1); unitName.set(k, raw || lastUnit); }
+        // Aynı ünite hem normal hem BÜYÜK HARFLE geldiyse normal yazılışı tercih et
+        else if (raw && isAllCaps(unitName.get(k)!) && !isAllCaps(raw)) {
+          unitName.set(k, raw);
+          await pool.query(`UPDATE ebook_practice_items SET unit_title = $3 WHERE ebook_id = $1 AND unit_order = $2`, [ebookId, unitOrder.get(k), raw]);
+        }
+        const unit = unitName.get(k)!;
         lastUnit = unit;
-        if (!unitOrder.has(unit)) unitOrder.set(unit, unitOrder.size + 1);
         await pool.query(
           `INSERT INTO ebook_practice_items (ebook_id, unit_order, unit_title, position, kind, en, tr, explanation, example_en, example_tr, source_pages)
            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
-          [ebookId, unitOrder.get(unit), unit, ++position, it.kind, en, String(it.tr ?? "").trim(),
+          [ebookId, unitOrder.get(k), unit, ++position, it.kind, en, String(it.tr ?? "").trim(),
            it.explanation?.trim() || null, it.example_en?.trim() || null, it.example_tr?.trim() || null, `${c.from}-${c.to}`],
         );
         inserted++;

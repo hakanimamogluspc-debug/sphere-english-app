@@ -21,6 +21,10 @@ const fake = async (_pdf: Buffer, ctx: { from: number; to: number; lastUnit: str
     { unit: "Ünite 1: Toplantıyı Açmak", kind: "pattern", en: "Let's get the ball rolling.", tr: "Hadi başlayalım.", explanation: "Toplantıyı başlatırken.", example_en: "Right, let's get the ball rolling.", example_tr: "Pekâlâ, başlayalım." },
     { unit: "Ünite 1: Toplantıyı Açmak", kind: "term", en: "agenda", tr: "gündem", explanation: null, example_en: null, example_tr: null },
   ];
+  if (ctx.from === 7) return [
+    // Aynı ünite BÜYÜK HARFLE gelirse ayrı ünite açılmamalı
+    { unit: "ÜNİTE 2: SÖZ ALMAK", kind: "term", en: "minutes", tr: "toplantı tutanağı", explanation: null, example_en: null, example_tr: null },
+  ];
   return [
     { unit: "", kind: "term", en: "action item", tr: "yapılacak iş", explanation: null, example_en: null, example_tr: null },
     { unit: "", kind: "pattern", en: "Let’s get the ball rolling", tr: "tekrar", explanation: null, example_en: null, example_tr: null },
@@ -50,16 +54,17 @@ afterAll(async () => {
 });
 
 describe("kitap pratikleri: çıkarım", () => {
-  it("PDF 6'şar sayfalık parçalara bölünür", async () => {
-    const parts = await splitPdf(await makePdf(9));
+  it("PDF sayfa parçalarına bölünür", async () => {
+    const parts = await splitPdf(await makePdf(9), 6);
     expect(parts.map((p) => [p.from, p.to])).toEqual([[1, 6], [7, 9]]);
+    expect((await splitPdf(await makePdf(9))).map((p) => p.from)).toEqual([1, 4, 7]);
   });
 
   it("öğeler taslak olarak kaydedilir; başlıksız öğe önceki üniteye düşer; tekrar ve geçersiz tür atlanır", async () => {
     expect(await claimExtractionJob(ebookId)).toBe(true);
     expect(await claimExtractionJob(ebookId)).toBe(false); // aynı anda ikinci iş yok
     const r = await runPracticeExtraction(ebookId);
-    expect(r.items).toBe(4);
+    expect(r.items).toBe(5);
     expect(calls[1].lastUnit).toBe("Ünite 1: Toplantıyı Açmak");
 
     const d = (await api().get(`/api/admin/ebook-practice/${ebookId}`).set(auth)).body;
@@ -69,6 +74,9 @@ describe("kitap pratikleri: çıkarım", () => {
     expect(ai.unitTitle).toBe("Ünite 1: Toplantıyı Açmak");
     expect(ai.unitOrder).toBe(1);
     expect(d.items.find((i: any) => i.en.startsWith("If I could")).unitOrder).toBe(2);
+    const minutes = d.items.find((i: any) => i.en === "minutes");
+    expect(minutes.unitOrder).toBe(2);
+    expect(minutes.unitTitle).toBe("Ünite 2: Söz Almak");
   });
 
   it("onaylı öğeler yeniden çıkarımda korunur ve çoğaltılmaz", async () => {
@@ -83,7 +91,7 @@ describe("kitap pratikleri: çıkarım", () => {
     expect(agendas).toHaveLength(1);
     expect(agendas[0].status).toBe("approved");
     expect(agendas[0].tr).toBe("toplantı gündemi");
-    expect(after).toHaveLength(4);
+    expect(after).toHaveLength(5);
   });
 });
 
