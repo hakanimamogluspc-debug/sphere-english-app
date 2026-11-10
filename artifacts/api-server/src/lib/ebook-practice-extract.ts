@@ -147,13 +147,14 @@ export async function claimExtractionJob(ebookId: number): Promise<boolean> {
  * Çıkarımı çalıştırır. Önceki TASLAK öğeler silinir; onaylanmış/gizlenmiş öğeler korunur ve
  * aynı kalıp tekrar eklenmez.
  */
-export async function runPracticeExtraction(ebookId: number): Promise<{ items: number }> {
+export async function runPracticeExtraction(ebookId: number, opts: { append?: boolean } = {}): Promise<{ items: number }> {
   try {
     const book = (await pool.query(`SELECT title, description FROM ebooks WHERE id = $1`, [ebookId])).rows[0];
     if (!book) throw new Error("Kitap bulunamadı");
     const chunks = await splitPdf(await loadFullPdf(ebookId));
     await pool.query(`UPDATE ebook_practice_jobs SET total = $2 WHERE ebook_id = $1`, [ebookId, chunks.length]);
-    await pool.query(`DELETE FROM ebook_practice_items WHERE ebook_id = $1 AND status = 'draft'`, [ebookId]);
+    // append: "Eksikleri tara" — mevcut taslaklar da korunur, yalnızca yeni öğeler eklenir
+    if (!opts.append) await pool.query(`DELETE FROM ebook_practice_items WHERE ebook_id = $1 AND status = 'draft'`, [ebookId]);
 
     const kept = await pool.query(`SELECT kind, en, unit_title, unit_order FROM ebook_practice_items WHERE ebook_id = $1`, [ebookId]);
     const seen = new Set(kept.rows.map((x: any) => `${x.kind}|${norm(x.en)}`));
@@ -166,7 +167,9 @@ export async function runPracticeExtraction(ebookId: number): Promise<{ items: n
       if (!unitOrder.has(k)) { unitOrder.set(k, x.unit_order); unitName.set(k, x.unit_title); }
     }
     const isAllCaps = (s: string) => s === s.toLocaleUpperCase("tr") && s !== s.toLocaleLowerCase("tr");
-    let position = 0;
+    let position = opts.append
+      ? Number((await pool.query(`SELECT COALESCE(MAX(position), 0) AS p FROM ebook_practice_items WHERE ebook_id = $1`, [ebookId])).rows[0].p)
+      : 0;
     let lastUnit = "";
     let inserted = 0;
 

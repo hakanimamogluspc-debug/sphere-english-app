@@ -93,6 +93,22 @@ describe("kitap pratikleri: çıkarım", () => {
     expect(agendas[0].tr).toBe("toplantı gündemi");
     expect(after).toHaveLength(5);
   });
+
+  it("'Eksikleri tara' taslakları silmez, yalnızca yeni öğe ekler", async () => {
+    const before = (await api().get(`/api/admin/ebook-practice/${ebookId}`).set(auth)).body.items;
+    const draftIds = before.filter((i: any) => i.status === "draft").map((i: any) => i.id).sort();
+    setExtractorForTests(async (pdf, ctx) => {
+      const base = await fake(pdf, ctx);
+      return ctx.from === 1 ? [...base, { unit: "", kind: "term", en: "stakeholder", tr: "paydaş", explanation: null, example_en: null, example_tr: null }] : base;
+    });
+    await claimExtractionJob(ebookId);
+    await runPracticeExtraction(ebookId, { append: true });
+    setExtractorForTests(fake);
+    const after = (await api().get(`/api/admin/ebook-practice/${ebookId}`).set(auth)).body.items;
+    expect(after).toHaveLength(6);
+    expect(after.filter((i: any) => draftIds.includes(i.id)).map((i: any) => i.id).sort()).toEqual(draftIds);
+    expect(after.find((i: any) => i.en === "stakeholder").unitOrder).toBe(1);
+  });
 });
 
 describe("kitap pratikleri: admin onay ve yayın", () => {
@@ -101,7 +117,7 @@ describe("kitap pratikleri: admin onay ve yayın", () => {
     expect((await api().post(`/api/admin/ebook-practice/${ebookId}/publish`).set(auth).send({ published: true })).status).toBe(400);
 
     const b = await api().post(`/api/admin/ebook-practice/${ebookId}/bulk-status`).set(auth).send({ status: "approved", unitOrder: 1 });
-    expect(b.body.updated).toBe(3);
+    expect(b.body.updated).toBe(4);
     expect((await api().patch(`/api/admin/ebook-practice/items/999999`).set(auth).send({ status: "approved" })).status).toBe(404);
     const anyItem = (await pool.query(`SELECT id FROM ebook_practice_items WHERE ebook_id = $1 LIMIT 1`, [ebookId])).rows[0].id;
     expect((await api().patch(`/api/admin/ebook-practice/items/${anyItem}`).set(auth).send({ en: "  " })).status).toBe(400);

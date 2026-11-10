@@ -81,14 +81,16 @@ export default function AdminEbookPractice() {
   }, [selected, job?.status, loadBook]);
   useEffect(() => { if (job && job.status !== "running") loadBooks(); }, [job?.status, loadBooks]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  async function extract() {
+  async function extract(append = false) {
     if (!selected) return;
     const hasApproved = items.some((i) => i.status === "approved");
-    const msg = "Kitabın PDF'i yapay zekâyla taranacak (birkaç dakika sürer). Mevcut TASLAK öğeler silinip yeniden oluşturulur"
-      + (hasApproved ? "; onayladıkların ve gizlediklerin korunur." : ".") + " Devam edilsin mi?";
+    const msg = append
+      ? "Kitap yeniden taranacak ve yalnızca listede OLMAYAN kalıp/terimler taslak olarak eklenecek. Mevcut öğelerin hiçbiri silinmez. Devam edilsin mi?"
+      : "Kitabın PDF'i yapay zekâyla taranacak (birkaç dakika sürer). Mevcut TASLAK öğeler silinip yeniden oluşturulur"
+        + (hasApproved ? "; onayladıkların ve gizlediklerin korunur." : ".") + " Devam edilsin mi?";
     if (!confirm(msg)) return;
     try {
-      const d = await apiFetch(`/admin/ebook-practice/${selected}/extract`, { method: "POST" });
+      const d = await apiFetch(`/admin/ebook-practice/${selected}/extract`, { method: "POST", body: JSON.stringify({ append }) });
       setJob(d.job);
     } catch (e: any) { alert(e.message); }
   }
@@ -178,7 +180,13 @@ export default function AdminEbookPractice() {
             )}
             {job?.status === "failed" && <div className="mt-2 text-xs text-red-700">Son çıkarım başarısız: {job.error}</div>}
           </div>
-          <button onClick={extract} disabled={running || !book.hasFile}
+          {items.length > 0 && (
+            <button onClick={() => extract(true)} disabled={running || !book.hasFile} title="Mevcut öğeleri silmeden, atlananları bulup ekler"
+              className="px-4 py-2 rounded-lg border border-[#13a9e0] text-[#0e7da6] text-sm font-bold inline-flex items-center gap-2 disabled:opacity-50">
+              <Sparkles size={15} /> Eksikleri tara
+            </button>
+          )}
+          <button onClick={() => extract(false)} disabled={running || !book.hasFile}
             className="px-4 py-2 rounded-lg border border-[#1e3a6e] text-[#1e3a6e] text-sm font-bold inline-flex items-center gap-2 disabled:opacity-50">
             {items.length ? <RefreshCw size={15} /> : <Sparkles size={15} />} {items.length ? "Yeniden çıkar" : "İçeriği çıkar"}
           </button>

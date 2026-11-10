@@ -78,7 +78,7 @@ router.post("/admin/ebook-practice/:ebookId/extract", authMiddleware, adminOnly,
   if (!ok) return res.status(400).json({ error: "Bu kitabın tam PDF'i yüklenmemiş" });
   if (!(await claimExtractionJob(ebookId))) return res.status(409).json({ error: "Çıkarım zaten çalışıyor" });
   // Arka planda — birkaç dakika sürebilir; admin ekranı durumu yoklar
-  runPracticeExtraction(ebookId).catch(() => {});
+  runPracticeExtraction(ebookId, { append: req.body?.append === true }).catch(() => {});
   return res.status(202).json({ ok: true, job: await jobOf(ebookId) });
 });
 
