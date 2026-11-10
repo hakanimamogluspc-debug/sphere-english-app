@@ -48,10 +48,10 @@ export default function BookReader() {
         if (!cancelled) { setTitle(pos.title); setPage(pos.page || 1); }
         const link = await fetch(`${API}/me/ebooks/${id}/read-link`, { method: "POST", headers: authHeaders() }).then((r) => r.json());
         if (link.error) throw new Error(link.error);
-        task = pdfjsLib.getDocument({ url: `${API}${link.path}`, isEvalSupported: false, disableRange: true });
+        task = pdfjsLib.getDocument({ url: `${API}${link.path}`, disableRange: true });
         task.onProgress = (p: { loaded: number; total: number }) => { if (p.total) setProgress(Math.round((p.loaded / p.total) * 100)); };
         const d = await task.promise;
-        if (cancelled) { d.destroy(); return; }
+        if (cancelled) return; // temizlik aşağıdaki task.destroy() ile
         setDoc(d); setNumPages(d.numPages);
         setPage((p) => Math.min(Math.max(1, p), d.numPages));
       } catch (e: any) {
