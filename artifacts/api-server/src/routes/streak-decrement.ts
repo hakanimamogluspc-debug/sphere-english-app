@@ -28,30 +28,31 @@ function checkInternal(req: Request, res: Response): boolean {
   return true;
 }
 
+/**
+ * Seriyi bozulan öğrencilerin streak'ini sıfırlar. Uygulamanın kendi zamanlayıcısı her gece
+ * 00:00–00:59 TR'de çağırır (lib/scheduler.ts); dış cron'a gerek yok.
+ */
+export async function runStreakDecrement(): Promise<{ reset_count: number; cutoff_date: string }> {
+  // Dün tarihi (UTC)
+  const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+  // last_active_date < yesterday ise sıfırla
+  const r = await pool.query(
+    `UPDATE users
+     SET streak = 0
+     WHERE role = 'student'
+       AND streak > 0
+       AND last_active_date IS NOT NULL
+       AND last_active_date < $1`,
+    [yesterday],
+  );
+  return { reset_count: r.rowCount ?? 0, cutoff_date: yesterday };
+}
+
 router.post("/internal/streak/decrement", async (req: Request, res: Response) => {
   if (!checkInternal(req, res)) return;
 
   try {
-    // Dün tarihi (UTC)
-    const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
-
-    // last_active_date < yesterday ise sıfırla
-    const r = await pool.query(
-      `UPDATE users
-       SET streak = 0
-       WHERE role = 'student'
-         AND streak > 0
-         AND last_active_date IS NOT NULL
-         AND last_active_date < $1
-       RETURNING id, streak, last_active_date`,
-      [yesterday],
-    );
-
-    return res.json({
-      ok: true,
-      reset_count: r.rowCount,
-      cutoff_date: yesterday,
-    });
+    return res.json({ ok: true, ...(await runStreakDecrement()) });
   } catch (e: any) {
     console.error("[streak/decrement] HATA:", e?.message);
     return res.status(500).json({ error: e?.message });

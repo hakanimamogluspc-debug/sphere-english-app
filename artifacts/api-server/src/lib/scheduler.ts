@@ -221,6 +221,21 @@ async function tryStreakRisk(t: ReturnType<typeof nowTr>) {
   }
 }
 
+/** Seri sıfırlama — her gece 00:00–00:59 TR (eskiden cron-job.org çağırıyordu) */
+async function tryStreakDecrement(t: ReturnType<typeof nowTr>) {
+  if (t.hour !== 0) return;
+  if (!(await claimDaily("streak_decrement"))) return;
+  const { runStreakDecrement } = await import("../routes/streak-decrement.js");
+  try {
+    const r = await runStreakDecrement();
+    log(`Seri sıfırlama: ${r.reset_count} öğrenci (kesim ${r.cutoff_date})`);
+    await finishDaily("streak_decrement", r);
+  } catch (e: any) {
+    log(`Seri sıfırlama HATA: ${e?.message}`);
+    await finishDaily("streak_decrement", { error: e?.message });
+  }
+}
+
 /** Instagram token'ı — her gün 04:00–04:59 TR kontrol; 7 günden eskiyse yenile (60 gün daha) */
 async function tryInstagramToken(t: ReturnType<typeof nowTr>) {
   if (t.hour !== 4) return;
@@ -256,6 +271,7 @@ export function startScheduler() {
     try { await tryWeeklyReport(t); } catch (e: any) { log(`weekly tick err: ${e?.message}`); }
     try { await tryComeback(t); } catch (e: any) { log(`comeback tick err: ${e?.message}`); }
     try { await tryStreakRisk(t); } catch (e: any) { log(`streak tick err: ${e?.message}`); }
+    try { await tryStreakDecrement(t); } catch (e: any) { log(`streak decrement tick err: ${e?.message}`); }
     try { await tryInstagramToken(t); } catch (e: any) { log(`ig token tick err: ${e?.message}`); }
   };
 
