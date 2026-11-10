@@ -1202,6 +1202,36 @@ export async function runStartupMigrations() {
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )`,
     `CREATE UNIQUE INDEX IF NOT EXISTS email_suppressions_email_uniq ON email_suppressions (lower(email))`,
+    // ─── Kitap pratikleri: PDF'ten AI ile çıkarılan kalıp/terimler (admin onaylar) — bkz. lib/ebook-practice-extract.ts
+    `CREATE TABLE IF NOT EXISTS ebook_practice_items (
+      id SERIAL PRIMARY KEY,
+      ebook_id INTEGER NOT NULL REFERENCES ebooks(id) ON DELETE CASCADE,
+      unit_order INTEGER NOT NULL DEFAULT 0,
+      unit_title VARCHAR(300) NOT NULL DEFAULT '',
+      position INTEGER NOT NULL DEFAULT 0,
+      kind VARCHAR(20) NOT NULL,
+      en TEXT NOT NULL,
+      tr TEXT NOT NULL DEFAULT '',
+      explanation TEXT,
+      example_en TEXT,
+      example_tr TEXT,
+      source_pages VARCHAR(20),
+      status VARCHAR(20) NOT NULL DEFAULT 'draft',
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`,
+    `CREATE INDEX IF NOT EXISTS ebook_practice_items_ebook_idx ON ebook_practice_items (ebook_id, unit_order, position)`,
+    `CREATE TABLE IF NOT EXISTS ebook_practice_jobs (
+      ebook_id INTEGER PRIMARY KEY REFERENCES ebooks(id) ON DELETE CASCADE,
+      status VARCHAR(20) NOT NULL,
+      done INTEGER NOT NULL DEFAULT 0,
+      total INTEGER NOT NULL DEFAULT 0,
+      item_count INTEGER NOT NULL DEFAULT 0,
+      error TEXT,
+      started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      finished_at TIMESTAMPTZ
+    )`,
+    `ALTER TABLE ebooks ADD COLUMN IF NOT EXISTS practice_published BOOLEAN NOT NULL DEFAULT FALSE`,
     `INSERT INTO feature_settings (key, label, is_enabled, visible_to, category) VALUES
       ('admin-coupons', 'Kupon Kodları', true, ARRAY['admin']::TEXT[], 'admin')
       ON CONFLICT (key) DO NOTHING`,
