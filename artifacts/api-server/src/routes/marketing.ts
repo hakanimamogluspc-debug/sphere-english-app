@@ -174,8 +174,7 @@ router.get(
       const [newThisWeek] = await db.select({ count: count() }).from(usersTable).where(gte(usersTable.createdAt, startOfWeek));
       const [newThisMonth] = await db.select({ count: count() }).from(usersTable).where(gte(usersTable.createdAt, startOfMonth));
 
-      const [totalLeads] = await db.select({ count: count() }).from(contactLeadsTable);
-      const [newLeads] = await db.select({ count: count() }).from(contactLeadsTable).where(gte(contactLeadsTable.createdAt, startOfWeek));
+      const allLeads = await collectLeads();
       const [openLeads] = await db.select({ count: count() }).from(contactLeadsTable).where(eq(contactLeadsTable.status, "new"));
 
       const [totalPageViews] = await db.select({ count: count() }).from(pageViewsTable);
@@ -215,8 +214,9 @@ router.get(
           newThisMonth: Number(newThisMonth.count),
         },
         leads: {
-          total: Number(totalLeads.count),
-          newThisWeek: Number(newLeads.count),
+          // Tüm kaynaklar (iletişim, asistan, demo, kurs, e-kitap, bülten, haberdar ol, B2B) — e-posta başına tek
+          total: allLeads.length,
+          newThisWeek: allLeads.filter((l) => l.createdAt && new Date(l.createdAt) >= startOfWeek).length,
           open: Number(openLeads.count),
         },
         pageViews: {
@@ -240,79 +240,90 @@ router.get(
 );
 
 // ─── Admin: Get contact leads ─────────────────────────────────────────────────
+/**
+ * Tüm lead kaynakları tek listede. Aynı e-posta birden çok kaynaktan geldiyse TEK satır olur,
+ * `sources` alanında hepsi listelenir. Öncelik (satırın adı/şirketi/durumu hangi kaynaktan alınır):
+ * iletişim formu > site asistanı > demo > kurs alıcısı > e-kitap alıcısı > bülten > haberdar ol > B2B.
+ */
+const LEAD_SOURCE_ORDER = [
+  "contact_form", "chatbot", "demo", "course_order", "ebook_purchase", "newsletter", "waitlist", "b2b",
+] as const;
+type LeadSource = (typeof LEAD_SOURCE_ORDER)[number];
+
+async function collectLeads(): Promise<any[]> {
+  const q = async (text: string) => {
+    try { return (await pool.query(text)).rows as any[]; }
+    catch (e: any) { console.warn("[marketing/leads] kaynak okunamadı:", e?.message); return []; }
+  };
+  const [contacts, buyers, courses, demos, news, waits, b2b] = await Promise.all([
+    q(`SELECT id, name, email, phone, company, message, source, status, notes, created_at FROM contact_leads ORDER BY created_at DESC LIMIT 5000`),
+    q(`SELECT DISTINCT ON (lower(buyer_email)) buyer_email AS email, buyer_name AS name, buyer_phone AS phone, created_at
+         FROM ebook_purchases WHERE payment_status = 'success' AND buyer_email IS NOT NULL AND buyer_email <> ''
+        ORDER BY lower(buyer_email), created_at DESC`),
+    q(`SELECT DISTINCT ON (lower(buyer_email)) buyer_email AS email, buyer_name AS name, buyer_phone AS phone, programme_title, created_at
+         FROM course_orders WHERE status IN ('paid','registered') ORDER BY lower(buyer_email), created_at DESC`),
+    q(`SELECT DISTINCT ON (lower(customer_email)) customer_email AS email, customer_name AS name, customer_phone AS phone,
+              customer_company AS company, message, status, booking_date, created_at
+         FROM demo_bookings ORDER BY lower(customer_email), created_at DESC`),
+    q(`SELECT email, created_at, unsubscribed_at FROM newsletter_subscribers`),
+    q(`SELECT DISTINCT ON (lower(email)) email, interest_area, created_at FROM ebook_waitlist ORDER BY lower(email), created_at DESC`),
+    q(`SELECT id, email, COALESCE(full_name, NULLIF(TRIM(COALESCE(first_name,'') || ' ' || COALESCE(last_name,'')), '')) AS name,
+              company, job_title, segment, status, notes, discovered_at AS created_at
+         FROM outreach_leads WHERE email IS NOT NULL AND email <> '' ORDER BY discovered_at DESC LIMIT 5000`),
+  ]);
+
+  const byEmail = new Map<string, any>();
+  const add = (src: LeadSource, email: unknown, rec: Record<string, any>) => {
+    const key = String(email ?? "").trim().toLowerCase();
+    if (!key.includes("@")) return;
+    const cur = byEmail.get(key);
+    if (!cur) {
+      byEmail.set(key, { email: key, sources: [src], ...rec, source: src });
+      return;
+    }
+    if (!cur.sources.includes(src)) cur.sources.push(src);
+    // Eksik alanları sonraki kaynaklardan tamamla
+    for (const k of ["name", "phone", "company", "message"]) if (!cur[k] && rec[k]) cur[k] = rec[k];
+    // En yeni hareket tarihi
+    if (rec.createdAt && (!cur.createdAt || new Date(rec.createdAt) > new Date(cur.createdAt))) cur.createdAt = rec.createdAt;
+  };
+
+  // Öncelik sırasıyla ekle (ilk gelen satırın kimliği/durumu kullanılır)
+  for (const l of contacts) {
+    const src: LeadSource = l.source === "chatbot" ? "chatbot" : "contact_form";
+    add(src, l.email, { id: `contact-${l.id}`, rawId: l.id, name: l.name, phone: l.phone, company: l.company,
+      message: l.message, status: l.status ?? "new", notes: l.notes, createdAt: l.created_at, editable: true });
+  }
+  for (const d of demos) add("demo", d.email, { id: `demo-${d.email}`, rawId: d.email, name: d.name, phone: d.phone,
+    company: d.company, message: d.message, status: "demo", createdAt: d.created_at,
+    detail: `Demo: ${d.booking_date ? new Date(d.booking_date).toLocaleDateString("tr-TR") : ""} (${d.status})` });
+  for (const c of courses) add("course_order", c.email, { id: `course-${c.email}`, rawId: c.email, name: c.name,
+    phone: c.phone, status: "customer", createdAt: c.created_at, detail: `Kurs: ${c.programme_title}` });
+  for (const b of buyers) add("ebook_purchase", b.email, { id: `ebook-${b.email}`, rawId: b.email, name: b.name,
+    phone: b.phone, status: "customer", createdAt: b.created_at });
+  for (const n of news) add("newsletter", n.email, { id: `news-${n.email}`, rawId: n.email, status: n.unsubscribed_at ? "lost" : "new",
+    createdAt: n.created_at, detail: n.unsubscribed_at ? "Bültenden ayrıldı" : "Bülten abonesi" });
+  for (const w of waits) add("waitlist", w.email, { id: `wait-${w.email}`, rawId: w.email, status: "new",
+    createdAt: w.created_at, detail: w.interest_area ? `Haberdar ol: ${w.interest_area}` : "Haberdar ol listesi" });
+  for (const o of b2b) add("b2b", o.email, { id: `b2b-${o.id}`, rawId: o.id, name: o.name, company: o.company,
+    status: o.status === "rejected" ? "lost" : (o.status ?? "new"), notes: o.notes, createdAt: o.created_at, editable: true,
+    detail: [o.job_title, o.segment].filter(Boolean).join(" · ") || null });
+
+  const merged = [...byEmail.values()];
+  merged.sort((a, b) => (b.createdAt ? new Date(b.createdAt).getTime() : 0) - (a.createdAt ? new Date(a.createdAt).getTime() : 0));
+  return merged;
+}
+
 router.get(
   "/admin/marketing/leads",
   authMiddleware,
   requireRole("admin"),
   async (req: AuthRequest, res: Response) => {
     try {
-      // ?source=contact_form | ebook_purchase | all (default: all)
-      const source = String((req.query.source ?? "all")).toLowerCase();
-
-      // Contact form lead'leri
-      const contactLeads =
-        source === "ebook_purchase"
-          ? []
-          : (await db
-              .select()
-              .from(contactLeadsTable)
-              .orderBy(desc(contactLeadsTable.createdAt))
-              .limit(500)
-            ).map((l: any) => ({
-              id: `contact-${l.id}`,
-              rawId: l.id,
-              source: "contact_form" as const,
-              email: l.email,
-              name: l.name,
-              phone: l.phone ?? null,
-              company: l.company ?? null,
-              message: l.message ?? null,
-              status: l.status ?? "new",
-              notes: l.notes ?? null,
-              createdAt: l.createdAt,
-            }));
-
-      // E-kitap alıcıları — success statülü satın alanlar, unique email
-      let ebookLeads: any[] = [];
-      if (source !== "contact_form") {
-        const rows = await db.execute(sql`
-          SELECT DISTINCT ON (buyer_email)
-            buyer_email, buyer_name, buyer_phone, created_at
-          FROM ebook_purchases
-          WHERE payment_status = 'success' AND buyer_email IS NOT NULL AND buyer_email != ''
-          ORDER BY buyer_email, created_at DESC
-          LIMIT 1000
-        `);
-        ebookLeads = ((rows.rows ?? rows) as any[]).map((r: any) => ({
-          id: `ebook-${r.buyer_email}`,
-          rawId: r.buyer_email,
-          source: "ebook_purchase" as const,
-          email: r.buyer_email,
-          name: r.buyer_name || null,
-          phone: r.buyer_phone || null,
-          company: null,
-          message: null,
-          status: "customer",
-          notes: null,
-          createdAt: r.created_at,
-        }));
-      }
-
-      // Birleştir + email bazında deduplicate (contact form önce, ebook alıcı ikinci)
-      const seen = new Set<string>();
-      const merged: any[] = [];
-      for (const l of [...contactLeads, ...ebookLeads]) {
-        const key = String(l.email || "").toLowerCase();
-        if (!key || seen.has(key)) continue;
-        seen.add(key);
-        merged.push(l);
-      }
-      // Tarihe göre sırala (yeni önce)
-      merged.sort((a, b) => {
-        const at = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-        const bt = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-        return bt - at;
-      });
+      // ?source=<kaynak> ile tek kaynağa daraltılabilir (varsayılan: hepsi)
+      const source = String(req.query.source ?? "all").toLowerCase();
+      let merged = await collectLeads();
+      if (source !== "all") merged = merged.filter((l) => l.sources.includes(source));
 
       // Listeden çıkanları işaretle (Leads ekranında rozet + toplu gönderimden hariç)
       const sup = await suppressedEmails();
@@ -321,7 +332,7 @@ router.get(
         l.unsubscribed = !!s;
         l.unsubscribedAt = s?.createdAt ?? null;
       }
-      return res.json(merged.slice(0, 500));
+      return res.json(merged.slice(0, 10000));
     } catch (e: any) {
       console.error("[marketing/leads] HATA:", e?.message);
       return res.status(500).json({ error: "Leadler alınamadı." });
@@ -381,8 +392,24 @@ router.patch(
   requireRole("admin"),
   async (req: AuthRequest, res: Response) => {
     try {
-      const id = Number((req.params.id as string));
+      // id: "contact-12" / "b2b-34" (birleşik liste) ya da eski düz sayı (iletişim formu)
+      const raw = String(req.params.id ?? "");
       const { status, notes } = req.body;
+      const CONTACT_STATUSES = ["new", "contacted", "qualified", "lost"];
+      if (raw.startsWith("b2b-")) {
+        const id = Number(raw.slice(4));
+        if (!Number.isInteger(id)) return res.status(400).json({ error: "id geçersiz" });
+        // B2B kayıtlarında "Kaybedildi" karşılığı "rejected"
+        const b2bStatus = status === "lost" ? "rejected" : status;
+        await pool.query(
+          `UPDATE outreach_leads SET status = COALESCE($2, status), notes = $3, updated_at = NOW() WHERE id = $1`,
+          [id, ["new", "viewed", "contacted", "qualified", "rejected", "archived"].includes(b2bStatus) ? b2bStatus : null, notes ?? null],
+        );
+        return res.json({ ok: true });
+      }
+      const id = Number(raw.startsWith("contact-") ? raw.slice(8) : raw);
+      if (!Number.isInteger(id)) return res.status(400).json({ error: "Bu lead türü düzenlenemez" });
+      if (status && !CONTACT_STATUSES.includes(status)) return res.status(400).json({ error: "Geçersiz durum" });
       await db.update(contactLeadsTable).set({ status, notes, updatedAt: new Date() }).where(eq(contactLeadsTable.id, id));
       return res.json({ ok: true });
     } catch {

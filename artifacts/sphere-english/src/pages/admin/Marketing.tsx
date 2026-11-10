@@ -53,7 +53,14 @@ interface Lead {
   phone?: string;
   company?: string;
   message?: string;
-  source: string; // 'contact_form' | 'ebook_purchase' | eski değerler
+  /** Satırın birincil kaynağı (bkz. LEAD_SOURCES) */
+  source: string;
+  /** Bu e-postanın geldiği tüm kaynaklar (aynı kişi birden çok yerden gelebilir) */
+  sources?: string[];
+  /** Kaynağa özel kısa bilgi (ör. "Demo: 12.11.2026", "Kurs: Foundation", B2B ünvan) */
+  detail?: string | null;
+  /** Durum/not düzenlenebilir mi (iletişim formu, site asistanı, B2B) */
+  editable?: boolean;
   status: string;
   notes?: string;
   createdAt: string;
@@ -119,6 +126,18 @@ const RECIPIENT_OPTIONS = [
   { value: "custom", label: "Özel E-postalar" },
 ];
 
+/** Sphere'de lead oluşan tüm kaynaklar — Leads sekmesi */
+const LEAD_SOURCES: Record<string, { label: string; color: string; emoji: string }> = {
+  contact_form: { label: "İletişim Formu", color: "bg-blue-100 text-blue-800", emoji: "📝" },
+  chatbot: { label: "Site Asistanı", color: "bg-indigo-100 text-indigo-800", emoji: "🤖" },
+  demo: { label: "Demo Randevusu", color: "bg-violet-100 text-violet-800", emoji: "📅" },
+  course_order: { label: "Kurs Alıcısı", color: "bg-teal-100 text-teal-800", emoji: "🎓" },
+  ebook_purchase: { label: "E-Kitap Alıcısı", color: "bg-emerald-100 text-emerald-800", emoji: "🛒" },
+  newsletter: { label: "Bülten", color: "bg-sky-100 text-sky-800", emoji: "📨" },
+  waitlist: { label: "Haberdar Ol", color: "bg-amber-100 text-amber-800", emoji: "🔔" },
+  b2b: { label: "B2B (Outbound)", color: "bg-slate-200 text-slate-800", emoji: "🏢" },
+};
+
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   new: { label: "Yeni", color: "bg-blue-100 text-blue-700" },
   contacted: { label: "İletişime Geçildi", color: "bg-yellow-100 text-yellow-700" },
@@ -179,7 +198,7 @@ export default function AdminMarketing() {
   // Lead filters
   const [leadSearch, setLeadSearch] = useState("");
   const [leadStatus, setLeadStatus] = useState("all");
-  const [leadSource, setLeadSource] = useState<"all" | "contact_form" | "ebook_purchase">("all");
+  const [leadSource, setLeadSource] = useState<string>("all");
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [leadNote, setLeadNote] = useState("");
   const [leadStatusEdit, setLeadStatusEdit] = useState("new");
@@ -444,7 +463,7 @@ export default function AdminMarketing() {
     const matchSearch = !q || nm.includes(q) || em.includes(q);
     const matchStatus = leadStatus === "all"
       || (leadStatus === "unsubscribed" ? !!l.unsubscribed : l.status === leadStatus);
-    const matchSource = leadSource === "all" || l.source === leadSource;
+    const matchSource = leadSource === "all" || (l.sources ?? [l.source]).includes(leadSource);
     return matchSearch && matchStatus && matchSource;
   });
 
@@ -489,15 +508,9 @@ export default function AdminMarketing() {
     setTab("email");
   };
 
-  const sourceLabels: Record<string, { label: string; color: string; emoji: string }> = {
-    contact_form: { label: "İletişim Formu", color: "bg-blue-100 text-blue-800", emoji: "📝" },
-    ebook_purchase: { label: "E-Kitap Alıcısı", color: "bg-emerald-100 text-emerald-800", emoji: "🛒" },
-  };
-  const sourceCounts = {
-    all: leads.length,
-    contact_form: leads.filter(l => l.source === "contact_form").length,
-    ebook_purchase: leads.filter(l => l.source === "ebook_purchase").length,
-  };
+  const sourceLabels = LEAD_SOURCES;
+  const sourceCounts: Record<string, number> = { all: leads.length };
+  for (const k of Object.keys(LEAD_SOURCES)) sourceCounts[k] = leads.filter(l => (l.sources ?? [l.source]).includes(k)).length;
 
   const levelColors: Record<string, string> = {
     A1: "bg-green-400", A2: "bg-teal-400", B1: "bg-blue-400",
@@ -676,8 +689,9 @@ export default function AdminMarketing() {
               className="bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 outline-none"
             >
               <option value="all">Tüm Kaynaklar ({sourceCounts.all})</option>
-              <option value="contact_form">📝 İletişim Formu ({sourceCounts.contact_form})</option>
-              <option value="ebook_purchase">🛒 E-Kitap Alıcısı ({sourceCounts.ebook_purchase})</option>
+              {Object.entries(LEAD_SOURCES).map(([k, v]) => (
+                <option key={k} value={k}>{v.emoji} {v.label} ({sourceCounts[k] ?? 0})</option>
+              ))}
             </select>
             <select
               value={leadStatus}
@@ -724,8 +738,8 @@ export default function AdminMarketing() {
           {filteredLeads.length === 0 ? (
             <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-8 text-center text-gray-400">
               <Users size={32} className="mx-auto mb-2 opacity-30" />
-              <p>Henüz lead yok.</p>
-              <p className="text-xs mt-1">www.sphereenglish.com iletişim formu dolduranlar burada görünür.</p>
+              <p>{leads.length === 0 ? "Henüz lead yok." : "Bu filtreye uyan lead yok."}</p>
+              <p className="text-xs mt-1">İletişim formu, site asistanı, demo, kurs ve e-kitap alıcıları, bülten, haberdar ol listesi ve B2B lead'leri burada toplanır.</p>
             </div>
           ) : (
             <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
@@ -746,7 +760,7 @@ export default function AdminMarketing() {
                 </thead>
                 <tbody className="divide-y divide-gray-50">
                   {filteredLeads.map(lead => {
-                    const src = sourceLabels[lead.source];
+                    const srcs = (lead.sources ?? [lead.source]).map(k => ({ k, ...(sourceLabels[k] ?? { label: k, color: "bg-gray-100 text-gray-600", emoji: "•" }) }));
                     return (
                       <tr key={lead.id} className={`hover:bg-gray-50 ${lead.unsubscribed ? "opacity-60" : ""}`}>
                         <td className="pl-4 py-3">
@@ -757,14 +771,14 @@ export default function AdminMarketing() {
                         <td className="px-4 py-3 font-medium text-gray-800">{lead.name || "—"}</td>
                         <td className="px-4 py-3 text-gray-500">{lead.email}</td>
                         <td className="px-4 py-3">
-                          {src ? (
-                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium ${src.color}`}>
-                              <span>{src.emoji}</span>
-                              {src.label}
-                            </span>
-                          ) : (
-                            <span className="text-gray-400 text-xs">{lead.source || "—"}</span>
-                          )}
+                          <div className="flex flex-wrap gap-1">
+                            {srcs.map(src => (
+                              <span key={src.k} className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium ${src.color}`}>
+                                <span>{src.emoji}</span>
+                                {src.label}
+                              </span>
+                            ))}
+                          </div>
                         </td>
                         <td className="px-4 py-3 text-gray-500 hidden md:table-cell">{lead.company || "—"}</td>
                         <td className="px-4 py-3">
@@ -808,7 +822,8 @@ export default function AdminMarketing() {
                   {selectedLead.phone && <p><span className="text-gray-400">Tel:</span> {selectedLead.phone}</p>}
                   {selectedLead.company && <p><span className="text-gray-400">Şirket:</span> {selectedLead.company}</p>}
                   {selectedLead.message && <p className="bg-gray-50 rounded-lg p-3 text-gray-600 mt-2">{selectedLead.message}</p>}
-                  <p><span className="text-gray-400">Kaynak:</span> {selectedLead.source}</p>
+                  <p><span className="text-gray-400">Kaynak:</span> {(selectedLead.sources ?? [selectedLead.source]).map(k => sourceLabels[k]?.label ?? k).join(", ")}</p>
+                  {selectedLead.detail && <p><span className="text-gray-400">Bilgi:</span> {selectedLead.detail}</p>}
                   <p><span className="text-gray-400">Tarih:</span> {new Date(selectedLead.createdAt).toLocaleString("tr-TR")}</p>
                 </div>
                 <div className="mb-4 flex gap-2">
@@ -830,10 +845,10 @@ export default function AdminMarketing() {
                     </>
                   )}
                 </div>
-                {selectedLead.source === "ebook_purchase" ? (
-                  <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-3 text-xs text-emerald-900">
-                    🛒 <strong>E-Kitap Alıcısı</strong> — bu bir satın alma kaydından türetildi.
-                    Durum/not güncellenemez.
+                {!selectedLead.editable ? (
+                  <div className="rounded-lg bg-gray-50 border border-gray-200 p-3 text-xs text-gray-700">
+                    Bu kişi <strong>{sourceLabels[selectedLead.source]?.label ?? selectedLead.source}</strong> kaydından geliyor;
+                    durum ve not burada düzenlenmez. E-posta gönderebilir ya da listeden çıkarabilirsin.
                   </div>
                 ) : (
                   <div className="space-y-3">

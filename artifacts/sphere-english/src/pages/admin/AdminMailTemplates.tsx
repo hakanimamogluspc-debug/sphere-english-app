@@ -222,7 +222,7 @@ function AiGenerateTab({ onGenerated }: { onGenerated: (r: { subject: string; pr
               value={brief}
               onChange={(e) => setBrief(e.target.value)}
               rows={4}
-              placeholder="Örn: Yeni yayınladığımız 'Toplantı İngilizcesi' e-kitabı için duyuru maili. Kitap 199 TL, 47 diyalog + 150 kalıp içeriyor. Kurumsal İK yöneticilerine yönelik, indirim vurgusu olmasın."
+              placeholder="Örn: Yeni yayınladığımız 'Toplantı İngilizcesi' e-kitabı için duyuru maili. Kitap 399 TL, 47 diyalog + 150 kalıp içeriyor. Kurumsal İK yöneticilerine yönelik, indirim vurgusu olmasın."
               className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
             />
             {selectedAssets.length > 0 && (
