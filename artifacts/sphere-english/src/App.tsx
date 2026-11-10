@@ -24,6 +24,7 @@ const SetupPassword   = lazy(() => import("./pages/SetupPassword"));
 const EbookActivate   = lazy(() => import("./pages/EbookActivate"));
 const MyEbooks        = lazy(() => import("./pages/MyEbooks"));
 const BookPractice    = lazy(() => import("./pages/BookPractice"));
+const BookReader      = lazy(() => import("./pages/BookReader")); // pdf.js yalnızca okuyucu açılınca yüklenir
 const ForgotPassword  = lazy(() => import("./pages/ForgotPassword"));
 const Dashboard       = lazy(() => import("./pages/dashboard"));
 const CourseList      = lazy(() => import("./pages/courses/CourseList"));
@@ -328,6 +329,7 @@ function Router() {
         <Route path="/sifre-belirle" component={SetupPassword} />
         <Route path="/kitaplarim/etkinlestir" component={EbookActivate} />
         <Route path="/kitaplarim"><LayoutWrapper component={MyEbooks} allowedRoles={['student', 'admin', 'teacher', 'corporate']} /></Route>
+        <Route path="/kitaplarim/:id/oku"><LayoutWrapper component={BookReader} allowedRoles={['student', 'admin', 'teacher', 'corporate']} noLayout /></Route>
         <Route path="/kitaplarim/:id"><LayoutWrapper component={BookPractice} allowedRoles={['student', 'admin', 'teacher', 'corporate']} /></Route>
         <Route path="/sifremi-unuttum" component={ForgotPassword} />
         <Route path="/ai-studio" component={AIStudio} />

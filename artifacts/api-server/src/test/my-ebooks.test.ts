@@ -102,5 +102,13 @@ describe("Kitaplarım: erişim kontrolü", () => {
     expect((await api().get(`/api${tampered}`)).status).toBe(403);
     const expired = `/api/me/ebooks/${ebookId}/file?u=${user.id}&x=1&s=${"a".repeat(32)}`;
     expect((await api().get(expired)).status).toBe(403);
+
+    // Okuyucu: kaldığı sayfa kaydedilir, kitaplıkta görünür; başkasının kitabına yazılamaz
+    expect((await api().get(`/api/me/ebooks/${ebookId}/position`).set(auth)).body.page).toBe(1);
+    expect((await api().put(`/api/me/ebooks/${ebookId}/position`).set(auth).send({ page: 12, pageCount: 72 })).status).toBe(200);
+    expect((await api().get(`/api/me/ebooks/${ebookId}/position`).set(auth)).body.page).toBe(12);
+    expect((await api().get("/api/me/ebooks").set(auth)).body.ebooks[0].lastPage).toBe(12);
+    expect((await api().put(`/api/me/ebooks/${otherEbookId}/position`).set(auth).send({ page: 3 })).status).toBe(404);
+    expect((await api().put(`/api/me/ebooks/${ebookId}/position`).set(auth).send({ page: 0 })).status).toBe(400);
   });
 });

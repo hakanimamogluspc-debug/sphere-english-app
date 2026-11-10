@@ -57,6 +57,8 @@ app.use(
         scriptSrc: [
           "'self'",
           "'unsafe-inline'",
+          // Kitap okuyucu (pdf.js) bazı görsel çözücüler için WebAssembly kullanır; eval açmaz
+          "'wasm-unsafe-eval'",
           "https://www.googletagmanager.com",
           "https://www.google-analytics.com",
         ],

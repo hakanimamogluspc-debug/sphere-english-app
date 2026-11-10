@@ -124,6 +124,29 @@ router.post("/me/ebooks/:id/read-link", authMiddleware, async (req: AuthRequest,
   return res.json({ path, expiresAt: new Date(exp * 1000).toISOString() });
 });
 
+// Uygulama içi okuyucu — kaldığı sayfa
+router.get("/me/ebooks/:id/position", authMiddleware, async (req: AuthRequest, res) => {
+  const ebookId = Number(req.params.id);
+  if (!Number.isInteger(ebookId) || !(await ownsEbook(req.userId!, ebookId))) return res.status(404).json({ error: "Bu kitap kitaplığında yok" });
+  const r = await pool.query(`SELECT page, page_count FROM ebook_reading_positions WHERE user_id = $1 AND ebook_id = $2`, [req.userId, ebookId]);
+  const title = (await pool.query(`SELECT title FROM ebooks WHERE id = $1`, [ebookId])).rows[0]?.title ?? "";
+  return res.json({ title, page: r.rows[0]?.page ?? 1, pageCount: r.rows[0]?.page_count ?? null });
+});
+
+router.put("/me/ebooks/:id/position", authMiddleware, async (req: AuthRequest, res) => {
+  const ebookId = Number(req.params.id);
+  const page = Number(req.body?.page);
+  const pageCount = Number(req.body?.pageCount);
+  if (!Number.isInteger(page) || page < 1 || page > 5000) return res.status(400).json({ error: "Geçersiz sayfa" });
+  if (!Number.isInteger(ebookId) || !(await ownsEbook(req.userId!, ebookId))) return res.status(404).json({ error: "Bu kitap kitaplığında yok" });
+  await pool.query(
+    `INSERT INTO ebook_reading_positions (user_id, ebook_id, page, page_count, updated_at) VALUES ($1, $2, $3, $4, NOW())
+     ON CONFLICT (user_id, ebook_id) DO UPDATE SET page = $3, page_count = COALESCE($4, ebook_reading_positions.page_count), updated_at = NOW()`,
+    [req.userId, ebookId, page, Number.isInteger(pageCount) && pageCount > 0 ? pageCount : null],
+  );
+  return res.json({ ok: true });
+});
+
 router.get("/me/ebooks/:id/file", async (req, res) => {
   const ebookId = Number(req.params.id);
   const userId = Number(req.query.u);

@@ -105,6 +105,7 @@ export async function ownedEbooks(userId: number) {
   const r = await pool.query(
     `SELECT e.id, e.slug, e.title, e.subtitle, e.author, e.category, e.cover_image_url, e.page_count, e.practice_published,
             MIN(p.paid_at) AS purchased_at,
+            (SELECT rp.page FROM ebook_reading_positions rp WHERE rp.user_id = $1 AND rp.ebook_id = e.id) AS last_page,
             EXISTS (SELECT 1 FROM ebook_assets a WHERE a.ebook_id = e.id AND a.asset_type = 'full') AS has_file
      FROM ebook_purchases p
      JOIN ebooks e ON e.id = p.ebook_id
@@ -117,6 +118,7 @@ export async function ownedEbooks(userId: number) {
     id: x.id, slug: x.slug, title: x.title, subtitle: x.subtitle, author: x.author, category: x.category,
     coverImageUrl: x.cover_image_url, pageCount: x.page_count, purchasedAt: x.purchased_at, hasFile: x.has_file,
     practiceReady: x.practice_published === true,
+    lastPage: x.last_page ?? null,
   }));
 }
 

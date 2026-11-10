@@ -1253,6 +1253,15 @@ export async function runStartupMigrations() {
       total INTEGER NOT NULL,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )`,
+    // Uygulama içi okuyucu: kaldığı sayfa (cihazlar arası)
+    `CREATE TABLE IF NOT EXISTS ebook_reading_positions (
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      ebook_id INTEGER NOT NULL REFERENCES ebooks(id) ON DELETE CASCADE,
+      page INTEGER NOT NULL DEFAULT 1,
+      page_count INTEGER,
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      PRIMARY KEY (user_id, ebook_id)
+    )`,
     `CREATE INDEX IF NOT EXISTS ebook_practice_quiz_user_idx ON ebook_practice_quiz_attempts (user_id, ebook_id, created_at)`,
     `INSERT INTO feature_settings (key, label, is_enabled, visible_to, category) VALUES
       ('admin-coupons', 'Kupon Kodları', true, ARRAY['admin']::TEXT[], 'admin')

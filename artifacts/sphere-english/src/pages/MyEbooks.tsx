@@ -10,7 +10,7 @@ const WWW = "https://www.sphereenglish.com";
 interface OwnedEbook {
   id: number; slug: string; title: string; subtitle: string | null; author: string | null;
   category: string | null; coverImageUrl: string | null; pageCount: number | null;
-  purchasedAt: string | null; hasFile: boolean; practiceReady: boolean;
+  purchasedAt: string | null; hasFile: boolean; practiceReady: boolean; lastPage: number | null;
 }
 
 function authHeaders(): HeadersInit {
@@ -20,31 +20,11 @@ function authHeaders(): HeadersInit {
 export default function MyEbooks() {
   const [books, setBooks] = useState<OwnedEbook[] | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [opening, setOpening] = useState<number | null>(null);
-
   useEffect(() => {
     fetch(`${API}/me/ebooks`, { headers: authHeaders() })
       .then(async (r) => { const d = await r.json(); if (!r.ok) throw new Error(d.error); setBooks(d.ebooks); })
       .catch((e) => setError(e?.message || "Kitaplar yüklenemedi"));
   }, []);
-
-  async function read(book: OwnedEbook) {
-    setOpening(book.id);
-    // Açılır pencere engellenmesin diye sekmeyi tıklama anında aç, adresi sonra ver
-    const win = window.open("about:blank", "_blank");
-    try {
-      const r = await fetch(`${API}/me/ebooks/${book.id}/read-link`, { method: "POST", headers: authHeaders() });
-      const d = await r.json();
-      if (!r.ok) throw new Error(d.error);
-      const url = `${API}${d.path}`;
-      if (win) win.location.href = url; else window.location.href = url;
-    } catch (e: any) {
-      win?.close();
-      alert(e?.message || "Kitap açılamadı");
-    } finally {
-      setOpening(null);
-    }
-  }
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-6">
@@ -83,11 +63,14 @@ export default function MyEbooks() {
                 <h3 className="font-bold text-[#1e3a6e] leading-snug">{b.title}</h3>
                 {b.subtitle && <p className="text-xs text-slate-500 mt-1 line-clamp-2">{b.subtitle}</p>}
                 <div className="mt-auto pt-4 space-y-2">
-                  <button onClick={() => read(b)} disabled={!b.hasFile || opening === b.id}
-                    className="w-full py-2.5 rounded-lg bg-[#1e3a6e] hover:bg-[#16305c] disabled:opacity-50 text-white text-sm font-bold inline-flex items-center justify-center gap-2">
-                    {opening === b.id ? <Loader2 size={16} className="animate-spin" /> : <BookOpen size={16} />}
-                    {b.hasFile ? "Kitabı oku" : "Dosya hazırlanıyor"}
-                  </button>
+                  {b.hasFile ? (
+                    <a href={`/kitaplarim/${b.id}/oku`}
+                      className="w-full py-2.5 rounded-lg bg-[#1e3a6e] hover:bg-[#16305c] text-white text-sm font-bold inline-flex items-center justify-center gap-2">
+                      <BookOpen size={16} /> {b.lastPage && b.lastPage > 1 ? `Okumaya devam et (s. ${b.lastPage})` : "Kitabı oku"}
+                    </a>
+                  ) : (
+                    <div className="w-full py-2.5 rounded-lg bg-slate-100 text-slate-500 text-sm font-bold text-center">Dosya hazırlanıyor</div>
+                  )}
                   {b.practiceReady ? (
                     <a href={`/kitaplarim/${b.id}`}
                       className="w-full py-2.5 rounded-lg border-2 border-[#13a9e0] text-[#0e7da6] hover:bg-[#e8eef8] text-sm font-bold inline-flex items-center justify-center gap-1.5">
