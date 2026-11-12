@@ -117,6 +117,20 @@ export default function AdminEbookPractice() {
     } catch (e: any) { alert(e.message); }
   }
 
+  /** Ekranda görünen (filtreye uyan) tüm taslakları tek seferde onayla */
+  async function approveVisibleDrafts() {
+    if (!selected) return;
+    const ids = units.flatMap(([, u]) => u.items).filter((i) => i.status === "draft").map((i) => i.id);
+    if (ids.length === 0) return;
+    const scope = kindFilter === "pattern" ? "kalıp" : kindFilter === "term" ? "terim" : "öğe";
+    if (!confirm(`Listede görünen ${ids.length} taslak ${scope} onaylanacak. Devam edilsin mi?`)) return;
+    try {
+      await apiFetch(`/admin/ebook-practice/${selected}/bulk-status`, { method: "POST", body: JSON.stringify({ status: "approved", ids }) });
+      await loadBook(selected, true);
+      loadBooks();
+    } catch (e: any) { alert(e.message); }
+  }
+
   async function togglePublish() {
     if (!selected) return;
     try {
@@ -141,6 +155,7 @@ export default function AdminEbookPractice() {
     return [...map.entries()].sort((a, b) => a[0] - b[0]);
   }, [items, statusFilter, kindFilter]);
 
+  const visibleDrafts = units.reduce((s, [, u]) => s + u.items.filter((i) => i.status === "draft").length, 0);
   const book = books.find((b) => b.id === selected);
   const running = job?.status === "running";
 
@@ -213,6 +228,12 @@ export default function AdminEbookPractice() {
               {k === "all" ? "Hepsi" : k === "pattern" ? "Kalıplar" : "Terimler"}
             </button>
           ))}
+          {visibleDrafts > 0 && (
+            <button onClick={approveVisibleDrafts} disabled={running}
+              className="ml-auto px-4 py-1.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold inline-flex items-center gap-1.5 disabled:opacity-50">
+              <Check size={15} /> Görünen {visibleDrafts} taslağı onayla
+            </button>
+          )}
         </div>
       )}
 
