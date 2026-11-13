@@ -636,18 +636,24 @@ router.post(
             // For non-registered users: use customName if given, else extract from email
             const resolvedFirstName = user.firstName || customName?.trim() || extractNameFromEmail(user.email);
             const resolvedLastName = user.lastName || "";
-            let personalizedBody = body
-              .replace(/\{\{EMAIL\}\}/g, user.email || "")
-              .replace(/\{\{AD\}\}/g, resolvedFirstName)
-              .replace(/\{\{SOYAD\}\}/g, resolvedLastName)
-              .replace(/\{\{AD_SOYAD\}\}/g, `${resolvedFirstName} ${resolvedLastName}`.trim())
-              // Kişiye özel Kitaplarım bağlantısı: hesabı varsa doğrudan Kitaplarım, yoksa imzalı "hesabını aç" bağlantısı
-              .replace(/\{\{KITAPLARIM_LINKI\}\}/g, Number(user.id) > 0 ? libraryUrl() : ebookClaimUrl(user.email));
-            if (variables && typeof variables === "object") {
-              for (const [key, val] of Object.entries(variables)) {
-                personalizedBody = personalizedBody.replace(new RegExp(`\\{\\{${key}\\}\\}`, "g"), val);
+            // Aynı kişiselleştirme hem gövdeye hem KONU satırına uygulanır ({{AD}} konuda da çalışsın)
+            const personalize = (text: string) => {
+              let out = text
+                .replace(/\{\{EMAIL\}\}/g, user.email || "")
+                .replace(/\{\{AD\}\}/g, resolvedFirstName)
+                .replace(/\{\{SOYAD\}\}/g, resolvedLastName)
+                .replace(/\{\{AD_SOYAD\}\}/g, `${resolvedFirstName} ${resolvedLastName}`.trim())
+                // Kişiye özel Kitaplarım bağlantısı: hesabı varsa doğrudan Kitaplarım, yoksa imzalı "hesabını aç" bağlantısı
+                .replace(/\{\{KITAPLARIM_LINKI\}\}/g, Number(user.id) > 0 ? libraryUrl() : ebookClaimUrl(user.email));
+              if (variables && typeof variables === "object") {
+                for (const [key, val] of Object.entries(variables)) {
+                  out = out.replace(new RegExp(`\\{\\{${key}\\}\\}`, "g"), String(val));
+                }
               }
-            }
+              return out;
+            };
+            let personalizedBody = personalize(body);
+            const personalizedSubject = personalize(subject).replace(/\{\{LISTEDEN_CIK\}\}/g, "").trim();
             // "Listeden çık" bağlantısı: şablonda {{LISTEDEN_CIK}} varsa oraya, yoksa en alta eklenir
             const unsubUrl = marketingUnsubUrl(user.email);
             personalizedBody = /\{\{LISTEDEN_CIK\}\}/.test(personalizedBody)
@@ -655,7 +661,7 @@ router.post(
               : /<\/body>/i.test(personalizedBody)
                 ? personalizedBody.replace(/<\/body>/i, `${unsubscribeFooterHtml(user.email)}</body>`)
                 : personalizedBody + unsubscribeFooterHtml(user.email);
-            const result = await sendEmailViaResendOrSmtp(user.email, subject, personalizedBody, fromEmail, resend, transporter, {
+            const result = await sendEmailViaResendOrSmtp(user.email, personalizedSubject, personalizedBody, fromEmail, resend, transporter, {
               "List-Unsubscribe": `<${unsubUrl}>`,
               "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
             });
