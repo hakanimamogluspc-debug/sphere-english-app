@@ -634,8 +634,11 @@ router.post(
         for (const user of recipients) {
           try {
             // For non-registered users: use customName if given, else extract from email
-            const resolvedFirstName = user.firstName || customName?.trim() || extractNameFromEmail(user.email);
-            const resolvedLastName = user.lastName || "";
+            // Ad/soyad her kelimenin baş harfi büyük (Türkçe kurallarıyla): "şener koyuncuoğlu" → "Şener Koyuncuoğlu", "AYHAN" → "Ayhan"
+            const titleCase = (s: string) => s.trim().split(/\s+/).filter(Boolean)
+              .map((w) => w.charAt(0).toLocaleUpperCase("tr-TR") + w.slice(1).toLocaleLowerCase("tr-TR")).join(" ");
+            const resolvedFirstName = titleCase(user.firstName || customName?.trim() || extractNameFromEmail(user.email));
+            const resolvedLastName = titleCase(user.lastName || "");
             // Aynı kişiselleştirme hem gövdeye hem KONU satırına uygulanır ({{AD}} konuda da çalışsın)
             const personalize = (text: string) => {
               let out = text
