@@ -237,7 +237,7 @@ export default function AdminMarketing() {
     }
   };
 
-  const AUTO_VARS = ["EMAIL", "AD", "SOYAD", "AD_SOYAD", "LISTEDEN_CIK"];
+  const AUTO_VARS = ["EMAIL", "AD", "SOYAD", "AD_SOYAD", "LISTEDEN_CIK", "KITAPLARIM_LINKI"];
 
   const detectedVars = (() => {
     const matches = body.match(/\{\{([A-Z0-9_]+)\}\}/g) || [];

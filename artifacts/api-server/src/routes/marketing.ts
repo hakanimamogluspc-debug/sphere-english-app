@@ -8,6 +8,7 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import { suppressedEmails, suppress, unsuppress, verifyMarketingUnsub, marketingUnsubUrl, unsubscribeFooterHtml } from "../lib/email-suppression.js";
+import { ebookClaimUrl, libraryUrl } from "../lib/ebook-library.js";
 
 const TEMPLATES_DIR = path.join(process.cwd(), "public", "templates");
 if (!fs.existsSync(TEMPLATES_DIR)) fs.mkdirSync(TEMPLATES_DIR, { recursive: true });
@@ -639,7 +640,9 @@ router.post(
               .replace(/\{\{EMAIL\}\}/g, user.email || "")
               .replace(/\{\{AD\}\}/g, resolvedFirstName)
               .replace(/\{\{SOYAD\}\}/g, resolvedLastName)
-              .replace(/\{\{AD_SOYAD\}\}/g, `${resolvedFirstName} ${resolvedLastName}`.trim());
+              .replace(/\{\{AD_SOYAD\}\}/g, `${resolvedFirstName} ${resolvedLastName}`.trim())
+              // Kişiye özel Kitaplarım bağlantısı: hesabı varsa doğrudan Kitaplarım, yoksa imzalı "hesabını aç" bağlantısı
+              .replace(/\{\{KITAPLARIM_LINKI\}\}/g, Number(user.id) > 0 ? libraryUrl() : ebookClaimUrl(user.email));
             if (variables && typeof variables === "object") {
               for (const [key, val] of Object.entries(variables)) {
                 personalizedBody = personalizedBody.replace(new RegExp(`\\{\\{${key}\\}\\}`, "g"), val);

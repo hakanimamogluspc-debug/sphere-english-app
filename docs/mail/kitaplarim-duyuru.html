@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="x-apple-disable-message-reformatting">
+<title>Kitapların artık uygulamada</title>
+<!--
+  Sphere English — "Kitaplarım" duyurusu (e-kitap alıcılarına)
+  Gönderim: Admin → Pazarlama → E-posta Gönder → alıcı: "E-kitap alıcıları"
+  Otomatik dolanlar: {{AD}}, {{KITAPLARIM_LINKI}} (kişiye özel), {{LISTEDEN_CIK}}
+  Elle doldurulacaklar (Medya Kütüphanesi → "Link"i kopyala):
+    https://app.sphereenglish.com/api/mail-assets/27/Ekran-g-r-nt-s-2026-11-13-204624.jpg  Kitaplarım ekranı
+    https://app.sphereenglish.com/api/mail-assets/26/Ekran-g-r-nt-s-2026-11-13-204702.jpg     Okuyucu (çift sayfa açık kitap)
+    https://app.sphereenglish.com/api/mail-assets/24/Ekran-g-r-nt-s-2026-11-13-214813.jpg     Kart (çevrilmiş hâli: Türkçe + örnek cümle)
+    https://app.sphereenglish.com/api/mail-assets/25/Ekran-g-r-nt-s-2026-11-13-204727.jpg        Mini test sorusu (bir şık işaretlenmiş)
+    mail-assets/29 + 28   AI koç — iki görsel yan yana (telefonda alt alta)
+  Görseller en az 1200 px genişlikte olsun; telefondan alınan dik ekran görüntüleri de olur.
+-->
+<style>
+  body { margin:0; padding:0; background:#e8eef8; }
+  img { border:0; outline:none; text-decoration:none; display:block; }
+  a { color:#0e7da6; }
+  @media (max-width:620px) {
+    .wrap { width:100% !important; }
+    .px { padding-left:22px !important; padding-right:22px !important; }
+    .h1 { font-size:24px !important; line-height:31px !important; }
+    .col2 { max-width:100% !important; display:block !important; }
+    .col2 img { max-width:100% !important; }
+    .col2-right { margin-left:0 !important; margin-top:12px !important; }
+  }
+</style>
+</head>
+<body style="margin:0;padding:0;background:#e8eef8;">
+<!-- Önizleme metni (gelen kutusunda konunun yanında görünür) -->
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:#e8eef8;">
+  Aldığın kitapları artık uygulamada okuyabilir, içindeki kalıp ve terimlerle pratik yapabilirsin. Hesabın ücretsiz.
+</div>
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#e8eef8;">
+<tr><td align="center" style="padding:28px 12px;">
+
+  <table role="presentation" class="wrap" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;background:#ffffff;border-radius:16px;overflow:hidden;">
+
+    <!-- Logo -->
+    <tr><td class="px" style="padding:28px 40px 8px;">
+      <img src="https://www.sphereenglish.com/assets/images/Ad_5_-1774053772671.png" alt="Sphere English" width="150" style="width:150px;height:auto;">
+    </td></tr>
+
+    <!-- Giriş -->
+    <tr><td class="px" style="padding:16px 40px 8px;font-family:Arial,Helvetica,sans-serif;">
+      <h1 class="h1" style="margin:0 0 14px;font-size:28px;line-height:36px;font-weight:800;color:#1e3a6e;">
+        Kitapların artık uygulamada
+      </h1>
+      <p style="margin:0 0 14px;font-size:16px;line-height:25px;color:#1e3a6e;">Merhaba {{AD}},</p>
+      <p style="margin:0 0 14px;font-size:16px;line-height:25px;color:#334155;">
+        Sphere English'ten aldığın e-kitapları artık PDF indirmeden, doğrudan uygulamanın içinde okuyabilirsin.
+        Daha önemlisi: kitaplarda geçen kalıp ve terimleri, kitabı bitirdikten sonra unutmamak için uygulamada pratik yapabilirsin.
+      </p>
+      <p style="margin:0 0 22px;font-size:16px;line-height:25px;color:#334155;">
+        Bunun için ücretsiz bir Sphere English hesabı yeterli. Kitapların hesabına otomatik olarak ekleniyor.
+      </p>
+    </td></tr>
+
+    <!-- Ana buton -->
+    <tr><td class="px" align="center" style="padding:0 40px 30px;">
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+        <td align="center" bgcolor="#1e3a6e" style="border-radius:12px;">
+          <a href="{{KITAPLARIM_LINKI}}" style="display:inline-block;padding:16px 34px;font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:700;color:#ffffff;text-decoration:none;border-radius:12px;">
+            Kitaplarımı uygulamada aç
+          </a>
+        </td>
+      </tr></table>
+      <p style="margin:10px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:18px;color:#64748b;">
+        Bu bağlantı sana özel. Hesabın yoksa ad, soyad ve şifreni girip açarsın; hesap yalnızca sen formu gönderirsen oluşur.
+      </p>
+    </td></tr>
+
+    <!-- 1. Kitaplarım -->
+    <tr><td class="px" style="padding:0 40px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-top:1px solid #e2e8f0;"><tr><td style="padding-top:28px;"></td></tr></table>
+    </td></tr>
+    <tr><td class="px" style="padding:0 40px 10px;font-family:Arial,Helvetica,sans-serif;">
+      <div style="font-size:12px;font-weight:700;letter-spacing:1px;color:#0e7da6;text-transform:uppercase;margin-bottom:6px;">1 · Kitaplarım</div>
+      <h2 style="margin:0 0 10px;font-size:20px;line-height:27px;color:#1e3a6e;">Bütün kitapların tek yerde</h2>
+      <p style="margin:0 0 16px;font-size:15px;line-height:23px;color:#334155;">
+        Menüdeki <b>Kitaplarım</b> bölümünde satın aldığın tüm kitaplar kapaklarıyla duruyor. İndirme bağlantısının süresi ya da indirme hakkı derdi yok;
+        kitabı istediğin zaman, istediğin cihazdan açabilirsin.
+      </p>
+    </td></tr>
+    <tr><td class="px" style="padding:0 40px 28px;">
+      <img src="https://app.sphereenglish.com/api/mail-assets/27/Ekran-g-r-nt-s-2026-11-13-204624.jpg" alt="Kitaplarım ekranı: satın alınan kitaplar kapaklarıyla listeleniyor" width="520" style="width:100%;max-width:520px;height:auto;border-radius:12px;border:1px solid #e2e8f0;">
+    </td></tr>
+
+    <!-- 2. Okuyucu -->
+    <tr><td class="px" style="padding:0 40px 10px;font-family:Arial,Helvetica,sans-serif;">
+      <div style="font-size:12px;font-weight:700;letter-spacing:1px;color:#0e7da6;text-transform:uppercase;margin-bottom:6px;">2 · Okuma</div>
+      <h2 style="margin:0 0 10px;font-size:20px;line-height:27px;color:#1e3a6e;">Basılı kitap gibi, sayfa çevirerek</h2>
+      <p style="margin:0 0 16px;font-size:15px;line-height:23px;color:#334155;">
+        Bilgisayarda kitap çift sayfa açılıyor; telefonda parmağınla kaydırarak sayfa çeviriyorsun. Küçük yazılar için yakınlaştırabilirsin.
+        Kaldığın sayfa hesabına kaydediliyor: telefonda bıraktığın yerden bilgisayarda devam edersin.
+      </p>
+    </td></tr>
+    <tr><td class="px" style="padding:0 40px 28px;">
+      <img src="https://app.sphereenglish.com/api/mail-assets/26/Ekran-g-r-nt-s-2026-11-13-204702.jpg" alt="Uygulama içi okuyucu: kitap çift sayfa açık" width="520" style="width:100%;max-width:520px;height:auto;border-radius:12px;border:1px solid #e2e8f0;">
+    </td></tr>
+
+    <!-- 3. Pratik başlığı -->
+    <tr><td class="px" style="padding:6px 40px 4px;font-family:Arial,Helvetica,sans-serif;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#e8eef8;border-radius:12px;"><tr>
+        <td style="padding:20px 22px;">
+          <div style="font-size:12px;font-weight:700;letter-spacing:1px;color:#0e7da6;text-transform:uppercase;margin-bottom:6px;">3 · Pratik</div>
+          <div style="font-size:20px;line-height:27px;font-weight:700;color:#1e3a6e;margin-bottom:8px;">Okuduğun kalıpları kullanmaya başla</div>
+          <div style="font-size:15px;line-height:23px;color:#334155;">
+            Kitabı okumak bir şey, toplantıda o kalıbı aklına getirmek başka. Her kitabın kalıp ve terimleri, kitabın ünitelerine göre
+            üç pratik türüne dönüştürüldü. Kitabın kartındaki <b>Pratik yap</b> butonuyla başlarsın.
+          </div>
+        </td>
+      </tr></table>
+    </td></tr>
+
+    <!-- 3a Kartlar -->
+    <tr><td class="px" style="padding:24px 40px 10px;font-family:Arial,Helvetica,sans-serif;">
+      <h3 style="margin:0 0 8px;font-size:17px;line-height:24px;color:#1e3a6e;">Kartlar: unutmaya yaklaştığında yeniden sorulur</h3>
+      <p style="margin:0 0 16px;font-size:15px;line-height:23px;color:#334155;">
+        Kartın önünde İngilizce kalıp var; sesli dinleyebilirsin. Anlamını düşünüp kartı çeviriyorsun: Türkçesi, kısa açıklaması ve kitaptaki örnek cümle çıkıyor.
+        <b>Biliyorum</b> dediğin kartlar giderek daha seyrek gelir, <b>Tekrar et</b> dediklerin aynı turda yeniden sorulur.
+        Günde birkaç dakika yeter.
+      </p>
+    </td></tr>
+    <tr><td class="px" style="padding:0 40px 26px;">
+      <img src="https://app.sphereenglish.com/api/mail-assets/24/Ekran-g-r-nt-s-2026-11-13-214813.jpg" alt="Kart pratiği: İngilizce kalıp, Türkçe anlamı ve örnek cümle" width="520" style="width:100%;max-width:520px;height:auto;border-radius:12px;border:1px solid #e2e8f0;">
+    </td></tr>
+
+    <!-- 3b Mini test -->
+    <tr><td class="px" style="padding:0 40px 10px;font-family:Arial,Helvetica,sans-serif;">
+      <h3 style="margin:0 0 8px;font-size:17px;line-height:24px;color:#1e3a6e;">Mini test: 10 soruda ne kaldığını gör</h3>
+      <p style="margin:0 0 16px;font-size:15px;line-height:23px;color:#334155;">
+        Bir üniteyi seçip 10 soruluk test çözüyorsun: kalıbın anlamını bulmak, Türkçesinden İngilizcesini seçmek ve kitaptaki örnek cümlede boşluğu doldurmak.
+        Yanlış yaptığın kalıplar kart tekrarında otomatik olarak öne alınır.
+      </p>
+    </td></tr>
+    <tr><td class="px" style="padding:0 40px 26px;">
+      <img src="https://app.sphereenglish.com/api/mail-assets/25/Ekran-g-r-nt-s-2026-11-13-204727.jpg" alt="Mini test sorusu ve şıklar" width="520" style="width:100%;max-width:520px;height:auto;border-radius:12px;border:1px solid #e2e8f0;">
+    </td></tr>
+
+    <!-- 3c AI koç -->
+    <tr><td class="px" style="padding:0 40px 10px;font-family:Arial,Helvetica,sans-serif;">
+      <h3 style="margin:0 0 8px;font-size:17px;line-height:24px;color:#1e3a6e;">AI koç: kalıpları kısa bir iş sohbetinde kullan</h3>
+      <p style="margin:0 0 16px;font-size:15px;line-height:23px;color:#334155;">
+        Koç, seçtiğin ünitenin konusunda kısa bir iş senaryosu açıyor ve bir iş arkadaşın gibi İngilizce konuşuyor.
+        Ekranın üstünde o ünitenin hedef kalıpları duruyor; sohbette kullandıkça yeşile dönüyor.
+        Daha uygun bir ifade varsa mesajının altına Türkçe kısa bir ipucu düşüyor. Sohbet 8 turda tamamlanıyor.
+      </p>
+    </td></tr>
+    <!-- AI koç: iki görsel yan yana (dar ekranda alt alta) -->
+    <tr><td class="px" style="padding:0 40px 30px;font-size:0;line-height:0;" align="center">
+      <!--[if mso]><table role="presentation" width="520" cellpadding="0" cellspacing="0" border="0"><tr><td width="255" valign="top"><![endif]-->
+      <div class="col2" style="display:inline-block;width:100%;max-width:255px;vertical-align:top;">
+        <img src="https://app.sphereenglish.com/api/mail-assets/29/Ekran-g-r-nt-s-2026-11-13-221041.jpg" alt="AI koç sohbeti: hedef kalıplar" width="255" style="width:100%;max-width:255px;height:auto;border-radius:12px;border:1px solid #e2e8f0;">
+      </div>
+      <!--[if mso]></td><td width="10"></td><td width="255" valign="top"><![endif]-->
+      <div class="col2 col2-right" style="display:inline-block;width:100%;max-width:255px;vertical-align:top;margin-left:10px;">
+        <img src="https://app.sphereenglish.com/api/mail-assets/28/Ekran-g-r-nt-s-2026-11-13-221121.jpg" alt="AI koç sohbeti: Türkçe ipucu" width="255" style="width:100%;max-width:255px;height:auto;border-radius:12px;border:1px solid #e2e8f0;">
+      </div>
+      <!--[if mso]></td></tr></table><![endif]-->
+    </td></tr>
+
+    <!-- Nasıl başlarım -->
+    <tr><td class="px" style="padding:0 40px 8px;font-family:Arial,Helvetica,sans-serif;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #e2e8f0;border-radius:12px;"><tr>
+        <td style="padding:20px 22px;">
+          <div style="font-size:17px;font-weight:700;color:#1e3a6e;margin-bottom:12px;">Üç adımda başla</div>
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="font-size:15px;line-height:22px;color:#334155;">
+            <tr><td valign="top" style="padding:0 10px 10px 0;font-weight:700;color:#13a9e0;">1</td>
+                <td style="padding:0 0 10px;">Aşağıdaki butona tıkla. Hesabın varsa giriş yapman yeterli; yoksa ad, soyad ve şifreni girerek ücretsiz hesabını aç.</td></tr>
+            <tr><td valign="top" style="padding:0 10px 10px 0;font-weight:700;color:#13a9e0;">2</td>
+                <td style="padding:0 0 10px;">Menüden <b>Kitaplarım</b>'a gir; aldığın kitaplar orada.</td></tr>
+            <tr><td valign="top" style="padding:0 10px 0 0;font-weight:700;color:#13a9e0;">3</td>
+                <td>Kitabı oku ya da <b>Pratik yap</b> ile kartlara, teste veya AI koça geç.</td></tr>
+          </table>
+        </td>
+      </tr></table>
+    </td></tr>
+
+    <tr><td class="px" align="center" style="padding:22px 40px 10px;">
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+        <td align="center" bgcolor="#1e3a6e" style="border-radius:12px;">
+          <a href="{{KITAPLARIM_LINKI}}" style="display:inline-block;padding:16px 34px;font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:700;color:#ffffff;text-decoration:none;border-radius:12px;">
+            Kitaplarımı uygulamada aç
+          </a>
+        </td>
+      </tr></table>
+    </td></tr>
+
+    <!-- Not -->
+    <tr><td class="px" style="padding:14px 40px 30px;font-family:Arial,Helvetica,sans-serif;">
+      <p style="margin:0 0 10px;font-size:13px;line-height:20px;color:#64748b;">
+        Pratikler kitaplara sırayla ekleniyor. Bir kitabında henüz <b>Pratik yap</b> butonu görmüyorsan çok yakında eklenecek; kitabı okumaya hemen başlayabilirsin.
+      </p>
+      <p style="margin:0;font-size:13px;line-height:20px;color:#64748b;">
+        PDF dosyaların da senin; daha önce indirdiğin kitapları kullanmaya devam edebilirsin.
+        Bir sorun yaşarsan bu e-postayı yanıtlaman yeterli.
+      </p>
+    </td></tr>
+
+    <!-- Alt bilgi -->
+    <tr><td class="px" style="padding:20px 40px 26px;background:#1e3a6e;font-family:Arial,Helvetica,sans-serif;">
+      <p style="margin:0 0 6px;font-size:13px;line-height:20px;color:#ffffff;font-weight:700;">Sphere English</p>
+      <p style="margin:0 0 10px;font-size:12px;line-height:18px;color:#c7d4ea;">
+        İmmer Global Eğitim ve Danışmanlık Ltd. Şti. · 150 Evler Mah. Atatürk Blv. No:456/35, 10400 Ayvalık / Balıkesir<br>
+        <a href="mailto:info@sphereenglish.com" style="color:#4dcfff;">info@sphereenglish.com</a> ·
+        <a href="https://www.sphereenglish.com" style="color:#4dcfff;">sphereenglish.com</a>
+      </p>
+      <p style="margin:0;font-size:11px;line-height:17px;color:#c7d4ea;">
+        Bu e-postayı Sphere English'ten e-kitap satın aldığın için aldın.
+        Almak istemiyorsan <a href="{{LISTEDEN_CIK}}" style="color:#4dcfff;">listeden çık</a>.
+      </p>
+    </td></tr>
+
+  </table>
+</td></tr>
+</table>
+</body>
+</html>
