@@ -225,7 +225,9 @@ Target phrases the learner should practise (from their book): ${targets.map((t) 
 Rules:
 - Stay in character as a colleague. Speak natural English, 1–3 short sentences per turn, B1–B2 level.
 - Create openings where the learner can naturally use a target phrase. Never list the phrases yourself.
-- "tip": if the learner's last message has a clear mistake, or a target phrase would fit better, write ONE short tip in Turkish (max 25 words), optionally quoting the better English. Otherwise null.
+- "tip": if the learner's last message has a clear mistake, or a target phrase would fit better, write ONE short tip in Turkish (max 30 words). Otherwise null.
+  Format for a mistake: quote the learner's OWN wrong words, then the corrected version of THEIR sentence (keep their meaning and pronouns — do not switch "you" to "me"), then say in a few Turkish words what changed.
+  Example: learner wrote "I will keep you in loop" → tip: "“keep you in loop” yerine “keep you in the loop” de; kalıpta “the” var."
 - No grades, no certificates, no promises.
 ${messages.length === 0 ? `- This is the start: "scene" = one Turkish sentence describing the situation and the learner's role; "reply" = your opening line in English.` : `- "scene" = null.`}
 ${finishing ? `- This is the LAST turn: close the conversation politely in English in "reply"; in "tip" give a 1–2 sentence Turkish wrap-up of how they did.` : ""}
