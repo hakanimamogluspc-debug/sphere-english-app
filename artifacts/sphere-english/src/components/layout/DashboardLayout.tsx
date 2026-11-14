@@ -164,6 +164,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       { name: 'Abonelikler',         href: '/admin/subscriptions',            icon: Crown },
       { name: 'Ödemeler & İade',     href: '/admin/payments',                 icon: Receipt },
       { name: 'E-Faturalar',         href: '/admin/faturalar',                icon: Receipt },
+      { name: 'Kampanyalar',         href: '/admin/kampanyalar',              icon: Gift },
       { name: 'Kupon Kodları',       href: '/admin/coupons',                  icon: Ticket },
       { name: 'Affiliate Program',   href: '/admin/affiliates',               icon: Award },
 

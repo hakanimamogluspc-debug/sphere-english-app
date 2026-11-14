@@ -1253,6 +1253,31 @@ export async function runStartupMigrations() {
       total INTEGER NOT NULL,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )`,
+    // ─── Kampanyalar (X al Y öde, sepet eşiği, kademeli adet, süreli indirim) — bkz. lib/campaign-engine.ts
+    `CREATE TABLE IF NOT EXISTS campaigns (
+      id SERIAL PRIMARY KEY,
+      name VARCHAR(200) NOT NULL,
+      type VARCHAR(30) NOT NULL,
+      scope VARCHAR(10) NOT NULL DEFAULT 'ebook',
+      target_ebook_ids INTEGER[] NOT NULL DEFAULT '{}',
+      target_categories TEXT[] NOT NULL DEFAULT '{}',
+      target_course_slugs TEXT[] NOT NULL DEFAULT '{}',
+      params JSONB NOT NULL DEFAULT '{}'::jsonb,
+      badge_text VARCHAR(60),
+      description TEXT,
+      starts_at TIMESTAMPTZ,
+      ends_at TIMESTAMPTZ,
+      is_active BOOLEAN NOT NULL DEFAULT FALSE,
+      show_on_home BOOLEAN NOT NULL DEFAULT FALSE,
+      priority INTEGER NOT NULL DEFAULT 0,
+      used_count INTEGER NOT NULL DEFAULT 0,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`,
+    `ALTER TABLE ebook_purchases ADD COLUMN IF NOT EXISTS campaign_id INTEGER REFERENCES campaigns(id) ON DELETE SET NULL`,
+    `ALTER TABLE ebook_purchases ADD COLUMN IF NOT EXISTS campaign_discount_kurus BIGINT`,
+    `ALTER TABLE course_orders ADD COLUMN IF NOT EXISTS campaign_id INTEGER REFERENCES campaigns(id) ON DELETE SET NULL`,
+    `ALTER TABLE course_orders ADD COLUMN IF NOT EXISTS list_amount_kurus INTEGER`,
     // Uygulama içi okuyucu: kaldığı sayfa (cihazlar arası)
     `CREATE TABLE IF NOT EXISTS ebook_reading_positions (
       user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
