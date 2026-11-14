@@ -285,6 +285,8 @@ router.post("/internal/course-orders/pre-create", async (req: Request, res: Resp
     iyzicoConversationId,
     iyzicoToken,
     amountKurus,
+    campaignId,        // kampanya uygulandıysa (www fiyatı /campaigns/quote'tan alır)
+    listAmountKurus,   // indirimsiz liste fiyatı
   } = (req.body ?? {}) as any;
 
   // Önce sync cache'ten dene; yoksa DB'den async yükle (yeni admin eklenen kurslar için)
@@ -304,8 +306,8 @@ router.post("/internal/course-orders/pre-create", async (req: Request, res: Resp
          (order_token, programme_slug, programme_title,
           buyer_name, buyer_email, buyer_phone, tc_kimlik,
           billing_address, billing_city, billing_district, billing_postal_code,
-          iyzico_conversation_id, iyzico_token, amount_kurus, status)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, 'pending')
+          iyzico_conversation_id, iyzico_token, amount_kurus, status, campaign_id, list_amount_kurus)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, 'pending', $15, $16)
        ON CONFLICT (order_token) DO NOTHING`,
       [
         orderToken, programme.slug, programme.title,
@@ -318,6 +320,8 @@ router.post("/internal/course-orders/pre-create", async (req: Request, res: Resp
         iyzicoConversationId ?? null,
         iyzicoToken ?? null,
         amountKurus ?? programme.priceKurus,
+        Number.isInteger(Number(campaignId)) && Number(campaignId) > 0 ? Number(campaignId) : null,
+        Number(listAmountKurus) > 0 ? Math.round(Number(listAmountKurus)) : null,
       ],
     );
     return res.json({ ok: true, orderToken });
@@ -368,6 +372,11 @@ router.post("/internal/course-orders/activate", async (req: Request, res: Respon
        WHERE order_token = $1`,
       [orderToken, iyzicoPaymentId ?? null],
     );
+    // Kampanya kullanım sayacı
+    await pool.query(
+      `UPDATE campaigns SET used_count = used_count + 1 WHERE id = (SELECT campaign_id FROM course_orders WHERE order_token = $1)`,
+      [orderToken],
+    ).catch((e: any) => console.error("[course-orders] kampanya sayacı HATA:", e?.message));
 
     // Fresh order verisi (paid_at + iyzico_payment_id dahil)
     const freshRes: any = await pool.query(

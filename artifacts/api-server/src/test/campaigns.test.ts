@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { pool } from "@workspace/db";
-import { api, resetDb, closeDb, createAdmin } from "./helpers.js";
+import { api, resetDb, closeDb, createAdmin, internalSignature } from "./helpers.js";
 import { computeQuote, validateCampaignParams, type Campaign, type CartLine } from "../lib/campaign-engine.js";
 
 const now = new Date("2026-11-14T12:00:00Z");
@@ -120,6 +120,33 @@ describe("kampanya API", () => {
     // Pasife alınınca teklif değişir
     await api().patch(`/api/admin/campaigns/${c.body.campaign.id}`).set(auth).send({ isActive: false });
     expect((await api().post("/api/campaigns/quote").send({ items })).body.applied).toBeNull();
+  });
+
+  it("sepet ön kaydı: fiyat kampanya motorundan gelir, kampanya kaydedilir; tutar uyuşmazsa 409", async () => {
+    const c = await api().post("/api/admin/campaigns").set(auth).send({
+      name: `Sepet 3al2 ${tag}`, type: "buy_x_pay_y", targetEbookIds: ids, params: { buy: 3, pay: 2 }, isActive: true,
+    });
+    const items = [0, 1, 2].map((i) => ({ type: "ebook", slug: `kmp-${tag}-${i}` }));
+    const base = { items, buyerEmail: `kmp-${tag}@example.com`, buyerName: "Test Alıcı" };
+
+    const wrong = { ...base, iyzicoConversationId: `CART-T-${tag}-1`, expectedFinalKurus: 1 };
+    const r409 = await api().post("/api/internal/cart/pre-create").set("X-Internal-Signature", internalSignature(wrong)).send(wrong);
+    expect(r409.status).toBe(409);
+
+    const body = { ...base, iyzicoConversationId: `CART-T-${tag}-2`, expectedFinalKurus: (499 + 599) * 100 };
+    const ok = await api().post("/api/internal/cart/pre-create").set("X-Internal-Signature", internalSignature(body)).send(body);
+    expect(ok.status, JSON.stringify(ok.body)).toBe(200);
+    expect(ok.body.finalKurus).toBe((499 + 599) * 100);
+    const rows = (await pool.query(
+      `SELECT amount_paid, campaign_id, campaign_discount_kurus FROM ebook_purchases WHERE order_id = $1 ORDER BY id`, [body.iyzicoConversationId],
+    )).rows;
+    expect(rows).toHaveLength(3);
+    expect(Math.round(rows.reduce((s: number, r: any) => s + Number(r.amount_paid) * 100, 0))).toBe((499 + 599) * 100);
+    expect(rows[2].campaign_id).toBe(c.body.campaign.id);
+    expect(Number(rows[2].campaign_discount_kurus)).toBe(39900);
+
+    await pool.query(`DELETE FROM ebook_purchases WHERE order_id LIKE $1`, [`CART-T-${tag}-%`]);
+    await api().patch(`/api/admin/campaigns/${c.body.campaign.id}`).set(auth).send({ isActive: false });
   });
 
   it("geçersiz ürün ve admin yetkisi", async () => {

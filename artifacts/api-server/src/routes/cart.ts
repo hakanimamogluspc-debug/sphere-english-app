@@ -31,6 +31,7 @@ import { recordRedemption } from "../lib/coupon.js";
 import { attributeEbookSale } from "../lib/affiliate.js";
 import { issueInvoiceForSource } from "../lib/invoice/index.js";
 import { downloadExpiry } from "../lib/ebook-download-policy.js";
+import { quoteCart } from "../lib/campaigns.js";
 
 const router = Router();
 
@@ -153,6 +154,7 @@ router.post("/internal/cart/pre-create", async (req: Request, res: Response) => 
     billingPostalCode,
     couponCode,
     couponDiscountKurus,
+    expectedFinalKurus,
     affiliateCode: _affiliateCode,
     iyzicoConversationId,
     // Meta Pixel/CAPI kimlik verisi — checkout başlarken yakalanır
@@ -175,19 +177,24 @@ router.post("/internal/cart/pre-create", async (req: Request, res: Response) => 
 
     const { resolved, subtotalKurus } = r;
 
-    const discountKurus = Math.max(0, Number(couponDiscountKurus ?? 0));
-    const finalKurus = Math.max(0, subtotalKurus - discountKurus);
-
-    // Coupon ID lookup
-    let couponId: number | null = null;
-    if (couponCode) {
-      try {
-        const cRows = await db.execute(
-          sql`SELECT id FROM coupons WHERE code = ${couponCode} LIMIT 1`,
-        );
-        couponId = ((cRows.rows ?? cRows)[0] as any)?.id ?? null;
-      } catch {}
+    // Fiyatın tek doğruluk kaynağı kampanya motoru: süreli indirim + (sepet kampanyası | kupon, hangisi iyiyse)
+    const qr = await quoteCart(items, couponCode ?? null);
+    if ("error" in qr) return res.status(400).json({ error: qr.error });
+    const quote = qr.quote;
+    if (quote.lines.length !== resolved.length) {
+      return res.status(500).json({ error: "Sepet satırları eşleşmedi" });
     }
+    // www'nin iyzico'ya göndereceği tutarla birebir aynı olmalı (fiyat arada değiştiyse dur)
+    if (expectedFinalKurus !== undefined && Number(expectedFinalKurus) !== quote.finalKurus) {
+      return res.status(409).json({ error: "Fiyatlar güncellendi, lütfen sepeti yenileyip tekrar deneyin", finalKurus: quote.finalKurus });
+    }
+    void couponDiscountKurus; // eski istemci alanı — artık sunucuda hesaplanıyor
+    const finalKurus = quote.finalKurus;
+    const couponId: number | null = quote.coupon?.id ?? null;
+    const discountKurus = quote.coupon?.discountKurus ?? 0;
+    const campaignId: number | null =
+      quote.cartCampaign?.id ?? quote.lines.find((l) => l.timedCampaignId)?.timedCampaignId ?? null;
+    const campaignDiscountKurus = Math.max(0, quote.listKurus - quote.finalKurus - discountKurus);
 
     const userRows = await db.execute(sql`
       SELECT id FROM users WHERE LOWER(email) = LOWER(${buyerEmail}) LIMIT 1
@@ -219,9 +226,7 @@ router.post("/internal/cart/pre-create", async (req: Request, res: Response) => 
     for (let i = 0; i < resolved.length; i++) {
       const item = resolved[i];
       const isLastItem = i === resolved.length - 1;
-      const itemCouponDiscount = isLastItem ? discountKurus : 0;
-      const paidKurusForThis = Math.max(0, item.priceKurus - itemCouponDiscount);
-      const paidTry = paidKurusForThis / 100;
+      const paidTry = quote.lines[i].finalKurus / 100;
 
       const ins = await db.execute(sql`
         INSERT INTO ebook_purchases (
@@ -233,6 +238,7 @@ router.post("/internal/cart/pre-create", async (req: Request, res: Response) => 
           payment_status, invoice_status,
           download_count,
           coupon_id, coupon_discount_kurus,
+          campaign_id, campaign_discount_kurus,
           order_id, bundle_id,
           meta_fbp, meta_fbc, meta_client_ip, meta_client_user_agent
         ) VALUES (
@@ -244,6 +250,7 @@ router.post("/internal/cart/pre-create", async (req: Request, res: Response) => 
           'pending', 'pending',
           0,
           ${isLastItem ? couponId : null}, ${isLastItem ? discountKurus || null : null},
+          ${isLastItem ? campaignId : null}, ${isLastItem ? campaignDiscountKurus || null : null},
           ${orderId}, ${item.bundleId},
           ${metaFbp ?? null}, ${metaFbc ?? null}, ${metaClientIp ?? null}, ${metaClientUserAgent ?? null}
         )
@@ -356,13 +363,24 @@ router.post("/internal/cart/activate", async (req: Request, res: Response) => {
     }
 
     const activatedPurchaseIds: number[] = [];
+    // Kupon indirimi artık tüm satırlara dağıtıldığı için tutarlar sipariş toplamından hesaplanır
+    const orderPaidKurus = pending.reduce((s: number, x: any) => s + Math.round(Number(x.amount_paid) * 100), 0);
+
+    // Kampanya kullanım sayacı (sipariş başına bir kez; paket satırları aşağıda silinmeden önce)
+    try {
+      await db.execute(sql`
+        UPDATE campaigns SET used_count = used_count + 1
+        WHERE id IN (SELECT DISTINCT campaign_id FROM ebook_purchases WHERE order_id = ${orderKey} AND campaign_id IS NOT NULL)
+      `);
+    } catch (e: any) {
+      console.error("[CART] kampanya sayacı HATA:", e?.message);
+    }
 
     for (const p of pending) {
       // COUPON REDEMPTION — sadece bir kere, master satırında
       if (p.coupon_id && p.coupon_discount_kurus) {
         try {
-          const originalKurus =
-            Math.round(Number(p.amount_paid) * 100) + Number(p.coupon_discount_kurus);
+          const originalKurus = orderPaidKurus + Number(p.coupon_discount_kurus);
           await recordRedemption({
             couponId: Number(p.coupon_id),
             userId: null,
@@ -371,7 +389,7 @@ router.post("/internal/cart/activate", async (req: Request, res: Response) => {
             buyerEmail: String(p.buyer_email),
             originalAmountKurus: originalKurus,
             discountKurus: Number(p.coupon_discount_kurus),
-            finalAmountKurus: Math.round(Number(p.amount_paid) * 100),
+            finalAmountKurus: orderPaidKurus,
             conversationId: iyzicoConversationId ?? null,
           });
         } catch (cErr: any) {

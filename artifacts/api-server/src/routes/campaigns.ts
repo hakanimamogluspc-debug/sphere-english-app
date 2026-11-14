@@ -40,7 +40,7 @@ router.post("/campaigns/quote", async (req: Request, res: Response) => {
   const q = r.quote;
   return res.json({
     lines: q.lines.map((l) => ({
-      type: l.kind, slug: l.slug, title: l.title,
+      type: l.kind, id: l.refId, slug: l.slug, title: l.title,
       listKurus: l.unitKurus, saleKurus: l.saleKurus, finalKurus: l.finalKurus, timedCampaignId: l.timedCampaignId,
     })),
     listKurus: q.listKurus, saleKurus: q.saleKurus,

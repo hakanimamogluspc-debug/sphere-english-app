@@ -199,6 +199,9 @@ router.post("/internal/ebook-purchase/pre-create", async (req: Request, res: Res
     affiliateCode,
     couponCode,
     couponDiscountKurus,
+    // Kampanya (www, fiyatı /campaigns/quote'tan alır)
+    campaignId,
+    campaignDiscountKurus,
     // Meta Pixel/CAPI kimlik verisi — checkout başlarken yakalanır
     metaFbp,
     metaFbc,
@@ -266,6 +269,7 @@ router.post("/internal/ebook-purchase/pre-create", async (req: Request, res: Res
         payment_status, invoice_status,
         download_count,
         coupon_discount_kurus,
+        campaign_id, campaign_discount_kurus,
         meta_fbp, meta_fbc, meta_client_ip, meta_client_user_agent
       ) VALUES (
         ${ebookId}, ${userId}, ${buyerEmail.toLowerCase()}, ${buyerName ?? null}, ${buyerPhone ?? null},
@@ -276,6 +280,7 @@ router.post("/internal/ebook-purchase/pre-create", async (req: Request, res: Res
         'pending', 'pending',
         0,
         ${couponDiscountKurus ?? null},
+        ${Number.isInteger(Number(campaignId)) && Number(campaignId) > 0 ? Number(campaignId) : null}, ${Number(campaignDiscountKurus) > 0 ? Math.round(Number(campaignDiscountKurus)) : null},
         ${metaFbp ?? null}, ${metaFbc ?? null}, ${metaClientIp ?? null}, ${metaClientUserAgent ?? null}
       )
       RETURNING id
@@ -435,6 +440,15 @@ router.post("/internal/ebook-purchase/activate", async (req: Request, res: Respo
       const updatedRow = (upd.rows ?? upd)[0] as any;
       if (updatedRow) {
         console.info(`[EBOOK-PURCHASE] Activate: purchaseId=${updatedRow.id} buyer=${buyerEmail}`);
+        // Kampanya kullanım sayacı
+        try {
+          await db.execute(sql`
+            UPDATE campaigns SET used_count = used_count + 1
+            WHERE id = (SELECT campaign_id FROM ebook_purchases WHERE id = ${updatedRow.id})
+          `);
+        } catch (e: any) {
+          console.error("[EBOOK-PURCHASE] kampanya sayacı HATA:", e?.message);
+        }
         // Coupon redemption record (varsa)
         try {
           const cRows = await db.execute(sql`
