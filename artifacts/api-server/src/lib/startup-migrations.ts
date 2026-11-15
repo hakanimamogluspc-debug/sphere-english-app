@@ -1274,6 +1274,47 @@ export async function runStartupMigrations() {
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )`,
+    // ─── Ana sayfa banner'ları (www hero slaytları) — bkz. routes/home-banners.ts
+    `CREATE TABLE IF NOT EXISTS home_banners (
+      id SERIAL PRIMARY KEY,
+      slot VARCHAR(20) NOT NULL DEFAULT 'general',
+      sort_order INTEGER NOT NULL DEFAULT 0,
+      is_active BOOLEAN NOT NULL DEFAULT TRUE,
+      eyebrow VARCHAR(80),
+      title_line1 VARCHAR(80) NOT NULL,
+      title_line2 VARCHAR(80),
+      title_accent VARCHAR(80),
+      subtitle TEXT,
+      cta1_text VARCHAR(60),
+      cta1_url VARCHAR(300),
+      cta2_text VARCHAR(60),
+      cta2_url VARCHAR(300),
+      image_url TEXT,
+      image_alt VARCHAR(200),
+      image_badge VARCHAR(80),
+      use_campaign BOOLEAN NOT NULL DEFAULT FALSE,
+      starts_at TIMESTAMPTZ,
+      ends_at TIMESTAMPTZ,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`,
+    // İlk kurulumda 3 varsayılan slayt (tablo boşsa): e-kitap (kampanyayı öne çıkarır), kurslar, genel
+    `INSERT INTO home_banners (slot, sort_order, eyebrow, title_line1, title_line2, title_accent, subtitle, cta1_text, cta1_url, cta2_text, cta2_url, image_url, image_alt, image_badge, use_campaign)
+     SELECT * FROM (VALUES
+      ('ebook', 1, 'E-KİTAPLAR', 'İş İngilizcesi', 'Kalıplarını', 'Cebinde Taşı.',
+       'Toplantıdan finansa kurumsal kalıplar ve terimler; Türkçe açıklamalı, gerçek iş örnekleriyle. Aldığın kitapları uygulamada okur, kalıplarla pratik yaparsın.',
+       'E-KİTAPLARI İNCELE', '/e-kitaplar', '5''Lİ SETİ GÖR', '/e-kitaplar/paketler/is-ingilizcesinde-kullanilan-bin-kelime',
+       'https://app.sphereenglish.com/api-server/api/bundle-cover/1', 'İş İngilizcesinde Kullanılan 1000 Kelime e-kitap seti', 'PDF + uygulamada pratik', TRUE),
+      ('course', 2, 'CANLI KURSLAR', 'Gerçek Eğitmenle', 'Canlı Derste', 'Konuş.',
+       'Seviyene uygun programda, iş hayatından senaryolarla canlı konuşma pratiği. Toplantı, sunum ve e-posta dilini derste kullanarak öğren.',
+       'KURSLARI İNCELE', '/is-ingilizcesi-kursu', 'ÜCRETSİZ DEMO AL', '/demo',
+       'https://images.pexels.com/photos/3182773/pexels-photo-3182773.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1', 'Profesyoneller çevrimiçi İş İngilizcesi dersinde', 'Canlı Ders Devam Ediyor', FALSE),
+      ('general', 3, NULL, 'İş İngilizcesinde', 'Bir Üst Seviyeye', 'Geç.',
+       'Türk profesyoneller için gerçek iş hayatına odaklanan online kurslar, dijital kaynaklar ve AI destekli pratik. Toplantıdan e-postaya, mülakattan pazarlığa kariyerinizde daha net ve güvenli iletişim.',
+       'KURSLARI İNCELE', '/is-ingilizcesi-kursu', 'E-KİTAPLARI KEŞFET', '/e-kitaplar',
+       'https://images.pexels.com/photos/3182773/pexels-photo-3182773.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1', 'Profesyoneller Zoom üzerinden çevrimiçi İş İngilizcesi dersi yapıyor', 'Canlı Ders Devam Ediyor', FALSE)
+     ) AS v(slot, sort_order, eyebrow, title_line1, title_line2, title_accent, subtitle, cta1_text, cta1_url, cta2_text, cta2_url, image_url, image_alt, image_badge, use_campaign)
+     WHERE NOT EXISTS (SELECT 1 FROM home_banners)`,
     `ALTER TABLE ebook_purchases ADD COLUMN IF NOT EXISTS campaign_id INTEGER REFERENCES campaigns(id) ON DELETE SET NULL`,
     `ALTER TABLE ebook_purchases ADD COLUMN IF NOT EXISTS campaign_discount_kurus BIGINT`,
     `ALTER TABLE course_orders ADD COLUMN IF NOT EXISTS campaign_id INTEGER REFERENCES campaigns(id) ON DELETE SET NULL`,

@@ -88,6 +88,7 @@ import myEbooksRouter from "./my-ebooks";
 import myEbookPracticeRouter from "./my-ebook-practice";
 import adminEbookPracticeRouter from "./admin-ebook-practice";
 import campaignsRouter from "./campaigns";
+import homeBannersRouter from "./home-banners";
 import demoRouter from "./demo";
 import adminContentArticlesRouter from "./admin-content-articles";
 import adminContentInventoryRouter from "./admin-content-inventory";
@@ -182,6 +183,7 @@ router.use(myEbooksRouter); // Kitaplarım (e-kitap alıcısı ↔ hesap)
 router.use(myEbookPracticeRouter); // Kitaplarım → kartlar, mini test, AI koç
 router.use(adminEbookPracticeRouter); // Kitap pratikleri: AI çıkarımı + admin onayı
 router.use(campaignsRouter); // Kampanyalar: motor, teklif, admin
+router.use(homeBannersRouter); // www ana sayfa slaytları
 router.use(demoRouter);
 router.use(adminContentArticlesRouter);
 router.use(adminContentInventoryRouter);
