@@ -25,9 +25,12 @@ describe("ana sayfa banner'ları", () => {
 
   it("admin slayt ekler/gizler; geçersiz bağlantı reddedilir; yetki gerekir", async () => {
     expect((await api().post("/api/admin/home-banners").set(auth).send({ titleLine1: `X ${tag}`, cta1Url: "javascript:alert(1)" })).status).toBe(400);
-    const c = await api().post("/api/admin/home-banners").set(auth).send({ titleLine1: `Test ${tag}`, slot: "general", isActive: true, sortOrder: 0 });
+    expect((await api().post("/api/admin/home-banners").set(auth).send({ titleLine1: `X ${tag}`, videoUrl: "http://x.com/a.mp4" })).status).toBe(400);
+    const c = await api().post("/api/admin/home-banners").set(auth).send({ titleLine1: `Test ${tag}`, slot: "general", isActive: true, sortOrder: 0, videoUrl: "/api/media/v.mp4" });
     expect(c.status, JSON.stringify(c.body)).toBe(201);
-    expect((await api().get("/api/home-banners")).body.banners[0].titleLine1).toBe(`Test ${tag}`);
+    const first = (await api().get("/api/home-banners")).body.banners[0];
+    expect(first.titleLine1).toBe(`Test ${tag}`);
+    expect(first.videoUrl).toBe("/api/media/v.mp4");
     await api().patch(`/api/admin/home-banners/${c.body.banner.id}`).set(auth).send({ isActive: false });
     expect((await api().get("/api/home-banners")).body.banners.map((b: any) => b.id)).not.toContain(c.body.banner.id);
     expect((await api().get("/api/admin/home-banners")).status).toBe(401);

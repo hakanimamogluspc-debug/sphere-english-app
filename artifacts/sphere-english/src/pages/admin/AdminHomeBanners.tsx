@@ -23,7 +23,7 @@ interface Banner {
   id: number; slot: "ebook" | "course" | "general"; sortOrder: number; isActive: boolean;
   eyebrow: string | null; titleLine1: string; titleLine2: string | null; titleAccent: string | null; subtitle: string | null;
   cta1Text: string | null; cta1Url: string | null; cta2Text: string | null; cta2Url: string | null;
-  imageUrl: string | null; imageAlt: string | null; imageBadge: string | null; useCampaign: boolean;
+  imageUrl: string | null; videoUrl: string | null; imageAlt: string | null; imageBadge: string | null; useCampaign: boolean;
   startsAt: string | null; endsAt: string | null;
 }
 const SLOT_LABEL = { ebook: "E-kitap / kampanya", course: "Kurslar", general: "Genel" };
@@ -77,7 +77,7 @@ export default function AdminHomeBanners() {
         {list?.map((b, i) => (
           <div key={b.id} className={`rounded-2xl border bg-white p-4 flex gap-4 items-center ${b.isActive ? "border-slate-200" : "border-dashed border-slate-300 opacity-70"}`}>
             <div className="w-28 h-20 rounded-xl overflow-hidden bg-[#e8eef8] shrink-0">
-              {b.imageUrl && <img src={b.imageUrl} alt="" className="w-full h-full object-cover" />}
+              {b.imageUrl && <img src={b.imageUrl.startsWith("/") ? `https://www.sphereenglish.com${b.imageUrl}` : b.imageUrl} alt="" className="w-full h-full object-cover object-top" />}
             </div>
             <div className="flex-1 min-w-0">
               <div className="text-[11px] font-bold text-[#0e7da6] uppercase">{SLOT_LABEL[b.slot]}{b.useCampaign && " · kampanyayı öne çıkarır"}{b.eyebrow && ` · ${b.eyebrow}`}</div>
@@ -146,8 +146,12 @@ function Editor({ initial, onClose, onSaved }: { initial: Partial<Banner>; onClo
             {field("İkinci buton bağlantısı", "cta2Url", "", 300)}
           </div>
           <div className="grid sm:grid-cols-2 gap-3">
-            {field("Görsel bağlantısı (Medya Kütüphanesi'nden)", "imageUrl", "https://…", 500)}
+            {field("Görsel bağlantısı (Medya Kütüphanesi ya da /hero/…)", "imageUrl", "https://… veya /hero/kurs.png", 500)}
             {field("Görsel üstü rozet", "imageBadge", "Canlı Ders Devam Ediyor")}
+          </div>
+          <div>
+            {field("Video bağlantısı (isteğe bağlı, sessiz döngü; görsel kapak olarak kalır)", "videoUrl", "/hero/kurs.mp4", 500)}
+            <p className="text-[11px] text-slate-400 mt-1">Dikey (3:4) kısa MP4. Hareketi azaltma ayarı açık ziyaretçilere yalnızca görsel gösterilir.</p>
           </div>
           {field("Görsel açıklaması (erişilebilirlik)", "imageAlt", "", 200)}
           <div className="grid sm:grid-cols-2 gap-3">

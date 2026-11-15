@@ -22,7 +22,7 @@ function map(r: any) {
     id: r.id, slot: r.slot, sortOrder: r.sort_order, isActive: r.is_active,
     eyebrow: r.eyebrow, titleLine1: r.title_line1, titleLine2: r.title_line2, titleAccent: r.title_accent,
     subtitle: r.subtitle, cta1Text: r.cta1_text, cta1Url: r.cta1_url, cta2Text: r.cta2_text, cta2Url: r.cta2_url,
-    imageUrl: r.image_url, imageAlt: r.image_alt, imageBadge: r.image_badge, useCampaign: r.use_campaign,
+    imageUrl: r.image_url, videoUrl: r.video_url ?? null, imageAlt: r.image_alt, imageBadge: r.image_badge, useCampaign: r.use_campaign,
     startsAt: r.starts_at, endsAt: r.ends_at,
   };
 }
@@ -83,7 +83,7 @@ function parse(b: any, partial: boolean): { v: Record<string, unknown> } | { err
     ["subtitle", "subtitle", 600], ["cta1Text", "cta1_text", 60], ["cta2Text", "cta2_text", 60],
     ["imageAlt", "image_alt", 200], ["imageBadge", "image_badge", 80],
   ] as const) if (b[k] !== undefined) v[col] = str(b[k], max);
-  for (const [k, col] of [["cta1Url", "cta1_url"], ["cta2Url", "cta2_url"], ["imageUrl", "image_url"]] as const) {
+  for (const [k, col] of [["cta1Url", "cta1_url"], ["cta2Url", "cta2_url"], ["imageUrl", "image_url"], ["videoUrl", "video_url"]] as const) {
     if (b[k] === undefined) continue;
     const u = str(b[k], 500);
     if (u && !/^(\/|https:\/\/)/.test(u)) return { error: "Bağlantılar / ile ya da https:// ile başlamalı" };

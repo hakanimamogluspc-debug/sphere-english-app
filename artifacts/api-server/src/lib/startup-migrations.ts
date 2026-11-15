@@ -1315,6 +1315,7 @@ export async function runStartupMigrations() {
        'https://images.pexels.com/photos/3182773/pexels-photo-3182773.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1', 'Profesyoneller Zoom üzerinden çevrimiçi İş İngilizcesi dersi yapıyor', 'Canlı Ders Devam Ediyor', FALSE)
      ) AS v(slot, sort_order, eyebrow, title_line1, title_line2, title_accent, subtitle, cta1_text, cta1_url, cta2_text, cta2_url, image_url, image_alt, image_badge, use_campaign)
      WHERE NOT EXISTS (SELECT 1 FROM home_banners)`,
+    `ALTER TABLE home_banners ADD COLUMN IF NOT EXISTS video_url TEXT`,
     `ALTER TABLE ebook_purchases ADD COLUMN IF NOT EXISTS campaign_id INTEGER REFERENCES campaigns(id) ON DELETE SET NULL`,
     `ALTER TABLE ebook_purchases ADD COLUMN IF NOT EXISTS campaign_discount_kurus BIGINT`,
     `ALTER TABLE course_orders ADD COLUMN IF NOT EXISTS campaign_id INTEGER REFERENCES campaigns(id) ON DELETE SET NULL`,
