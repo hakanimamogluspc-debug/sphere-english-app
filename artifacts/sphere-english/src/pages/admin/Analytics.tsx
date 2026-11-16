@@ -127,7 +127,7 @@ const MODULE_LABELS: Record<string, string> = {
   teacher_area: "Öğretmen Paneli",
   admin_area: "Admin Paneli",
   corporate_area: "Kurumsal Panel",
-  general: "Tanımsız sayfa",
+  general: "Diğer sayfalar (ayrıntısı kaydedilmemiş)",
 };
 
 function labelFor(m: string): string {
@@ -137,7 +137,7 @@ function labelFor(m: string): string {
   if (MODULE_LABELS[k]) return MODULE_LABELS[k];
   // Etiketi olmayan yeni modül: ham adı okunur hale getir (ornek_modul → Ornek modul)
   const t = k.replace(/_/g, " ").trim();
-  return t ? t.charAt(0).toLocaleUpperCase("tr-TR") + t.slice(1) : "Tanımsız sayfa";
+  return t ? t.charAt(0).toLocaleUpperCase("tr-TR") + t.slice(1) : "Diğer sayfalar";
 }
 
 function formatMinutes(mins: number): string {
