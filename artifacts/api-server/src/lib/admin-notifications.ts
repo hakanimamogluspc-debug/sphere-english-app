@@ -244,6 +244,8 @@ export async function notifyNewUserRegistration(opts: {
   accountType?: string | null;
   companyName?: string | null;
   studentNumber?: string | null;
+  /** Kayıt hangi yoldan geldi (ör. "E-kitap aktivasyon bağlantısı") */
+  source?: string | null;
 }): Promise<void> {
   const roleLabel: Record<string, string> = {
     student: "Öğrenci",
@@ -272,6 +274,7 @@ export async function notifyNewUserRegistration(opts: {
   if (opts.accountType) fields.push({ label: "Hesap Tipi", value: accountLabel[opts.accountType] ?? opts.accountType });
   if (opts.companyName) fields.push({ label: "Kurum", value: opts.companyName });
   if (opts.studentNumber) fields.push({ label: "Öğrenci No", value: opts.studentNumber });
+  if (opts.source) fields.push({ label: "Kayıt yolu", value: opts.source });
   fields.push({ label: "Kullanıcı ID", value: `#${opts.userId}` });
 
   const url = `${getAppUrl()}/admin/users`;

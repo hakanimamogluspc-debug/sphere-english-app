@@ -25,6 +25,9 @@ import {
 } from "../lib/ebook-library.js";
 import { getObjectStream } from "../lib/object-storage.js";
 import { TERMS_VERSION } from "./auth.js";
+import { notifyNewUserRegistration } from "../lib/admin-notifications.js";
+import { sendEmail } from "../lib/email.js";
+import { renderWelcomeEmail } from "../lib/welcome-email.js";
 
 const router = Router();
 
@@ -86,6 +89,21 @@ router.post("/ebook-library/activate", async (req, res: Response) => {
       secure: process.env.NODE_ENV === "production",
     });
     console.info(`[ebook-library] hesap açıldı user=${user.id}, ${linked} kitap bağlandı`);
+
+    // Normal kayıtla aynı bildirimler: yöneticiye "yeni kayıt", kullanıcıya hoş geldin maili.
+    // (Kasım 2026'ya kadar bu yoldan açılan hesaplarda ikisi de gitmiyordu.)
+    notifyNewUserRegistration({
+      userId: user.id, firstName, lastName, email, role: "student", accountType: "bireysel",
+      studentNumber, source: `E-kitap aktivasyon bağlantısı (${linked} kitap bağlandı)`,
+    }).catch((e) => console.warn("[ebook-library/activate] admin bildirim hata:", e?.message));
+    (async () => {
+      try {
+        const { subject, html } = renderWelcomeEmail({ firstName });
+        await sendEmail(email, subject, html);
+      } catch (e: any) {
+        console.warn("[ebook-library/activate] welcome mail hata:", e?.message);
+      }
+    })();
     const { password: _p, ...safe } = user as any;
     return res.status(201).json({ ok: true, token, user: { ...safe, studentNumber, company: null }, linked });
   } catch (err: any) {
