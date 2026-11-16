@@ -78,38 +78,66 @@ interface UserDetail {
 
 // ─── Modül adlarını Türkçe etiketle ───────────────────────────────────────
 const MODULE_LABELS: Record<string, string> = {
-  pronunciation: "Telaffuz Koçu",
-  writing: "Yazma Koçu",
-  grammar: "Dilbilgisi Koçu",
-  vocab: "Kelime Oyunu",
-  simulation: "İş Senaryoları",
-  interview: "Mülakat Sim.",
-  presentation: "Sunum Sim.",
-  "ai-quiz": "Akıllı Quiz",
-  "ai-tutor": "Kişisel Tutor",
-  "learning-path": "Öğrenme Yolu",
-  "level-exam": "Seviye Sınavı",
-  materials: "Materyaller",
+  // Anahtarlar api-server/src/lib/activity-module.ts ile aynı (alt çizgili).
+  pronunciation_coach: "Konuşma Koçu",
+  writing_coach: "Yazma Koçu",
+  grammar_coach: "Dilbilgisi Koçu",
+  vocab_game: "Kelime Oyunu",
+  vocab_hub: "Kelime Çalışmaları",
+  simulation_mode: "İş Senaryoları",
+  interview_sim: "Mülakat Simülatörü",
+  presentation_sim: "Sunum Simülatörü",
+  ai_quiz: "Akıllı Quiz",
+  ai_tutor: "AI Öğretmen Lara",
+  learning_path: "Öğrenme Yolu",
+  level_exams: "Seviye Sınavları",
+  speaking_scenes: "Konuşma Sahneleri",
+  student_materials: "Materyaller",
+  student_speaking_club: "Speaking Club",
+  discover: "Keşfet",
+  business_cards: "İş Kartları",
+  career: "Kariyer",
+  watch_listen: "İzle & Dinle",
+  my_ebooks: "Kitaplarım (okuma + pratik)",
+  ebook_activate: "Kitaplarını Aç (hesap açma)",
   courses: "Kurslar",
-  "speaking-club": "Speaking Club",
-  "live-class": "Canlı Ders",
+  live_class: "Canlı Dersler",
   quizzes: "Alıştırmalar",
   forum: "Forum",
   messages: "Mesajlar",
   subscription: "Abonelik",
-  dashboard: "Dashboard",
+  dashboard: "Kontrol Paneli",
   leaderboard: "Sıralama",
   progress: "İlerleme",
   certificates: "Sertifikalar",
-  "placement-test": "Seviye Tespit",
-  "teacher-area": "Öğretmen Paneli",
-  "admin-area": "Admin Paneli",
-  "corporate-area": "Kurumsal Panel",
-  general: "Diğer",
+  placement_test: "Seviye Belirleme Testi",
+  onboarding: "Karşılama (ilk kurulum)",
+  profile: "Profil",
+  settings: "Ayarlar",
+  practice_hub: "Pratik (mobil sekme)",
+  library_hub: "Kütüphane (mobil sekme)",
+  achievements: "Ödüller / Kazanımlar",
+  journey: "Yolculuğum",
+  my_report: "Raporum",
+  help_center: "Yardım Merkezi",
+  invite: "Davet",
+  partner_area: "Partner Paneli",
+  ai_studio_hub: "AI Studio (ana ekran)",
+  auth_pages: "Giriş / Kayıt",
+  teacher_area: "Öğretmen Paneli",
+  admin_area: "Admin Paneli",
+  corporate_area: "Kurumsal Panel",
+  general: "Tanımsız sayfa",
 };
 
 function labelFor(m: string): string {
-  return MODULE_LABELS[m] ?? m;
+  if (MODULE_LABELS[m]) return MODULE_LABELS[m];
+  // Eski kayıtlar tireli gelebilir (ör. "placement-test")
+  const k = m.replace(/-/g, "_");
+  if (MODULE_LABELS[k]) return MODULE_LABELS[k];
+  // Etiketi olmayan yeni modül: ham adı okunur hale getir (ornek_modul → Ornek modul)
+  const t = k.replace(/_/g, " ").trim();
+  return t ? t.charAt(0).toLocaleUpperCase("tr-TR") + t.slice(1) : "Tanımsız sayfa";
 }
 
 function formatMinutes(mins: number): string {

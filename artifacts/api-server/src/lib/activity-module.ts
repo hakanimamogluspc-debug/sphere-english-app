@@ -99,6 +99,36 @@ const MODULE_PREFIXES: ReadonlyArray<{ prefix: string; module: string }> = [
   { prefix: "/corporate",                   module: "corporate_area" },
   // Placement
   { prefix: "/placement-test",              module: "placement_test" },
+
+  // ─── Kitaplarım (e-kitap alıcıları) — en uzun önek kazanır ────
+  { prefix: "/kitaplarim/etkinlestir",      module: "ebook_activate" },
+  { prefix: "/kitaplarim",                  module: "my_ebooks" },
+
+  // ─── Daha önce "general"a düşen sayfalar ───────────────────
+  { prefix: "/student/vocab-hub",           module: "vocab_hub" },
+  { prefix: "/m/pratik/kelime-hub",         module: "vocab_hub" },
+  { prefix: "/student/settings",            module: "settings" },
+  { prefix: "/ayarlar",                     module: "settings" },
+  { prefix: "/profile",                     module: "profile" },
+  { prefix: "/m/profil",                    module: "profile" },
+  { prefix: "/m/pratik",                    module: "practice_hub" },
+  { prefix: "/m/kutuphane",                 module: "library_hub" },
+  { prefix: "/m/kazanim",                   module: "achievements" },
+  { prefix: "/odullerim",                   module: "achievements" },
+  { prefix: "/yolculugum",                  module: "journey" },
+  { prefix: "/raporum",                     module: "my_report" },
+  { prefix: "/kariyer",                     module: "career" },
+  { prefix: "/yardim",                      module: "help_center" },
+  { prefix: "/onboarding",                  module: "onboarding" },
+  { prefix: "/davet",                       module: "invite" },
+  { prefix: "/partner",                     module: "partner_area" },
+  { prefix: "/ai-studio",                   module: "ai_studio_hub" },
+  { prefix: "/live-classes",                module: "live_class" },
+  { prefix: "/quizzes",                     module: "quizzes" },
+  { prefix: "/register",                    module: "auth_pages" },
+  { prefix: "/login",                       module: "auth_pages" },
+  { prefix: "/sifre-belirle",               module: "auth_pages" },
+  { prefix: "/sifremi-unuttum",             module: "auth_pages" },
 ];
 
 export function resolveModule(page: string | undefined | null): string {
