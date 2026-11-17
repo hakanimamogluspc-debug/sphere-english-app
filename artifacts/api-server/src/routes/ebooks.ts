@@ -14,6 +14,10 @@ import { db } from "@workspace/db";
 const router = Router();
 
 // SELECT için ortak alanlar — full_pdf_path public dönmesin (güvenlik)
+//
+// downloads_display_count: sitede "N kez indirildi" olarak gösterilen sayı. Artık admin'de elle
+// girilen değer DEĞİL; ödemesi tamamlanmış alımlardaki gerçek PDF indirme sayılarının toplamı
+// (ebook_purchases.download_count). Alan adı www ile uyum için aynı bırakıldı.
 const PUBLIC_COLUMNS = sql`
   id, slug, title, subtitle, description, long_description, table_of_contents,
   author, publisher, isbn, language, content_language,
@@ -21,7 +25,10 @@ const PUBLIC_COLUMNS = sql`
   cover_image_url, gallery_urls, preview_pdf_url,
   page_count, reading_time_min, category, tags,
   price_try, list_price_try, currency,
-  discount_ends_at, downloads_display_count,
+  discount_ends_at,
+  (SELECT COALESCE(SUM(p.download_count), 0)::int
+     FROM ebook_purchases p
+    WHERE p.ebook_id = ebooks.id AND p.payment_status = 'success') AS downloads_display_count,
   is_active, is_featured, published_at,
   seo_title, seo_description, seo_keywords,
   created_at, updated_at

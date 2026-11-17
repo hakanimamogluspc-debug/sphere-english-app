@@ -339,7 +339,7 @@ export default function AdminEbookForm() {
               <Field label="Satış Fiyatı (TL)" required type="number" value={form.priceTry} onChange={(v) => update("priceTry", v)} />
               <Field label="Liste Fiyatı (indirim öncesi, opsiyonel)" type="number" value={form.listPriceTry} onChange={(v) => update("listPriceTry", v)} />
               <Field label="İndirim Bitiş Tarihi (opsiyonel, geri sayım için)" type="datetime-local" value={form.discountEndsAt} onChange={(v) => update("discountEndsAt", v)} />
-              <Field label="Görünen İndirilme Sayısı (sosyal kanıt)" type="number" value={form.downloadsDisplayCount} onChange={(v) => update("downloadsDisplayCount", v)} />
+              <Field label="İndirilme sayısı (artık kullanılmıyor — sitede gerçek indirme sayısı otomatik gösterilir)" type="number" value={form.downloadsDisplayCount} onChange={(v) => update("downloadsDisplayCount", v)} />
             </div>
           </Section>
 
