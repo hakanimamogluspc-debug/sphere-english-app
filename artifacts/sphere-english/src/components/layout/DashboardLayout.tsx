@@ -153,6 +153,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       { name: 'E-Kitaplar',          href: '',                                icon: Package,       isSectionHeader: true },
       { name: 'Kitaplar',            href: '/admin/ebooks',                   icon: BookOpen },
       { name: 'Kitap Pratikleri',    href: '/admin/kitap-pratikleri',         icon: Sparkles },
+      { name: 'E-Kitap Tanımlama',   href: '/admin/kitap-tanimla',            icon: BookOpen },
       { name: 'Paketler',            href: '/admin/bundles',                  icon: Package },
       { name: 'E-Kitap Sayfası',     href: '/admin/ebook-marketing',          icon: Megaphone },
       { name: 'Yardım Merkezi',      href: '/admin/help-center',              icon: LifeBuoy },

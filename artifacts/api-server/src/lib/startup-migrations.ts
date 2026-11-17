@@ -1316,6 +1316,18 @@ export async function runStartupMigrations() {
      ) AS v(slot, sort_order, eyebrow, title_line1, title_line2, title_accent, subtitle, cta1_text, cta1_url, cta2_text, cta2_url, image_url, image_alt, image_badge, use_campaign)
      WHERE NOT EXISTS (SELECT 1 FROM home_banners)`,
     `ALTER TABLE home_banners ADD COLUMN IF NOT EXISTS video_url TEXT`,
+    // Admin'in öğrenciye tanımladığı (hediye/kurumsal) e-kitaplar. Satış kaydı DEĞİLDİR:
+    // ebook_purchases'a satır açılmaz; satış istatistikleri, faturalar ve indirme sayıları etkilenmez.
+    `CREATE TABLE IF NOT EXISTS ebook_grants (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      ebook_id INTEGER NOT NULL REFERENCES ebooks(id) ON DELETE CASCADE,
+      granted_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+      note VARCHAR(300),
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      UNIQUE (user_id, ebook_id)
+    )`,
+    `CREATE INDEX IF NOT EXISTS ebook_grants_ebook_idx ON ebook_grants(ebook_id)`,
     `ALTER TABLE ebook_purchases ADD COLUMN IF NOT EXISTS campaign_id INTEGER REFERENCES campaigns(id) ON DELETE SET NULL`,
     `ALTER TABLE ebook_purchases ADD COLUMN IF NOT EXISTS campaign_discount_kurus BIGINT`,
     `ALTER TABLE course_orders ADD COLUMN IF NOT EXISTS campaign_id INTEGER REFERENCES campaigns(id) ON DELETE SET NULL`,

@@ -100,32 +100,48 @@ export function verifyReadLink(userId: number, ebookId: number, exp: number, sig
   return crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(readLinkSig(userId, ebookId, exp)));
 }
 
-/** Kullanıcının sahip olduğu kitaplar (ödemesi tamamlanmış, tekilleştirilmiş) */
+/**
+ * Sahiplik koşulu (SQL parçası): kullanıcı kitabı satın almış YA DA admin ona tanımlamış.
+ * `userParam` kullanıcı id'sinin parametresi ("$1"), `ebookExpr` kitap id ifadesi ("e.id").
+ */
+export function ownsSql(userParam: string, ebookExpr: string): string {
+  return `(EXISTS (SELECT 1 FROM ebook_purchases op WHERE op.user_id = ${userParam} AND op.ebook_id = ${ebookExpr} AND op.payment_status = 'success')
+        OR EXISTS (SELECT 1 FROM ebook_grants og WHERE og.user_id = ${userParam} AND og.ebook_id = ${ebookExpr}))`;
+}
+
+/** Kullanıcının kitaplığı: satın aldıkları + admin'in tanımladıkları (tekilleştirilmiş) */
 export async function ownedEbooks(userId: number) {
   const r = await pool.query(
     `SELECT e.id, e.slug, e.title, e.subtitle, e.author, e.category, e.cover_image_url, e.page_count, e.practice_published,
-            MIN(p.paid_at) AS purchased_at,
+            MIN(o.at) AS purchased_at,
+            BOOL_AND(o.granted) AS granted_only,
             (SELECT rp.page FROM ebook_reading_positions rp WHERE rp.user_id = $1 AND rp.ebook_id = e.id) AS last_page,
             EXISTS (SELECT 1 FROM ebook_assets a WHERE a.ebook_id = e.id AND a.asset_type = 'full') AS has_file
-     FROM ebook_purchases p
-     JOIN ebooks e ON e.id = p.ebook_id
-     WHERE p.user_id = $1 AND p.payment_status = 'success'
+     FROM (
+       SELECT p.ebook_id, p.paid_at AS at, FALSE AS granted FROM ebook_purchases p
+        WHERE p.user_id = $1 AND p.payment_status = 'success'
+       UNION ALL
+       SELECT g.ebook_id, g.created_at AS at, TRUE AS granted FROM ebook_grants g WHERE g.user_id = $1
+     ) o
+     JOIN ebooks e ON e.id = o.ebook_id
      GROUP BY e.id
-     ORDER BY MIN(p.paid_at) DESC NULLS LAST, e.id`,
+     ORDER BY MIN(o.at) DESC NULLS LAST, e.id`,
     [userId],
   );
   return r.rows.map((x: any) => ({
     id: x.id, slug: x.slug, title: x.title, subtitle: x.subtitle, author: x.author, category: x.category,
     coverImageUrl: x.cover_image_url, pageCount: x.page_count, purchasedAt: x.purchased_at, hasFile: x.has_file,
     practiceReady: x.practice_published === true,
+    /** true: satın alınmadı, admin tanımladı */
+    granted: x.granted_only === true,
     lastPage: x.last_page ?? null,
   }));
 }
 
 export async function ownsEbook(userId: number, ebookId: number): Promise<boolean> {
   const r = await pool.query(
-    `SELECT 1 FROM ebook_purchases WHERE user_id = $1 AND ebook_id = $2 AND payment_status = 'success' LIMIT 1`,
+    `SELECT ${ownsSql("$1", "$2")} AS owns`,
     [userId, ebookId],
   );
-  return r.rows.length > 0;
+  return r.rows[0]?.owns === true;
 }

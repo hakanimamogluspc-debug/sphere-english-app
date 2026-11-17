@@ -29,6 +29,7 @@ Entegrasyon testleri: Express uygulaması **gerçek bir Postgres**'e karşı, HT
 | `ebook-practice.test.ts` | Kitap pratikleri: PDF'in parçalara bölünmesi, (sahte modelle) çıkarım, ünite devri, tekrar/geçersiz öğe ayıklama, onaylıların yeniden çıkarımda korunması, aynı anda tek iş, ünite toplu onayı, onaysız yayın reddi, admin yetkisi |
 | `ebook-practice-student.test.ts` | Öğrenci pratikleri: Leitner aralıkları, mini test üretimi (tekrarsız şıklar, boşluk doldurma), yayın/sahiplik kontrolü, kart tekrarı, test sonucunun kartlara yansıması, AI koç hedef kalıpları ve tur sınırı (sahte modelle) |
 | `my-ebooks.test.ts` | Kitaplarım: imzalı bağlantıyla hesap açma (koşul onayı şart, kendiliğinden açılmaz), alımların hesaba bağlanması, kitap listesi, süreli okuma bağlantısı, okuyucuda kaldığı sayfa, başkasının kitabına / bozuk bağlantıya erişim reddi |
+| `ebook-grants.test.ts` | Admin'in öğrenciye e-kitap tanımlaması: yetki, kitaplıkta görünme ve okuma, satış kaydı açılmaması, tekrar/satın alınmış kitabın atlanması, arama, listeleme, geri alma |
 | `marketing-leads.test.ts` | Pazarlama → Leads: tüm kaynaklar (iletişim, bülten, haberdar ol, B2B…) tek listede, aynı e-posta tek satır + kaynaklar, kaynak filtresi, B2B durum/not güncelleme |
 | `bot-reply-text.test.ts` | Bot cevabı yarıda kesilirse yarım link ve tamamlanmamış cümle atılır |
 | `entitlement.test.ts` | otomatik deneme süresi, süresi geçmiş deneme, aktif abonelik, lazy expiry (past_due / expired), iptal-ama-dönem-sürüyor |

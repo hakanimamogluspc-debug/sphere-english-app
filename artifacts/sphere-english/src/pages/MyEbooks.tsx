@@ -30,7 +30,7 @@ export default function MyEbooks() {
     <div className="max-w-5xl mx-auto px-4 py-6">
       <div className="mb-6">
         <h1 className="text-2xl font-extrabold text-[#1e3a6e]">Kitaplarım</h1>
-        <p className="text-sm text-slate-500 mt-1">Satın aldığın e-kitaplar burada. İndirme hakkı derdi olmadan istediğin zaman açabilirsin.</p>
+        <p className="text-sm text-slate-500 mt-1">E-kitapların burada. İndirme hakkı derdi olmadan istediğin zaman açabilirsin.</p>
       </div>
 
       {error && <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-sm text-red-800">{error}</div>}

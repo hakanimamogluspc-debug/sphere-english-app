@@ -74,6 +74,7 @@ const ROUTE_TITLES: RouteTitleEntry[] = [
   { prefix: '/admin/medya', title: 'Medya Kütüphanesi — Admin' },
   { prefix: '/admin/popuplar', title: 'Site Pop-up\'ları — Admin' },
   { prefix: '/admin/kitap-pratikleri', title: 'Kitap Pratikleri — Admin' },
+  { prefix: '/admin/kitap-tanimla', title: 'E-Kitap Tanımlama — Admin' },
   { prefix: '/admin/kampanyalar', title: 'Kampanyalar — Admin' },
   { prefix: '/admin/ana-sayfa-bannerlari', title: "Ana Sayfa Banner'ları — Admin" },
   { prefix: '/admin/marketing', title: 'Pazarlama — Admin' },

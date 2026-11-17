@@ -14,6 +14,7 @@ import OpenAI from "openai";
 import { pool } from "@workspace/db";
 import { authMiddleware, type AuthRequest } from "../middlewares/auth.js";
 import { openaiTrackedFetch } from "../lib/ai-usage.js";
+import { ownsSql } from "../lib/ebook-library.js";
 import { nextReview, buildQuiz, usedTargets, LEARNED_BOX, type QuizSourceItem } from "../lib/ebook-practice-quiz.js";
 
 const router = Router();
@@ -24,7 +25,7 @@ async function guard(req: AuthRequest, res: Response): Promise<number | null> {
   if (!Number.isInteger(ebookId)) { res.status(400).json({ error: "Geçersiz kitap" }); return null; }
   const r = await pool.query(
     `SELECT e.practice_published,
-            EXISTS (SELECT 1 FROM ebook_purchases p WHERE p.user_id = $1 AND p.ebook_id = e.id AND p.payment_status = 'success') AS owns
+            ${ownsSql("$1", "e.id")} AS owns
      FROM ebooks e WHERE e.id = $2`,
     [req.userId, ebookId],
   );
@@ -117,7 +118,7 @@ router.post("/me/ebooks/practice/review", authMiddleware, async (req: AuthReques
   const ok = await pool.query(
     `SELECT 1 FROM ebook_practice_items i JOIN ebooks e ON e.id = i.ebook_id
      WHERE i.id = $1 AND i.status = 'approved' AND e.practice_published
-       AND EXISTS (SELECT 1 FROM ebook_purchases p WHERE p.user_id = $2 AND p.ebook_id = e.id AND p.payment_status = 'success')`,
+       AND ${ownsSql("$2", "e.id")}`,
     [itemId, req.userId],
   );
   if (!ok.rows.length) return res.status(404).json({ error: "Kart bulunamadı" });
