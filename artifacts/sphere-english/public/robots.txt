@@ -1,5 +1,13 @@
-# app.sphereenglish.com - Uygulama (giriş gerektirir, indexlenmesin)
+# app.sphereenglish.com - Uygulama (giriş gerektirir, dizine eklenmesin)
+# Yalnızca www.sphereenglish.com'daki ürün sayfalarının kullandığı herkese açık görseller taranabilir:
+# kitap/set kapakları ve medya kütüphanesi görselleri. (Kapalı olunca arama motorları ve
+# yapay zeka asistanları ürün kapaklarını göremiyordu.)
 User-agent: *
 Disallow: /
+Allow: /api-server/api/bundle-cover/
+Allow: /api-server/api/ebooks/asset/
+Allow: /api/bundle-cover/
+Allow: /api/ebooks/asset/
+Allow: /api/mail-assets/
 
 # Ana site için: https://www.sphereenglish.com/sitemap.xml
