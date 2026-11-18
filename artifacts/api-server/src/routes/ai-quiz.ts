@@ -101,6 +101,14 @@ QUESTION DESIGN RULES:
 - For fill_blank: correctAnswer must be a single word or short phrase (max 4 words). Be lenient — list the most obvious answer.
 - All explanations are MANDATORY: explanationEn (1-2 sentences in English) AND explanationTr (1-2 sentences in Turkish).
 
+DISTRACTOR RULES (multiple_choice) — a learner who does not know the answer must NOT be able to guess it:
+- All 4 options must be the same part of speech / grammatical form and fit the sentence grammatically.
+- All 4 options must be similar in length and style. The correct answer must never be the longest, the most detailed, or the only "sensible-looking" option.
+- Wrong options must be plausible, typical mistakes for a Turkish learner at ${level} (confusable words, near-synonyms with a different collocation, wrong tense/preposition) — never absurd, off-topic or joke options.
+- Do not repeat words from the prompt only in the correct option, and do not give the answer away in the prompt or context.
+- Exactly one option is correct; no "all of the above" / "none of the above".
+- For true_false: the statement must require understanding, not common sense; keep the True/False split roughly balanced across the quiz.
+
 Return STRICT JSON (no markdown), this exact schema:
 {
   "title": "<short Turkish quiz title 4-8 words>",

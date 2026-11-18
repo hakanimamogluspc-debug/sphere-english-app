@@ -32,6 +32,36 @@ describe("pratik yardımcıları", () => {
     expect(qs.some((q) => q.type === "blank" && q.prompt.includes("_____"))).toBe(true);
   });
 
+  it("yanlış şıklar doğru cevaba benzeyenlerden seçilir; karışacak kadar yakın olan şık olmaz", () => {
+    const mk = (id: number, en: string, tr: string, unitOrder = 1): QuizSourceItem => ({ id, kind: "pattern", en, tr, exampleEn: null, unitOrder });
+    const all: QuizSourceItem[] = [
+      mk(1, "Could you let me know by [date]?", "[tarih] itibarıyla bana bildirebilir misiniz?"),
+      // Doğru cevabı içeren uzun cümle: şık OLMAMALI
+      mk(2, "Could you let me know by tomorrow, 24 November, if you can set up his account in time?", "Hesabını zamanında açabilir misin, yarına kadar haber verir misin?"),
+      mk(3, "Could you send me the report by [date]?", "Raporu [tarih] itibarıyla gönderebilir misiniz?"),
+      mk(4, "Could you confirm the meeting by [date]?", "Toplantıyı [tarih] itibarıyla teyit edebilir misiniz?"),
+      mk(5, "Could we reschedule the call to [date]?", "Görüşmeyi [tarih] tarihine erteleyebilir miyiz?"),
+      mk(6, "Would you mind sharing the file by [date]?", "Dosyayı [tarih] itibarıyla paylaşır mısınız?"),
+      // Alakasız kısa ifadeler: benzer adaylar varken seçilmemeli
+      mk(7, "Please do not use", "Lütfen kullanmayın", 4),
+      mk(8, "Can we meet at 2", "Saat 2'de buluşabilir miyiz", 4),
+      mk(9, "Noted", "Not edildi", 4),
+      mk(10, "FYI", "Bilginize", 4),
+    ];
+    for (let seed = 0; seed < 25; seed++) {
+      let n = seed;
+      const rnd = () => { n = (n * 9301 + 49297) % 233280; return n / 233280; };
+      const q = buildQuiz([all[0]], all, 1, rnd)[0];
+      expect(q.options).toHaveLength(4);
+      const joined = q.options.join(" | ");
+      expect(joined).not.toContain("24 November");
+      for (const far of ["Please do not use", "Can we meet at 2", "Noted", "FYI", "Lütfen kullanmayın", "Not edildi", "Bilginize"]) {
+        expect(q.options).not.toContain(far);
+      }
+      expect(q.hint).toBeNull();
+    }
+  });
+
   it("koçta kullanılan hedef kalıplar yakalanır", () => {
     expect(usedTargets(["OK, let's touch base on Friday!"], ["Touch Base", "Circle back."])).toEqual(["Touch Base"]);
   });

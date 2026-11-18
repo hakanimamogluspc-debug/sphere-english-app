@@ -90,15 +90,28 @@ router.get("/vocab-game/game/word", async (req, res) => {
     const wordsSeen = sessionWords.filter(sw => sw.isCorrect !== null || sw.isSkipped).length;
     const totalWords = session.totalWords;
 
-    let wrongWords = await db
+    // Yanlış şıklar doğru kelimeye BENZEYENLERDEN seçilir: aynı kategori, aynı seviye, aynı kelime sayısı,
+    // aynı uzunluk. Eskiden yalnızca "aynı uzunlukta rastgele kelime" seçiliyordu; alakasız kategorilerden
+    // gelen şıklar görsele bakınca kolayca eleniyordu. En benzer 12 aday içinden rastgele 4'ü alınır.
+    // Uzunluk ve kelime sayısı en ağır ölçüt: ekranda harf sayısı ipucu (word_structure) gösterildiği için
+    // farklı uzunluktaki şıklar kendiliğinden elenirdi.
+    const wordCount = word.word.trim().split(/\s+/).length;
+    const similar = await db
       .select({ word: vocabWordsTable.word })
       .from(vocabWordsTable)
       .where(and(
         ne(vocabWordsTable.id, word.id),
-        sql`length(word) = ${word.word.length}`
+        sql`lower(word) <> ${word.word.toLowerCase()}`,
       ))
-      .orderBy(sql`RANDOM()`)
-      .limit(4);
+      .orderBy(sql`(
+          (CASE WHEN category IS NOT DISTINCT FROM ${word.category} THEN 3 ELSE 0 END)
+        + (CASE WHEN level IS NOT DISTINCT FROM ${word.level} THEN 1 ELSE 0 END)
+        + (CASE WHEN array_length(regexp_split_to_array(trim(word), '\\s+'), 1) = ${wordCount} THEN 3 ELSE 0 END)
+        + (CASE WHEN length(word) = ${word.word.length} THEN 4
+                WHEN abs(length(word) - ${word.word.length}) <= 2 THEN 1 ELSE 0 END)
+        ) DESC, RANDOM()`)
+      .limit(12);
+    let wrongWords = similar.sort(() => Math.random() - 0.5).slice(0, 4);
 
     if (wrongWords.length < 4) {
       const existing = wrongWords.map((w) => w.word);
