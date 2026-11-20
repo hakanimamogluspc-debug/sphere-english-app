@@ -3,6 +3,7 @@ import { useLocation } from "wouter";
 import { API } from "@/lib/api-url";
 import { TabBar, BusinessCard, Button, colors, fonts, radius, type TabKey, type BusinessCardData } from "@/components/mobile";
 import { Search, X, ArrowLeft } from "lucide-react";
+import MyBooksCard from "@/components/mobile/MyBooksCard";
 
 /**
  * /m/kutuphane — Mobil kütüphane
@@ -166,6 +167,9 @@ export default function MobileLibrary() {
             }} />
           </span> istersin?
         </div>
+
+        {/* Kitaplarım — yalnızca kitabı olan kullanıcıda görünür */}
+        <div style={{ marginTop: 18 }}><MyBooksCard /></div>
 
         {/* Alt sekmeler */}
         <div style={{

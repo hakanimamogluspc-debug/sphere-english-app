@@ -221,8 +221,13 @@ function ProtectedRoute({ component: Component, allowedRoles, skipPlacementCheck
     return <Redirect to={location.startsWith("/m/") ? "/m/pratik" : "/dashboard"} />;
   }
 
+  // Kitaplarım: e-kitap alıcısı karşılama/seviye testine zorlanmadan kitaplarına ulaşır.
+  // (Router'daki istisna tek başına yetmiyordu; bu bileşen de aynı yönlendirmeyi yapıyordu.)
+  const isLibrary = location.startsWith("/kitaplarim");
+
   if (
     !skipPlacementCheck &&
+    !isLibrary &&
     user?.role === "student" &&
     !user?.company &&
     user?.onboardingCompleted !== true &&
@@ -233,6 +238,7 @@ function ProtectedRoute({ component: Component, allowedRoles, skipPlacementCheck
 
   if (
     !skipPlacementCheck &&
+    !isLibrary &&
     user?.role === "student" &&
     !user?.company &&
     user?.placementTestCompleted === false &&

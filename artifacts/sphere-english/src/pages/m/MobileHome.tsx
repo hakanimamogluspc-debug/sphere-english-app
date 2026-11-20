@@ -10,6 +10,7 @@ import {
 } from "@/components/mobile";
 import { ArrowRight, Volume2 } from "lucide-react";
 import MobileGuidedJourneyCard from "@/components/journey/MobileGuidedJourneyCard";
+import MyBooksCard from "@/components/mobile/MyBooksCard";
 
 /**
  * Mobil Ana Sayfa — /m/anasayfa
@@ -236,6 +237,9 @@ export default function MobileHome() {
             onCta={() => setLocation("/m/pratik")}
           />
         )}
+
+        {/* Kitaplarım — yalnızca kitabı olan kullanıcıda görünür */}
+        <div style={{ marginTop: 14 }}><MyBooksCard /></div>
 
         {/* 7 Günlük Başlangıç Planı */}
         <MobileGuidedJourneyCard />
